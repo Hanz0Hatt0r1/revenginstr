@@ -24,6 +24,7 @@ revenginstr-callgraph = "revenginstr.evidence.callgraph:main"
 revenginstr-evidence-aggregate = "revenginstr.evidence.aggregate:main"
 revenginstr-receiver-plan = "revenginstr.receiver.plan:main"
 revenginstr-receiver-infer = "revenginstr.receiver.infer:main"
+revenginstr-family-mine = "revenginstr.family.mine:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
