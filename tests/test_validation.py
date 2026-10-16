@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 
-from revenginstr.ml.evidence_tokens import EVIDENCE_FORMAT, load_evidence
 from revenginstr.validation import DRIFT_AUDIT_FORMAT, FROZEN_VALIDATION_FORMAT
 from revenginstr.validation.drift import audit_drift
 from revenginstr.validation.frozen import freeze_validation
@@ -86,21 +85,21 @@ def _classified(prefix: str, count: int, *, shifted: bool, routed: bool) -> list
         if routed and base_action == "accept" and index % 4 == 0:
             action = "escalate"
             changed = True
-        rows.append(
-            {
-                "id": f"{prefix}:{index}",
-                "prediction": prediction,
-                "base_action": base_action,
-                "action": action,
-                "accept_router_changed": changed,
-                "confidence": 0.92 if not shifted else 0.71,
-                "raw_confidence": 0.88 if not shifted else 0.68,
-                "family_similarity": 0.82 if not shifted else 0.55,
-                "competing_similarity": 0.25 if not shifted else 0.46,
-                "contrast_margin": 0.57 if not shifted else 0.09,
-                "probabilities": {"game": 0.7, "engine": 0.2, "media": 0.1},
-            }
-        )
+        row = {
+            "id": f"{prefix}:{index}",
+            "prediction": prediction,
+            "base_action": base_action,
+            "action": action,
+            "confidence": 0.92 if not shifted else 0.71,
+            "raw_confidence": 0.88 if not shifted else 0.68,
+            "family_similarity": 0.82 if not shifted else 0.55,
+            "competing_similarity": 0.25 if not shifted else 0.46,
+            "contrast_margin": 0.57 if not shifted else 0.09,
+            "probabilities": {"game": 0.7, "engine": 0.2, "media": 0.1},
+        }
+        if routed:
+            row["accept_router_changed"] = changed
+        rows.append(row)
     return rows
 
 
@@ -136,7 +135,7 @@ def test_drift_audit_reports_unlabeled_shift_and_router_intervention() -> None:
     assert summary["severity"]["level"] == "high"
 
 
-def test_drift_audit_can_use_router_manifest_for_reference_rate(tmp_path: Path) -> None:
+def test_drift_audit_can_use_router_manifest_for_reference_rate() -> None:
     reference = _classified("ref", 50, shifted=False, routed=False)
     frozen = _classified("new", 20, shifted=False, routed=True)
     manifest = {
