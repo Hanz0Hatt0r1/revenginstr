@@ -4,21 +4,29 @@ import hashlib
 import json
 from pathlib import Path
 
-from revenginstr.family.features import MINHASH_PRIME, family_feature_set, minhash_signature, portable_pcode
+from revenginstr.family.features import (
+    MINHASH_PRIME,
+    HashProfile,
+    family_feature_set,
+    minhash_signature,
+    portable_pcode,
+)
 from revenginstr.family.mine import mine_dataset
 
 
-def legacy_nevergone_signature(features: set[str] | frozenset[str]) -> tuple[int, ...]:
+def legacy_signature(
+    features: set[str] | frozenset[str], person: bytes, permutation_prefix: str
+) -> tuple[int, ...]:
     hashes = [
         int.from_bytes(
-            hashlib.blake2b(token.encode("utf-8"), digest_size=8, person=b"NVG-FAM").digest(),
+            hashlib.blake2b(token.encode("utf-8"), digest_size=8, person=person).digest(),
             "big",
         ) & MINHASH_PRIME
         for token in features
     ] or [0]
     result = []
     for index in range(32):
-        digest = hashlib.sha256(f"NevergoneFamilyMinHash/{index}".encode("ascii")).digest()
+        digest = hashlib.sha256(f"{permutation_prefix}{index}".encode("ascii")).digest()
         a = (int.from_bytes(digest[:8], "big") % (MINHASH_PRIME - 1)) + 1
         b = int.from_bytes(digest[8:16], "big") % MINHASH_PRIME
         result.append(min((a * value + b) % MINHASH_PRIME for value in hashes))
@@ -39,8 +47,32 @@ def write_split(path: Path, rows: list[dict]) -> None:
 
 def test_nevergone_hash_profile_reproduces_historical_seeds() -> None:
     features = family_feature_set(text("INT_ADD"))
-    assert minhash_signature(features, "nevergone-v1") == legacy_nevergone_signature(features)
+    assert minhash_signature(features, "nevergone-v1") == legacy_signature(
+        features, b"NVG-FAM", "NevergoneFamilyMinHash/"
+    )
     assert minhash_signature(features, "revenginstr-v1") != minhash_signature(features, "nevergone-v1")
+
+
+def test_consumer_owned_hash_profile_and_format(tmp_path: Path) -> None:
+    profile = HashProfile("consumer-v1", b"CONSUMER", "ConsumerFamilyMinHash/")
+    features = family_feature_set(text("INT_ADD"))
+    assert minhash_signature(features, profile) == legacy_signature(
+        features, b"CONSUMER", "ConsumerFamilyMinHash/"
+    )
+
+    dataset = tmp_path / "dataset"
+    dataset.mkdir()
+    write_split(dataset / "train.jsonl", [{"id": "a", "text": text("INT_ADD")}])
+    write_split(dataset / "validation.jsonl", [])
+    write_split(dataset / "test.jsonl", [])
+    output = tmp_path / "families.jsonl"
+    report = mine_dataset(
+        dataset, output, hash_profile=profile, output_format="CONSUMER.FunctionFamilies/1"
+    )
+    row = json.loads(output.read_text(encoding="utf-8"))
+    assert row["format"] == "CONSUMER.FunctionFamilies/1"
+    assert report["format"] == "CONSUMER.FunctionFamilies/1"
+    assert report["policy"]["hash_profile"] == "consumer-v1"
 
 
 def test_portable_pcode_ignores_headers_and_ssa_ordinals() -> None:

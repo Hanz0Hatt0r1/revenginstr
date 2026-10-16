@@ -10,11 +10,13 @@ from pathlib import Path
 from typing import Any
 
 from .features import (
+    HashProfile,
     PROFILES,
     family_feature_set,
     jaccard,
     lsh_band_keys,
     minhash_signature,
+    profile_config,
     portable_pcode,
 )
 
@@ -71,13 +73,15 @@ def read_dataset(dataset_dir: Path) -> list[dict[str, Any]]:
 
 def mine_dataset(dataset_dir: Path, output_path: Path, *, similarity_threshold: float = 0.72,
                  min_length_ratio: float = 0.55, bands: int = 8,
-                 hash_profile: str = "revenginstr-v1") -> dict[str, Any]:
+                 hash_profile: str | HashProfile = "revenginstr-v1",
+                 output_format: str = FORMAT) -> dict[str, Any]:
     if not 0.0 < similarity_threshold <= 1.0:
         raise ValueError("similarity_threshold must be in (0, 1]")
     if not 0.0 < min_length_ratio <= 1.0:
         raise ValueError("min_length_ratio must be in (0, 1]")
-    if hash_profile not in PROFILES:
-        raise ValueError(f"unknown hash profile: {hash_profile}")
+    if not isinstance(output_format, str) or not output_format or output_format.strip() != output_format:
+        raise ValueError("output_format must be a non-empty string without surrounding whitespace")
+    profile = profile_config(hash_profile)
 
     rows = read_dataset(dataset_dir)
     features: list[frozenset[str]] = []
@@ -88,7 +92,7 @@ def mine_dataset(dataset_dir: Path, output_path: Path, *, similarity_threshold: 
         text = row["text"]
         feature_set = family_feature_set(text)
         features.append(feature_set)
-        signatures.append(minhash_signature(feature_set, hash_profile))
+        signatures.append(minhash_signature(feature_set, profile))
         portable = portable_pcode(text)
         portable_hashes.append(hashlib.sha256(portable.encode("utf-8")).hexdigest())
         op_counts.append(sum(1 for line in portable.splitlines() if line))
@@ -156,7 +160,7 @@ def mine_dataset(dataset_dir: Path, output_path: Path, *, similarity_threshold: 
         for index, row in sorted(enumerate(rows), key=lambda item: item[1]["id"]):
             family_id = family_by_index[index]
             handle.write(json.dumps({
-                "format": FORMAT,
+                "format": output_format,
                 "id": row["id"],
                 "family_id": family_id,
                 "family_size": family_sizes[family_id],
@@ -165,7 +169,7 @@ def mine_dataset(dataset_dir: Path, output_path: Path, *, similarity_threshold: 
             }, sort_keys=True) + "\n")
 
     manifest = {
-        "format": FORMAT,
+        "format": output_format,
         "dataset": str(dataset_dir),
         "functions": len(rows),
         "exact_portable_groups": len(exact_groups),
@@ -184,7 +188,7 @@ def mine_dataset(dataset_dir: Path, output_path: Path, *, similarity_threshold: 
             "min_length_ratio": min_length_ratio,
             "minhash_size": len(signatures[0]) if signatures else 32,
             "lsh_bands": bands,
-            "hash_profile": hash_profile,
+            "hash_profile": profile.name,
             "function_names_used": False,
             "addresses_used": False,
             "headers_used": False,
