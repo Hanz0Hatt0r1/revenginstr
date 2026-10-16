@@ -29,15 +29,46 @@ revenginstr-freeze-validation \
   --tag unseen500-v1
 ```
 
+### Consumer-owned eligibility
+
+Some projects need title-specific population rules before random/frozen selection.
+Examples include excluding compiler/runtime scaffolding, known third-party libraries
+or functions outside a semantic research frontier. Those rules must stay in the
+consumer repository rather than being embedded in `revenginstr`.
+
+The consumer can write an eligibility trace containing `id` and/or
+`program` + `source_entry` for every allowed function, then pass it to the generic
+selector:
+
+```bash
+revenginstr-freeze-validation \
+  wide-corpus.jsonl \
+  validation/unseen500 \
+  --eligible-trace consumer-eligible-functions.jsonl \
+  --exclude-trace training-trace.jsonl \
+  --limit 500 \
+  --tag unseen500-v1
+```
+
+Multiple `--eligible-trace` and `--exclude-trace` arguments are allowed. Eligibility
+traces form a union of allowed identities; exclusion traces form a union of blocked
+identities. Eligibility is applied first, then training/calibration overlap is
+removed.
+
+This boundary lets a consumer preserve project-specific origin decisions without
+teaching the common validation core about Cocos, EA libraries, retail addresses,
+compiler scaffolding or any other title-specific semantics.
+
 The selector:
 
 1. accepts only successful `REVENGINSTR.PcodeCorpus/1` rows;
 2. excludes external rows by default;
-3. removes any identity present in an exclusion trace;
-4. removes duplicate physical identities;
-5. ranks remaining rows by a stable SHA-256 selection key;
-6. writes exactly the requested number of rows;
-7. writes immutable source/exclusion/corpus/trace SHA-256 provenance.
+3. optionally restricts the population to consumer-provided eligibility traces;
+4. removes any identity present in an exclusion trace;
+5. removes duplicate physical identities;
+6. ranks remaining rows by a stable SHA-256 selection key;
+7. writes exactly the requested number of rows;
+8. writes immutable source/eligibility/exclusion/corpus/trace SHA-256 provenance.
 
 Output:
 
@@ -109,6 +140,18 @@ has_receiver_inference
 ```
 
 Override the set by repeating `--core-evidence-key`.
+
+## Schemas
+
+Stable JSON Schema contracts are provided for the manifest/report surfaces:
+
+```text
+schemas/frozen-validation-v1.schema.json
+schemas/drift-audit-v1.schema.json
+```
+
+The frozen manifest hashes the eligibility traces as well as exclusion traces, so
+consumer population policy becomes part of the retained provenance.
 
 ## Interpretation
 
