@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-compact-instruction-stream-v1.schema.json",
+  "title": "REVENGINSTR.GhidraCompactInstructionStream/1 JSONL row",
+  "description": "A portable program identity header or one compact decoded-instruction row.",
+  "oneOf": [
+    {"$ref": "#/$defs/header"},
+    {"$ref": "#/$defs/instruction"}
+  ],
+  "$defs": {
+    "header": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "kind", "program", "executable_md5", "language_id", "image_base", "pointer_size"],
+      "properties": {
+        "format": {"const": "REVENGINSTR.GhidraCompactInstructionStream/1"},
+        "kind": {"const": "header"},
+        "program": {"type": "string", "minLength": 1},
+        "executable_md5": {"type": ["string", "null"]},
+        "language_id": {"type": "string", "minLength": 1},
+        "image_base": {"type": ["string", "null"]},
+        "pointer_size": {"type": "integer", "minimum": 1}
+      }
+    },
+    "instruction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "kind", "address", "mnemonic", "operands", "flow_type", "flows"],
+      "properties": {
+        "format": {"const": "REVENGINSTR.GhidraCompactInstructionStream/1"},
+        "kind": {"const": "instruction"},
+        "address": {"type": "string", "minLength": 1},
+        "mnemonic": {"type": "string", "minLength": 1},
+        "operands": {"type": "array", "items": {"type": "string"}},
+        "flow_type": {"type": "string", "minLength": 1},
+        "flows": {"type": "array", "items": {"type": ["string", "null"]}}
+      }
+    }
+  }
+}
