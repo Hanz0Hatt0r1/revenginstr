@@ -7,7 +7,7 @@ import pytest
 from jsonschema import Draft202012Validator, ValidationError
 
 from revenginstr.evidence.aggregate import aggregate
-from revenginstr.receiver.infer import infer
+from revenginstr.receiver.infer import infer, read_tsv
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -91,6 +91,30 @@ def test_receiver_inference_schema_keeps_identity_evidence_non_routing() -> None
     schema.validate(rows[0])
     with pytest.raises(ValidationError):
         schema.validate({**rows[0], "affects_routing": True})
+
+
+def test_generic_receiver_tsv_row_schema(tmp_path: Path) -> None:
+    path = tmp_path / "receiver-types.tsv"
+    fields = [
+        "format", "source_id", "function_entry", "call_index", "call_address",
+        "call_time", "arg_count", "receiver_present", "receiver_storage_kind",
+        "receiver_token", "receiver_type_name", "receiver_type_display",
+        "receiver_pointer_depth", "pointee_type_name", "pointee_type_display",
+        "flow_type_node_count", "flow_single_pointer_pointee_names_json",
+        "flow_single_pointer_pointee_displays_json",
+    ]
+    values = [
+        "REVENGINSTR.GhidraIndirectReceiverType/1", "sample.exe:00401000",
+        "00401000", "0", "00401020", "4", "2", "1", "register",
+        "register:0010:4", "Widget *", "Widget *", "1", "Widget", "Widget",
+        "0", "[]", "[]",
+    ]
+    path.write_text("\t".join(fields) + "\n" + "\t".join(values) + "\n", encoding="utf-8")
+
+    schema = validator("ghidra-indirect-receiver-type-v1.schema.json")
+    schema.validate(read_tsv(path)[0])
+    with pytest.raises(ValidationError):
+        schema.validate({**dict(zip(fields, values)), "format": "consumer.receiver/2"})
 
 
 def test_validation_manifest_and_drift_schemas() -> None:

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-indirect-receiver-type-v1.schema.json",
+  "title": "REVENGINSTR.GhidraIndirectReceiverType/1 TSV row",
+  "description": "One metadata-only indirect-call receiver observation emitted by the generic Ghidra exporter. TSV cells are represented as strings, including numeric cells and JSON-encoded type-flow arrays.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "source_id", "function_entry", "call_index", "call_address",
+    "call_time", "arg_count", "receiver_present", "receiver_storage_kind",
+    "receiver_token", "receiver_type_name", "receiver_type_display",
+    "receiver_pointer_depth", "pointee_type_name", "pointee_type_display",
+    "flow_type_node_count", "flow_single_pointer_pointee_names_json",
+    "flow_single_pointer_pointee_displays_json"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraIndirectReceiverType/1"},
+    "source_id": {"type": "string", "minLength": 1},
+    "function_entry": {"type": "string", "minLength": 1},
+    "call_index": {"type": "string", "pattern": "^[0-9]+$"},
+    "call_address": {"type": "string"},
+    "call_time": {"type": "string", "pattern": "^[0-9]+$"},
+    "arg_count": {"type": "string", "pattern": "^[0-9]+$"},
+    "receiver_present": {"enum": ["0", "1"]},
+    "receiver_storage_kind": {"type": "string"},
+    "receiver_token": {"type": "string"},
+    "receiver_type_name": {"type": "string"},
+    "receiver_type_display": {"type": "string"},
+    "receiver_pointer_depth": {"type": "string", "pattern": "^[0-9]+$"},
+    "pointee_type_name": {"type": "string"},
+    "pointee_type_display": {"type": "string"},
+    "flow_type_node_count": {"type": "string", "pattern": "^[0-9]+$"},
+    "flow_single_pointer_pointee_names_json": {"type": "string"},
+    "flow_single_pointer_pointee_displays_json": {"type": "string"}
+  }
+}
