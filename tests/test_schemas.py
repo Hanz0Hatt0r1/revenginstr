@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 from pathlib import Path
 
@@ -111,16 +112,9 @@ def test_generic_receiver_tsv_row_schema(tmp_path: Path) -> None:
 
 def test_generic_function_pcode_flow_tsv_row_schema() -> None:
     schema = validator("ghidra-function-pcode-flow-v1.schema.json")
-    schema.validate({
-        "function_entry": "00401000",
-        "op_address": "00401004",
-        "op_time": "7",
-        "opcode": "CALL",
-        "output": "-",
-        "inputs": "const:0x401020:4;register:0010:4",
-        "callee_entry": "00401020",
-        "callee_name": "FUN_00401020",
-    })
+    fixture = ROOT / "tests/fixtures/ghidra-function-pcode-flow.tsv"
+    with fixture.open(encoding="utf-8", newline="") as handle:
+        schema.validate(next(csv.DictReader(handle, delimiter="\t")))
     with pytest.raises(ValidationError):
         schema.validate({
             "function_entry": "00401000",

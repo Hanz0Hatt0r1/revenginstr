@@ -276,11 +276,12 @@ For every stable evidence family document:
 
 Every migrated exporter gets a legal synthetic or minimal fixture so parity can be tested without redistributing game binaries.
 
-**Initial fixtures added (2026-10-17):** a synthetic P-code corpus record and
-decoded TSV payloads for all five Program Index tables and ARM32 Itanium vtable
-slots. Tests run the P-code record through audit and schema validation, and
-check exact TSV headers, column ordering, and rows against the v1 schemas. The
-work remains open for parity fixtures accompanying later exporter migrations.
+**Initial fixtures added (2026-10-17):** a synthetic P-code corpus record,
+Function/Bounded P-code TSV row, and decoded payloads for all five Program
+Index tables and ARM32 Itanium vtable slots. Tests run P-code records through
+audit/schema validation and check exact TSV headers, column ordering, and rows
+against their v1 schemas. The work remains open for fixtures accompanying
+later exporter migrations.
 
 ### M1.4 Consumer boundary
 
