@@ -79,7 +79,9 @@ REVENGINSTR.BenchmarkDelta/1
 
 JSON Schemas in `schemas/` define portable evidence, benchmark, determinism and
 metric-delta contracts. Source identifiers remain join metadata; evidence
-features are numeric or boolean, project-neutral summaries.
+features are numeric or boolean, project-neutral summaries. The normative
+field, ordering, provenance and compatibility index is
+[`docs/SCHEMA_CONTRACTS.md`](docs/SCHEMA_CONTRACTS.md).
 The `GhidraFunctionPcodeFlow/1` metadata-only TSV contract is documented in
 `docs/GHIDRA_FUNCTION_PCODE_FLOW.md`.
 The `GhidraPcodeDefinedString/1` TSV contract resolves only defined strings
@@ -112,6 +114,9 @@ docs/GHIDRA_INDIRECT_CALL_EVIDENCE.md.
 
 The generic Ghidra program metadata index is documented in
 docs/GHIDRA_PROGRAM_INDEX.md.
+
+The ARM32 Itanium vtable-slot exporter and its row contract are documented in
+[`docs/GHIDRA_VTABLE_SLOTS.md`](docs/GHIDRA_VTABLE_SLOTS.md).
 
 The generic address-reference exporter is documented in
 docs/GHIDRA_ADDRESS_REFERENCES.md.

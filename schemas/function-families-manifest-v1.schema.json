@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/function-families-manifest-v1.schema.json",
+  "title": "REVENGINSTR.FunctionFamilies/1 manifest",
+  "type": "object",
+  "required": ["format", "dataset", "functions", "exact_portable_groups", "families", "multi_member_families", "largest_family", "exact_merges", "lsh_candidate_pairs", "similarity_pairs_checked", "accepted_similarity_pairs", "fuzzy_merges", "mixed_label_families", "policy"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.FunctionFamilies/1"},
+    "dataset": {"type": "string"},
+    "functions": {"type": "integer", "minimum": 1},
+    "exact_portable_groups": {"type": "integer", "minimum": 1},
+    "families": {"type": "integer", "minimum": 1},
+    "multi_member_families": {"type": "integer", "minimum": 0},
+    "largest_family": {"type": "integer", "minimum": 1},
+    "exact_merges": {"type": "integer", "minimum": 0},
+    "lsh_candidate_pairs": {"type": "integer", "minimum": 0},
+    "similarity_pairs_checked": {"type": "integer", "minimum": 0},
+    "accepted_similarity_pairs": {"type": "integer", "minimum": 0},
+    "fuzzy_merges": {"type": "integer", "minimum": 0},
+    "mixed_label_families": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "policy": {
+      "type": "object",
+      "required": ["similarity", "similarity_threshold", "min_length_ratio", "minhash_size", "lsh_bands", "hash_profile", "function_names_used", "addresses_used", "headers_used"],
+      "properties": {
+        "similarity": {"type": "string"},
+        "similarity_threshold": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "min_length_ratio": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "minhash_size": {"type": "integer", "minimum": 1},
+        "lsh_bands": {"type": "integer", "minimum": 1},
+        "hash_profile": {"type": "string"},
+        "function_names_used": {"const": false},
+        "addresses_used": {"const": false},
+        "headers_used": {"const": false}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

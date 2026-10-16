@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from jsonschema import Draft202012Validator
+
 from revenginstr.ml.accept_error_router import (
     FORMAT,
     route_rows,
@@ -42,6 +44,11 @@ def make_oof() -> list[dict]:
                 "contrast_margin": 0.7 if correct else -0.4,
             })
     return rows
+
+
+def validate_schema(name: str, value: dict) -> None:
+    schema_path = Path(__file__).resolve().parents[1] / "schemas" / name
+    Draft202012Validator(json.loads(schema_path.read_text(encoding="utf-8"))).validate(value)
 
 
 def test_blocked_evidence_identity_terms() -> None:
@@ -92,8 +99,11 @@ def test_accept_error_router_train_and_monotone_inference(tmp_path: Path) -> Non
     assert manifest["calibration"]["kept_precision"] >= 0.95
     assert manifest["calibration"]["kept_coverage"] >= 0.70
     assert "source_entry" not in manifest["evidence_keys"]
+    validate_schema("accept-error-router-v1.schema.json", manifest)
     assert (model_dir / "accept_error_router.joblib").exists()
     assert (model_dir / "crossfit_accept_scores.jsonl").exists()
+    for line in (model_dir / "crossfit_accept_scores.jsonl").read_text(encoding="utf-8").splitlines():
+        validate_schema("accept-error-router-crossfit-score-v1.schema.json", json.loads(line))
 
     import joblib
 
@@ -113,6 +123,8 @@ def test_accept_error_router_train_and_monotone_inference(tmp_path: Path) -> Non
     assert routed[-1]["base_action"] == "review"
     assert routed[-1]["action"] == "review"
     assert routed[-1]["accept_router_changed"] is False
+    for row in routed:
+        validate_schema("accept-error-router-prediction-v1.schema.json", row)
     assert all(
         (row["base_action"], row["action"]) not in {
             ("review", "accept"), ("escalate", "accept"), ("escalate", "review")

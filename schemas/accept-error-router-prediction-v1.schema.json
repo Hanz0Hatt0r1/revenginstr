@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/accept-error-router-prediction-v1.schema.json",
+  "title": "REVENGINSTR.AcceptErrorRouter/1 input-preserving prediction row extension",
+  "description": "Requires router-added fields and permits all original classifier row fields to pass through unchanged.",
+  "type": "object",
+  "required": ["id", "prediction", "action", "accept_error_router_format", "base_action", "accept_correctness_probability", "accept_router_changed"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "prediction": {"type": "string", "minLength": 1},
+    "action": {"enum": ["accept", "review", "escalate"]},
+    "accept_error_router_format": {"const": "REVENGINSTR.AcceptErrorRouter/1"},
+    "base_action": {"enum": ["accept", "review", "escalate"]},
+    "accept_correctness_probability": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "accept_router_changed": {"type": "boolean"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"base_action": {"const": "accept"}}, "required": ["base_action"]},
+      "then": {"properties": {"accept_correctness_probability": {"type": "number"}}},
+      "else": {"properties": {"accept_correctness_probability": {"type": "null"}}}
+    }
+  ],
+  "additionalProperties": true
+}

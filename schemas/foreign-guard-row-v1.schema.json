@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/foreign-guard-row-v1.schema.json",
+  "title": "REVENGINSTR.ForeignGuard/1 prediction row extension",
+  "description": "Required fields added by the guard. Original classifier fields are preserved and remain consumer/model specific.",
+  "type": "object",
+  "required": ["foreign_guard_format", "base_action", "foreign_guard_changed", "foreign_guard_reasons", "foreign_similarity_floor", "foreign_contrast_floor", "foreign_similarity_pass", "foreign_contrast_pass", "foreign_guard_pass"],
+  "properties": {
+    "foreign_guard_format": {"const": "REVENGINSTR.ForeignGuard/1"},
+    "base_action": {"type": ["string", "null"]},
+    "foreign_guard_changed": {"type": "boolean"},
+    "foreign_guard_reasons": {"type": "array", "items": {"enum": ["missing_family_similarity", "family_similarity_below_floor", "missing_contrast_margin", "contrast_margin_below_floor"]}},
+    "foreign_similarity_floor": {"type": "number"},
+    "foreign_contrast_floor": {"type": "number"},
+    "foreign_similarity_pass": {"type": "boolean"},
+    "foreign_contrast_pass": {"type": "boolean"},
+    "foreign_guard_pass": {"type": "boolean"}
+  },
+  "additionalProperties": true
+}

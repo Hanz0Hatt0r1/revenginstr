@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-program-index-xrefs-v1.schema.json",
+  "$comment": "Object representation of one UTF-8 TSV row. The exact header is defined in docs/GHIDRA_PROGRAM_INDEX.md; the wire cells are strings.",
+  "title": "REVENGINSTR.GhidraProgramIndex.Xrefs/1 TSV row",
+  "type": "object",
+  "required": ["from", "to", "type", "operand", "source"],
+  "properties": {
+    "from": {"type": "string", "description": "Reference source address."},
+    "to": {"type": "string", "description": "Reference target address."},
+    "type": {"type": "string"},
+    "operand": {"type": "string", "pattern": "^-?[0-9]+$"},
+    "source": {"type": "string"}
+  },
+  "additionalProperties": false
+}

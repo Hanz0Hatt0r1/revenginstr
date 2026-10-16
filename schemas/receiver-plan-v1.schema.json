@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/receiver-plan-v1.schema.json",
+  "$comment": "Decoded representation of a headered TSV plan row; all wire cells are strings.",
+  "title": "REVENGINSTR.ReceiverPlan/1 TSV row",
+  "type": "object",
+  "required": ["source_id", "source_entry", "expected_calls"],
+  "properties": {
+    "source_id": {"type": "string", "minLength": 1},
+    "source_entry": {"type": "string", "minLength": 1},
+    "expected_calls": {"type": "string", "description": "Empty until consumer call counts are supplied."}
+  },
+  "additionalProperties": false
+}

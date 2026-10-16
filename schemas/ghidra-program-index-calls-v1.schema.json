@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-program-index-calls-v1.schema.json",
+  "$comment": "Object representation of one UTF-8 TSV row. The exact header is defined in docs/GHIDRA_PROGRAM_INDEX.md; the wire cells are strings.",
+  "title": "REVENGINSTR.GhidraProgramIndex.Calls/1 TSV row",
+  "type": "object",
+  "required": ["caller_entry", "call_site", "callee_entry"],
+  "properties": {
+    "caller_entry": {"type": "string", "description": "Resolved caller function entry address."},
+    "call_site": {"type": "string", "description": "Direct call reference source address."},
+    "callee_entry": {"type": "string", "description": "Resolved callee function entry address."}
+  },
+  "additionalProperties": false
+}

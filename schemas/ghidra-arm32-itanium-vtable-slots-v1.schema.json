@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-arm32-itanium-vtable-slots-v1.schema.json",
+  "$comment": "Object representation of one UTF-8 TSV row; exact header and ordering are defined in docs/GHIDRA_VTABLE_SLOTS.md.",
+  "title": "REVENGINSTR.GhidraArm32ItaniumVtableSlots/1 TSV row",
+  "type": "object",
+  "required": [
+    "vtable_symbol_start", "vtable_symbol_name", "address_point", "slot_offset",
+    "slot_address", "raw_value", "target_thumb", "target_entry", "target_name",
+    "target_signature", "resolution_mode", "next_vtable_symbol_start"
+  ],
+  "properties": {
+    "vtable_symbol_start": {"type": "string"},
+    "vtable_symbol_name": {"type": "string"},
+    "address_point": {"type": "string"},
+    "slot_offset": {"type": "string"},
+    "slot_address": {"type": "string"},
+    "raw_value": {"type": "string"},
+    "target_thumb": {"enum": ["true", "false"]},
+    "target_entry": {"type": "string"},
+    "target_name": {"type": "string"},
+    "target_signature": {"type": "string"},
+    "resolution_mode": {"enum": ["direct_ghidra_address", "image_base_plus_module_offset", "unexpected"]},
+    "next_vtable_symbol_start": {"type": "string"}
+  },
+  "additionalProperties": false
+}

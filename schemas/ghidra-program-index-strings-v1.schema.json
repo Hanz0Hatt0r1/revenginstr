@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-program-index-strings-v1.schema.json",
+  "$comment": "Object representation of one UTF-8 TSV row. The exact header is defined in docs/GHIDRA_PROGRAM_INDEX.md; the wire cells are strings.",
+  "title": "REVENGINSTR.GhidraProgramIndex.Strings/1 TSV row",
+  "type": "object",
+  "required": ["address", "utf8_base64", "length"],
+  "properties": {
+    "address": {"type": "string", "description": "Ghidra defined-data address."},
+    "utf8_base64": {"type": "string", "contentEncoding": "base64"},
+    "length": {"type": "string", "pattern": "^[0-9]+$", "description": "Java String.length(): UTF-16 code units."}
+  },
+  "additionalProperties": false
+}

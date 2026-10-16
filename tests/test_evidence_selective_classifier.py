@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from jsonschema import Draft202012Validator
+
 from revenginstr.evidence.structural import structural_metrics
 from revenginstr.ml.evidence_selective import FORMAT, classify_rows, train_evidence_selective_classifier
 from revenginstr.ml.evidence_tokens import EVIDENCE_FORMAT, augment_text, bucket_number, load_evidence
@@ -24,6 +26,11 @@ def text(label: str, variant: int) -> str:
         f"o2 {tail} {tail_args}\n"
         "o3 RETURN ret=v1:4\n"
     )
+
+
+def validate_schema(name: str, value: dict) -> None:
+    schema_path = Path(__file__).resolve().parents[1] / "schemas" / name
+    Draft202012Validator(json.loads(schema_path.read_text(encoding="utf-8"))).validate(value)
 
 
 def test_structural_and_bucketed_evidence_contract() -> None:
@@ -79,6 +86,9 @@ def test_evidence_selective_train_and_infer(tmp_path: Path) -> None:
     assert manifest["external_evidence_rows"] == 16
     assert manifest["mean_evidence_tokens"] > 20
     assert manifest["leakage_policy"]["numeric_evidence_bucketed"] is True
+    validate_schema("evidence-selective-classifier-v1.schema.json", manifest)
+    for line in (model_dir / "oof_predictions.jsonl").read_text(encoding="utf-8").splitlines():
+        validate_schema("evidence-selective-classifier-prediction-v1.schema.json", json.loads(line))
 
     import joblib
 
@@ -93,3 +103,4 @@ def test_evidence_selective_train_and_infer(tmp_path: Path) -> None:
     assert inferred[0]["external_evidence_present"] is True
     assert inferred[0]["evidence_token_count"] > 20
     assert inferred[0]["action"] in {"accept", "review", "escalate"}
+    validate_schema("evidence-selective-classifier-prediction-v1.schema.json", inferred[0])

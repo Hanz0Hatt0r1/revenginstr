@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from jsonschema import Draft202012Validator
+
 from revenginstr.ml import SELECTIVE_CLASSIFIER_FORMAT
 from revenginstr.ml.selective import (
     choose_precision_threshold,
@@ -33,6 +35,11 @@ def _text(label: str, variant: int) -> str:
         "o2 STORE addr=reg:4 value=v1:4\n"
         "o3 RETURN ret=v1:4\n"
     )
+
+
+def _validate_schema(name: str, value: dict) -> None:
+    schema_path = Path(__file__).resolve().parents[1] / "schemas" / name
+    Draft202012Validator(json.loads(schema_path.read_text(encoding="utf-8"))).validate(value)
 
 
 def test_threshold_and_contrastive_routing() -> None:
@@ -101,8 +108,11 @@ def test_train_serialize_and_infer_project_neutral_classifier(tmp_path: Path) ->
     assert manifest["functions"] == 16
     assert manifest["families"] == 8
     assert manifest["leakage_policy"]["function_names_used"] is False
+    _validate_schema("selective-classifier-v1.schema.json", manifest)
     assert (model_dir / "classifier.joblib").exists()
     assert (model_dir / "oof_predictions.jsonl").exists()
+    for line in (model_dir / "oof_predictions.jsonl").read_text(encoding="utf-8").splitlines():
+        _validate_schema("selective-classifier-prediction-v1.schema.json", json.loads(line))
 
     import joblib
 
@@ -118,3 +128,5 @@ def test_train_serialize_and_infer_project_neutral_classifier(tmp_path: Path) ->
     assert all(row["format"] == SELECTIVE_CLASSIFIER_FORMAT for row in results)
     assert all(row["action"] in {"accept", "review", "escalate"} for row in results)
     assert all("family_similarity" in row and "contrast_margin" in row for row in results)
+    for row in results:
+        _validate_schema("selective-classifier-prediction-v1.schema.json", row)

@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/pcode-audit-v1.schema.json",
+  "title": "REVENGINSTR.PcodeAudit/1 report",
+  "type": "object",
+  "required": ["format", "corpus", "transfer"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.PcodeAudit/1"},
+    "corpus": {"$ref": "#/$defs/corpusAudit"},
+    "transfer": {"oneOf": [{"$ref": "#/$defs/transferAudit"}, {"type": "null"}]}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "countMap": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "quantiles": {
+      "type": "object",
+      "required": ["min", "median", "p90", "max"],
+      "properties": {
+        "min": {"type": ["number", "null"]},
+        "median": {"type": ["number", "null"]},
+        "p90": {"type": ["number", "null"]},
+        "max": {"type": ["number", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "corpusAudit": {
+      "type": "object",
+      "required": ["rows", "formats", "statuses", "architecture", "endian", "pointer_size", "calling_convention", "truncated", "truncated_fraction", "emitted_ops", "leakage_findings", "portable_contract_pass"],
+      "properties": {
+        "rows": {"type": "integer", "minimum": 0},
+        "formats": {"$ref": "#/$defs/countMap"},
+        "statuses": {"$ref": "#/$defs/countMap"},
+        "architecture": {"$ref": "#/$defs/countMap"},
+        "endian": {"$ref": "#/$defs/countMap"},
+        "pointer_size": {"$ref": "#/$defs/countMap"},
+        "calling_convention": {"$ref": "#/$defs/countMap"},
+        "truncated": {"type": "integer", "minimum": 0},
+        "truncated_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+        "emitted_ops": {"$ref": "#/$defs/quantiles"},
+        "leakage_findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["row", "reason"],
+            "properties": {"row": {"type": "integer", "minimum": 1}, "reason": {"type": "string"}},
+            "additionalProperties": false
+          }
+        },
+        "portable_contract_pass": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "transferAudit": {
+      "type": "object",
+      "required": ["rows", "predictions", "base_actions", "actions", "base_accept_fraction", "accept_fraction", "accept_retention", "changed_actions", "promotions", "confidence", "raw_confidence", "family_similarity", "contrast_margin", "semantic_labels_available", "interpretation"],
+      "properties": {
+        "rows": {"type": "integer", "minimum": 0},
+        "predictions": {"$ref": "#/$defs/countMap"},
+        "base_actions": {"$ref": "#/$defs/countMap"},
+        "actions": {"$ref": "#/$defs/countMap"},
+        "base_accept_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "accept_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+        "accept_retention": {"type": ["number", "null"], "minimum": 0},
+        "changed_actions": {"type": "integer", "minimum": 0},
+        "promotions": {"type": "integer", "minimum": 0},
+        "confidence": {"$ref": "#/$defs/quantiles"},
+        "raw_confidence": {"$ref": "#/$defs/quantiles"},
+        "family_similarity": {"$ref": "#/$defs/quantiles"},
+        "contrast_margin": {"$ref": "#/$defs/quantiles"},
+        "semantic_labels_available": {"const": false},
+        "interpretation": {"type": "string"},
+        "row_count_warning": {"type": "string"}
+      },
+      "additionalProperties": false
+    }
+  }
+}

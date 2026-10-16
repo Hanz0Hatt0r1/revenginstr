@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/foreign-guard-v1.schema.json",
+  "title": "REVENGINSTR.ForeignGuard/1 report",
+  "type": "object",
+  "required": ["format", "rows", "similarity_floor", "contrast_floor", "base_actions", "actions", "changed_accepts", "changed_fraction", "accept_retention", "promotions", "reasons", "semantic_labels_used"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.ForeignGuard/1"},
+    "rows": {"type": "integer", "minimum": 0},
+    "similarity_floor": {"type": "number"},
+    "contrast_floor": {"type": "number"},
+    "base_actions": {"$ref": "#/$defs/countMap"},
+    "actions": {"$ref": "#/$defs/countMap"},
+    "changed_accepts": {"type": "integer", "minimum": 0},
+    "changed_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+    "accept_retention": {"type": ["number", "null"], "minimum": 0},
+    "promotions": {"type": "integer", "minimum": 0},
+    "reasons": {"$ref": "#/$defs/countMap"},
+    "semantic_labels_used": {"const": false}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "countMap": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/accept-error-router-crossfit-score-v1.schema.json",
+  "title": "REVENGINSTR.AcceptErrorRouter/1 crossfit accept score row",
+  "type": "object",
+  "required": ["format", "id", "family_id", "prediction", "truth", "correct", "score", "threshold", "keep"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.AcceptErrorRouter/1"},
+    "id": {"type": "string", "minLength": 1},
+    "family_id": {"type": "string", "minLength": 1},
+    "prediction": {"type": "string", "minLength": 1},
+    "truth": {"type": "string", "minLength": 1},
+    "correct": {"type": "boolean"},
+    "score": {"type": "number", "minimum": 0, "maximum": 1},
+    "threshold": {"type": "number", "minimum": 0, "maximum": 1},
+    "keep": {"type": "boolean"}
+  },
+  "additionalProperties": false
+}
