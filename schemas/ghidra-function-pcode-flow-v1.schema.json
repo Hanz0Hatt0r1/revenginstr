@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-function-pcode-flow-v1.schema.json",
+  "title": "REVENGINSTR.GhidraFunctionPcodeFlow/1 TSV row",
+  "description": "One metadata-only High P-code operation row. TSV cells are strings except op_time, which is a decimal sequence number. Addresses and symbol names are taken from the selected Ghidra program.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "function_entry", "op_address", "op_time", "opcode", "output",
+    "inputs", "callee_entry", "callee_name"
+  ],
+  "properties": {
+    "function_entry": {"type": "string", "minLength": 1},
+    "op_address": {"type": "string", "minLength": 1},
+    "op_time": {"type": "string", "pattern": "^[0-9]+$"},
+    "opcode": {"type": "string", "minLength": 1},
+    "output": {"type": "string"},
+    "inputs": {"type": "string"},
+    "callee_entry": {"type": "string"},
+    "callee_name": {"type": "string"}
+  }
+}

@@ -117,6 +117,31 @@ def test_generic_receiver_tsv_row_schema(tmp_path: Path) -> None:
         schema.validate({**dict(zip(fields, values)), "format": "consumer.receiver/2"})
 
 
+def test_generic_function_pcode_flow_tsv_row_schema() -> None:
+    schema = validator("ghidra-function-pcode-flow-v1.schema.json")
+    schema.validate({
+        "function_entry": "00401000",
+        "op_address": "00401004",
+        "op_time": "7",
+        "opcode": "CALL",
+        "output": "-",
+        "inputs": "const:0x401020:4;register:0010:4",
+        "callee_entry": "00401020",
+        "callee_name": "FUN_00401020",
+    })
+    with pytest.raises(ValidationError):
+        schema.validate({
+            "function_entry": "00401000",
+            "op_address": "00401004",
+            "op_time": "not-a-sequence-number",
+            "opcode": "CALL",
+            "output": "-",
+            "inputs": "-",
+            "callee_entry": "-",
+            "callee_name": "-",
+        })
+
+
 def test_validation_manifest_and_drift_schemas() -> None:
     digest = "a" * 64
     frozen = validator("frozen-validation-v1.schema.json")
