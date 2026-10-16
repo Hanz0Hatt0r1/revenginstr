@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "revenginstr"
-version = "0.4.0"
+version = "0.5.0"
 description = "Reusable reverse-engineering analysis tooling"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -37,6 +37,8 @@ revenginstr-evidence-selective-train = "revenginstr.ml.evidence_selective:train_
 revenginstr-evidence-selective-infer = "revenginstr.ml.evidence_selective:infer_main"
 revenginstr-accept-router-train = "revenginstr.ml.accept_error_router:train_main"
 revenginstr-accept-router-infer = "revenginstr.ml.accept_error_router:infer_main"
+revenginstr-freeze-validation = "revenginstr.validation.frozen:main"
+revenginstr-drift-audit = "revenginstr.validation.drift:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
