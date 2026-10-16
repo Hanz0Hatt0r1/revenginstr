@@ -31,3 +31,12 @@ The runner uses `-readOnly -noanalysis` and a temporary script directory, so it
 does not alter the project analysis or compile unrelated scripts. Consumers
 should retain their existing exporter copy as a fallback until shared-first
 lookup has passed same-project output parity.
+
+`ExportBoundedCallGraphPcodeFlow.java` and
+`ExportBoundedReverseCallGraphPcodeFlow.java` emit the same TSV row contract
+while following bounded direct callees or direct callers. Optional
+repeated `--priority=<rank>:<fragment>` arguments configure traversal order,
+with `--default-priority=<rank>` for names that match no fragment. Repeating
+the option also supports demangled symbols that contain commas. Keep
+program-specific fragments in the consumer adapter; the generic exporters do
+not choose title-specific names.

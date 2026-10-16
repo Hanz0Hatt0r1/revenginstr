@@ -42,6 +42,9 @@ while evidence feature values remain numeric or boolean and project-neutral.
 The generic one-function High P-code exporter preserves its existing metadata TSV
 in `REVENGINSTR.GhidraFunctionPcodeFlow/1`; see
 `docs/GHIDRA_FUNCTION_PCODE_FLOW.md` for the schema and read-only runner.
+Bounded forward/reverse call-graph exporters use the same TSV contract. Any
+symbol-priority fragments used to cap a consumer-specific traversal stay in
+that consumer's adapter and are passed as `--priority` arguments.
 
 Nevergone experiment names such as v5.4/v9/v10 remain historical evaluation/model lineage, not public toolkit API versions.
 
