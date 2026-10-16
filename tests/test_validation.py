@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from revenginstr.validation import DRIFT_AUDIT_FORMAT, FROZEN_VALIDATION_FORMAT
-from revenginstr.validation.drift import audit_drift
+from revenginstr.validation.drift import audit_drift, overlay_reference_base_actions
 from revenginstr.validation.frozen import freeze_validation
 
 
@@ -147,3 +147,41 @@ def test_drift_audit_can_use_router_manifest_for_reference_rate() -> None:
     summary = audit_drift(reference, frozen, router_manifest=manifest)
     assert summary["router_intervention"]["reference_changed"] == 3
     assert summary["router_intervention"]["reference_change_fraction_accept"] == pytest.approx(0.1)
+
+
+def test_reference_base_action_overlay_uses_manifest_routing_counts() -> None:
+    reference = _classified("ref", 10, shifted=False, routed=False)
+    # Simulate a retained historical baseline different from classifier.action:
+    # 4 accept, 3 review, 3 escalate.
+    companion = []
+    for index, row in enumerate(reference):
+        companion.append(
+            {
+                "id": row["id"],
+                "action": "accept" if index < 4 else ("review" if index < 7 else "escalate"),
+            }
+        )
+    overlaid = overlay_reference_base_actions(reference, companion)
+    frozen = _classified("new", 10, shifted=False, routed=False)
+    manifest = {"calibration": {"legacy_accept_examples": 4, "kept_examples": 3}}
+    summary = audit_drift(overlaid, frozen, router_manifest=manifest)
+
+    assert summary["router_intervention"]["reference_legacy_accept"] == 4
+    assert summary["router_intervention"]["reference_changed"] == 1
+    assert summary["categorical_shift"]["base_action"]["reference"] == {
+        "accept": 0.4,
+        "escalate": 0.3,
+        "review": 0.3,
+    }
+    assert summary["categorical_shift"]["routed_action"]["reference"] == {
+        "accept": 0.3,
+        "escalate": 0.4,
+        "review": 0.3,
+    }
+
+
+def test_reference_base_action_overlay_fails_closed_on_population_mismatch() -> None:
+    reference = _classified("ref", 3, shifted=False, routed=False)
+    companion = [{"id": reference[0]["id"], "action": "accept"}]
+    with pytest.raises(ValueError, match="missing id"):
+        overlay_reference_base_actions(reference, companion)
