@@ -75,6 +75,7 @@ def test_generic_field_store_export_contract() -> None:
 
 def test_field_store_runner_is_read_only_and_isolated() -> None:
     runner = (ROOT / "scripts/run_ghidra_field_store_candidates.sh").read_text(encoding="utf-8")
+    assert "-recursive" in runner
     assert "-readOnly" in runner
     assert "-noanalysis" in runner
     assert "mktemp -d" in runner
