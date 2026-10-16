@@ -1,0 +1,127 @@
+name: Consumer benchmark (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      manifest_path:
+        description: Path to the pinned benchmark manifest in the caller repository
+        required: true
+        type: string
+      mode:
+        description: Benchmark stage set
+        required: false
+        default: full
+        type: string
+      revenginstr_ref:
+        description: revenginstr branch, tag, or commit to benchmark
+        required: false
+        default: main
+        type: string
+      baseline_summary_path:
+        description: Optional baseline summary path in the caller repository
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout consumer repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          path: consumer
+          persist-credentials: false
+
+      - name: Checkout revenginstr
+        uses: actions/checkout@v4
+        with:
+          repository: Hanz0Hatt0r1/revenginstr
+          ref: ${{ inputs.revenginstr_ref }}
+          path: revenginstr
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install benchmark tools
+        run: python -m pip install -e './revenginstr[benchmark,ml]'
+
+      - name: Validate inputs
+        id: validate
+        env:
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+          MODE: ${{ inputs.mode }}
+          BASELINE_SUMMARY_PATH: ${{ inputs.baseline_summary_path }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          root = (Path.cwd() / 'consumer').resolve()
+          manifest_value = os.environ['MANIFEST_PATH']
+          baseline = os.environ['BASELINE_SUMMARY_PATH']
+          if any(character in manifest_value + baseline for character in '\r\n'):
+              raise SystemExit('manifest and baseline paths cannot contain newlines')
+          manifest = (root / manifest_value).resolve()
+          try:
+              manifest.relative_to(root)
+          except ValueError as error:
+              raise SystemExit('manifest_path must stay inside the consumer checkout') from error
+          if not manifest.is_file():
+              raise SystemExit(f'manifest does not exist: {manifest}')
+          mode = os.environ['MODE']
+          if mode not in {'smoke', 'full'}:
+              raise SystemExit('mode must be smoke or full')
+          if baseline:
+              baseline_path = (root / baseline).resolve()
+              try:
+                  baseline_path.relative_to(root)
+              except ValueError as error:
+                  raise SystemExit('baseline_summary_path must stay inside the consumer checkout') from error
+              if not baseline_path.is_file():
+                  raise SystemExit(f'baseline summary does not exist: {baseline_path}')
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write(f'manifest={manifest}\nmode={mode}\n')
+              output.write(f'baseline={baseline_path if baseline else ""}\n')
+          PY
+
+      - name: Run benchmark
+        env:
+          MANIFEST: ${{ steps.validate.outputs.manifest }}
+          MODE: ${{ steps.validate.outputs.mode }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/revenginstr-results"
+          revenginstr-benchmark "$MANIFEST" \
+            --mode "$MODE" --output "$RUNNER_TEMP/revenginstr-results/candidate-summary.json"
+
+      - name: Compare with baseline summary
+        if: ${{ always() && inputs.baseline_summary_path != '' }}
+        env:
+          BASELINE_PATH: ${{ steps.validate.outputs.baseline }}
+        run: |
+          if [[ ! -f "$RUNNER_TEMP/revenginstr-results/candidate-summary.json" ]]; then
+            echo 'candidate summary unavailable; skipping delta'
+            exit 0
+          fi
+          revenginstr-benchmark-delta "$BASELINE_PATH" \
+            "$RUNNER_TEMP/revenginstr-results/candidate-summary.json" \
+            --output "$RUNNER_TEMP/revenginstr-results/benchmark-delta.json"
+
+      - name: Upload benchmark summary and metric deltas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: consumer-benchmark-${{ github.run_id }}
+          path: ${{ runner.temp }}/revenginstr-results/
+          if-no-files-found: warn
+          retention-days: 90

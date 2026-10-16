@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/benchmark-delta-v1.schema.json",
+  "title": "REVENGINSTR.BenchmarkDelta/1",
+  "type": "object",
+  "required": [
+    "format", "benchmark", "mode", "baseline_summary_sha256", "candidate_summary_sha256",
+    "baseline_status", "candidate_status", "metrics"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.BenchmarkDelta/1"},
+    "benchmark": {"$ref": "#/$defs/benchmarkIdentity"},
+    "mode": {"enum": ["smoke", "full"]},
+    "baseline_summary_sha256": {"$ref": "#/$defs/sha256"},
+    "candidate_summary_sha256": {"$ref": "#/$defs/sha256"},
+    "baseline_status": {"type": ["string", "null"]},
+    "candidate_status": {"type": ["string", "null"]},
+    "metrics": {"type": "array", "items": {"$ref": "#/$defs/metricDelta"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+    "benchmarkIdentity": {
+      "type": "object",
+      "required": ["dataset_id", "split_id", "family_set_id"],
+      "properties": {
+        "dataset_id": {"type": ["string", "null"]},
+        "split_id": {"type": ["string", "null"]},
+        "family_set_id": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "metricDelta": {
+      "type": "object",
+      "required": ["name", "baseline", "candidate", "delta"],
+      "properties": {
+        "name": {"type": "string"},
+        "baseline": {"type": ["number", "null"]},
+        "candidate": {"type": ["number", "null"]},
+        "delta": {"type": ["number", "null"]}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
