@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-pcode-defined-strings-v1.schema.json",
+  "title": "REVENGINSTR.GhidraPcodeDefinedString/1 TSV row",
+  "description": "One defined Ghidra String resolved from a constant token in a metadata-only P-code TSV. Addresses and string content are evidence from the selected Ghidra program.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "constant_address", "data_address", "byte_offset", "utf8_base64", "length"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraPcodeDefinedString/1"},
+    "constant_address": {"type": "string", "pattern": "^0x[0-9a-f]+$"},
+    "data_address": {"type": "string", "minLength": 1},
+    "byte_offset": {"type": "string", "pattern": "^0x[0-9a-f]+$"},
+    "utf8_base64": {"type": "string", "contentEncoding": "base64"},
+    "length": {"type": "string", "pattern": "^[0-9]+$", "description": "Java String.length(), measured in UTF-16 code units."}
+  }
+}

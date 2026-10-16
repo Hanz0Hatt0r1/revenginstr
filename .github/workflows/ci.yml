@@ -29,6 +29,7 @@ jobs:
           bash -n scripts/run_ghidra_function_pcode_flow.sh
           bash -n scripts/run_ghidra_caller_argument_subtree.sh
           bash -n scripts/run_ghidra_function_identities.sh
+          bash -n scripts/run_ghidra_pcode_defined_strings.sh
       - name: Validate generic exporter contract
         run: |
           python - <<'PY'
