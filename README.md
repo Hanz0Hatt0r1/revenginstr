@@ -15,8 +15,10 @@ The repository now owns these generic mechanisms:
 - mass indirect-call receiver/type acquisition;
 - conservative receiver class/vtable identity inference from consumer-owned catalogs;
 - leakage-safe evidence aggregation;
+- deterministic structural P-code metrics and coarse numeric evidence tokenization;
 - portable P-code function-family mining with deterministic MinHash/LSH;
 - family-grouped selective classification with calibrated correctness confidence and contrastive family OOD;
+- optional evidence-aware selective classification using `REVENGINSTR.Evidence/1`;
 - compatibility hash profile for historical Nevergone family groups.
 
 Stable component formats currently include:
@@ -32,6 +34,7 @@ REVENGINSTR.ReceiverInference/1
 REVENGINSTR.Evidence/1
 REVENGINSTR.FunctionFamilies/1
 REVENGINSTR.SelectiveClassifier/1
+REVENGINSTR.EvidenceSelectiveClassifier/1
 ```
 
 ## Boundary
@@ -52,7 +55,7 @@ ghidra/                        generic Ghidra exporters
 scripts/                       read-only/noanalysis Ghidra runners
 src/revenginstr/pcode/         portable corpus audits
 src/revenginstr/ood/           cross-project safety guards
-src/revenginstr/evidence/      callgraph + aggregated evidence
+src/revenginstr/evidence/      callgraph + structural + aggregated evidence
 src/revenginstr/receiver/      receiver planning/inference
 src/revenginstr/family/        portable family features/mining
 src/revenginstr/ml/            project-neutral selective classifiers
@@ -97,6 +100,11 @@ revenginstr-family-mine dataset families.jsonl
 revenginstr-selective-train dataset families.jsonl model \
   --task code_domain --classes game engine runtime_library media_library
 revenginstr-selective-infer model corpus.jsonl --output predictions.jsonl
+revenginstr-evidence-selective-train dataset families.jsonl model-v2 \
+  --evidence evidence.jsonl \
+  --task code_domain --classes game engine runtime_library media_library
+revenginstr-evidence-selective-infer model-v2 corpus.jsonl \
+  --evidence evidence.jsonl --output predictions-v2.jsonl
 ```
 
 For an existing analyzed Ghidra project:
@@ -115,7 +123,7 @@ The Ghidra runners are `-readOnly -noanalysis`; they consume an existing analysi
 
 Function-family mining excludes headers from the portable view. New projects use the `revenginstr-v1` MinHash profile; Nevergone can request `nevergone-v1` to reproduce its historical seeds during migration.
 
-The selective classifier also trains only on the portable operation view. Family IDs are grouping/OOD metadata and labels are targets, never model features.
+The P-code-only selective classifier trains only on the portable operation view. The evidence-aware variant additionally receives deterministic structural summaries and coarse bucketed numeric `REVENGINSTR.Evidence/1` features. Family IDs are grouping/OOD metadata and labels are targets, never model features.
 
 ## Consumer contract
 
@@ -130,4 +138,4 @@ Consumer repositories own:
 
 Cross-project model output is triage/OOD evidence, not semantic authority. Generic algorithms must not close a consumer's semantic proof gate on their own.
 
-See `docs/MIGRATION.md` for the extraction policy and `docs/SELECTIVE_CLASSIFIER.md` for the generic classifier contract.
+See `docs/MIGRATION.md`, `docs/SELECTIVE_CLASSIFIER.md` and `docs/EVIDENCE_SELECTIVE_CLASSIFIER.md`.
