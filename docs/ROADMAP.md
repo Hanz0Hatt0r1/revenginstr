@@ -182,9 +182,13 @@ Standardize a machine-readable result with at least:
 - OOD/conflict/failure reason counts;
 - runtime/memory/artifact size.
 
-The initial summary records artifact hashes, stage commands and runtimes, and
-manifest-declared numeric gates. Standard projections for the metric families
-above remain outstanding.
+The summary now includes opt-in classifier/router, receiver and frozen/drift
+validation projections. These provide class distributions and metrics,
+confusion matrices, selective coverage, calibration bins, receiver status
+coverage, exact-evidence comparison gates, configured reason-code counts,
+artifact sizes, stage runtimes and platform-supported peak RSS. Exact comparison
+keys and row values remain out of the summary. Unlabeled validation reports are
+kept diagnostic and do not receive fabricated accuracy metrics.
 
 ### M0.4 Determinism audit
 
@@ -667,7 +671,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 
 1. ✅ Canonical benchmark manifest schema.
 2. ✅ One-command benchmark runner.
-3. Standardized combined metric projections for classifier, receiver and router reports.
+3. ✅ Standardized combined metric projections for classifier, receiver, router and validation reports.
 4. Exporter/schema inventory.
 5. Receiver residual taxonomy v1.
 6. Frozen receiver coverage report.

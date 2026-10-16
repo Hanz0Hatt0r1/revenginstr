@@ -48,6 +48,10 @@
     "metrics": {
       "type": "array",
       "items": {"$ref": "#/$defs/metric"}
+    },
+    "projections": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/projection"}
     }
   },
   "$defs": {
@@ -110,6 +114,47 @@
         "maximum": {"type": "number"}
       },
       "anyOf": [{"required": ["minimum"]}, {"required": ["maximum"]}],
+      "additionalProperties": false
+    },
+    "projection": {
+      "type": "object",
+      "required": ["id", "kind", "artifact"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"},
+        "kind": {"enum": ["classifier", "router", "receiver", "validation"]},
+        "artifact": {"type": "string", "minLength": 1},
+        "mode": {"enum": ["both", "smoke", "full"]},
+        "truth_field": {"type": "string", "minLength": 1},
+        "prediction_field": {"type": "string", "minLength": 1},
+        "action_field": {"type": "string", "minLength": 1},
+        "confidence_field": {"type": "string", "minLength": 1},
+        "accepted_actions": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "calibration_bins": {"type": "integer", "minimum": 1, "maximum": 100},
+        "status_field": {"type": "string", "minLength": 1},
+        "resolved_statuses": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "reason_fields": {
+          "type": "object",
+          "properties": {
+            "ood": {"type": "string", "minLength": 1},
+            "conflict": {"type": "string", "minLength": 1},
+            "failure": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false
+        },
+        "exact_evidence": {"$ref": "#/$defs/exactEvidence"}
+      },
+      "additionalProperties": false
+    },
+    "exactEvidence": {
+      "type": "object",
+      "required": ["expected_artifact", "key_fields", "compare_fields"],
+      "properties": {
+        "actual_artifact": {"type": "string", "minLength": 1},
+        "expected_artifact": {"type": "string", "minLength": 1},
+        "key_fields": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "compare_fields": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "maximum_mismatches": {"type": "integer", "minimum": 0}
+      },
       "additionalProperties": false
     }
   },
