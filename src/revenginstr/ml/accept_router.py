@@ -1,14 +1,15 @@
 """Project-neutral cross-fitted accept-error router.
 
 The router is trained only on held-out OOF rows that the base selective classifier
-already marked ``accept``.  It learns the probability that the base prediction is
+already marked ``accept``. It learns the probability that the base prediction is
 correct and may only demote an ``accept`` action; review/escalate rows are
-preserved.  This is the reusable mechanism extracted from the Nevergone v9/v10
+preserved. This is the reusable mechanism extracted from the Nevergone v9/v10
 accept-error routing line.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -277,6 +278,44 @@ def _infer_classes(rows: list[dict[str, Any]], requested: list[str] | None) -> l
     return sorted(values)
 
 
+def _resolve_meta_folds(
+    rows: list[dict[str, Any]],
+    accept_indices: list[int],
+    *,
+    requested_folds: int,
+    seed: int,
+) -> tuple[list[int], str]:
+    explicit = [rows[index].get("fold") for index in accept_indices]
+    if explicit and all(isinstance(value, int) and value > 0 for value in explicit):
+        folds = [int(row.get("fold", 0)) for row in rows]
+        return folds, "explicit_oof_fold"
+
+    families: dict[str, list[int]] = {}
+    for index in accept_indices:
+        family_id = rows[index].get("family_id")
+        if not isinstance(family_id, str) or not family_id:
+            raise ValueError(
+                "OOF rows need either a positive integer fold or family_id so meta cross-fitting can remain group-safe"
+            )
+        families.setdefault(family_id, []).append(index)
+    fold_count = min(requested_folds, len(families))
+    if fold_count < 2:
+        raise ValueError("accept rows must span at least two families/meta folds")
+    ordered_families = sorted(
+        families,
+        key=lambda family: hashlib.sha256(f"{seed}\0{family}".encode("utf-8")).hexdigest(),
+    )
+    family_fold = {
+        family: (position % fold_count) + 1
+        for position, family in enumerate(ordered_families)
+    }
+    folds: list[int] = []
+    for row in rows:
+        family_id = row.get("family_id")
+        folds.append(family_fold.get(str(family_id), 0))
+    return folds, "derived_family_hash"
+
+
 def train_accept_router(
     oof_path: Path,
     output_dir: Path,
@@ -284,6 +323,7 @@ def train_accept_router(
     evidence_path: Path | None = None,
     classes: list[str] | None = None,
     seed: int = 42,
+    meta_folds: int = 5,
     target_accept_precision: float = 0.97,
     max_accept_coverage_loss: float = 0.04,
     min_class_meta_examples: int = 100,
@@ -294,6 +334,8 @@ def train_accept_router(
         raise ValueError("target_accept_precision must be in [0,1]")
     if not 0.0 <= max_accept_coverage_loss <= 1.0:
         raise ValueError("max_accept_coverage_loss must be in [0,1]")
+    if meta_folds < 2:
+        raise ValueError("meta_folds must be >= 2")
     if below_threshold_action not in {"review", "escalate"}:
         raise ValueError("below_threshold_action must be review or escalate")
 
@@ -306,38 +348,36 @@ def train_accept_router(
     evidence = load_evidence(evidence_path)
     evidence_keys = safe_evidence_keys(evidence)
 
-    folds: list[int] = []
     correct_values: list[bool] = []
     legacy_actions: list[str] = []
     predictions: list[str] = []
     for row in rows:
-        fold = row.get("fold")
-        if not isinstance(fold, int) or fold <= 0:
-            raise ValueError(
-                f"row {row.get('id')}: positive integer fold is required; retrain the base classifier with a current revenginstr version"
-            )
         prediction = str(row.get("prediction", ""))
         truth = str(row.get("truth", ""))
         if not prediction or not truth:
             raise ValueError(f"row {row.get('id')}: truth and prediction are required")
-        folds.append(fold)
         correct_values.append(bool(row.get("correct", prediction == truth)))
         legacy_actions.append(str(row.get("action", "")))
         predictions.append(prediction)
+
+    accept_list = [index for index, action in enumerate(legacy_actions) if action == "accept"]
+    if len(accept_list) < min_accept_examples:
+        raise ValueError(f"not enough legacy accept rows: {len(accept_list)} < {min_accept_examples}")
+    folds, fold_source = _resolve_meta_folds(
+        rows,
+        accept_list,
+        requested_folds=meta_folds,
+        seed=seed,
+    )
 
     matrix = build_matrix(rows, evidence, evidence_keys, class_names, np)
     fold_array = np.asarray(folds, dtype=np.int64)
     correct = np.asarray(correct_values, dtype=bool)
     prediction_array = np.asarray(predictions, dtype=object)
-    accept = np.asarray(
-        [index for index, action in enumerate(legacy_actions) if action == "accept"],
-        dtype=np.int64,
-    )
-    if len(accept) < min_accept_examples:
-        raise ValueError(f"not enough legacy accept rows: {len(accept)} < {min_accept_examples}")
+    accept = np.asarray(accept_list, dtype=np.int64)
     unique_folds = sorted(set(fold_array[accept].tolist()))
     if len(unique_folds) < 2:
-        raise ValueError("accept rows must span at least two OOF folds")
+        raise ValueError("accept rows must span at least two meta folds")
 
     crossfit_scores = np.full(len(accept), 0.5, dtype=np.float64)
     for fold in unique_folds:
@@ -403,7 +443,8 @@ def train_accept_router(
             "promotions_allowed": False,
         },
         "calibration": {
-            "method": "oof-fold-crossfit",
+            "method": "group_safe_crossfit_oof",
+            "fold_source": fold_source,
             "training_feedback": False,
             "target_accept_precision": target_accept_precision,
             "max_accept_coverage_loss": max_accept_coverage_loss,
@@ -498,6 +539,7 @@ def train_main(argv: list[str] | None = None) -> int:
     parser.add_argument("--evidence", type=Path)
     parser.add_argument("--classes", nargs="+")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--meta-folds", type=int, default=5)
     parser.add_argument("--target-accept-precision", type=float, default=0.97)
     parser.add_argument("--max-accept-coverage-loss", type=float, default=0.04)
     parser.add_argument("--min-class-meta-examples", type=int, default=100)
@@ -510,6 +552,7 @@ def train_main(argv: list[str] | None = None) -> int:
         evidence_path=args.evidence,
         classes=args.classes,
         seed=args.seed,
+        meta_folds=args.meta_folds,
         target_accept_precision=args.target_accept_precision,
         max_accept_coverage_loss=args.max_accept_coverage_loss,
         min_class_meta_examples=args.min_class_meta_examples,
@@ -522,6 +565,7 @@ def train_main(argv: list[str] | None = None) -> int:
     print("crossfit accept precision:", f"{calibration['kept_precision']:.6f}")
     print("crossfit accept coverage:", f"{calibration['kept_coverage']:.6f}")
     print("accept rows:", calibration["legacy_accept_examples"])
+    print("fold source:", calibration["fold_source"])
     print("evidence features:", manifest["evidence_feature_count"])
     print("artifact:", manifest["artifact"])
     return 0
