@@ -24,16 +24,8 @@ def write_jsonl(path: Path, rows: list[dict]) -> None:
 
 def test_pcode_and_callgraph_contract_schemas() -> None:
     pcode = validator("pcode-corpus-v1.schema.json")
-    pcode.validate({
-        "format": "REVENGINSTR.PcodeCorpus/1",
-        "program": "sample.exe",
-        "source_entry": "00401000",
-        "source_name": "FUN_00401000",
-        "external": False,
-        "decompile_status": "ok",
-        "metrics": {"emitted_ops": 2, "truncated": False},
-        "model_text": "ARCH=X8632\nPTR_SIZE=4\n",
-    })
+    fixture = ROOT / "tests/fixtures/pcode-corpus/synthetic.jsonl"
+    pcode.validate(json.loads(fixture.read_text(encoding="utf-8").splitlines()[0]))
 
     callgraph = validator("callgraph-metrics-v1.schema.json")
     callgraph.validate({
