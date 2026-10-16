@@ -26,6 +26,7 @@ jobs:
           bash -n scripts/run_ghidra_pcode_export.sh
           bash -n scripts/run_ghidra_receiver_types.sh
           bash -n scripts/run_ghidra_vtable_slots.sh
+          bash -n scripts/run_ghidra_function_pcode_flow.sh
       - name: Validate generic exporter contract
         run: |
           python - <<'PY'
@@ -36,6 +37,16 @@ jobs:
           assert 'Nevergone' not in text
           assert 'SHIFT' not in text
           print('generic exporter contract: OK')
+          PY
+      - name: Validate function P-code flow boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('ghidra/ExportFunctionPcodeFlow.java').read_text()
+          assert 'function_entry\\top_address\\top_time\\topcode\\toutput\\tinputs\\tcallee_entry\\tcallee_name' in text
+          for forbidden in ('Nevergone', 'GameScene', 'HDVehicle', 'SHIFT'):
+              assert forbidden not in text
+          print('function P-code flow contract: OK')
           PY
       - name: Validate selective classifier boundary
         run: |

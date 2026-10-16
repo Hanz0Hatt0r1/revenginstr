@@ -36,6 +36,7 @@ REVENGINSTR.CallGraphMetrics/1
 REVENGINSTR.ReceiverPlan/1
 REVENGINSTR.GhidraIndirectReceiverType/1
 REVENGINSTR.GhidraArm32ItaniumVtableSlots/1
+REVENGINSTR.GhidraFunctionPcodeFlow/1
 REVENGINSTR.ReceiverInference/1
 REVENGINSTR.Evidence/1
 REVENGINSTR.FunctionFamilies/1
@@ -49,6 +50,8 @@ REVENGINSTR.DriftAudit/1
 JSON Schemas in `schemas/` define the portable P-code corpus, callgraph metrics,
 receiver TSV/inference records and aggregated evidence. Source identifiers remain
 join metadata; evidence features are numeric or boolean, project-neutral summaries.
+The `GhidraFunctionPcodeFlow/1` metadata-only TSV contract is documented in
+`docs/GHIDRA_FUNCTION_PCODE_FLOW.md`.
 
 ## Boundary
 
@@ -138,6 +141,10 @@ For an existing analyzed Ghidra project:
 GHIDRA_HOME=/opt/ghidra \
   scripts/run_ghidra_pcode_export.sh \
   /path/to/projects project-name program-name corpus.jsonl 1000
+
+GHIDRA_HOME=/opt/ghidra \
+  scripts/run_ghidra_function_pcode_flow.sh \
+  /path/to/projects project-name program-name 00401000 function-flow.tsv
 ```
 
 The Ghidra runners are `-readOnly -noanalysis`; they consume an existing analysis database rather than silently changing it.
