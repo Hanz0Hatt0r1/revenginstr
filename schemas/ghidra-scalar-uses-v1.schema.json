@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-scalar-uses-v1.schema.json",
+  "title": "REVENGINSTR.GhidraScalarUses/1 JSONL row",
+  "description": "One instruction whose operand contains a caller-selected exact unsigned scalar. Matches are candidate inventory only; scalar equality does not establish semantic identity.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "program", "target_scalar", "function_address", "function_name",
+    "instruction_address", "mnemonic", "text", "matching_operand_index",
+    "matching_operand_text", "usage_class"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraScalarUses/1"},
+    "program": {"type": "string", "minLength": 1},
+    "target_scalar": {"type": "string", "pattern": "^0x[0-9a-f]+$"},
+    "function_address": {"type": ["string", "null"]},
+    "function_name": {"type": ["string", "null"]},
+    "instruction_address": {"type": "string", "minLength": 1},
+    "mnemonic": {"type": "string", "minLength": 1},
+    "text": {"type": "string", "minLength": 1},
+    "matching_operand_index": {"type": "integer", "minimum": 0},
+    "matching_operand_text": {"type": "string", "minLength": 1},
+    "usage_class": {"enum": ["address-materializer", "call", "memory-or-copy", "arithmetic", "other"]}
+  }
+}

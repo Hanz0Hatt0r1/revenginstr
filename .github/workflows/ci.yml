@@ -37,6 +37,7 @@ jobs:
           bash -n scripts/run_ghidra_program_index.sh
           bash -n scripts/run_ghidra_field_store_candidates.sh
           bash -n scripts/run_ghidra_parameter_store_field.sh
+          bash -n scripts/run_ghidra_scalar_uses.sh
       - name: Validate generic exporter contract
         run: |
           python - <<'PY'
