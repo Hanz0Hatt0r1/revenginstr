@@ -233,6 +233,14 @@ Finish the extraction of generic analysis logic into `revenginstr` and remove du
 
 ### M1.1 Exporter inventory
 
+**Initial inventory complete (2026-10-17):** see
+[`docs/EXPORTER_INVENTORY.md`](EXPORTER_INVENTORY.md). It classifies the
+reusable exporter surface using the `origin/main` snapshots of all three
+repositories and records compatibility wrappers, remaining duplicate
+implementations, consumer-specific tooling, and the evidence required before
+retiring any fallback. Consumer working trees were left unchanged. Keep the
+inventory current as each exporter is migrated.
+
 Maintain an inventory of reusable exporters/runners classified as:
 
 - canonical in `revenginstr`;
@@ -830,8 +838,10 @@ Mitigation: preserve heuristic/sparse baselines, feature ablations and evidence-
 
 # 20. Immediate next action
 
-Continue with **M1.1**: inventory reusable exporters and runners across the
-three repositories, recording which implementations are canonical in
-`revenginstr`, thin consumer wrappers, consumer-specific, pending migration or
-obsolete. The benchmark and CI policy milestones now have shared schemas,
-replay checks and consumer-owned report retention.
+Continue with **M1.2**: document stable schema contracts for each generic
+evidence family. Start with the existing JSON Schemas and TSV exporters, record
+required/optional fields, normalization, provenance, ordering, failure and
+compatibility behavior, and add contract links to
+[`docs/EXPORTER_INVENTORY.md`](EXPORTER_INVENTORY.md). The benchmark and CI
+policy milestones now have shared schemas, replay checks and consumer-owned
+report retention.
