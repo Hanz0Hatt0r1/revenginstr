@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-parameter-store-field-v1.schema.json",
+  "title": "REVENGINSTR.GhidraParameterStoreField/1 TSV row",
+  "description": "One High-P-code store from a function parameter into a constant-offset field rooted at another parameter. Function names and addresses are metadata from the selected program.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "function_entry", "function_name", "store_address", "store_time",
+    "destination_parameter_index", "destination_offset", "destination_pattern",
+    "source_parameter_index", "value_size", "status"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraParameterStoreField/1"},
+    "function_entry": {"type": "string", "minLength": 1},
+    "function_name": {"type": "string", "minLength": 1},
+    "store_address": {"type": "string", "minLength": 1},
+    "store_time": {"type": "string", "pattern": "^(?:-|[0-9]+)$"},
+    "destination_parameter_index": {"type": "string", "pattern": "^[0-9]+$"},
+    "destination_offset": {"type": "string", "pattern": "^-?0x[0-9a-f]+$"},
+    "destination_pattern": {"type": "string", "minLength": 1},
+    "source_parameter_index": {"type": "string", "pattern": "^[0-9]+$"},
+    "value_size": {"type": "string", "pattern": "^(?:-|[0-9]+)$"},
+    "status": {"const": "parameter_to_parameter_field"}
+  }
+}
