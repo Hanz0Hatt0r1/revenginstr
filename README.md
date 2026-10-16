@@ -39,6 +39,7 @@ REVENGINSTR.GhidraIndirectReceiverType/1
 REVENGINSTR.GhidraArm32ItaniumVtableSlots/1
 REVENGINSTR.GhidraFunctionPcodeFlow/1
 REVENGINSTR.GhidraPcodeDefinedString/1
+REVENGINSTR.GhidraAddressReferenceOwner/1
 REVENGINSTR.ReceiverInference/1
 REVENGINSTR.Evidence/1
 REVENGINSTR.FunctionFamilies/1
@@ -57,6 +58,8 @@ The `GhidraFunctionPcodeFlow/1` metadata-only TSV contract is documented in
 The `GhidraPcodeDefinedString/1` TSV contract resolves only defined strings
 referenced by constant tokens in a P-code TSV; string values are base64 encoded.
 See `docs/GHIDRA_PCODE_DEFINED_STRINGS.md` for the exporter contract and runner.
+`GhidraAddressReferenceOwner/1` lists direct reference locations for
+caller-supplied addresses; see `docs/GHIDRA_ADDRESS_REFERENCE_OWNERS.md`.
 
 ## Boundary
 
@@ -154,6 +157,10 @@ GHIDRA_HOME=/opt/ghidra \
 GHIDRA_HOME=/opt/ghidra \
   scripts/run_ghidra_pcode_defined_strings.sh \
   /path/to/projects project-name program-name function-flow.tsv defined-strings.tsv
+
+GHIDRA_HOME=/opt/ghidra \
+  scripts/run_ghidra_address_reference_owners.sh \
+  /path/to/projects project-name program-name references.tsv 00401000 00402000
 ```
 
 The Ghidra runners are `-readOnly -noanalysis`; they consume an existing analysis database rather than silently changing it.

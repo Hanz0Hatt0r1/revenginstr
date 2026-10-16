@@ -163,6 +163,24 @@ def test_generic_defined_string_tsv_row_schema() -> None:
         })
 
 
+def test_generic_address_reference_owner_tsv_row_schema() -> None:
+    schema = validator("ghidra-address-reference-owners-v1.schema.json")
+    schema.validate({
+        "format": "REVENGINSTR.GhidraAddressReferenceOwner/1",
+        "target_address": "00401000",
+        "target_block": ".data",
+        "target_symbol": "-",
+        "reference_from": "00402010",
+        "reference_type": "DATA",
+        "reference_source": "ANALYSIS",
+        "operand_index": "-",
+        "from_symbol": "-",
+        "from_instruction": "-",
+        "containing_function_entry": "-",
+        "containing_function_name": "-",
+    })
+
+
 def test_validation_manifest_and_drift_schemas() -> None:
     digest = "a" * 64
     frozen = validator("frozen-validation-v1.schema.json")
