@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-indirect-call-evidence-v1.schema.json",
+  "title": "REVENGINSTR.GhidraIndirectCallEvidence/1 JSONL row",
+  "description": "Bounded High-P-code target expression evidence for one indirect call site.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program", "requested", "function_entry", "call_address", "call_time", "target", "target_expression", "arg_count"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraIndirectCallEvidence/1"},
+    "program": {"type": "string"},
+    "requested": {"type": "string", "minLength": 1},
+    "function_entry": {"$ref": "#/$defs/address"},
+    "call_address": {"$ref": "#/$defs/address"},
+    "call_time": {"type": "integer", "minimum": 0},
+    "target": {"type": "string", "minLength": 1},
+    "target_expression": {"type": "string", "minLength": 1},
+    "arg_count": {"type": "integer", "minimum": 0}
+  },
+  "$defs": {
+    "address": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"}
+  }
+}
