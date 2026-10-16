@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import re
 from collections import Counter
+from dataclasses import dataclass
 from functools import lru_cache
 from typing import Iterable
 
@@ -16,15 +17,34 @@ _CONST_WIDTH = re.compile(r"\b(const:(?:tiny|small|medium|large|xlarge|zero|one|
 
 MINHASH_SIZE = 32
 MINHASH_PRIME = (1 << 61) - 1
+
+
+@dataclass(frozen=True)
+class HashProfile:
+    """Caller-owned MinHash seed configuration."""
+
+    name: str
+    person: bytes
+    permutation_prefix: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.name, str) or not self.name.strip() or self.name.strip() != self.name:
+            raise ValueError("hash profile name must be a non-empty string without surrounding whitespace")
+        if not isinstance(self.permutation_prefix, str) or not self.permutation_prefix:
+            raise ValueError("hash profile name and permutation prefix must be non-empty")
+        if not isinstance(self.person, bytes) or not self.person or len(self.person) > 16:
+            raise ValueError("hash profile person must contain between 1 and 16 bytes")
+
+
 PROFILES = {
-    "revenginstr-v1": {
-        "person": b"REVENG-FAM",
-        "permutation_prefix": "RevEngInstrFamilyMinHash/",
-    },
-    "nevergone-v1": {
-        "person": b"NVG-FAM",
-        "permutation_prefix": "NevergoneFamilyMinHash/",
-    },
+    "revenginstr-v1": HashProfile(
+        "revenginstr-v1", b"REVENG-FAM", "RevEngInstrFamilyMinHash/"
+    ),
+    # Compatibility alias for existing callers; consumer adapters should pass
+    # their HashProfile so project-specific seed data stays in the consumer.
+    "nevergone-v1": HashProfile(
+        "nevergone-v1", b"NVG-FAM", "NevergoneFamilyMinHash/"
+    ),
 }
 
 
@@ -106,42 +126,48 @@ def jaccard(left: frozenset[str], right: frozenset[str]) -> float:
     return len(left & right) / union if union else 1.0
 
 
-def profile_config(profile: str) -> dict[str, object]:
+def profile_config(profile: str | HashProfile) -> HashProfile:
+    if isinstance(profile, HashProfile):
+        return profile
     try:
         return PROFILES[profile]
     except KeyError as error:
         raise ValueError(f"unknown family hash profile: {profile}; choose from {sorted(PROFILES)}") from error
 
 
-def hash64(value: str, profile: str = "revenginstr-v1") -> int:
-    person = profile_config(profile)["person"]
-    assert isinstance(person, bytes)
+def hash64(value: str, profile: str | HashProfile = "revenginstr-v1") -> int:
+    config = profile_config(profile)
     return int.from_bytes(
-        hashlib.blake2b(value.encode("utf-8"), digest_size=8, person=person).digest(),
+        hashlib.blake2b(value.encode("utf-8"), digest_size=8, person=config.person).digest(),
         "big",
     ) & MINHASH_PRIME
 
 
 @lru_cache(maxsize=None)
-def permutations(profile: str = "revenginstr-v1") -> tuple[tuple[int, int], ...]:
-    prefix = profile_config(profile)["permutation_prefix"]
-    assert isinstance(prefix, str)
+def _profile_permutations(config: HashProfile) -> tuple[tuple[int, int], ...]:
     result: list[tuple[int, int]] = []
     for index in range(MINHASH_SIZE):
-        digest = hashlib.sha256(f"{prefix}{index}".encode("ascii")).digest()
+        digest = hashlib.sha256(f"{config.permutation_prefix}{index}".encode("ascii")).digest()
         a = (int.from_bytes(digest[:8], "big") % (MINHASH_PRIME - 1)) + 1
         b = int.from_bytes(digest[8:16], "big") % MINHASH_PRIME
         result.append((a, b))
     return tuple(result)
 
 
-def minhash_signature(features: Iterable[str], profile: str = "revenginstr-v1") -> tuple[int, ...]:
-    hashes = [hash64(token, profile) for token in features]
+def permutations(profile: str | HashProfile = "revenginstr-v1") -> tuple[tuple[int, int], ...]:
+    return _profile_permutations(profile_config(profile))
+
+
+def minhash_signature(
+    features: Iterable[str], profile: str | HashProfile = "revenginstr-v1"
+) -> tuple[int, ...]:
+    config = profile_config(profile)
+    hashes = [hash64(token, config) for token in features]
     if not hashes:
         hashes = [0]
     return tuple(
         min((a * value + b) % MINHASH_PRIME for value in hashes)
-        for a, b in permutations(profile)
+        for a, b in permutations(config)
     )
 
 

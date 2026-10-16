@@ -143,7 +143,7 @@ The Ghidra runners are `-readOnly -noanalysis`; they consume an existing analysi
 
 `model_text` deliberately excludes function names, absolute addresses, direct call target identity, strings/resources, instruction bytes and decompiler C. Outer `program`, `source_entry` and `source_name` fields are audit/join metadata only.
 
-Function-family mining excludes headers from the portable view. New projects use the `revenginstr-v1` MinHash profile; Nevergone can request `nevergone-v1` to reproduce its historical seeds during migration.
+Function-family mining excludes headers from the portable view. The CLI uses the generic `revenginstr-v1` MinHash profile. Callers that need deterministic historical seeds can pass a `HashProfile` to the Python API and keep those seed values in their consumer adapter.
 
 The P-code-only selective classifier trains only on the portable operation view. The evidence-aware variant additionally receives deterministic structural summaries and coarse bucketed numeric `REVENGINSTR.Evidence/1` features. Family IDs are grouping/OOD metadata and labels are targets, never model features.
 
