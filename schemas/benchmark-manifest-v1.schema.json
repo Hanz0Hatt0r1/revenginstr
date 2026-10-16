@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/benchmark-manifest-v1.schema.json",
+  "title": "REVENGINSTR.BenchmarkManifest/1",
+  "type": "object",
+  "required": ["format", "benchmark", "toolchain", "schemas", "artifacts", "configs", "stages"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.BenchmarkManifest/1"},
+    "benchmark": {
+      "type": "object",
+      "required": ["id", "dataset_id", "dataset_artifact", "split_id", "family_set_id"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "dataset_id": {"type": "string", "minLength": 1},
+        "dataset_artifact": {"type": "string", "minLength": 1},
+        "split_id": {"type": "string", "minLength": 1},
+        "family_set_id": {"type": ["string", "null"]},
+        "family_artifact": {"type": ["string", "null"]},
+        "description": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "toolchain": {
+      "type": "object",
+      "required": ["revenginstr_version"],
+      "properties": {
+        "revenginstr_version": {"type": "string", "minLength": 1},
+        "source_revision": {"type": "string"},
+        "ghidra_version": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "schemas": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/schemaContract"}
+    },
+    "artifacts": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/artifact"}
+    },
+    "configs": {"type": "object"},
+    "stages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/stage"}
+    },
+    "metrics": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/metric"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+    "schemaContract": {
+      "type": "object",
+      "required": ["path", "version", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "artifact": {
+      "type": "object",
+      "required": ["path", "role", "kind"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "role": {"enum": ["input", "output"]},
+        "kind": {"enum": ["file", "directory"]},
+        "content": {"enum": ["json", "jsonl", "csv", "tsv", "binary"]},
+        "format": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "schema": {"type": "string", "minLength": 1}
+      },
+      "allOf": [
+        {"if": {"properties": {"role": {"const": "input"}}, "required": ["role"]}, "then": {"required": ["sha256"]}},
+        {"if": {"properties": {"role": {"const": "output"}}, "required": ["role"]}, "then": {"not": {"required": ["sha256"]}}},
+        {"if": {"properties": {"kind": {"const": "file"}}, "required": ["kind"]}, "then": {"required": ["content"]}},
+        {"if": {"properties": {"kind": {"const": "directory"}}, "required": ["kind"]}, "then": {"not": {"anyOf": [{"required": ["content"]}, {"required": ["format"]}, {"required": ["schema"]}]}}},
+        {"if": {"properties": {"content": {"const": "binary"}}, "required": ["content"]}, "then": {"not": {"anyOf": [{"required": ["format"]}, {"required": ["schema"]}]}}}
+      ],
+      "additionalProperties": false
+    },
+    "stage": {
+      "type": "object",
+      "required": ["id", "tool", "args", "inputs", "outputs"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"},
+        "tool": {"enum": ["pcode-audit", "foreign-guard", "callgraph", "evidence-aggregate", "receiver-plan", "receiver-infer", "family-mine", "selective-train", "selective-infer", "evidence-selective-train", "evidence-selective-infer", "accept-router-train", "accept-router-infer", "freeze-validation", "drift-audit"]},
+        "mode": {"enum": ["both", "smoke", "full"]},
+        "args": {"type": "array", "items": {"type": "string"}},
+        "inputs": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "outputs": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "depends_on": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "timeout_seconds": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "metric": {
+      "type": "object",
+      "required": ["name", "artifact", "json_pointer"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "artifact": {"type": "string", "minLength": 1},
+        "json_pointer": {"type": "string"},
+        "mode": {"enum": ["both", "smoke", "full"]},
+        "minimum": {"type": "number"},
+        "maximum": {"type": "number"}
+      },
+      "anyOf": [{"required": ["minimum"]}, {"required": ["maximum"]}],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

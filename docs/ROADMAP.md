@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `adb8fa8a5d7bdeeadfcad07f8789d6a5bfe4f84e`  
+**Repository baseline:** `main` through `8ea9f4677c654e3f9976d1c043ec59933c7629bc`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -38,13 +38,14 @@ The system must prefer abstention over fabricated certainty. Model output is nev
 - evidence-aware selective classification;
 - accept-error routing;
 - frozen validation and drift diagnostics;
+- hash-pinned benchmark manifests, allowlisted smoke/full execution and metric-gate summaries;
 - stable schemas under `schemas/`;
 - generic runners under `scripts/`;
 - project-neutral tests under `tests/`.
 
 The main remaining gaps are not basic extraction. They are:
 
-- one canonical benchmark/control surface for the whole stack;
+- standardized benchmark projections for classifier, router and receiver metrics;
 - higher receiver/type coverage on hard unseen cases;
 - better classifier operating points at the game/engine boundary;
 - higher safe router coverage;
@@ -162,6 +163,10 @@ Add a runner that can execute, in dependency order:
 
 Support `smoke` and `full` modes.
 
+The initial runner is available as `revenginstr-benchmark`. It validates pinned
+input artifacts and schemas, runs allowlisted tools in dependency order without
+a shell, and emits a versioned hash/runtime/metric-gate summary.
+
 ### M0.3 Summary schema
 
 Standardize a machine-readable result with at least:
@@ -176,6 +181,10 @@ Standardize a machine-readable result with at least:
 - exact-evidence mismatch count;
 - OOD/conflict/failure reason counts;
 - runtime/memory/artifact size.
+
+The initial summary records artifact hashes, stage commands and runtimes, and
+manifest-declared numeric gates. Standard projections for the metric families
+above remain outstanding.
 
 ### M0.4 Determinism audit
 
@@ -656,9 +665,9 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 
 ## P0 — immediate
 
-1. Canonical benchmark manifest schema.
-2. One-command benchmark runner.
-3. Machine-readable combined metric summary.
+1. ✅ Canonical benchmark manifest schema.
+2. ✅ One-command benchmark runner.
+3. Standardized combined metric projections for classifier, receiver and router reports.
 4. Exporter/schema inventory.
 5. Receiver residual taxonomy v1.
 6. Frozen receiver coverage report.
@@ -805,4 +814,4 @@ Mitigation: preserve heuristic/sparse baselines, feature ablations and evidence-
 
 # 20. Immediate next action
 
-Start with **M0.1 + M0.2**: add the canonical benchmark manifest and one-command benchmark runner. `revenginstr` already has enough mature extractors, inference code, classifiers, routers and validation utilities that the highest-leverage next improvement is a unified measurement/control surface. Once that exists, receiver, classifier, router and semantic work can advance against the same objective gates.
+Continue with **M0.3**: project the existing classifier, receiver, router and validation reports into the combined summary schema, including class metrics, calibration, coverage and exact-evidence gates. The manifest and smoke/full runner now provide the shared control surface; this next step makes summaries comparable across benchmark consumers.

@@ -21,9 +21,11 @@ ml = [
   "scikit-learn>=1.5",
   "joblib>=1.3",
 ]
+benchmark = ["jsonschema>=4"]
 test = ["pytest>=8", "jsonschema>=4"]
 
 [project.scripts]
+revenginstr-benchmark = "revenginstr.benchmark:main"
 revenginstr-pcode-audit = "revenginstr.pcode.audit:main"
 revenginstr-foreign-guard = "revenginstr.ood.foreign_guard:main"
 revenginstr-callgraph = "revenginstr.evidence.callgraph:main"
@@ -45,6 +47,9 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.data-files]
+"share/revenginstr/schemas" = ["schemas/*.schema.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

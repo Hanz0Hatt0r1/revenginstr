@@ -35,6 +35,7 @@ The repository now owns these generic mechanisms:
 - optional evidence-aware selective classification using `REVENGINSTR.Evidence/1`;
 - family-grouped accept-error production routing with monotone `accept -> escalate` correction;
 - deterministic identity-disjoint frozen validation with SHA-256 provenance;
+- a hash-pinned benchmark manifest and dependency-ordered smoke/full runner;
 - unlabeled distribution-shift diagnostics for predictions, routing and evidence coverage;
 - compatibility hash profile for historical Nevergone family groups.
 
@@ -152,9 +153,13 @@ Development setup:
 
 ```bash
 cd ~/revenginstr
-python -m pip install -e '.[test,ml]'
+python -m pip install -e '.[test,ml,benchmark]'
 pytest
 ```
+
+Consumer benchmark datasets remain outside this repository. A manifest pins
+their identities and hashes, runs the selected project-neutral stages and
+emits a machine-readable metric/gate summary. See [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
 
 Nevergone and NFS Shift runners can use a sibling `~/revenginstr` checkout and `PYTHONPATH` directly, so editable installation is convenient rather than mandatory. Once installed, the analysis/validation CLIs operate on local files and do not require a remote service.
 

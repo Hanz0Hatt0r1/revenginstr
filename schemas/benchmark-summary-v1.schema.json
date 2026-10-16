@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/benchmark-summary-v1.schema.json",
+  "title": "REVENGINSTR.BenchmarkSummary/1",
+  "type": "object",
+  "required": ["format", "benchmark", "mode", "manifest_sha256", "tool_version", "toolchain", "schema_versions", "configuration_sha256", "status", "artifacts", "stages", "metrics", "gate_failures"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.BenchmarkSummary/1"},
+    "benchmark": {"type": "object"},
+    "mode": {"enum": ["smoke", "full"]},
+    "manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "tool_version": {"type": "string"},
+    "toolchain": {"type": "object"},
+    "schema_versions": {"type": "object", "additionalProperties": {"type": "string"}},
+    "configuration_sha256": {"$ref": "#/$defs/sha256"},
+    "status": {"enum": ["passed", "failed", "failed_gates"]},
+    "artifacts": {"type": "object", "additionalProperties": {"$ref": "#/$defs/artifactResult"}},
+    "stages": {"type": "array", "items": {"$ref": "#/$defs/stageResult"}},
+    "metrics": {"type": "array", "items": {"$ref": "#/$defs/metricResult"}},
+    "gate_failures": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+    "artifactResult": {
+      "type": "object",
+      "required": ["path", "kind", "sha256", "pinned"],
+      "properties": {
+        "path": {"type": "string"},
+        "kind": {"enum": ["file", "directory"]},
+        "format": {"type": ["string", "null"]},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "pinned": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "stageResult": {
+      "type": "object",
+      "required": ["id", "tool", "command", "status", "exit_code", "duration_seconds"],
+      "properties": {
+        "id": {"type": "string"},
+        "tool": {"type": "string"},
+        "command": {"type": "array", "items": {"type": "string"}},
+        "status": {"enum": ["passed", "failed", "timed_out", "artifact_validation_failed"]},
+        "exit_code": {"type": ["integer", "null"]},
+        "duration_seconds": {"type": "number", "minimum": 0},
+        "error": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "metricResult": {
+      "type": "object",
+      "required": ["name", "artifact", "json_pointer", "value", "passed"],
+      "properties": {
+        "name": {"type": "string"},
+        "artifact": {"type": "string"},
+        "json_pointer": {"type": "string"},
+        "minimum": {"type": "number"},
+        "maximum": {"type": "number"},
+        "value": {"type": ["number", "null"]},
+        "passed": {"type": "boolean"},
+        "error": {"type": "string"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
