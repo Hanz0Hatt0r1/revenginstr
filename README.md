@@ -18,6 +18,7 @@ The repository now owns these generic mechanisms:
 - read-only ARM32 Itanium primary-vtable slot export from Ghidra;
 - targeted data and direct-reference export for caller-selected Ghidra addresses;
 - targeted machine-instruction, control-flow, reference and P-code export from Ghidra;
+- targeted numeric-operand and referenced-scalar export from Ghidra;
 - conservative receiver class/vtable identity inference from consumer-owned catalogs;
 - leakage-safe evidence aggregation;
 - deterministic structural P-code metrics and coarse numeric evidence tokenization;
@@ -44,6 +45,7 @@ REVENGINSTR.GhidraPcodeDefinedString/1
 REVENGINSTR.GhidraAddressReferenceOwner/1
 REVENGINSTR.GhidraAddressReferences/1
 REVENGINSTR.GhidraFunctionInstructions/1
+REVENGINSTR.GhidraFunctionOperand/1
 REVENGINSTR.ReceiverInference/1
 REVENGINSTR.Evidence/1
 REVENGINSTR.FunctionFamilies/1
@@ -67,6 +69,9 @@ caller-supplied addresses; see `docs/GHIDRA_ADDRESS_REFERENCE_OWNERS.md`.
 
 The generic Ghidra function-instruction export is documented in
 docs/GHIDRA_FUNCTION_INSTRUCTIONS.md.
+
+The generic numeric function-operand export is documented in
+docs/GHIDRA_FUNCTION_OPERANDS.md.
 
 The generic address-reference exporter is documented in
 docs/GHIDRA_ADDRESS_REFERENCES.md.

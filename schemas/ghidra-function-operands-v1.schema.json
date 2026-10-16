@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-function-operands-v1.schema.json",
+  "title": "REVENGINSTR.GhidraFunctionOperand/1 JSONL row",
+  "description": "Numeric instruction operands and referenced scalar data values from one Ghidra function.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program", "requested", "function_entry", "instruction", "operand", "kind", "bit_length", "signed_value", "unsigned_hex", "target", "target_type", "number_value"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraFunctionOperand/1"},
+    "program": {"type": "string"},
+    "requested": {"type": "string", "minLength": 1},
+    "function_entry": {"$ref": "#/$defs/address"},
+    "instruction": {"$ref": "#/$defs/address"},
+    "operand": {"type": "integer", "minimum": 0},
+    "kind": {"enum": ["immediate", "referenced-scalar", "referenced-number"]},
+    "bit_length": {"type": ["integer", "null"], "minimum": 1},
+    "signed_value": {"type": ["string", "null"]},
+    "unsigned_hex": {"type": ["string", "null"], "pattern": "^0x[0-9a-f]+$"},
+    "target": {"oneOf": [{"$ref": "#/$defs/address"}, {"type": "null"}]},
+    "target_type": {"type": ["string", "null"]},
+    "number_value": {"type": ["string", "null"]}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"kind": {"enum": ["immediate", "referenced-scalar"]}}},
+      "then": {
+        "properties": {
+          "bit_length": {"type": "integer", "minimum": 1},
+          "signed_value": {"type": "string"},
+          "unsigned_hex": {"type": "string", "pattern": "^0x[0-9a-f]+$"},
+          "number_value": {"type": "null"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"kind": {"const": "immediate"}}},
+      "then": {"properties": {"target": {"type": "null"}, "target_type": {"type": "null"}}}
+    },
+    {
+      "if": {"properties": {"kind": {"const": "referenced-scalar"}}},
+      "then": {"properties": {"target": {"$ref": "#/$defs/address"}, "target_type": {"type": "string"}}}
+    },
+    {
+      "if": {"properties": {"kind": {"const": "referenced-number"}}},
+      "then": {
+        "properties": {
+          "bit_length": {"type": "null"},
+          "signed_value": {"type": "null"},
+          "unsigned_hex": {"type": "null"},
+          "target": {"$ref": "#/$defs/address"},
+          "target_type": {"type": "string"},
+          "number_value": {"type": "string"}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "address": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"}
+  }
+}
