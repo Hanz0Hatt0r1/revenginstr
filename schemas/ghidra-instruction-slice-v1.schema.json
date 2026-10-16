@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-instruction-slice-v1.schema.json",
+  "title": "REVENGINSTR.GhidraInstructionSlice/1 JSONL row",
+  "description": "Bounded instruction, control-flow, reference, and machine-P-code context around one requested program address.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program", "requested", "start", "length", "exact_instruction_at_start", "instruction_count", "instructions"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraInstructionSlice/1"},
+    "program": {"type": "string", "minLength": 1},
+    "requested": {"type": "string", "minLength": 1},
+    "start": {"type": "string", "minLength": 1},
+    "length": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+    "exact_instruction_at_start": {"type": "boolean"},
+    "instruction_count": {"type": "integer", "minimum": 0},
+    "instructions": {"type": "array", "items": {"$ref": "#/$defs/instruction"}}
+  },
+  "$defs": {
+    "varnode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "space", "offset", "size", "constant", "register", "unique"],
+      "properties": {
+        "text": {"type": "string"},
+        "space": {"type": ["string", "null"]},
+        "offset": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"},
+        "size": {"type": "integer", "minimum": 0},
+        "constant": {"type": "boolean"},
+        "register": {"type": "boolean"},
+        "unique": {"type": "boolean"}
+      }
+    },
+    "pcode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["opcode", "text", "output", "inputs"],
+      "properties": {
+        "opcode": {"type": "string", "minLength": 1},
+        "text": {"type": "string"},
+        "output": {"oneOf": [{"$ref": "#/$defs/varnode"}, {"type": "null"}]},
+        "inputs": {"type": "array", "items": {"$ref": "#/$defs/varnode"}}
+      }
+    },
+    "instruction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["address", "bytes", "mnemonic", "text", "operands", "flow_type", "fallthrough", "flows", "references", "pcode"],
+      "properties": {
+        "address": {"type": "string", "minLength": 1},
+        "bytes": {"type": "string", "pattern": "^(?:[0-9a-fA-F]{2})+$"},
+        "mnemonic": {"type": "string", "minLength": 1},
+        "text": {"type": "string", "minLength": 1},
+        "operands": {"type": "array", "items": {"type": "string"}},
+        "flow_type": {"type": "string"},
+        "fallthrough": {"type": ["string", "null"]},
+        "flows": {"type": "array", "items": {"type": ["string", "null"]}},
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["to", "type"],
+            "properties": {"to": {"type": ["string", "null"]}, "type": {"type": "string"}}
+          }
+        },
+        "pcode": {"type": "array", "items": {"$ref": "#/$defs/pcode"}}
+      }
+    }
+  }
+}
