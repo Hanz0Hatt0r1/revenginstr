@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-address-references-v1.schema.json",
+  "title": "REVENGINSTR.GhidraAddressReferences/1 JSONL row",
+  "description": "Target memory metadata and direct Ghidra references for one caller-supplied address.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "program", "executable_md5", "requested", "resolved_address", "found",
+    "target_block", "primary_symbol", "data_type", "data_length", "reference_count",
+    "function_addresses", "references"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraAddressReferences/1"},
+    "program": {"type": "string"},
+    "executable_md5": {
+      "oneOf": [
+        {"type": "string", "pattern": "^[0-9a-fA-F]{32}$"},
+        {"type": "null"}
+      ]
+    },
+    "requested": {"type": "string", "minLength": 1},
+    "resolved_address": {"type": ["string", "null"]},
+    "found": {"type": "boolean"},
+    "target_block": {"type": ["string", "null"]},
+    "primary_symbol": {"type": ["string", "null"]},
+    "data_type": {"type": ["string", "null"]},
+    "data_length": {"type": "integer", "minimum": 0},
+    "reference_count": {"type": "integer", "minimum": 0},
+    "function_addresses": {"type": "array", "items": {"type": "string"}},
+    "references": {"type": "array", "items": {"$ref": "#/$defs/reference"}}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"found": {"const": true}}},
+      "then": {
+        "properties": {
+          "resolved_address": {"type": "string"},
+          "target_block": {"type": "string"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"found": {"const": false}}},
+      "then": {
+        "properties": {
+          "resolved_address": {"type": ["string", "null"]},
+          "target_block": {"type": "null"},
+          "primary_symbol": {"type": "null"},
+          "data_type": {"type": "null"},
+          "data_length": {"const": 0},
+          "reference_count": {"const": 0},
+          "function_addresses": {"maxItems": 0},
+          "references": {"maxItems": 0}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "from", "type", "source", "operand_index", "primary",
+        "function_address", "function_name", "instruction"
+      ],
+      "properties": {
+        "from": {"type": ["string", "null"]},
+        "type": {"type": "string"},
+        "source": {"type": "string"},
+        "operand_index": {"type": "integer"},
+        "primary": {"type": "boolean"},
+        "function_address": {"type": ["string", "null"]},
+        "function_name": {"type": ["string", "null"]},
+        "instruction": {"type": ["string", "null"]}
+      }
+    }
+  }
+}
