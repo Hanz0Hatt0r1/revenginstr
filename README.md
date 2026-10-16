@@ -9,6 +9,7 @@ Reusable reverse-engineering analysis tooling extracted from the Nevergone and N
 The repository now owns these generic mechanisms:
 
 - architecture-normalized high-P-code export from Ghidra;
+- direct-call resolution that tolerates low-bit-tagged code pointers when the normalized target is a known function;
 - portable corpus/schema validation and leakage audits;
 - cross-project/OOD diagnostics and monotone foreign-project guards;
 - callgraph metric extraction;
