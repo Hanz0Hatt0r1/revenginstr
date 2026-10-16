@@ -20,6 +20,8 @@ The repository now owns these generic mechanisms:
 - family-grouped selective classification with calibrated correctness confidence and contrastive family OOD;
 - optional evidence-aware selective classification using `REVENGINSTR.Evidence/1`;
 - family-grouped accept-error production routing with monotone `accept -> escalate` correction;
+- deterministic identity-disjoint frozen validation with SHA-256 provenance;
+- unlabeled distribution-shift diagnostics for predictions, routing and evidence coverage;
 - compatibility hash profile for historical Nevergone family groups.
 
 Stable component formats currently include:
@@ -37,11 +39,13 @@ REVENGINSTR.FunctionFamilies/1
 REVENGINSTR.SelectiveClassifier/1
 REVENGINSTR.EvidenceSelectiveClassifier/1
 REVENGINSTR.AcceptErrorRouter/1
+REVENGINSTR.FrozenValidation/1
+REVENGINSTR.DriftAudit/1
 ```
 
 ## Boundary
 
-The toolkit may know about architectures such as ARM32 and x86-32 and generic concepts such as P-code, callgraphs, receivers, vtables, family similarity, OOD and selective routing.
+The toolkit may know about architectures such as ARM32 and x86-32 and generic concepts such as P-code, callgraphs, receivers, vtables, family similarity, OOD, selective routing and distribution shift.
 
 It must not encode Nevergone `GameScene`/Cocos rules, NFS Shift retail addresses/`HDVehicle` offsets, or any other title-specific semantic truth.
 
@@ -61,6 +65,7 @@ src/revenginstr/evidence/      callgraph + structural + aggregated evidence
 src/revenginstr/receiver/      receiver planning/inference
 src/revenginstr/family/        portable family features/mining
 src/revenginstr/ml/            project-neutral classifiers and routers
+src/revenginstr/validation/    frozen holdout + drift diagnostics
 schemas/                       stable data contracts
 tests/                         project-neutral tests
 docs/                          architecture/migration notes
@@ -84,7 +89,7 @@ python -m pip install -e '.[test,ml]'
 pytest
 ```
 
-Nevergone and NFS Shift runners can use a sibling `~/revenginstr` checkout and `PYTHONPATH` directly, so editable installation is convenient rather than mandatory.
+Nevergone and NFS Shift runners can use a sibling `~/revenginstr` checkout and `PYTHONPATH` directly, so editable installation is convenient rather than mandatory. Once installed, the analysis/validation CLIs operate on local files and do not require a remote service.
 
 ## CLI examples
 
@@ -111,6 +116,13 @@ revenginstr-accept-router-train model-v2/oof_predictions.jsonl accept-router \
   --evidence evidence.jsonl --target-accept-precision 0.97
 revenginstr-accept-router-infer accept-router predictions-v2.jsonl \
   --evidence evidence.jsonl --output routed.jsonl
+revenginstr-freeze-validation wide-corpus.jsonl validation/unseen500 \
+  --exclude-trace training-trace.jsonl --limit 500 --tag unseen500-v1
+revenginstr-drift-audit model-v2/oof_predictions.jsonl validation/unseen500/routed.jsonl \
+  --reference-evidence evidence.jsonl \
+  --frozen-evidence validation/unseen500/evidence.jsonl \
+  --router-manifest accept-router/manifest.json \
+  --output validation/unseen500/drift.json
 ```
 
 For an existing analyzed Ghidra project:
@@ -133,6 +145,8 @@ The P-code-only selective classifier trains only on the portable operation view.
 
 The accept-error router is trained only from already-held-out base predictions and family groups. It preserves class predictions and all non-accept actions; it can only downgrade a questionable base `accept` to `escalate`.
 
+Frozen validation is also project-neutral: consumers provide training/calibration trace identities, while revenginstr handles deterministic selection, immutability hashes and deployment-drift diagnostics. Frozen unlabeled data never becomes semantic ground truth merely because a model produced predictions for it.
+
 ## Consumer contract
 
 Consumer repositories own:
@@ -142,8 +156,9 @@ Consumer repositories own:
 - class/vtable catalog contents;
 - title-specific addresses and object-layout knowledge;
 - semantic gates and deployment decisions;
-- historical experiment/model lineage.
+- historical experiment/model lineage;
+- the trace identities that define what counts as training/calibration overlap.
 
 Cross-project model output is triage/OOD evidence, not semantic authority. Generic algorithms must not close a consumer's semantic proof gate on their own.
 
-See `docs/MIGRATION.md`, `docs/SELECTIVE_CLASSIFIER.md`, `docs/EVIDENCE_SELECTIVE_CLASSIFIER.md` and `docs/ACCEPT_ERROR_ROUTER.md`.
+See `docs/MIGRATION.md`, `docs/SELECTIVE_CLASSIFIER.md`, `docs/EVIDENCE_SELECTIVE_CLASSIFIER.md`, `docs/ACCEPT_ERROR_ROUTER.md` and `docs/FROZEN_VALIDATION.md`.
