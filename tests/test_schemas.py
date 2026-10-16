@@ -7,6 +7,7 @@ import pytest
 from jsonschema import Draft202012Validator, ValidationError
 
 from revenginstr.evidence.aggregate import aggregate
+from revenginstr.receiver.infer import infer
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -67,6 +68,29 @@ def test_evidence_schema_accepts_aggregated_rows_and_rejects_text_features(tmp_p
     evidence.validate({**rows[0], "consumer_metadata": {"program": "sample.exe"}})
     with pytest.raises(ValidationError):
         evidence.validate({**rows[0], "features": {"receiver.class_name": "SecretClass"}})
+
+
+def test_receiver_inference_schema_keeps_identity_evidence_non_routing() -> None:
+    rows = infer([{
+        "format": "REVENGINSTR.GhidraIndirectReceiverType/1",
+        "source_id": "sample.exe:00401000",
+        "call_index": "0",
+        "call_address": "00401020",
+        "receiver_pointer_depth": "1",
+        "pointee_type_name": "Widget",
+        "pointee_type_display": "Widget",
+        "receiver_type_name": "Widget *",
+        "receiver_type_display": "Widget *",
+        "receiver_storage_kind": "register",
+        "flow_type_node_count": "0",
+        "flow_single_pointer_pointee_names_json": "[]",
+        "flow_single_pointer_pointee_displays_json": "[]",
+    }], [{"class_name": "Widget", "receiver_vtable_id": "sample.exe:00900000"}])
+
+    schema = validator("receiver-inference-v1.schema.json")
+    schema.validate(rows[0])
+    with pytest.raises(ValidationError):
+        schema.validate({**rows[0], "affects_routing": True})
 
 
 def test_validation_manifest_and_drift_schemas() -> None:
