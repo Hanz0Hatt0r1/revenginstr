@@ -14,6 +14,7 @@ The repository now owns these generic mechanisms:
 - cross-project/OOD diagnostics and monotone foreign-project guards;
 - callgraph metric extraction;
 - mass indirect-call receiver/type acquisition;
+- read-only ARM32 Itanium primary-vtable slot export from Ghidra;
 - conservative receiver class/vtable identity inference from consumer-owned catalogs;
 - leakage-safe evidence aggregation;
 - deterministic structural P-code metrics and coarse numeric evidence tokenization;
@@ -34,6 +35,7 @@ REVENGINSTR.ForeignGuard/1
 REVENGINSTR.CallGraphMetrics/1
 REVENGINSTR.ReceiverPlan/1
 REVENGINSTR.GhidraIndirectReceiverType/1
+REVENGINSTR.GhidraArm32ItaniumVtableSlots/1
 REVENGINSTR.ReceiverInference/1
 REVENGINSTR.Evidence/1
 REVENGINSTR.FunctionFamilies/1
@@ -139,6 +141,11 @@ GHIDRA_HOME=/opt/ghidra \
 ```
 
 The Ghidra runners are `-readOnly -noanalysis`; they consume an existing analysis database rather than silently changing it.
+
+For ARM32 Itanium binaries, `scripts/run_ghidra_vtable_slots.sh` exports the
+contiguous primary function-pointer prefix for each detected vtable. Its TSV
+contains program-specific symbols and addresses from the selected Ghidra project;
+the exporter implementation and output contract remain project-neutral.
 
 ## Portable P-code contract
 

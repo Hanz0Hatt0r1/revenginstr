@@ -49,6 +49,11 @@ guard, callgraph/evidence aggregation, receiver planning and inference, function
 family mining, selective classifiers and monotone accept-error routing. The
 generic mechanisms are covered by one project-neutral test suite and CI.
 
+The shared Ghidra scripts now also include a read-only ARM32 Itanium vtable-slot
+exporter. It owns the symbol scan, pointer normalization and bounded contiguous
+slot walk; consumer repositories still own the exported symbols/addresses and
+interpretation catalogs.
+
 The NFS Shift probe uses the shared exporter, audit and foreign guard when a
 sibling `revenginstr` checkout is available, while retaining its historical
 fallback. Nevergone's evidence pipeline similarly calls shared receiver,
