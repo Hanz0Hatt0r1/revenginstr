@@ -40,11 +40,6 @@ PROFILES = {
     "revenginstr-v1": HashProfile(
         "revenginstr-v1", b"REVENG-FAM", "RevEngInstrFamilyMinHash/"
     ),
-    # Compatibility alias for existing callers; consumer adapters should pass
-    # their HashProfile so project-specific seed data stays in the consumer.
-    "nevergone-v1": HashProfile(
-        "nevergone-v1", b"NVG-FAM", "NevergoneFamilyMinHash/"
-    ),
 }
 
 

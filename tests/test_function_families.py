@@ -45,12 +45,13 @@ def write_split(path: Path, rows: list[dict]) -> None:
     path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
 
 
-def test_nevergone_hash_profile_reproduces_historical_seeds() -> None:
+def test_custom_hash_profile_reproduces_caller_owned_seeds() -> None:
     features = family_feature_set(text("INT_ADD"))
-    assert minhash_signature(features, "nevergone-v1") == legacy_signature(
-        features, b"NVG-FAM", "NevergoneFamilyMinHash/"
+    profile = HashProfile("fixture-v1", b"FIXTURE", "FixtureFamilyMinHash/")
+    assert minhash_signature(features, profile) == legacy_signature(
+        features, b"FIXTURE", "FixtureFamilyMinHash/"
     )
-    assert minhash_signature(features, "revenginstr-v1") != minhash_signature(features, "nevergone-v1")
+    assert minhash_signature(features, "revenginstr-v1") != minhash_signature(features, profile)
 
 
 def test_consumer_owned_hash_profile_and_format(tmp_path: Path) -> None:
@@ -93,9 +94,9 @@ def test_family_miner_groups_exact_portable_duplicates(tmp_path: Path) -> None:
     ])
     write_split(dataset / "test.jsonl", [])
     output = tmp_path / "families.jsonl"
-    report = mine_dataset(dataset, output, hash_profile="nevergone-v1")
+    report = mine_dataset(dataset, output)
     rows = {row["id"]: row for row in map(json.loads, output.read_text(encoding="utf-8").splitlines())}
     assert rows["a"]["family_id"] == rows["b"]["family_id"]
     assert rows["a"]["family_size"] == 2
     assert report["functions"] == 3
-    assert report["policy"]["hash_profile"] == "nevergone-v1"
+    assert report["policy"]["hash_profile"] == "revenginstr-v1"
