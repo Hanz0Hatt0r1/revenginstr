@@ -8,6 +8,7 @@ import pytest
 from jsonschema import Draft202012Validator
 
 from revenginstr.benchmark import BenchmarkError, run_benchmark
+from revenginstr.benchmark_metrics import project
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -94,7 +95,14 @@ def test_benchmark_runs_a_pinned_smoke_pipeline_and_records_hashes(tmp_path: Pat
     assert summary["metrics"][0]["value"] == 1
     assert summary["metrics"][0]["passed"] is True
     assert summary["artifacts"]["corpus"]["pinned"] is True
+    assert summary["artifacts"]["corpus"]["size_bytes"] == (tmp_path / "corpus.jsonl").stat().st_size
     assert summary["artifacts"]["audit"]["pinned"] is False
+    assert summary["artifacts"]["audit"]["size_bytes"] > 0
+    assert summary["stages"][0]["memory_measurement"] in {"getrusage.ru_maxrss", "unavailable"}
+    if summary["stages"][0]["memory_measurement"] == "getrusage.ru_maxrss":
+        assert summary["stages"][0]["peak_rss_bytes"] > 0
+    else:
+        assert summary["stages"][0]["peak_rss_bytes"] is None
     assert json.loads((tmp_path / "summary.json").read_text(encoding="utf-8")) == summary
 
 
@@ -124,3 +132,117 @@ def test_benchmark_rejects_output_overwrite(tmp_path: Path) -> None:
     with pytest.raises(BenchmarkError, match="output artifact already exists"):
         run_benchmark(manifest_path)
     assert (tmp_path / "audit.json").read_text(encoding="utf-8") == "preserve"
+
+
+def test_classifier_projection_reports_metrics_coverage_and_calibration(tmp_path: Path) -> None:
+    predictions = tmp_path / "predictions.jsonl"
+    predictions.write_text("".join(json.dumps(row) + "\n" for row in [
+        {"truth": "alpha", "prediction": "alpha", "action": "accept", "confidence": 0.9},
+        {"truth": "beta", "prediction": "alpha", "action": "review", "confidence": 0.6},
+        {"truth": "beta", "prediction": "beta", "action": "accept", "confidence": 0.8},
+    ]), encoding="utf-8")
+
+    result = project(
+        {"id": "classifier", "kind": "classifier", "artifact": "predictions", "calibration_bins": 2},
+        {"content": "jsonl"}, {"predictions": predictions},
+    )
+
+    assert result["row_count"] == 3
+    assert result["class_distribution"] == {"alpha": 1, "beta": 2}
+    assert result["classification"]["confusion_matrix"] == [[1, 0], [1, 1]]
+    assert result["classification"]["macro_f1"] == pytest.approx(2 / 3)
+    assert result["classification"]["balanced_accuracy"] == pytest.approx(0.75)
+    assert result["coverage"]["accepted_rows"] == 2
+    assert result["coverage"]["accepted_accuracy"] == 1.0
+    assert result["calibration"]["sample_count"] == 3
+    assert result["calibration"]["brier_score"] == pytest.approx(0.1366666667)
+
+
+def test_receiver_projection_exact_evidence_compares_without_emitting_keys(tmp_path: Path) -> None:
+    actual = tmp_path / "actual.jsonl"
+    expected = tmp_path / "expected.jsonl"
+    actual.write_text(json.dumps({"source_id": "opaque-id", "call_index": 7, "status": "resolved_unique_vtable"}) + "\n", encoding="utf-8")
+    expected.write_text(json.dumps({"source_id": "opaque-id", "call_index": 7, "status": "unresolved_receiver_class"}) + "\n", encoding="utf-8")
+
+    result = project(
+        {
+            "id": "receiver", "kind": "receiver", "artifact": "actual",
+            "exact_evidence": {
+                "expected_artifact": "expected", "key_fields": ["source_id", "call_index"],
+                "compare_fields": ["status"], "maximum_mismatches": 0,
+            },
+        },
+        {"content": "jsonl"}, {"actual": actual, "expected": expected},
+    )
+
+    assert result["receiver"]["coverage"] == 1.0
+    assert result["exact_evidence"]["mismatch_rows"] == 1
+    assert result["exact_evidence"]["passed"] is False
+    assert "opaque-id" not in json.dumps(result)
+
+
+def test_benchmark_runs_projections_and_fails_exact_evidence_gate(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    rows = {
+        "predictions": [{"truth": "alpha", "prediction": "alpha", "action": "accept", "confidence": 0.9}],
+        "receiver_actual": [{"key": "opaque", "status": "resolved_unique_vtable"}],
+        "receiver_expected": [{"key": "opaque", "status": "unresolved_receiver_class"}],
+    }
+    for artifact_id, records in rows.items():
+        artifact_path = tmp_path / f"{artifact_id}.jsonl"
+        artifact_path.write_text("".join(json.dumps(row) + "\n" for row in records), encoding="utf-8")
+        manifest["artifacts"][artifact_id] = {
+            "path": str(artifact_path), "role": "input", "kind": "file", "content": "jsonl",
+            "sha256": _sha256(artifact_path),
+        }
+    drift_path = tmp_path / "drift.json"
+    drift_path.write_text(json.dumps({"format": "REVENGINSTR.DriftAudit/1", "labels_available": False,
+                                     "reference_rows": 20, "frozen_rows": 10}), encoding="utf-8")
+    manifest["artifacts"]["drift"] = {
+        "path": str(drift_path), "role": "input", "kind": "file", "content": "json",
+        "sha256": _sha256(drift_path),
+    }
+    manifest["projections"] = [
+        {"id": "classifier", "kind": "classifier", "artifact": "predictions"},
+        {
+            "id": "receiver", "kind": "receiver", "artifact": "receiver_actual",
+            "exact_evidence": {
+                "expected_artifact": "receiver_expected", "key_fields": ["key"],
+                "compare_fields": ["status"], "maximum_mismatches": 0,
+            },
+        },
+        {"id": "drift", "kind": "validation", "artifact": "drift"},
+    ]
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    summary, code = run_benchmark(manifest_path, output_path=tmp_path / "summary-with-projections.json")
+
+    assert code == 2
+    assert summary["status"] == "failed_gates"
+    assert summary["gate_failures"] == ["receiver.exact_evidence_mismatches"]
+    assert summary["projections"][0]["classification"]["macro_f1"] == 1.0
+    assert summary["projections"][1]["exact_evidence"]["mismatch_rows"] == 1
+    assert summary["projections"][2]["validation"]["labels_available"] is False
+    assert summary["projections"][2]["validation"]["frozen_rows"] == 10
+
+
+def test_validation_projection_preserves_unlabeled_status(tmp_path: Path) -> None:
+    report = tmp_path / "drift.json"
+    report.write_text(json.dumps({
+        "format": "REVENGINSTR.DriftAudit/1", "labels_available": False,
+        "reference_rows": 20, "frozen_rows": 10,
+        "severity": {"level": "moderate"},
+        "router_intervention": {"reference_legacy_accept": 8, "reference_changed": 1},
+    }), encoding="utf-8")
+
+    result = project(
+        {"id": "drift", "kind": "validation", "artifact": "report"},
+        {"content": "json"}, {"report": report},
+    )
+
+    assert result["validation"]["labels_available"] is False
+    assert result["validation"]["reference_rows"] == 20
+    assert result["validation"]["frozen_rows"] == 10
+    assert result["validation"]["severity"] == "moderate"
+    assert "classification" not in result

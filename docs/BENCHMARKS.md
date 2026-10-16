@@ -44,6 +44,67 @@ non-finite or non-numeric metric fails the gate. A run writes a
 schema versions, artifact hashes, executed commands, runtimes, metric values
 and gate results. Stage failures and gate failures return exit status 2.
 
+## Standard metric projections
+
+Optional manifest `projections` turn existing classifier, router, receiver and
+validation artifacts into comparable summary sections. Projections read rows
+from consumer-owned JSONL/JSON artifacts; the shared runner stores aggregate
+counts and metrics, not prediction rows or evidence identities. Classifier and
+router rows use `truth`, `prediction`, `action` and `confidence` by default.
+Set `truth_field`, `prediction_field`, `action_field` or `confidence_field` when
+a consumer uses different column names. Classification projections report the
+true-label distribution, per-class precision/recall/F1, macro-F1, balanced
+accuracy, confusion matrix, action coverage and calibration bins. Calibration
+uses confidence as a probability of correctness and only scores rows with both
+labels and confidence.
+
+Receiver projections count statuses and compute coverage over statuses named
+in `resolved_statuses` (default: `resolved_unique_vtable`). `reason_fields` can
+map available OOD, conflict and failure reason columns into count maps; absent
+reason data is not inferred. A validation projection summarizes frozen
+selection or drift reports without treating unlabeled rows as accuracy.
+
+An optional `exact_evidence` block compares actual and expected JSONL records by
+consumer-chosen key fields and compares only the listed evidence fields. The
+summary contains compared/mismatched/missing/unexpected row counts, never the
+keys or row values. `maximum_mismatches` defaults to zero and becomes a hard
+benchmark gate.
+
+Example:
+
+```json
+{
+  "projections": [
+    {
+      "id": "classifier_oof",
+      "kind": "classifier",
+      "artifact": "oof_predictions",
+      "calibration_bins": 10,
+      "reason_fields": {
+        "ood": "ood_reason",
+        "conflict": "conflict_reason",
+        "failure": "failure_reason"
+      }
+    },
+    {
+      "id": "receiver_exact",
+      "kind": "receiver",
+      "artifact": "receiver_inference",
+      "exact_evidence": {
+        "expected_artifact": "receiver_expected",
+        "key_fields": ["source_id", "call_index"],
+        "compare_fields": ["status", "receiver_vtable_id"],
+        "maximum_mismatches": 0
+      }
+    }
+  ]
+}
+```
+
+Artifact summaries include byte sizes. Stage summaries include elapsed time and
+peak process RSS where the platform exposes it through `getrusage`; the memory
+value is `null` with measurement `unavailable` on unsupported platforms.
+
 ## Small corpus-audit manifest
 
 This example shows the fields for an input corpus and one audit stage. Replace

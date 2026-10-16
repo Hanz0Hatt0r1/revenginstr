@@ -17,6 +17,7 @@
     "artifacts": {"type": "object", "additionalProperties": {"$ref": "#/$defs/artifactResult"}},
     "stages": {"type": "array", "items": {"$ref": "#/$defs/stageResult"}},
     "metrics": {"type": "array", "items": {"$ref": "#/$defs/metricResult"}},
+    "projections": {"type": "array", "items": {"$ref": "#/$defs/projectionResult"}},
     "gate_failures": {"type": "array", "items": {"type": "string"}}
   },
   "$defs": {
@@ -29,7 +30,8 @@
         "kind": {"enum": ["file", "directory"]},
         "format": {"type": ["string", "null"]},
         "sha256": {"$ref": "#/$defs/sha256"},
-        "pinned": {"type": "boolean"}
+        "pinned": {"type": "boolean"},
+        "size_bytes": {"type": "integer", "minimum": 0}
       },
       "additionalProperties": false
     },
@@ -43,6 +45,8 @@
         "status": {"enum": ["passed", "failed", "timed_out", "artifact_validation_failed"]},
         "exit_code": {"type": ["integer", "null"]},
         "duration_seconds": {"type": "number", "minimum": 0},
+        "peak_rss_bytes": {"type": ["integer", "null"], "minimum": 0},
+        "memory_measurement": {"enum": ["getrusage.ru_maxrss", "unavailable"]},
         "error": {"type": "string"}
       },
       "additionalProperties": false
@@ -59,6 +63,147 @@
         "value": {"type": ["number", "null"]},
         "passed": {"type": "boolean"},
         "error": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "projectionResult": {
+      "type": "object",
+      "required": ["id", "kind", "artifact", "row_count", "exact_evidence"],
+      "properties": {
+        "id": {"type": "string"},
+        "kind": {"enum": ["classifier", "router", "receiver", "validation"]},
+        "artifact": {"type": "string"},
+        "row_count": {"type": ["integer", "null"], "minimum": 0},
+        "class_distribution": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "classification": {"$ref": "#/$defs/classificationMetrics"},
+        "coverage": {"$ref": "#/$defs/coverageMetrics"},
+        "calibration": {"$ref": "#/$defs/calibrationMetrics"},
+        "receiver": {"$ref": "#/$defs/receiverMetrics"},
+        "reason_counts": {
+          "type": "object",
+          "properties": {
+            "ood": {"$ref": "#/$defs/countMap"},
+            "conflict": {"$ref": "#/$defs/countMap"},
+            "failure": {"$ref": "#/$defs/countMap"}
+          },
+          "additionalProperties": false
+        },
+        "exact_evidence": {"oneOf": [{"$ref": "#/$defs/exactEvidenceResult"}, {"type": "null"}]},
+        "validation": {"$ref": "#/$defs/validationMetrics"}
+      },
+      "additionalProperties": false
+    },
+    "countMap": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "classificationMetrics": {
+      "type": "object",
+      "required": ["classes", "confusion_matrix", "per_class", "macro_f1", "balanced_accuracy"],
+      "properties": {
+        "classes": {"type": "array", "items": {"type": "string"}},
+        "confusion_matrix": {"type": "array", "items": {"type": "array", "items": {"type": "integer", "minimum": 0}}},
+        "per_class": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["precision", "recall", "f1", "support"],
+            "properties": {
+              "precision": {"type": "number", "minimum": 0, "maximum": 1},
+              "recall": {"type": "number", "minimum": 0, "maximum": 1},
+              "f1": {"type": "number", "minimum": 0, "maximum": 1},
+              "support": {"type": "integer", "minimum": 0}
+            },
+            "additionalProperties": false
+          }
+        },
+        "macro_f1": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "balanced_accuracy": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+      },
+      "additionalProperties": false
+    },
+    "coverageMetrics": {
+      "type": "object",
+      "required": ["action_counts", "accepted_rows", "abstained_rows", "accepted_fraction", "abstained_fraction"],
+      "properties": {
+        "action_counts": {"$ref": "#/$defs/countMap"},
+        "accepted_rows": {"type": "integer", "minimum": 0},
+        "abstained_rows": {"type": "integer", "minimum": 0},
+        "accepted_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "abstained_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "accepted_accuracy": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+      },
+      "additionalProperties": false
+    },
+    "calibrationMetrics": {
+      "type": "object",
+      "required": ["sample_count", "excluded_count", "bins", "expected_calibration_error", "brier_score"],
+      "properties": {
+        "sample_count": {"type": "integer", "minimum": 1},
+        "excluded_count": {"type": "integer", "minimum": 0},
+        "bins": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["lower_bound", "upper_bound", "count", "mean_confidence", "observed_accuracy"],
+            "properties": {
+              "lower_bound": {"type": "number", "minimum": 0, "maximum": 1},
+              "upper_bound": {"type": "number", "minimum": 0, "maximum": 1},
+              "count": {"type": "integer", "minimum": 0},
+              "mean_confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+              "observed_accuracy": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+            },
+            "additionalProperties": false
+          }
+        },
+        "expected_calibration_error": {"type": "number", "minimum": 0, "maximum": 1},
+        "brier_score": {"type": "number", "minimum": 0, "maximum": 1}
+      },
+      "additionalProperties": false
+    },
+    "receiverMetrics": {
+      "type": "object",
+      "required": ["status_counts", "resolved_rows", "coverage"],
+      "properties": {
+        "status_counts": {"$ref": "#/$defs/countMap"},
+        "resolved_rows": {"type": "integer", "minimum": 0},
+        "coverage": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+      },
+      "additionalProperties": false
+    },
+    "exactEvidenceResult": {
+      "type": "object",
+      "required": ["actual_rows", "expected_rows", "compared_rows", "mismatched_rows", "missing_rows", "unexpected_rows", "mismatch_rows", "maximum_mismatches", "passed"],
+      "properties": {
+        "actual_rows": {"type": "integer", "minimum": 0},
+        "expected_rows": {"type": "integer", "minimum": 0},
+        "compared_rows": {"type": "integer", "minimum": 0},
+        "mismatched_rows": {"type": "integer", "minimum": 0},
+        "missing_rows": {"type": "integer", "minimum": 0},
+        "unexpected_rows": {"type": "integer", "minimum": 0},
+        "mismatch_rows": {"type": "integer", "minimum": 0},
+        "maximum_mismatches": {"type": "integer", "minimum": 0},
+        "passed": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "validationMetrics": {
+      "type": "object",
+      "required": ["report_format", "labels_available", "reference_rows", "frozen_rows", "severity", "router_intervention"],
+      "properties": {
+        "report_format": {"type": ["string", "null"]},
+        "labels_available": {"type": ["boolean", "null"]},
+        "reference_rows": {"type": ["integer", "null"], "minimum": 0},
+        "frozen_rows": {"type": ["integer", "null"], "minimum": 0},
+        "severity": {"type": ["string", "null"]},
+        "selection": {
+          "type": "object",
+          "properties": {
+            "eligible": {"type": "integer", "minimum": 0},
+            "eligibility_removed": {"type": "integer", "minimum": 0},
+            "excluded_overlap": {"type": "integer", "minimum": 0},
+            "limit": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": false
+        },
+        "router_intervention": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}}
       },
       "additionalProperties": false
     }

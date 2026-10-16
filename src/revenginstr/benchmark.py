@@ -11,11 +11,13 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any
 
 from . import __version__
+from .benchmark_metrics import MetricProjectionError, project as project_metrics
 
 MANIFEST_FORMAT = "REVENGINSTR.BenchmarkManifest/1"
 SUMMARY_FORMAT = "REVENGINSTR.BenchmarkSummary/1"
@@ -276,7 +278,80 @@ def _stage_plan(manifest: dict[str, Any], mode: str) -> tuple[list[dict[str, Any
             raise BenchmarkError(f"metric {metric['name']!r} references unknown artifact {metric['artifact']!r}")
         if "minimum" in metric and "maximum" in metric and metric["minimum"] > metric["maximum"]:
             raise BenchmarkError(f"metric {metric['name']!r} has minimum greater than maximum")
+    projection_ids: set[str] = set()
+    for projection in manifest.get("projections", []):
+        projection_id = projection["id"]
+        if projection_id in projection_ids:
+            raise BenchmarkError(f"duplicate projection id: {projection_id}")
+        projection_ids.add(projection_id)
+        projection_artifacts = {projection["artifact"]}
+        exact = projection.get("exact_evidence")
+        if exact:
+            projection_artifacts.add(exact.get("actual_artifact", projection["artifact"]))
+            projection_artifacts.add(exact["expected_artifact"])
+        for artifact_id in projection_artifacts:
+            if artifact_id not in artifacts:
+                raise BenchmarkError(f"projection {projection_id!r} references unknown artifact {artifact_id!r}")
+            artifact = artifacts[artifact_id]
+            if artifact["kind"] != "file" or artifact.get("content") not in {"json", "jsonl"}:
+                raise BenchmarkError(f"projection {projection_id!r} requires JSON or JSONL file artifacts")
+            projection_is_selected = projection.get("mode", "both") in {"both", mode}
+            if projection_is_selected and artifact["role"] == "output" and producers.get(artifact_id) not in selected_ids:
+                raise BenchmarkError(
+                    f"projection {projection_id!r} uses output {artifact_id!r}, whose producer is excluded in {mode} mode"
+                )
+        if projection["kind"] == "validation" and artifacts[projection["artifact"]]["content"] != "json":
+            raise BenchmarkError(f"validation projection {projection_id!r} requires a JSON report artifact")
+        if projection["kind"] != "validation" and artifacts[projection["artifact"]]["content"] != "jsonl":
+            raise BenchmarkError(f"{projection['kind']} projection {projection_id!r} requires a JSONL artifact")
+        if exact:
+            actual_id = exact.get("actual_artifact", projection["artifact"])
+            expected_id = exact["expected_artifact"]
+            if artifacts[actual_id]["content"] != "jsonl" or artifacts[expected_id]["content"] != "jsonl":
+                raise BenchmarkError(f"projection {projection_id!r} exact-evidence artifacts must be JSONL")
+    for projection in selected_projections(manifest, mode):
+        if projection.get("exact_evidence"):
+            exact = projection["exact_evidence"]
+            if set(exact["key_fields"]) & set(exact["compare_fields"]):
+                raise BenchmarkError(f"projection {projection['id']!r} exact-evidence key and compared fields must be distinct")
     return selected, producers
+
+
+def selected_projections(manifest: dict[str, Any], mode: str) -> list[dict[str, Any]]:
+    return [projection for projection in manifest.get("projections", [])
+            if projection.get("mode", "both") in {"both", mode}]
+
+
+def _artifact_size(path: Path) -> int:
+    if path.is_file():
+        return path.stat().st_size
+    return sum(child.stat().st_size for child in path.rglob("*") if child.is_file())
+
+
+def _read_process_memory(path: Path) -> tuple[int | None, str]:
+    try:
+        report = json.loads(path.read_text(encoding="utf-8"))
+        value = report.get("peak_rss_bytes")
+        measurement = report.get("memory_measurement", "unavailable")
+        return (value if isinstance(value, int) and value >= 0 else None, measurement)
+    except (OSError, json.JSONDecodeError):
+        return None, "unavailable"
+
+
+def _write_process_memory(path: str) -> None:
+    try:
+        import resource
+
+        rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        # macOS reports bytes; Linux and the BSDs report KiB.
+        peak_bytes = int(rss if sys.platform == "darwin" else rss * 1024)
+        report = {"peak_rss_bytes": peak_bytes, "memory_measurement": "getrusage.ru_maxrss"}
+    except (ImportError, AttributeError, OSError, ValueError):
+        report = {"peak_rss_bytes": None, "memory_measurement": "unavailable"}
+    try:
+        Path(path).write_text(json.dumps(report), encoding="utf-8")
+    except OSError:
+        pass
 
 
 def _expand_args(stage: dict[str, Any], paths: dict[str, Path]) -> list[str]:
@@ -366,6 +441,7 @@ def run_benchmark(manifest_path: Path, *, mode: str = "full", output_path: Path 
     _validate_manifest_schema(manifest)
     schemas = _load_schema_contracts(manifest, base)
     stages, _ = _stage_plan(manifest, mode)
+    projections = selected_projections(manifest, mode)
     artifacts = manifest["artifacts"]
     paths = {artifact_id: _resolve_path(base, artifact["path"]) for artifact_id, artifact in artifacts.items()}
     inputs = {artifact_id for stage in stages for artifact_id in stage.get("inputs", [])
@@ -374,6 +450,14 @@ def run_benchmark(manifest_path: Path, *, mode: str = "full", output_path: Path 
     family_artifact = manifest["benchmark"].get("family_artifact")
     if family_artifact is not None:
         inputs.add(family_artifact)
+    for projection in projections:
+        if artifacts[projection["artifact"]]["role"] == "input":
+            inputs.add(projection["artifact"])
+        exact = projection.get("exact_evidence")
+        if exact:
+            for artifact_id in (exact.get("actual_artifact", projection["artifact"]), exact["expected_artifact"]):
+                if artifacts[artifact_id]["role"] == "input":
+                    inputs.add(artifact_id)
     for metric in manifest.get("metrics", []):
         if metric.get("mode", "both") in {"both", mode} and artifacts[metric["artifact"]]["role"] == "input":
             inputs.add(metric["artifact"])
@@ -388,6 +472,7 @@ def run_benchmark(manifest_path: Path, *, mode: str = "full", output_path: Path 
         artifact_reports[artifact_id] = {
             "path": artifact["path"], "kind": artifact["kind"],
             "format": artifact.get("format"), "sha256": actual_hash, "pinned": True,
+            "size_bytes": _artifact_size(paths[artifact_id]),
         }
     for artifact_id in outputs:
         if paths[artifact_id].exists():
@@ -407,6 +492,7 @@ def run_benchmark(manifest_path: Path, *, mode: str = "full", output_path: Path 
         )
     config_identity = {
         "configs": manifest.get("configs", {}),
+        "projections": projections,
         "stages": [{key: stage[key] for key in (
             "id", "tool", "mode", "args", "inputs", "outputs", "depends_on", "timeout_seconds",
         ) if key in stage} for stage in manifest["stages"]],
@@ -427,6 +513,7 @@ def run_benchmark(manifest_path: Path, *, mode: str = "full", output_path: Path 
         "artifacts": artifact_reports,
         "stages": [],
         "metrics": [],
+        "projections": [],
         "gate_failures": [],
     }
 
@@ -443,10 +530,16 @@ def run_benchmark(manifest_path: Path, *, mode: str = "full", output_path: Path 
         stage_result: dict[str, Any] = {
             "id": stage["id"], "tool": stage["tool"], "command": command,
             "status": "passed", "exit_code": None,
+            "peak_rss_bytes": None, "memory_measurement": "unavailable",
         }
+        descriptor, resource_path_text = tempfile.mkstemp(prefix="revenginstr-stage-memory-", suffix=".json")
+        os.close(descriptor)
+        resource_path = Path(resource_path_text)
+        resource_path.unlink()
+        stage_env = {**child_env, "REVENGINSTR_BENCHMARK_RESOURCE_REPORT": str(resource_path)}
         try:
             process = subprocess.run(
-                command, cwd=Path(__file__).resolve().parents[2], env=child_env,
+                command, cwd=Path(__file__).resolve().parents[2], env=stage_env,
                 timeout=stage.get("timeout_seconds"), check=False,
             )
             stage_result["exit_code"] = process.returncode
@@ -461,6 +554,7 @@ def run_benchmark(manifest_path: Path, *, mode: str = "full", output_path: Path 
                     artifact_reports[artifact_id] = {
                         "path": artifact["path"], "kind": artifact["kind"],
                         "format": artifact.get("format"), "sha256": actual_hash, "pinned": False,
+                        "size_bytes": _artifact_size(paths[artifact_id]),
                     }
         except subprocess.TimeoutExpired:
             stage_result["status"] = "timed_out"
@@ -472,13 +566,27 @@ def run_benchmark(manifest_path: Path, *, mode: str = "full", output_path: Path 
             summary["status"] = "failed"
         finally:
             stage_result["duration_seconds"] = round(time.perf_counter() - started, 6)
+            stage_result["peak_rss_bytes"], stage_result["memory_measurement"] = _read_process_memory(resource_path)
+            resource_path.unlink(missing_ok=True)
         summary["stages"].append(stage_result)
         if summary["status"] == "failed":
             break
 
     if summary["status"] == "passed":
         summary["metrics"] = _evaluate_metrics(manifest, paths, mode)
+        try:
+            summary["projections"] = [
+                project_metrics(projection, artifacts[projection["artifact"]], paths)
+                for projection in projections
+            ]
+        except MetricProjectionError as exc:
+            raise BenchmarkError(f"metric projection failed: {exc}") from exc
         summary["gate_failures"] = [metric["name"] for metric in summary["metrics"] if not metric["passed"]]
+        summary["gate_failures"].extend(
+            f"{projection['id']}.exact_evidence_mismatches"
+            for projection in summary["projections"]
+            if projection["exact_evidence"] is not None and not projection["exact_evidence"]["passed"]
+        )
         if summary["gate_failures"]:
             summary["status"] = "failed_gates"
     summary["artifacts"] = artifact_reports
@@ -503,6 +611,10 @@ def main(argv: list[str] | None = None) -> int:
             return _run_tool(argv[1], argv[2:])
         except BenchmarkError as exc:
             raise SystemExit(str(exc)) from exc
+        finally:
+            resource_report = os.environ.get("REVENGINSTR_BENCHMARK_RESOURCE_REPORT")
+            if resource_report:
+                _write_process_memory(resource_report)
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("manifest", type=Path)
