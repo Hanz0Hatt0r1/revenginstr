@@ -16,6 +16,7 @@ The repository now owns these generic mechanisms:
 - conservative receiver class/vtable identity inference from consumer-owned catalogs;
 - leakage-safe evidence aggregation;
 - portable P-code function-family mining with deterministic MinHash/LSH;
+- family-grouped selective classification with calibrated correctness confidence and contrastive family OOD;
 - compatibility hash profile for historical Nevergone family groups.
 
 Stable component formats currently include:
@@ -30,6 +31,7 @@ REVENGINSTR.GhidraIndirectReceiverType/1
 REVENGINSTR.ReceiverInference/1
 REVENGINSTR.Evidence/1
 REVENGINSTR.FunctionFamilies/1
+REVENGINSTR.SelectiveClassifier/1
 ```
 
 ## Boundary
@@ -53,6 +55,7 @@ src/revenginstr/ood/           cross-project safety guards
 src/revenginstr/evidence/      callgraph + aggregated evidence
 src/revenginstr/receiver/      receiver planning/inference
 src/revenginstr/family/        portable family features/mining
+src/revenginstr/ml/            project-neutral selective classifiers
 schemas/                       stable data contracts
 tests/                         project-neutral tests
 docs/                          architecture/migration notes
@@ -72,11 +75,11 @@ Development setup:
 
 ```bash
 cd ~/revenginstr
-python -m pip install -e '.[test]'
+python -m pip install -e '.[test,ml]'
 pytest
 ```
 
-Nevergone and NFS Shift runners also auto-detect a sibling `~/revenginstr` checkout and can use `PYTHONPATH` directly, so editable installation is convenient rather than mandatory.
+Nevergone and NFS Shift runners can use a sibling `~/revenginstr` checkout and `PYTHONPATH` directly, so editable installation is convenient rather than mandatory.
 
 ## CLI examples
 
@@ -91,6 +94,9 @@ revenginstr-evidence-aggregate trace.jsonl \
   --receiver-inference receiver-inference.jsonl \
   --output evidence.jsonl
 revenginstr-family-mine dataset families.jsonl
+revenginstr-selective-train dataset families.jsonl model \
+  --task code_domain --classes game engine runtime_library media_library
+revenginstr-selective-infer model corpus.jsonl --output predictions.jsonl
 ```
 
 For an existing analyzed Ghidra project:
@@ -109,6 +115,8 @@ The Ghidra runners are `-readOnly -noanalysis`; they consume an existing analysi
 
 Function-family mining excludes headers from the portable view. New projects use the `revenginstr-v1` MinHash profile; Nevergone can request `nevergone-v1` to reproduce its historical seeds during migration.
 
+The selective classifier also trains only on the portable operation view. Family IDs are grouping/OOD metadata and labels are targets, never model features.
+
 ## Consumer contract
 
 Consumer repositories own:
@@ -122,4 +130,4 @@ Consumer repositories own:
 
 Cross-project model output is triage/OOD evidence, not semantic authority. Generic algorithms must not close a consumer's semantic proof gate on their own.
 
-See `docs/MIGRATION.md` for the extraction policy.
+See `docs/MIGRATION.md` for the extraction policy and `docs/SELECTIVE_CLASSIFIER.md` for the generic classifier contract.

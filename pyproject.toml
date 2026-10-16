@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "revenginstr"
-version = "0.1.0"
+version = "0.2.0"
 description = "Reusable reverse-engineering analysis tooling"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -15,6 +15,12 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+ml = [
+  "numpy>=1.26",
+  "scipy>=1.11",
+  "scikit-learn>=1.5",
+  "joblib>=1.3",
+]
 test = ["pytest>=8"]
 
 [project.scripts]
@@ -25,6 +31,8 @@ revenginstr-evidence-aggregate = "revenginstr.evidence.aggregate:main"
 revenginstr-receiver-plan = "revenginstr.receiver.plan:main"
 revenginstr-receiver-infer = "revenginstr.receiver.infer:main"
 revenginstr-family-mine = "revenginstr.family.mine:main"
+revenginstr-selective-train = "revenginstr.ml.selective:train_main"
+revenginstr-selective-infer = "revenginstr.ml.selective:infer_main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
