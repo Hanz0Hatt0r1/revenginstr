@@ -1,0 +1,808 @@
+# revenginstr Development Roadmap
+
+**Status:** active engineering plan  
+**Baseline date:** 2026-10-17  
+**Repository baseline:** `main` through `adb8fa8a5d7bdeeadfcad07f8789d6a5bfe4f84e`  
+**Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
+
+> This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
+
+## 1. North-star goal
+
+`revenginstr` should be able to take a supported native binary plus an already analyzed Ghidra project and produce a reproducible, auditable analysis package containing:
+
+1. canonical P-code and structural evidence;
+2. direct and indirect callgraph evidence;
+3. receiver/class/vtable hypotheses with provenance;
+4. code-domain and subsystem predictions where a model is available;
+5. function-level effect summaries;
+6. semantic role hypotheses and state/object relationships;
+7. calibrated `accept` / `review` / `escalate` decisions;
+8. a decision ledger explaining why every important automatic conclusion was reached;
+9. machine-readable artifacts consumable by decompilation/recompilation projects.
+
+The system must prefer abstention over fabricated certainty. Model output is never promoted to exact evidence. Unsupported shapes, conflicts, schema mismatches and distribution shift must fail closed.
+
+## 2. Current baseline
+
+`revenginstr` already owns a substantial project-neutral core:
+
+- architecture-normalized high-P-code export;
+- direct-call normalization and callgraph extraction;
+- receiver/type acquisition and conservative receiver inference;
+- ARM32 Itanium primary-vtable slot export;
+- function/instruction/P-code/address/reference/scalar/field-store evidence exporters;
+- program metadata indexing;
+- canonical P-code family mining;
+- family-grouped selective classification;
+- evidence-aware selective classification;
+- accept-error routing;
+- frozen validation and drift diagnostics;
+- stable schemas under `schemas/`;
+- generic runners under `scripts/`;
+- project-neutral tests under `tests/`.
+
+The main remaining gaps are not basic extraction. They are:
+
+- one canonical benchmark/control surface for the whole stack;
+- higher receiver/type coverage on hard unseen cases;
+- better classifier operating points at the game/engine boundary;
+- higher safe router coverage;
+- a reusable semantic/effect representation;
+- dependency-aware autonomous orchestration;
+- stronger cross-project validation.
+
+Reference measurements currently retained by the Nevergone consumer give the following planning baselines. They are consumer benchmark numbers, not hard-coded truths of this repository:
+
+| KPI | Reference baseline | Next gate | Stretch |
+| --- | ---: | ---: | ---: |
+| Classifier macro-F1 | ~0.765 | >=0.80 | >=0.83 |
+| `game` precision | ~0.42 broad / ~0.70 conservative | >=0.70 | >=0.75 |
+| `game` recall | ~0.71 broad / ~0.52 conservative | >=0.65 | >=0.70 |
+| Router accepted precision | ~0.974 | >=0.970 hard floor | >=0.975 |
+| Router coverage | ~0.44 current / ~0.58 earlier nested | >=0.55 | >=0.65 |
+| Exact vtable-slot mismatch | 0 on retained checks | 0 | 0 |
+| Totally-unseen receiver evidence coverage | low-20% range | >=35% | >=50% |
+| Semantic role macro-F1 | not canonical yet | >=0.75 | >=0.82 |
+| Autonomous supported-task resolution | not canonical yet | >=65% | >=80% |
+| Autonomous critical wrong-accept rate | not canonical yet | <2% | <1% |
+| Non-Nevergone validated consumers | 1 early consumer (NFS Shift) | >=2 | >=3 |
+
+## 3. Engineering rules
+
+### 3.1 Evidence classes remain distinct
+
+Every conclusion must retain whether it came from:
+
+- exact static evidence;
+- bounded runtime/native evidence supplied by a consumer;
+- inferred structural evidence;
+- learned/model prediction;
+- human label/review;
+- interventional probe.
+
+Derived evidence must retain lineage so correlated signals are not counted as independent confirmation.
+
+### 3.2 Project-neutral core only
+
+`revenginstr` may encode architecture, ABI, compiler, Ghidra, P-code, object-layout, vtable, callgraph, statistical and generic semantic concepts. It must not embed title-specific addresses, class names, offsets or semantic rules.
+
+### 3.3 Leakage-resistant ML
+
+Generic model input must exclude raw function identities and project fingerprints unless an experiment explicitly declares itself non-transferable. Evaluation must remain family-isolated and use frozen unseen/cross-project holdouts.
+
+### 3.4 Precision before coverage
+
+Automatic `accept` decisions have a hard precision floor. Coverage may increase only while safety metrics remain above their gate.
+
+### 3.5 Reproducible artifacts
+
+Every major stage should be able to emit:
+
+- input hashes/IDs;
+- schema/tool/model/config versions;
+- outputs and metrics;
+- failure/reason codes;
+- provenance references;
+- enough information to reproduce the decision.
+
+### 3.6 Fail closed
+
+Ambiguous joins, unsupported architecture/patterns, evidence conflicts, OOD inputs and incompatible schema versions become `review`, `escalate` or explicit failure states.
+
+---
+
+# 4. Milestone map
+
+| Milestone | Priority | Main result | Exit signal |
+| --- | --- | --- | --- |
+| M0 | P0 | Canonical benchmark and measurement layer | Clean checkout reproduces pinned smoke/full summaries |
+| M1 | P0 | Evidence/schema consolidation | Generic shared exporters cover >=95% of reusable evidence paths |
+| M2 | P0 | Receiver/type/vtable recovery v2 | >=35% unseen receiver coverage with zero exact-evidence regression |
+| M3 | P0 | Classifier v6 | Better calibrated game/engine boundary |
+| M4 | P0 | Router v9 | >=0.970 accepted precision and >=0.55 safe coverage |
+| M5 | P1 | Semantic Effect IR | Evidence-linked behavior/role summaries |
+| M6 | P1 | Autonomous analysis orchestrator | Bounded evidence acquisition and convergence |
+| M7 | P1/P2 | Cross-project productization | Stable reusable pipeline across multiple consumers |
+
+---
+
+# 5. M0 — Canonical benchmark and measurement layer
+
+## Goal
+
+Make every later change measurable against one versioned evaluation contract.
+
+## Work
+
+### M0.1 Benchmark manifest
+
+Add a project-neutral benchmark manifest format that pins:
+
+- corpus/schema versions;
+- consumer-provided dataset IDs/hashes;
+- split/family identities;
+- evidence artifact identities;
+- classifier/router configs;
+- expected metric names and gate policy.
+
+The manifest identifies proprietary consumer inputs by hash/path contract; it does not embed them.
+
+### M0.2 One-command benchmark runner
+
+Add a runner that can execute, in dependency order:
+
+1. schema/corpus validation;
+2. evidence aggregation;
+3. receiver inference evaluation;
+4. classifier evaluation;
+5. router evaluation;
+6. semantic evaluation when M5 exists;
+7. combined summary generation.
+
+Support `smoke` and `full` modes.
+
+### M0.3 Summary schema
+
+Standardize a machine-readable result with at least:
+
+- row counts and class distribution;
+- per-class precision/recall/F1;
+- macro-F1 and balanced accuracy;
+- confusion matrix;
+- coverage/abstention;
+- calibration bins;
+- receiver coverage;
+- exact-evidence mismatch count;
+- OOD/conflict/failure reason counts;
+- runtime/memory/artifact size.
+
+### M0.4 Determinism audit
+
+Provide a command that reruns deterministic stages and compares row selection, hashes, predictions, metrics and manifests.
+
+### M0.5 CI policy
+
+- per-PR unit/schema/synthetic smoke;
+- exporter parity tests for migration changes;
+- manually dispatched or scheduled heavier frozen benchmark;
+- metric deltas attached to behavior-changing PRs.
+
+## Exit criteria
+
+- Clean checkout reproduces the canonical smoke benchmark.
+- Full benchmark emits a pinned summary bundle.
+- Every ML metric bundle contains dataset/split/model identity.
+- Deterministic stages reproduce bit-for-bit or document bounded nondeterminism.
+- Schema mismatch fails closed.
+
+---
+
+# 6. M1 — Evidence and schema consolidation
+
+## Goal
+
+Finish the extraction of generic analysis logic into `revenginstr` and remove duplicated consumer implementations.
+
+## Work
+
+### M1.1 Exporter inventory
+
+Maintain an inventory of reusable exporters/runners classified as:
+
+- canonical in `revenginstr`;
+- canonical with thin consumer compatibility wrapper;
+- consumer-specific by design;
+- duplicate pending migration;
+- obsolete.
+
+### M1.2 Stable schema contracts
+
+For every stable evidence family document:
+
+- format/version;
+- required/optional fields;
+- normalization rules;
+- provenance fields;
+- ordering guarantees;
+- failure behavior;
+- compatibility policy.
+
+### M1.3 Synthetic/parity fixtures
+
+Every migrated exporter gets a legal synthetic or minimal fixture so parity can be tested without redistributing game binaries.
+
+### M1.4 Consumer boundary
+
+Consumers may own path discovery, proprietary joins, old-command compatibility and title-specific postprocessing. Generic parsing/recovery logic belongs here.
+
+### M1.5 Performance baselines
+
+Record representative wall time, peak memory and output size for whole-program exporters.
+
+## Exit criteria
+
+- >=95% of reusable evidence extraction in active consumers comes from shared primitives or thin wrappers.
+- Every migrated exporter has parity coverage.
+- Generic evidence formats have explicit version/provenance contracts.
+- No unexplained output drift between shared and compatibility paths.
+
+---
+
+# 7. M2 — Receiver/type/vtable recovery v2
+
+## Goal
+
+Increase hard unseen receiver coverage without weakening exact evidence safety.
+
+## Work
+
+### M2.1 Residual failure taxonomy
+
+Every unresolved receiver query receives one stable primary reason, including:
+
+- missing root provenance;
+- ambiguous PHI/MULTIEQUAL;
+- caller-argument propagation gap;
+- field load/store propagation gap;
+- singleton/default-instance gap;
+- factory-return gap;
+- nested/container object gap;
+- mixed receiver candidates;
+- missing vtable catalog entry;
+- slot ambiguity;
+- non-virtual `CALLIND`;
+- linker/veneer artifact;
+- P-code/decompiler limitation;
+- unsupported pattern.
+
+### M2.2 Receiver provenance graph
+
+Introduce a canonical graph IR whose nodes can represent parameters, locals, loads/stores, returns, call arguments, PHIs, globals, constructors/factories, singleton/default instances and vtable writes.
+
+Every edge carries provenance and evidence class.
+
+### M2.3 Bounded interprocedural propagation
+
+Add strict-budget propagation for:
+
+1. caller arguments;
+2. factory returns;
+3. getters/accessors;
+4. field stores to later field loads;
+5. constructor/vtable anchors.
+
+### M2.4 Ambiguity handling
+
+Distinguish same-type convergence, compatible subtype candidates, mixed candidates and partially unknown candidates. Mixed candidates are quarantined rather than collapsed for coverage.
+
+### M2.5 Candidate scoring
+
+Expose separate evidence dimensions instead of one opaque score:
+
+- exact vtable witness;
+- constructor/factory witness;
+- field/layout compatibility;
+- slot compatibility;
+- caller provenance;
+- callgraph consistency;
+- runtime witness supplied by a consumer.
+
+### M2.6 Frozen receiver benchmark
+
+Provide a reusable receiver evaluation harness that consumers can populate with sealed unseen cases.
+
+## Exit criteria
+
+Near-term:
+
+- >=35% useful receiver evidence coverage on a frozen unseen benchmark;
+- zero mismatches on exact vtable/runtime hard gates;
+- >=30% relative reduction in unsupported/unknown residuals without false confident convergence;
+- every unresolved row has an auditable reason code.
+
+Stretch: >=50% useful unseen coverage with no material rise in mixed-receiver false convergence.
+
+---
+
+# 8. M3 — Classifier v6
+
+## Goal
+
+Improve classification while keeping transferability, calibration and leakage resistance.
+
+## Work
+
+- per-class threshold and calibration sweeps;
+- error buckets for major confusion pairs;
+- evidence ablations for P-code, callgraph, receiver, field, external-call and family features;
+- coarse Effect-IR features once M5 begins;
+- calibration metrics/reliability data;
+- retained hard-negative sets;
+- explicit ID/OOD subgroup reporting.
+
+Audit-only identities may be used to understand errors but must not silently enter generic model input.
+
+## Exit criteria
+
+Near-term frozen-family targets:
+
+- macro-F1 >=0.80;
+- `game` precision >=0.70;
+- `game` recall >=0.65;
+- no unexplained >2 percentage-point regression in another major class;
+- reproducible calibrated confidence for routing.
+
+Stretch: macro-F1 >=0.83, game precision >=0.75, game recall >=0.70.
+
+---
+
+# 9. M4 — Selective router v9
+
+## Goal
+
+Safely automate more decisions than classifier confidence alone can support.
+
+## Inputs
+
+The router should combine independent signals such as:
+
+- calibrated classifier confidence/margin/entropy;
+- OOD/family distance;
+- receiver evidence quality;
+- callgraph support;
+- cross-model agreement;
+- evidence conflicts;
+- known failure bucket membership.
+
+## Required behavior
+
+- per-class acceptance policies;
+- hierarchical acceptance (coarse answer accepted while finer answer is reviewed);
+- conflict quarantine;
+- coverage decomposition by class, ID/OOD and evidence availability;
+- reason codes for every route;
+- a frozen routing gate not used for threshold tuning.
+
+## Exit criteria
+
+Hard gate:
+
+- accepted precision >=0.970;
+- coverage >=0.55;
+- critical false-accept rate <1%;
+- detected evidence conflicts never route to `accept`.
+
+Stretch: precision >=0.975 and coverage >=0.65.
+
+---
+
+# 10. M5 — Semantic Effect IR
+
+## Goal
+
+Move from structural/domain classification to auditable behavioral understanding.
+
+## M5.1 Effect IR schema
+
+Define a normalized function-level representation containing evidence-backed facts about:
+
+### Memory/object effects
+
+- parameter-derived field reads/writes;
+- global reads/writes;
+- candidate offsets/widths;
+- block copy/clear;
+- allocation/free/refcount-like behavior.
+
+### Call effects
+
+- internal/external and direct/indirect calls;
+- API categories;
+- callback registration/invocation;
+- factory/getter/setter-like patterns;
+- caller/callee neighborhood summaries.
+
+### Control effects
+
+- loops;
+- branch shape;
+- switch/state-machine patterns;
+- validation/fail paths;
+- retry/poll/update behavior.
+
+### Data effects
+
+- parser/decoder-like reads;
+- serializer-like writes;
+- hashing/comparison;
+- lookup/indexing;
+- math/coordinate transforms;
+- container iteration.
+
+### Type context
+
+- receiver candidates;
+- vtable/slot evidence;
+- constructor/destructor relationship;
+- layout compatibility;
+- neighboring methods sharing object evidence.
+
+Each field retains evidence lineage.
+
+## M5.2 Semantic role taxonomy
+
+Initial roles should remain bounded and multi-label-capable:
+
+- lifecycle/init/shutdown;
+- accessor/getter/setter;
+- constructor/destructor/factory;
+- parser/decoder/loader;
+- serializer/save writer;
+- state update/tick;
+- input handler;
+- render submission;
+- animation/action update;
+- physics/collision query;
+- combat/state transition;
+- resource lookup/cache;
+- callback/scheduler adapter;
+- network/media/runtime adapter;
+- utility/container/math;
+- unknown/compound.
+
+## M5.3 Structured summaries
+
+Generate a machine-readable summary first. Natural-language rendering may only restate claims present in that object.
+
+## M5.4 State-machine recovery
+
+Recover candidate state fields and transition graphs from repeated comparisons/writes, switch structure and cross-function field sharing, with confidence per edge.
+
+## M5.5 Object-role clustering
+
+Cluster methods using receiver, field, vtable, callgraph and Effect-IR similarity.
+
+## M5.6 Evaluation contract
+
+Provide a generic semantic-label schema. First consumer gold set target: >=500 functions, growing toward 1,000+ across projects.
+
+## Exit criteria
+
+- stable Effect IR schema;
+- role macro-F1 >=0.75 on a family-isolated consumer holdout;
+- >=90% audit acceptance for high-confidence structured summaries;
+- unsupported factual claims <5% in the high-confidence bucket;
+- every high-confidence claim linked to machine-readable evidence.
+
+Stretch: role macro-F1 >=0.82 and >=95% summary acceptance.
+
+---
+
+# 11. M6 — Autonomous analysis orchestrator
+
+## Goal
+
+Turn independent analyzers into a bounded iterative system that acquires the next useful evidence, invalidates dependent artifacts and converges or escalates.
+
+## Work
+
+### M6.1 Task graph
+
+Explicit dependencies, for example:
+
+`P-code -> callgraph -> receiver provenance -> vtable/slot -> Effect IR -> classifier -> semantic role -> router`.
+
+### M6.2 Evidence request planner
+
+For unresolved/high-value functions choose only from reviewed bounded actions, such as:
+
+- deeper P-code/function slice;
+- callers/callees;
+- field-store recovery;
+- constructor/vtable anchors;
+- consumer-provided bounded native probe;
+- neighboring family examples;
+- human review.
+
+The planner must never synthesize arbitrary executable probes on its own.
+
+### M6.3 Convergence states
+
+Standardize terminal states:
+
+- `accepted_exact`;
+- `accepted_high_confidence`;
+- `review_required`;
+- `escalated_conflict`;
+- `unsupported`;
+- `budget_exhausted`.
+
+### M6.4 Decision ledger
+
+Persist previous state, new state, evidence added, responsible rule/model, confidence delta and artifact references.
+
+### M6.5 Human feedback
+
+Generic feedback schema: confirmed, rejected, partially correct, ambiguous, needs-more-evidence. Feedback retains reviewer/provenance quality and does not automatically become training truth.
+
+### M6.6 Cost-aware prioritization
+
+Prioritize by downstream leverage, unresolved dispatches, graph centrality and expected uncertainty reduction.
+
+## Exit criteria
+
+First target on supported frozen tasks:
+
+- >=65% automatic resolution;
+- critical wrong-accept rate <2%;
+- >=50% reduction in human-review workload versus classifier-only triage;
+- deterministic decision ledger for every automatic resolution;
+- conflicts/OOD fail closed.
+
+Stretch: >=80% resolution, <1% critical wrong accepts and bounded convergence for >=95% of evaluated tasks.
+
+---
+
+# 12. M7 — Cross-project validation and productization
+
+## Goal
+
+Prove that `revenginstr` is generic rather than shaped around one consumer.
+
+## Work
+
+### M7.1 Cross-project matrix
+
+Validate on at least two additional binaries/projects varying compiler, symbols, engine/framework, optimization level, size and architecture where supported.
+
+### M7.2 Zero-semantic-adaptation run
+
+Run without title-specific semantic rules and record extraction success, receiver coverage, model/router behavior and semantic-summary audit quality.
+
+### M7.3 Adapter accounting
+
+Every consumer adapter is explicitly classified as:
+
+- path/input adapter;
+- schema conversion;
+- ABI/architecture adapter;
+- evidence source adapter;
+- semantic/domain rule.
+
+The count and complexity of semantic/domain rules is a generalization KPI.
+
+### M7.4 Distribution-shift report
+
+Detect drift in P-code features, size buckets, API categories, receiver evidence, calibration/confidence and family/OOD distance.
+
+### M7.5 Stable interfaces
+
+Define supported entry points for:
+
+- evidence extraction;
+- benchmark execution;
+- receiver inference;
+- classification/routing;
+- semantic analysis;
+- orchestration;
+- result/report generation.
+
+### M7.6 Documentation
+
+Provide install, Ghidra setup, first-analysis, schema, benchmark, adapter, confidence/evidence and failure-triage guides.
+
+## Exit criteria
+
+- generic pipeline validated on >=2 non-Nevergone targets;
+- no hidden Nevergone identity feature is required;
+- distribution shift is explicitly reported rather than silently trusted;
+- a new consumer can produce its first evidence + triage report through documented commands.
+
+---
+
+# 13. Evaluation and CI matrix
+
+| Test layer | Purpose | Required for |
+| --- | --- | --- |
+| Unit tests | parser/scorer/schema correctness | every logic change |
+| Synthetic Ghidra fixtures | exact behavior without proprietary inputs | exporter/recovery changes |
+| Exporter parity | shared vs compatibility output | migrations |
+| Consumer smoke | prevent downstream regressions | integration changes |
+| Family-grouped evaluation | prevent structural duplicate leakage | ML changes |
+| Frozen unseen benchmark | real generalization | receiver/classifier/router changes |
+| Exact receiver/vtable fixtures | safety hard gate | receiver changes |
+| Calibration/OOD evaluation | safe automation | classifier/router changes |
+| Semantic audit set | role/claim quality | M5+ |
+| Cross-project holdout | transfer | M7/release |
+| Determinism test | reproducibility | releases |
+| Performance benchmark | scalability | exporter/orchestrator changes |
+
+A behavior-changing PR should include before/after metrics or a pointer to the retained full benchmark artifact when the heavy benchmark is not suitable for PR CI.
+
+---
+
+# 14. Data and label strategy
+
+1. Keep source names, addresses, raw strings and title-local IDs in audit/trace artifacts unless a declared experiment intentionally studies them.
+2. Preserve evidence quality tiers with machine-readable reason codes.
+3. Do not manufacture negatives: unknown is not automatically `other`, `engine` or non-game.
+4. Prioritize manual evidence work on high-disagreement, high-centrality and repeated-family cases.
+5. Once a frozen set materially influences a new rule/threshold, retire it as the final untouched test and create a new sealed holdout.
+
+---
+
+# 15. PR-sized implementation sequence
+
+## P0 — immediate
+
+1. Canonical benchmark manifest schema.
+2. One-command benchmark runner.
+3. Machine-readable combined metric summary.
+4. Exporter/schema inventory.
+5. Receiver residual taxonomy v1.
+6. Frozen receiver coverage report.
+7. Classifier threshold/calibration sweep tooling.
+8. Classifier error-cluster report.
+9. Router evidence-aware reason codes and scoring inputs.
+10. Frozen router >=0.970 precision / >=0.55 coverage gate.
+11. Markdown + JSON KPI dashboard artifact.
+
+## P1 — after measurement is stable
+
+12. Receiver provenance graph IR.
+13. Interprocedural receiver propagation v1.
+14. Effect IR schema + extractor v1.
+15. Generic semantic-label/evaluation format.
+16. Structured function summary v1.
+17. Semantic role baseline.
+18. State-machine candidate detector.
+19. Object-role clustering.
+20. Analysis task graph/invalidation model.
+21. Decision ledger and convergence states.
+
+## P2 — autonomy and transfer
+
+22. Bounded evidence request planner.
+23. Human review feedback format.
+24. Cross-project holdout harness.
+25. Distribution-shift report.
+26. Stable top-level analysis CLI/result schema.
+27. Release-grade documentation and compatibility policy.
+
+---
+
+# 16. Recommended execution order
+
+### Wave A — measurement and safety
+
+M0 plus the highest-value M1 cleanup. No major semantic work should land without a benchmark capable of proving whether it helped.
+
+### Wave B — structural coverage
+
+M2: residual taxonomy, provenance graph, bounded interprocedural propagation, >=35% unseen receiver coverage, zero exact-evidence mismatches.
+
+### Wave C — classifier/router operating point
+
+M3 + M4: calibrated classifier and router >=0.970 precision / >=0.55 coverage.
+
+At the end of Wave C, `revenginstr` should qualify as a mature assisted reverse-engineering analysis core.
+
+### Wave D — semantic understanding
+
+M5: Effect IR, semantic gold/evaluation sets in consumers, structured summaries, roles, state/object recovery.
+
+### Wave E — autonomy
+
+M6: task graph, evidence planner, decision ledger, bounded convergence and >=65% automatic resolution on supported frozen tasks.
+
+### Wave F — transfer/productization
+
+M7: multiple independent consumers, drift handling, stable interfaces, project-adapter guide and release benchmark workflow.
+
+---
+
+# 17. Definition of done
+
+A `revenginstr` analysis feature is complete only when:
+
+1. input/output schema is explicit;
+2. evidence provenance is retained;
+3. unsupported inputs fail closed;
+4. unit/smoke coverage exists;
+5. relevant frozen evaluation shows no unacceptable regression;
+6. before/after metrics are retained when behavior changes;
+7. deterministic behavior is verified where expected;
+8. reproduction documentation exists;
+9. generic logic contains no unnecessary consumer-specific assumptions;
+10. downstream consumers can distinguish exact, inferred and learned evidence.
+
+---
+
+# 18. Major risks
+
+### Overfitting the toolchain to Nevergone
+
+Mitigation: project-neutral schemas, cross-project frozen tests, explicit adapters, early zero-semantic-adaptation runs.
+
+### Metric chasing against one frozen set
+
+Mitigation: retire contaminated holdouts and create new sealed tests; retain family and cross-project isolation.
+
+### Coverage pressure causes false accepts
+
+Mitigation: hard router precision floor, OOD/conflict quarantine, subgroup metrics and abstention-first policy.
+
+### Correlated evidence is treated as independent confirmation
+
+Mitigation: evidence lineage and common-upstream tracking.
+
+### Semantic labels become subjective
+
+Mitigation: structured effects/roles, ambiguity flags, reviewer agreement sampling and real `unknown/compound` states.
+
+### Schema migration breaks consumers
+
+Mitigation: versioned schemas, compatibility readers where justified, fixtures and fail-closed version checks.
+
+### Orchestration amplifies an early wrong hypothesis
+
+Mitigation: immutable decision ledger, evidence-class precedence, confidence caps and bounded passes.
+
+### Larger models hide structural weaknesses
+
+Mitigation: preserve heuristic/sparse baselines, feature ablations and evidence-linked structured outputs.
+
+---
+
+# 19. Success states
+
+## Assisted-analysis milestone
+
+- exact structural evidence remains regression-free;
+- unseen receiver coverage >=35%;
+- classifier macro-F1 >=0.80 with game precision >=0.70 and recall >=0.65 on an appropriate consumer benchmark;
+- router precision >=0.970 and coverage >=0.55;
+- accepted decisions are reproducible and provenance-linked.
+
+## Semantic-analysis milestone
+
+- stable Effect IR;
+- >=500 evidence-backed semantic functions across consumers;
+- semantic role macro-F1 >=0.75;
+- >=90% acceptance of high-confidence structured summaries;
+- state/object recovery validated across multiple independently understood subsystems.
+
+## Autonomous-analysis milestone
+
+- >=65% of supported frozen tasks resolve automatically;
+- critical wrong accepts <2%;
+- conflicts reliably escalate;
+- full evidence/decision chain is replayable;
+- at least two non-Nevergone consumers have measured transfer behavior.
+
+---
+
+# 20. Immediate next action
+
+Start with **M0.1 + M0.2**: add the canonical benchmark manifest and one-command benchmark runner. `revenginstr` already has enough mature extractors, inference code, classifiers, routers and validation utilities that the highest-leverage next improvement is a unified measurement/control surface. Once that exists, receiver, classifier, router and semantic work can advance against the same objective gates.
