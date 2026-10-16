@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-address-reference-owners-v1.schema.json",
+  "title": "REVENGINSTR.GhidraAddressReferenceOwner/1 TSV row",
+  "description": "One direct Ghidra reference to a caller-supplied address, with containing function identity metadata. Addresses and symbols are evidence from the selected Ghidra program.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "target_address", "target_block", "target_symbol", "reference_from",
+    "reference_type", "reference_source", "operand_index", "from_symbol",
+    "from_instruction", "containing_function_entry", "containing_function_name"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraAddressReferenceOwner/1"},
+    "target_address": {"type": "string", "minLength": 1},
+    "target_block": {"type": "string", "minLength": 1},
+    "target_symbol": {"type": "string", "minLength": 1},
+    "reference_from": {"type": "string", "minLength": 1},
+    "reference_type": {"type": "string", "minLength": 1},
+    "reference_source": {"type": "string", "minLength": 1},
+    "operand_index": {"type": "string", "pattern": "^(?:-|[0-9]+|-[0-9]+)$"},
+    "from_symbol": {"type": "string", "minLength": 1},
+    "from_instruction": {"type": "string", "minLength": 1},
+    "containing_function_entry": {"type": "string", "minLength": 1},
+    "containing_function_name": {"type": "string", "minLength": 1}
+  }
+}
