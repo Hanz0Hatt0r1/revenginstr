@@ -20,3 +20,10 @@ def test_bounded_pcode_exporters_are_generic_and_configurable() -> None:
         assert "--priority=" in source
         for consumer_term in ("Nevergone", "EnemyObject", "EnemyActionsSystem", "cocos2d::"):
             assert consumer_term not in source
+
+
+def test_single_function_pcode_exporter_matches_shared_fixture() -> None:
+    source = (ROOT / "ghidra/ExportFunctionPcodeFlow.java").read_text(encoding="utf-8")
+    fixture = (ROOT / "tests/fixtures/ghidra-function-pcode-flow.tsv").read_text(encoding="utf-8")
+    header = fixture.splitlines()[0]
+    assert header.replace("\t", "\\t") in source

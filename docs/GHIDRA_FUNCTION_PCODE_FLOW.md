@@ -18,6 +18,9 @@ Tabs separate columns. All values are strings except `op_time`, a decimal
 sequence number. Address and symbol cells reflect the selected input program;
 the exporter logic and row contract are project-neutral. Existing consumers can
 continue reading the metadata-only TSV without adding a format column.
+The synthetic row in `tests/fixtures/ghidra-function-pcode-flow.tsv` is shared by
+the single-function and bounded exporters and is validated against the row
+schema.
 
 Run the exporter against an already analyzed project:
 
