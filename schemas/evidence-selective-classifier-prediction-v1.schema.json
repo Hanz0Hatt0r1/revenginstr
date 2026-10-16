@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/evidence-selective-classifier-prediction-v1.schema.json",
+  "title": "REVENGINSTR.EvidenceSelectiveClassifier/1 prediction row",
+  "type": "object",
+  "required": [
+    "format",
+    "id",
+    "prediction",
+    "raw_confidence",
+    "confidence",
+    "confidence_source",
+    "action",
+    "accept_threshold",
+    "review_threshold",
+    "family_similarity",
+    "nearest_training_family",
+    "competing_similarity",
+    "nearest_competing_family",
+    "nearest_competing_label",
+    "contrast_margin",
+    "ood_accept_threshold",
+    "contrast_accept_threshold",
+    "evidence_token_count",
+    "external_evidence_present"
+  ],
+  "properties": {
+    "format": {
+      "const": "REVENGINSTR.EvidenceSelectiveClassifier/1"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "family_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task": {
+      "type": "string",
+      "minLength": 1
+    },
+    "truth": {
+      "type": "string"
+    },
+    "prediction": {
+      "type": "string",
+      "minLength": 1
+    },
+    "correct": {
+      "type": "boolean"
+    },
+    "raw_confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "confidence_source": {
+      "enum": [
+        "classwise",
+        "global_fallback"
+      ]
+    },
+    "action": {
+      "enum": [
+        "accept",
+        "review",
+        "escalate"
+      ]
+    },
+    "accept_threshold": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "review_threshold": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "family_similarity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "nearest_training_family": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "competing_similarity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "nearest_competing_family": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "nearest_competing_label": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "contrast_margin": {
+      "type": "number",
+      "minimum": -1,
+      "maximum": 1
+    },
+    "ood_accept_threshold": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "contrast_accept_threshold": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "probabilities": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      }
+    },
+    "evidence_token_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "external_evidence_present": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}

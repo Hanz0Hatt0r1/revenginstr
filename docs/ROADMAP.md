@@ -251,6 +251,17 @@ Maintain an inventory of reusable exporters/runners classified as:
 
 ### M1.2 Stable schema contracts
 
+**Complete (2026-10-17):**
+[`docs/SCHEMA_CONTRACTS.md`](SCHEMA_CONTRACTS.md) defines the shared versioning,
+wire, provenance, ordering, failure, and compatibility rules and indexes every
+schema currently published in `schemas/`. Closed schemas now cover the five
+legacy Program Index TSV tables and ARM32 vtable-slot TSV without changing
+exporter output. The index also covers P-code audit, foreign-guard,
+receiver-plan, function-family, selective classifier, evidence-aware
+classifier, and accept-error-router manifests and prediction records. Tests
+validate generated model, OOF, inference, and router artifacts against those
+contracts.
+
 For every stable evidence family document:
 
 - format/version;
@@ -838,10 +849,8 @@ Mitigation: preserve heuristic/sparse baselines, feature ablations and evidence-
 
 # 20. Immediate next action
 
-Continue with **M1.2**: document stable schema contracts for each generic
-evidence family. Start with the existing JSON Schemas and TSV exporters, record
-required/optional fields, normalization, provenance, ordering, failure and
-compatibility behavior, and add contract links to
-[`docs/EXPORTER_INVENTORY.md`](EXPORTER_INVENTORY.md). The benchmark and CI
-policy milestones now have shared schemas, replay checks and consumer-owned
-report retention.
+Continue with **M1.3**: expand synthetic/parity fixtures as shared exporter
+verticals migrate, keeping game binaries and labels consumer-owned. Keep the
+schema registry and generated-artifact checks current in every format change.
+The benchmark and CI policy milestones now have shared schemas, replay checks
+and consumer-owned report retention.

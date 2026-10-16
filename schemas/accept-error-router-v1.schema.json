@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/accept-error-router-v1.schema.json",
+  "title": "REVENGINSTR.AcceptErrorRouter/1 manifest",
+  "type": "object",
+  "required": ["format", "threshold", "classes", "evidence_keys", "base_feature_count", "meta_feature_count", "policy", "calibration", "leakage_policy"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.AcceptErrorRouter/1"},
+    "threshold": {"type": "number", "minimum": 0, "maximum": 1},
+    "classes": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "evidence_keys": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "base_feature_count": {"type": "integer", "minimum": 1},
+    "meta_feature_count": {"type": "integer", "minimum": 1},
+    "policy": {
+      "type": "object",
+      "required": ["scope", "below_threshold_action", "non_accept_action", "class_prediction_action", "promotions_allowed"],
+      "properties": {
+        "scope": {"const": "base_accept_only"},
+        "below_threshold_action": {"const": "escalate"},
+        "non_accept_action": {"const": "preserve"},
+        "class_prediction_action": {"const": "preserve"},
+        "promotions_allowed": {"const": false}
+      },
+      "additionalProperties": false
+    },
+    "calibration": {"$ref": "#/$defs/calibration"},
+    "leakage_policy": {"$ref": "#/$defs/leakagePolicy"}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "foldReport": {
+      "type": "object",
+      "required": ["fold", "fit_examples", "valid_examples", "valid_precision_at_0_5"],
+      "properties": {
+        "fold": {"type": "integer", "minimum": 1},
+        "fit_examples": {"type": "integer", "minimum": 1},
+        "valid_examples": {"type": "integer", "minimum": 1},
+        "valid_precision_at_0_5": {"type": "number", "minimum": 0, "maximum": 1}
+      },
+      "additionalProperties": false
+    },
+    "calibration": {
+      "type": "object",
+      "required": ["method", "training_feedback", "folds", "seed", "target_accept_precision", "max_accept_coverage_loss", "legacy_accept_examples", "kept_examples", "kept_precision", "kept_coverage", "candidate_count", "fold_reports"],
+      "properties": {
+        "method": {"const": "family_grouped_crossfit_oof_accepts"},
+        "training_feedback": {"const": false},
+        "folds": {"type": "integer", "minimum": 2},
+        "seed": {"type": "integer"},
+        "target_accept_precision": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "max_accept_coverage_loss": {"type": "number", "minimum": 0, "maximum": 1},
+        "legacy_accept_examples": {"type": "integer", "minimum": 1},
+        "kept_examples": {"type": "integer", "minimum": 1},
+        "kept_precision": {"type": "number", "minimum": 0, "maximum": 1},
+        "kept_coverage": {"type": "number", "minimum": 0, "maximum": 1},
+        "candidate_count": {"type": "integer", "minimum": 1},
+        "fold_reports": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/foldReport"}}
+      },
+      "additionalProperties": false
+    },
+    "leakagePolicy": {
+      "type": "object",
+      "required": ["family_grouped_crossfit", "raw_names_used", "addresses_used", "blocked_evidence_terms"],
+      "properties": {
+        "family_grouped_crossfit": {"const": true},
+        "raw_names_used": {"const": false},
+        "addresses_used": {"const": false},
+        "blocked_evidence_terms": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      },
+      "additionalProperties": false
+    }
+  }
+}

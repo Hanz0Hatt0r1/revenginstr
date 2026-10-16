@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-program-index-symbols-v1.schema.json",
+  "$comment": "Object representation of one UTF-8 TSV row. The exact header is defined in docs/GHIDRA_PROGRAM_INDEX.md; the wire cells are strings.",
+  "title": "REVENGINSTR.GhidraProgramIndex.Symbols/1 TSV row",
+  "type": "object",
+  "required": ["address", "name", "type", "source", "is_primary"],
+  "properties": {
+    "address": {"type": "string", "description": "Ghidra symbol address."},
+    "name": {"type": "string"},
+    "type": {"type": "string"},
+    "source": {"type": "string"},
+    "is_primary": {"enum": ["true", "false"]}
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,514 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/selective-classifier-v1.schema.json",
+  "title": "REVENGINSTR.SelectiveClassifier/1 manifest",
+  "type": "object",
+  "required": [
+    "format",
+    "task",
+    "classes",
+    "functions",
+    "families",
+    "prototype_families",
+    "class_distribution",
+    "dataset_fingerprint_sha256",
+    "representation",
+    "model",
+    "calibration",
+    "routing",
+    "leakage_policy"
+  ],
+  "properties": {
+    "format": {
+      "const": "REVENGINSTR.SelectiveClassifier/1"
+    },
+    "task": {
+      "type": "string",
+      "minLength": 1
+    },
+    "classes": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "functions": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "families": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "prototype_families": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "class_distribution": {
+      "$ref": "#/$defs/countMap"
+    },
+    "dataset_fingerprint_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "representation": {
+      "const": "portable_pcode_ops_only"
+    },
+    "model": {
+      "$ref": "#/$defs/model"
+    },
+    "calibration": {
+      "$ref": "#/$defs/calibration"
+    },
+    "routing": {
+      "$ref": "#/$defs/routing"
+    },
+    "leakage_policy": {
+      "$ref": "#/$defs/leakagePolicy"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "countMap": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "metricSummary": {
+      "type": "object",
+      "required": [
+        "accuracy",
+        "balanced_accuracy",
+        "macro_f1"
+      ],
+      "properties": {
+        "accuracy": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "balanced_accuracy": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "macro_f1": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "model": {
+      "type": "object",
+      "required": [
+        "kind",
+        "ngram_range",
+        "min_df",
+        "max_features",
+        "class_weight"
+      ],
+      "properties": {
+        "kind": {
+          "const": "tfidf_logistic_regression"
+        },
+        "ngram_range": {
+          "const": [
+            1,
+            2
+          ]
+        },
+        "min_df": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_features": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "class_weight": {
+          "const": "balanced"
+        }
+      },
+      "additionalProperties": false
+    },
+    "foldMetric": {
+      "type": "object",
+      "required": [
+        "fold",
+        "balanced_accuracy",
+        "macro_f1",
+        "examples",
+        "families"
+      ],
+      "properties": {
+        "fold": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "balanced_accuracy": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "macro_f1": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "examples": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "families": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "calibration": {
+      "type": "object",
+      "required": [
+        "kind",
+        "source",
+        "folds",
+        "seed",
+        "metrics",
+        "fold_metrics"
+      ],
+      "properties": {
+        "kind": {
+          "const": "predicted_class_isotonic_correctness_probability"
+        },
+        "source": {
+          "const": "family_grouped_oof"
+        },
+        "folds": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "metrics": {
+          "$ref": "#/$defs/metricSummary"
+        },
+        "fold_metrics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/foldMetric"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "classPolicy": {
+      "type": "object",
+      "required": [
+        "predicted_examples",
+        "oof_precision",
+        "confidence_calibrator",
+        "accept",
+        "review",
+        "accept_threshold",
+        "review_threshold",
+        "ood_accept",
+        "ood_accept_threshold",
+        "contrast_accept",
+        "contrast_accept_threshold",
+        "contrast_learned_threshold"
+      ],
+      "properties": {
+        "predicted_examples": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "oof_precision": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "confidence_calibrator": {
+          "enum": [
+            "classwise",
+            "global_fallback"
+          ]
+        },
+        "accept": {
+          "$ref": "#/$defs/probabilityThreshold"
+        },
+        "review": {
+          "$ref": "#/$defs/probabilityThreshold"
+        },
+        "accept_threshold": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "review_threshold": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "ood_accept": {
+          "$ref": "#/$defs/similarityThreshold"
+        },
+        "ood_accept_threshold": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "contrast_accept": {
+          "$ref": "#/$defs/signedThreshold"
+        },
+        "contrast_accept_threshold": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "contrast_learned_threshold": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "actionSummary": {
+      "type": "object",
+      "required": [
+        "examples",
+        "coverage",
+        "precision"
+      ],
+      "properties": {
+        "examples": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "coverage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "precision": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "routing": {
+      "type": "object",
+      "required": [
+        "kind",
+        "accept_target_precision",
+        "review_target_precision",
+        "class_policies",
+        "oof_action_counts",
+        "selective_oof"
+      ],
+      "properties": {
+        "kind": {
+          "const": "classwise_confidence_plus_contrastive_family_ood"
+        },
+        "accept_target_precision": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "review_target_precision": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "class_policies": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/classPolicy"
+          }
+        },
+        "oof_action_counts": {
+          "$ref": "#/$defs/countMap"
+        },
+        "selective_oof": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/actionSummary"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "leakagePolicy": {
+      "type": "object",
+      "required": [
+        "function_names_used",
+        "addresses_used",
+        "raw_headers_used",
+        "binary_identity_used",
+        "labels_used_as_model_features",
+        "family_grouped_calibration",
+        "family_grouped_ood_thresholds"
+      ],
+      "properties": {
+        "function_names_used": {
+          "const": false
+        },
+        "addresses_used": {
+          "const": false
+        },
+        "raw_headers_used": {
+          "const": false
+        },
+        "binary_identity_used": {
+          "const": false
+        },
+        "labels_used_as_model_features": {
+          "const": false
+        },
+        "family_grouped_calibration": {
+          "const": true
+        },
+        "family_grouped_ood_thresholds": {
+          "const": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "probabilityThreshold": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "threshold",
+            "precision",
+            "coverage",
+            "examples"
+          ],
+          "properties": {
+            "threshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "precision": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "coverage": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "examples": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "similarityThreshold": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "threshold",
+            "precision",
+            "coverage",
+            "examples"
+          ],
+          "properties": {
+            "threshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "precision": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "coverage": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "examples": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "signedThreshold": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "threshold",
+            "precision",
+            "coverage",
+            "examples"
+          ],
+          "properties": {
+            "threshold": {
+              "type": "number"
+            },
+            "precision": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "coverage": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "examples": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

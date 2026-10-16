@@ -71,7 +71,7 @@ def contrastive_family_scores(vectorizer, prototypes, texts: Iterable[str], pred
             if sims.size:
                 local = int(sims.argmax())
                 proto_index = predicted_indices[local]
-                predicted_similarity = float(sims[local])
+                predicted_similarity = min(1.0, max(0.0, float(sims[local])))
                 predicted_family = proto_families[proto_index]
 
         competing_similarity = 0.0
@@ -82,7 +82,7 @@ def contrastive_family_scores(vectorizer, prototypes, texts: Iterable[str], pred
             if sims.size:
                 local = int(sims.argmax())
                 proto_index = competing_indices[local]
-                competing_similarity = float(sims[local])
+                competing_similarity = min(1.0, max(0.0, float(sims[local])))
                 competing_family = proto_families[proto_index]
                 competing_label = proto_labels[proto_index]
 
