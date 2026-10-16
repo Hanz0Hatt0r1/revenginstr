@@ -9,7 +9,6 @@ description = "Reusable reverse-engineering analysis tooling"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{name = "Hanz0Hatt0r1"}]
-license = {text = "MIT"}
 classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: OS Independent",
