@@ -192,7 +192,11 @@ kept diagnostic and do not receive fabricated accuracy metrics.
 
 ### M0.4 Determinism audit
 
-Provide a command that reruns deterministic stages and compares row selection, hashes, predictions, metrics and manifests.
+`revenginstr-determinism-audit` reruns the selected benchmark stages twice with
+the same pinned inputs and isolated outputs. It compares stage results,
+artifact hashes (including row selection and predictions), metrics, projections
+and benchmark manifests, while excluding runtime and peak RSS. A versioned
+JSON report lists the differing paths and per-run artifact/metric hashes.
 
 ### M0.5 CI policy
 
@@ -818,4 +822,7 @@ Mitigation: preserve heuristic/sparse baselines, feature ablations and evidence-
 
 # 20. Immediate next action
 
-Continue with **M0.3**: project the existing classifier, receiver, router and validation reports into the combined summary schema, including class metrics, calibration, coverage and exact-evidence gates. The manifest and smoke/full runner now provide the shared control surface; this next step makes summaries comparable across benchmark consumers.
+Continue with **M0.5**: complete the benchmark CI policy with an explicit
+manual/scheduled heavy-benchmark entry point and a repeatable way to retain
+metric deltas for behavior-changing PRs. Unit, schema, synthetic benchmark and
+generic exporter boundary checks already run on every PR.
