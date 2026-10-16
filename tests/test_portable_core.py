@@ -62,6 +62,25 @@ def test_foreign_guard_is_monotone() -> None:
     assert summary["accept_retention"] == 1 / 3
 
 
+def test_foreign_guard_keeps_per_class_accept_thresholds() -> None:
+    rows = [{
+        "action": "accept",
+        "family_similarity": 0.75,
+        "contrast_margin": 0.10,
+        "ood_accept_threshold": 0.80,
+        "contrast_accept_threshold": 0.12,
+    }]
+    guarded, summary = apply_guard(rows, 0.70, 0.05)
+    assert guarded[0]["action"] == "review"
+    assert guarded[0]["foreign_similarity_floor"] == 0.80
+    assert guarded[0]["foreign_contrast_floor"] == 0.12
+    assert guarded[0]["foreign_guard_reasons"] == [
+        "family_similarity_below_floor",
+        "contrast_margin_below_floor",
+    ]
+    assert summary["promotions"] == 0
+
+
 def test_generic_exporter_has_project_neutral_contract() -> None:
     root = Path(__file__).resolve().parents[1]
     text = (root / "ghidra/PortablePcodeCorpusExporter.java").read_text(encoding="utf-8")
