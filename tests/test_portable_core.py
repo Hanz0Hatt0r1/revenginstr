@@ -8,26 +8,8 @@ from revenginstr.pcode.audit import build_report
 
 
 def sample_corpus() -> list[dict]:
-    return [
-        {
-            "format": "REVENGINSTR.PcodeCorpus/1",
-            "program": "sample.exe",
-            "source_entry": "00401000",
-            "source_name": "FUN_00401000",
-            "external": False,
-            "decompile_status": "ok",
-            "metrics": {"emitted_ops": 3, "truncated": False},
-            "model_text": (
-                "ARCH=X8632\nENDIAN=LE\nPTR_SIZE=4\nCALLCONV=__cdecl\n"
-                "PARAMS=1\nBODY_ADDRS_BUCKET=16-31\nOPS_BUCKET=2-3\n"
-                "CALLS_BUCKET=0\nINDIRECT_CALLS_BUCKET=0\nBRANCHES_BUCKET=0\n"
-                "LOADS_BUCKET=1\nSTORES_BUCKET=0\nTRUNCATED=0\n"
-                "o0 LOAD out=v0:4 addr=reg:4\n"
-                "o1 INT_ADD out=v1:4 in=v0:4 in=const:small:0x4:4\n"
-                "o2 RETURN ret=v1:4\n"
-            ),
-        }
-    ]
+    fixture = Path(__file__).resolve().parent / "fixtures/pcode-corpus/synthetic.jsonl"
+    return [json.loads(line) for line in fixture.read_text(encoding="utf-8").splitlines()]
 
 
 def test_portable_audit_passes_clean_corpus() -> None:
