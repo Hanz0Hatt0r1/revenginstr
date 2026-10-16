@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-function-instructions-v1.schema.json",
+  "title": "REVENGINSTR.GhidraFunctionInstructions/1 JSONL row",
+  "description": "Targeted Ghidra disassembly, control-flow, reference, and machine-P-code evidence for one function.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program", "requested", "resolved_address", "found", "function", "instruction_count", "instructions"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraFunctionInstructions/1"},
+    "program": {"type": "string"},
+    "requested": {"type": "string", "minLength": 1},
+    "resolved_address": {"type": ["string", "null"]},
+    "found": {"type": "boolean"},
+    "function": {
+      "oneOf": [
+        {"$ref": "#/$defs/function"},
+        {"type": "null"}
+      ]
+    },
+    "instruction_count": {"type": "integer", "minimum": 0},
+    "instructions": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/instruction"}
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"found": {"const": true}}},
+      "then": {"properties": {"function": {"$ref": "#/$defs/function"}}}
+    },
+    {
+      "if": {"properties": {"found": {"const": false}}},
+      "then": {
+        "properties": {
+          "function": {"type": "null"},
+          "instruction_count": {"const": 0},
+          "instructions": {"maxItems": 0}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "function": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["address", "name", "size", "calling_convention"],
+      "properties": {
+        "address": {"type": "string", "minLength": 1},
+        "name": {"type": "string"},
+        "size": {"type": "integer", "minimum": 0},
+        "calling_convention": {"type": ["string", "null"]}
+      }
+    },
+    "varnode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "space", "offset", "size", "constant", "register", "unique"],
+      "properties": {
+        "text": {"type": "string"},
+        "space": {"type": ["string", "null"]},
+        "offset": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"},
+        "size": {"type": "integer", "minimum": 0},
+        "constant": {"type": "boolean"},
+        "register": {"type": "boolean"},
+        "unique": {"type": "boolean"}
+      }
+    },
+    "pcode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["opcode", "text", "output", "inputs"],
+      "properties": {
+        "opcode": {"type": "string", "minLength": 1},
+        "text": {"type": "string"},
+        "output": {
+          "oneOf": [
+            {"$ref": "#/$defs/varnode"},
+            {"type": "null"}
+          ]
+        },
+        "inputs": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/varnode"}
+        }
+      }
+    },
+    "instruction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["address", "bytes", "mnemonic", "text", "operands", "flow_type", "fallthrough", "flows", "references", "pcode"],
+      "properties": {
+        "address": {"type": "string", "minLength": 1},
+        "bytes": {"type": "string", "pattern": "^(?:[0-9a-fA-F]{2})+$"},
+        "mnemonic": {"type": "string", "minLength": 1},
+        "text": {"type": "string", "minLength": 1},
+        "operands": {"type": "array", "items": {"type": "string"}},
+        "flow_type": {"type": "string"},
+        "fallthrough": {"type": ["string", "null"]},
+        "flows": {"type": "array", "items": {"type": "string"}},
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["to", "type"],
+            "properties": {
+              "to": {"type": ["string", "null"]},
+              "type": {"type": "string"}
+            }
+          }
+        },
+        "pcode": {"type": "array", "items": {"$ref": "#/$defs/pcode"}}
+      }
+    }
+  }
+}
