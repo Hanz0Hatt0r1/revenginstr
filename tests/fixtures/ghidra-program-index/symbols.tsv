@@ -1,0 +1,2 @@
+address	name	type	source	is_primary
+ram:00001000	FUN_00001000	Function	DEFAULT	true

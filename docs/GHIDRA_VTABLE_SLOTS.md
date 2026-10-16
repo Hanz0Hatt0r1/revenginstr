@@ -30,6 +30,10 @@ Invalid bounds or headless execution errors fail the command. A table with no
 resolved slots is a valid header-only output. The TSV header and row meanings
 are fixed for v1; incompatible changes require a new schema/version.
 
+`tests/fixtures/ghidra-arm32-vtable-slots.tsv` contains a synthetic decoded row
+for contract validation and consumer adapter parity; it has no binary-derived
+addresses or labels.
+
 ```sh
 GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_vtable_slots.sh \
   /path/to/project project-name program-name /tmp/vtables.tsv.gz 0x400

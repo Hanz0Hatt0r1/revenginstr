@@ -1,0 +1,2 @@
+entry	name	address_count	is_external	signature
+ram:00001000	FUN_00001000	1	false	int FUN_00001000(void)
