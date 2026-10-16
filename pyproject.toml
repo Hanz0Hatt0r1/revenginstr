@@ -21,6 +21,7 @@ test = ["pytest>=8"]
 revenginstr-pcode-audit = "revenginstr.pcode.audit:main"
 revenginstr-foreign-guard = "revenginstr.ood.foreign_guard:main"
 revenginstr-callgraph = "revenginstr.evidence.callgraph:main"
+revenginstr-evidence-aggregate = "revenginstr.evidence.aggregate:main"
 revenginstr-receiver-plan = "revenginstr.receiver.plan:main"
 revenginstr-receiver-infer = "revenginstr.receiver.infer:main"
 
