@@ -3,6 +3,10 @@
 The audit compares prediction/action distributions, confidence/OOD features,
 accept-router intervention rates and evidence-key coverage. It is diagnostic only:
 it never converts an unlabeled frozen set into a semantic accuracy estimate.
+
+Consumers with historical routing lineage may overlay a retained base-action file
+by id. This keeps experiment-specific action names/versions outside the generic
+core while allowing exact drift parity against old deployment baselines.
 """
 from __future__ import annotations
 
@@ -45,6 +49,49 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
                 raise ValueError(f"{path}:{line_no}: expected JSON object")
             rows.append(row)
     return rows
+
+
+def overlay_reference_base_actions(
+    reference_rows: list[dict[str, Any]],
+    action_rows: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Overlay consumer-retained base actions by id without changing predictions.
+
+    Companion rows may expose either ``base_action`` or ``action``. The companion
+    population must match the reference population exactly; drift parity fails
+    closed instead of silently dropping historical routing rows.
+    """
+    by_id: dict[str, str] = {}
+    for row in action_rows:
+        record_id = row.get("id")
+        action = row.get("base_action", row.get("action"))
+        if not isinstance(record_id, str) or not record_id:
+            raise ValueError("reference base-action row missing id")
+        if not isinstance(action, str) or not action:
+            raise ValueError(f"reference base-action row {record_id}: missing base_action/action")
+        if record_id in by_id:
+            raise ValueError(f"duplicate reference base-action id: {record_id}")
+        by_id[record_id] = action
+
+    reference_ids: set[str] = set()
+    output: list[dict[str, Any]] = []
+    for row in reference_rows:
+        record_id = row.get("id")
+        if not isinstance(record_id, str) or not record_id:
+            raise ValueError("reference classified row missing id")
+        if record_id in reference_ids:
+            raise ValueError(f"duplicate reference classified id: {record_id}")
+        reference_ids.add(record_id)
+        if record_id not in by_id:
+            raise ValueError(f"reference base-action companion missing id: {record_id}")
+        payload = dict(row)
+        payload["base_action"] = by_id[record_id]
+        output.append(payload)
+
+    extras = sorted(set(by_id) - reference_ids)
+    if extras:
+        raise ValueError(f"reference base-action companion has {len(extras)} extra ids; first={extras[0]}")
+    return output
 
 
 def quantile(values: list[float], q: float) -> float | None:
@@ -194,8 +241,10 @@ def _manifest_router_stats(manifest: dict[str, Any] | None) -> tuple[int, int] |
 def _routed_reference_actions(
     reference_rows: list[dict[str, Any]],
     router_stats: tuple[int, int] | None,
+    *,
+    actual_router_stats: tuple[int, int] | None,
 ) -> list[str]:
-    if any("base_action" in row for row in reference_rows):
+    if actual_router_stats is not None:
         return [str(row.get("action")) for row in reference_rows]
     if router_stats is None:
         return [str(row.get("action")) for row in reference_rows]
@@ -271,7 +320,8 @@ def audit_drift(
 
     reference_accept = [row for row in reference_rows if _base_action(row) == "accept"]
     frozen_accept = [row for row in frozen_rows if _base_action(row) == "accept"]
-    reference_router = _actual_router_stats(reference_rows) or _manifest_router_stats(router_manifest)
+    actual_reference_router = _actual_router_stats(reference_rows)
+    reference_router = actual_reference_router or _manifest_router_stats(router_manifest)
     frozen_router = _actual_router_stats(frozen_rows)
 
     if reference_router is None:
@@ -330,7 +380,11 @@ def audit_drift(
                 (_base_action(row) for row in frozen_rows),
             ),
             "routed_action": distribution_payload(
-                _routed_reference_actions(reference_rows, reference_router),
+                _routed_reference_actions(
+                    reference_rows,
+                    reference_router,
+                    actual_router_stats=actual_reference_router,
+                ),
                 (str(row.get("action")) for row in frozen_rows),
             ),
         },
@@ -369,6 +423,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("reference_classified", type=Path)
     parser.add_argument("frozen_classified", type=Path)
+    parser.add_argument("--reference-base-actions", type=Path)
     parser.add_argument("--reference-evidence", type=Path)
     parser.add_argument("--frozen-evidence", type=Path)
     parser.add_argument("--router-manifest", type=Path)
@@ -378,6 +433,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     reference_rows = read_jsonl(args.reference_classified)
+    if args.reference_base_actions is not None:
+        reference_rows = overlay_reference_base_actions(
+            reference_rows,
+            read_jsonl(args.reference_base_actions),
+        )
     frozen_rows = read_jsonl(args.frozen_classified)
     reference_evidence = load_evidence(args.reference_evidence)
     frozen_evidence = load_evidence(args.frozen_evidence)
