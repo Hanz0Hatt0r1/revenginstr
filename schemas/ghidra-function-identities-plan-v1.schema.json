@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-function-identities-plan-v1.schema.json",
+  "title": "REVENGINSTR.GhidraFunctionIdentitiesPlan/1 TSV row",
+  "description": "A consumer-supplied plan key, requested address, and function resolution policy.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["plan_id", "requested_entry", "resolution"],
+  "properties": {
+    "plan_id": {"type": "string", "minLength": 1},
+    "requested_entry": {"type": "string", "minLength": 1},
+    "resolution": {"enum": ["exact", "containing"]}
+  }
+}
