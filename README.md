@@ -19,6 +19,7 @@ The repository now owns these generic mechanisms:
 - portable P-code function-family mining with deterministic MinHash/LSH;
 - family-grouped selective classification with calibrated correctness confidence and contrastive family OOD;
 - optional evidence-aware selective classification using `REVENGINSTR.Evidence/1`;
+- group-safe accept-error meta routing that can only demote an already accepted prediction;
 - compatibility hash profile for historical Nevergone family groups.
 
 Stable component formats currently include:
@@ -35,6 +36,7 @@ REVENGINSTR.Evidence/1
 REVENGINSTR.FunctionFamilies/1
 REVENGINSTR.SelectiveClassifier/1
 REVENGINSTR.EvidenceSelectiveClassifier/1
+REVENGINSTR.AcceptErrorRouter/1
 ```
 
 ## Boundary
@@ -58,7 +60,7 @@ src/revenginstr/ood/           cross-project safety guards
 src/revenginstr/evidence/      callgraph + structural + aggregated evidence
 src/revenginstr/receiver/      receiver planning/inference
 src/revenginstr/family/        portable family features/mining
-src/revenginstr/ml/            project-neutral selective classifiers
+src/revenginstr/ml/            selective classifiers + accept routing
 schemas/                       stable data contracts
 tests/                         project-neutral tests
 docs/                          architecture/migration notes
@@ -105,6 +107,10 @@ revenginstr-evidence-selective-train dataset families.jsonl model-v2 \
   --task code_domain --classes game engine runtime_library media_library
 revenginstr-evidence-selective-infer model-v2 corpus.jsonl \
   --evidence evidence.jsonl --output predictions-v2.jsonl
+revenginstr-accept-router-train model-v2/oof_predictions.jsonl model-v2/accept-router \
+  --evidence evidence.jsonl --target-accept-precision 0.97
+revenginstr-accept-router-apply model-v2/accept-router predictions-v2.jsonl \
+  --evidence evidence.jsonl --output predictions-routed.jsonl
 ```
 
 For an existing analyzed Ghidra project:
@@ -125,6 +131,8 @@ Function-family mining excludes headers from the portable view. New projects use
 
 The P-code-only selective classifier trains only on the portable operation view. The evidence-aware variant additionally receives deterministic structural summaries and coarse bucketed numeric `REVENGINSTR.Evidence/1` features. Family IDs are grouping/OOD metadata and labels are targets, never model features.
 
+The accept-error router is trained only on base-classifier OOF rows that were already accepted. It uses base probabilities, family-similarity/contrast signals, predicted-class identity and sanitized numeric evidence. It can preserve or demote an accept, never promote review/escalate. If base OOF rows do not carry an explicit fold, meta folds are derived deterministically from `family_id` so families remain isolated.
+
 ## Consumer contract
 
 Consumer repositories own:
@@ -138,4 +146,4 @@ Consumer repositories own:
 
 Cross-project model output is triage/OOD evidence, not semantic authority. Generic algorithms must not close a consumer's semantic proof gate on their own.
 
-See `docs/MIGRATION.md`, `docs/SELECTIVE_CLASSIFIER.md` and `docs/EVIDENCE_SELECTIVE_CLASSIFIER.md`.
+See `docs/MIGRATION.md`, `docs/SELECTIVE_CLASSIFIER.md`, `docs/EVIDENCE_SELECTIVE_CLASSIFIER.md` and `docs/ACCEPT_ERROR_ROUTER.md`.
