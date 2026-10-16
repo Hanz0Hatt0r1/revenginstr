@@ -47,8 +47,8 @@ REVENGINSTR.DriftAudit/1
 ```
 
 JSON Schemas in `schemas/` define the portable P-code corpus, callgraph metrics,
-and aggregated evidence records. Source identifiers remain join metadata; evidence
-features are numeric or boolean, project-neutral summaries.
+receiver inference and aggregated evidence records. Source identifiers remain join
+metadata; evidence features are numeric or boolean, project-neutral summaries.
 
 ## Boundary
 

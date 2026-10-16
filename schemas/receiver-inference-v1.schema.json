@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/receiver-inference-v1.schema.json",
+  "title": "REVENGINSTR.ReceiverInference/1 record",
+  "description": "Conservative receiver identity evidence joined to a consumer-owned catalog. It does not infer dispatch slots or authorize routing changes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "source_id", "source_entry", "call_index", "call_address",
+    "dispatch_slot_offset", "slot_evidence_present", "resolution_scope",
+    "receiver_type_evidence_present", "receiver_type_format", "receiver_type_name",
+    "receiver_type_display", "receiver_pointer_depth", "pointee_type_name",
+    "pointee_type_display", "receiver_storage_kind", "flow_type_node_count",
+    "flow_single_pointer_pointee_names", "flow_single_pointer_pointee_displays",
+    "class_name", "class_match_kind", "class_evidence_source",
+    "candidate_receiver_class_names", "candidate_receiver_vtable_ids",
+    "receiver_vtable_id", "affects_routing", "target_transfer_scope",
+    "cross_vtable_transfer_allowed", "cross_class_transfer_allowed", "status"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.ReceiverInference/1"},
+    "source_id": {"type": "string", "minLength": 1},
+    "source_entry": {"type": "string", "minLength": 1},
+    "call_index": {"type": "integer", "minimum": 0},
+    "call_address": {"type": ["string", "null"]},
+    "dispatch_slot_offset": {"type": "null"},
+    "slot_evidence_present": {"const": false},
+    "resolution_scope": {"const": "receiver_identity_only_no_dispatch_slot"},
+    "receiver_type_evidence_present": {"const": true},
+    "receiver_type_format": {"type": ["string", "null"]},
+    "receiver_type_name": {"type": ["string", "null"]},
+    "receiver_type_display": {"type": ["string", "null"]},
+    "receiver_pointer_depth": {"type": "integer", "minimum": 0},
+    "pointee_type_name": {"type": ["string", "null"]},
+    "pointee_type_display": {"type": ["string", "null"]},
+    "receiver_storage_kind": {"type": ["string", "null"]},
+    "flow_type_node_count": {"type": "integer", "minimum": 0},
+    "flow_single_pointer_pointee_names": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "flow_single_pointer_pointee_displays": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "class_name": {"type": ["string", "null"]},
+    "class_match_kind": {
+      "enum": [
+        null,
+        "exact_catalog_class_name",
+        "unique_terminal_class_name",
+        "transparent_flow_exact_catalog_class_name",
+        "transparent_flow_unique_terminal_class_name"
+      ]
+    },
+    "class_evidence_source": {
+      "enum": [null, "direct_receiver_type", "transparent_type_flow"]
+    },
+    "candidate_receiver_class_names": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true
+    },
+    "candidate_receiver_vtable_ids": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true
+    },
+    "receiver_vtable_id": {"type": ["string", "null"]},
+    "affects_routing": {"const": false},
+    "target_transfer_scope": {"const": "disabled_without_dispatch_slot"},
+    "cross_vtable_transfer_allowed": {"const": false},
+    "cross_class_transfer_allowed": {"const": false},
+    "status": {
+      "enum": [
+        "receiver_not_single_pointer",
+        "unresolved_receiver_class",
+        "ambiguous_receiver_class",
+        "ambiguous_class_vtable",
+        "resolved_unique_vtable"
+      ]
+    }
+  }
+}
