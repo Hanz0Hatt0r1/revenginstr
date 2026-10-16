@@ -19,6 +19,7 @@ The repository now owns these generic mechanisms:
 - targeted data and direct-reference export for caller-selected Ghidra addresses;
 - targeted listing, memory-block, symbol and function metadata export by address;
 - bounded High-P-code indirect-call target evidence;
+- read-only full-program metadata indexing for functions, symbols, strings, references and direct calls;
 - targeted machine-instruction, control-flow, reference and P-code export from Ghidra;
 - targeted numeric-operand and referenced-scalar export from Ghidra;
 - conservative receiver class/vtable identity inference from consumer-owned catalogs;
@@ -82,6 +83,9 @@ docs/GHIDRA_ADDRESS_METADATA.md.
 
 The generic indirect-call evidence export is documented in
 docs/GHIDRA_INDIRECT_CALL_EVIDENCE.md.
+
+The generic Ghidra program metadata index is documented in
+docs/GHIDRA_PROGRAM_INDEX.md.
 
 The generic address-reference exporter is documented in
 docs/GHIDRA_ADDRESS_REFERENCES.md.
