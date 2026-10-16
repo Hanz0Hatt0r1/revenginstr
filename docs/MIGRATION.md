@@ -36,8 +36,8 @@ REVENGINSTR.Evidence/1
 REVENGINSTR.ReceiverInference/1
 ```
 
-JSON Schemas for `PcodeCorpus/1`, `CallGraphMetrics/1`, `Evidence/1` and
-`ReceiverInference/1` live in `schemas/`; source identifiers are join metadata,
+JSON Schemas for `PcodeCorpus/1`, `CallGraphMetrics/1`, receiver type/inference
+records, and `Evidence/1` live in `schemas/`; source identifiers are join metadata,
 while evidence feature values remain numeric or boolean and project-neutral.
 
 Nevergone experiment names such as v5.4/v9/v10 remain historical evaluation/model lineage, not public toolkit API versions.
