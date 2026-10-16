@@ -16,13 +16,15 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install
-        run: python -m pip install -e '.[test]'
+        run: python -m pip install -e '.[test,ml]'
       - name: Compile Python
         run: python -m compileall -q src tests
       - name: Test
         run: pytest -q
       - name: Validate shell syntax
-        run: bash -n scripts/run_ghidra_pcode_export.sh
+        run: |
+          bash -n scripts/run_ghidra_pcode_export.sh
+          bash -n scripts/run_ghidra_receiver_types.sh
       - name: Validate generic exporter contract
         run: |
           python - <<'PY'
@@ -33,4 +35,14 @@ jobs:
           assert 'Nevergone' not in text
           assert 'SHIFT' not in text
           print('generic exporter contract: OK')
+          PY
+      - name: Validate selective classifier boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('src/revenginstr/ml/selective.py').read_text()
+          assert 'REVENGINSTR.SelectiveClassifier/1' not in text or 'SELECTIVE_CLASSIFIER_FORMAT' in text
+          for forbidden in ('GameScene', 'HDVehicle', 'manager+0x374'):
+              assert forbidden not in text
+          print('selective classifier boundary: OK')
           PY
