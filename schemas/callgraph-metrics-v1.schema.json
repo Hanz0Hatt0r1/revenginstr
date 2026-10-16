@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/callgraph-metrics-v1.schema.json",
+  "title": "REVENGINSTR.CallGraphMetrics/1 record",
+  "type": "object",
+  "required": ["format", "id", "source_entry", "metrics"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.CallGraphMetrics/1"},
+    "id": {"type": "string", "minLength": 1},
+    "source_entry": {"type": "string", "minLength": 1},
+    "metrics": {
+      "type": "object",
+      "additionalProperties": {"type": ["number", "null"]}
+    }
+  }
+}
