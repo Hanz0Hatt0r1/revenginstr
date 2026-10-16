@@ -30,4 +30,11 @@ TMP_SCRIPT_DIR=$(mktemp -d)
 trap 'rm -rf -- "$TMP_SCRIPT_DIR"' EXIT
 cp "$ROOT/ghidra/ExportGhidraParameterStoreField.java" "$TMP_SCRIPT_DIR/ExportGhidraParameterStoreField.java"
 
-"$ANALYZE"   "$PROJECT_DIR" "$PROJECT_NAME"   -process "$PROGRAM_NAME"   -readOnly   -noanalysis   -scriptPath "$TMP_SCRIPT_DIR"   -postScript ExportGhidraParameterStoreField.java "$FUNCTION" "$OUTPUT"
+"$ANALYZE" \
+  "$PROJECT_DIR" "$PROJECT_NAME" \
+  -recursive \
+  -process "$PROGRAM_NAME" \
+  -readOnly \
+  -noanalysis \
+  -scriptPath "$TMP_SCRIPT_DIR" \
+  -postScript ExportGhidraParameterStoreField.java "$FUNCTION" "$OUTPUT"

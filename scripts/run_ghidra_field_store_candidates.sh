@@ -36,6 +36,7 @@ cp "$ROOT/ghidra/ExportGhidraFieldStoreCandidates.java" "$TMP_SCRIPT_DIR/ExportG
 
 "$ANALYZE" \
   "$PROJECT_DIR" "$PROJECT_NAME" \
+  -recursive \
   -process "$PROGRAM_NAME" \
   -readOnly \
   -noanalysis \

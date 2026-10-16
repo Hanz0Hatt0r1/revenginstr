@@ -62,6 +62,7 @@ def test_generic_parameter_store_export_contract() -> None:
 
 def test_parameter_store_runner_is_read_only_and_isolated() -> None:
     runner = (ROOT / "scripts/run_ghidra_parameter_store_field.sh").read_text(encoding="utf-8")
+    assert "-recursive" in runner
     assert "-readOnly" in runner
     assert "-noanalysis" in runner
     assert "mktemp -d" in runner
