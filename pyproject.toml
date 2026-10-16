@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "revenginstr"
+version = "0.1.0"
+description = "Reusable reverse-engineering analysis tooling"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "Hanz0Hatt0r1"}]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[project.scripts]
+revenginstr-pcode-audit = "revenginstr.pcode.audit:main"
+revenginstr-foreign-guard = "revenginstr.ood.foreign_guard:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

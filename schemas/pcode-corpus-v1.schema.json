@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/pcode-corpus-v1.schema.json",
+  "title": "REVENGINSTR.PcodeCorpus/1 record",
+  "type": "object",
+  "required": ["format", "program", "source_entry", "source_name", "external", "decompile_status"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.PcodeCorpus/1"},
+    "program": {"type": "string"},
+    "source_entry": {"type": "string"},
+    "source_name": {"type": "string"},
+    "external": {"type": "boolean"},
+    "decompile_status": {"enum": ["ok", "failed"]},
+    "error": {"type": "string"},
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "ops": {"type": "integer", "minimum": 0},
+        "emitted_ops": {"type": "integer", "minimum": 0, "maximum": 256},
+        "calls": {"type": "integer", "minimum": 0},
+        "indirect_calls": {"type": "integer", "minimum": 0},
+        "branches": {"type": "integer", "minimum": 0},
+        "loads": {"type": "integer", "minimum": 0},
+        "stores": {"type": "integer", "minimum": 0},
+        "truncated": {"type": "boolean"}
+      },
+      "additionalProperties": true
+    },
+    "model_text": {"type": "string"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"decompile_status": {"const": "ok"}}},
+      "then": {"required": ["metrics", "model_text"]}
+    }
+  ],
+  "additionalProperties": true
+}
