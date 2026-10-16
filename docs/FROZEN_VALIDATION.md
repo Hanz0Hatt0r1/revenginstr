@@ -121,6 +121,35 @@ revenginstr-drift-audit \
   --output validation/unseen500/drift.json
 ```
 
+### Retained historical action baselines
+
+A consumer may have a historical routing baseline whose actions are not identical
+to the `action` field in the retained classifier OOF file. To reproduce drift
+statistics without teaching the generic core about experiment names or versions,
+provide a companion JSONL containing the exact same ids and either `base_action` or
+`action`:
+
+```bash
+revenginstr-drift-audit \
+  historical/base-oof.jsonl \
+  historical/frozen-routed.jsonl \
+  --reference-base-actions historical/base-actions.jsonl \
+  --router-manifest historical/router/manifest.json \
+  --reference-evidence historical/evidence.jsonl \
+  --frozen-evidence historical/frozen-evidence.jsonl \
+  --output historical/drift-reproduced.json
+```
+
+The companion population must match the reference population exactly. Missing,
+duplicate or extra ids fail closed. When the reference rows do not themselves
+contain `accept_router_changed`, the router manifest supplies the retained number of
+accepted rows demoted by the historical router; routed-action distribution is then
+reconstructed from the overlaid baseline counts without inventing row-level
+correctness.
+
+This mechanism is intended for migration/parity and long-lived experiment lineage.
+It remains project-neutral: the consumer owns how a historical action is extracted.
+
 The audit reports:
 
 - Jensen-Shannon divergence for prediction/base-action/routed-action distributions;
