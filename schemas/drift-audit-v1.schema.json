@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/drift-audit-v1.schema.json",
+  "title": "REVENGINSTR.DriftAudit/1 report",
+  "type": "object",
+  "required": [
+    "format",
+    "labels_available",
+    "reference_rows",
+    "frozen_rows",
+    "categorical_shift",
+    "router_intervention",
+    "numeric_shift_all",
+    "numeric_shift_base_accept",
+    "evidence_shift",
+    "severity",
+    "note"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.DriftAudit/1"},
+    "labels_available": {"const": false},
+    "reference_rows": {"type": "integer", "minimum": 1},
+    "frozen_rows": {"type": "integer", "minimum": 1},
+    "categorical_shift": {
+      "type": "object",
+      "required": ["prediction", "base_action", "routed_action"],
+      "additionalProperties": {"$ref": "#/$defs/distribution_shift"}
+    },
+    "router_intervention": {"type": "object"},
+    "numeric_shift_all": {"type": "object"},
+    "numeric_shift_base_accept": {"type": "object"},
+    "evidence_shift": {
+      "type": "object",
+      "required": ["reference_rows", "frozen_rows", "core", "top_feature_coverage_shifts"]
+    },
+    "severity": {
+      "type": "object",
+      "required": ["level", "diagnostic_only", "thresholds", "observed"],
+      "properties": {
+        "level": {"enum": ["low", "moderate", "high"]},
+        "diagnostic_only": {"const": true}
+      },
+      "additionalProperties": true
+    },
+    "note": {"type": "string"}
+  },
+  "$defs": {
+    "distribution": {
+      "type": "object",
+      "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1}
+    },
+    "distribution_shift": {
+      "type": "object",
+      "required": ["reference", "frozen", "js_divergence_bits"],
+      "properties": {
+        "reference": {"$ref": "#/$defs/distribution"},
+        "frozen": {"$ref": "#/$defs/distribution"},
+        "js_divergence_bits": {"type": "number", "minimum": 0}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}

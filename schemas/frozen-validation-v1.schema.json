@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/frozen-validation-v1.schema.json",
+  "title": "REVENGINSTR.FrozenValidation/1 manifest",
+  "type": "object",
+  "required": [
+    "format",
+    "tag",
+    "selection",
+    "selection_salt",
+    "limit",
+    "source_corpus",
+    "eligibility_traces",
+    "exclusion_traces",
+    "frozen_corpus",
+    "trace"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.FrozenValidation/1"},
+    "tag": {"type": "string", "minLength": 1},
+    "selection": {"const": "stable_hash_identity_disjoint"},
+    "selection_salt": {"type": "string", "minLength": 1},
+    "limit": {"type": "integer", "minimum": 1},
+    "record_id_fallback": {"type": "string"},
+    "include_external": {"type": "boolean"},
+    "source_corpus": {"$ref": "#/$defs/source"},
+    "eligibility_traces": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/file_hash"}
+    },
+    "exclusion_traces": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/file_hash"}
+    },
+    "frozen_corpus": {"$ref": "#/$defs/output"},
+    "trace": {"$ref": "#/$defs/output"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "file_hash": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "required": ["path", "sha256", "input_rows", "eligible", "eligibility_removed", "excluded_overlap"],
+      "properties": {
+        "path": {"type": "string"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "input_rows": {"type": "integer", "minimum": 0},
+        "eligible": {"type": "integer", "minimum": 0},
+        "eligibility_removed": {"type": "integer", "minimum": 0},
+        "excluded_overlap": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": true
+    },
+    "output": {
+      "type": "object",
+      "required": ["path", "sha256", "rows"],
+      "properties": {
+        "path": {"type": "string"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "rows": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}

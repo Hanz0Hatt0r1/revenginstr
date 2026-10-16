@@ -1,9 +1,12 @@
 """Freeze a deterministic identity-disjoint portable P-code holdout.
 
-The tool is deliberately project-neutral. Consumer repositories provide one or
-more exclusion traces containing identities used by training/calibration. The
-frozen corpus itself remains `REVENGINSTR.PcodeCorpus/1`; an `id` join key is
-added when the source exporter did not provide one.
+The tool is deliberately project-neutral. Consumer repositories may provide:
+
+- exclusion traces: identities already consumed by training/calibration;
+- eligibility traces: identities allowed into this validation population.
+
+This keeps title-specific origin/runtime filtering in the consumer while the core
+owns deterministic selection, overlap removal and immutable provenance.
 """
 from __future__ import annotations
 
@@ -79,13 +82,13 @@ def physical_identity(row: dict[str, Any]) -> str:
     raise ValueError("row has no stable identity")
 
 
-def load_excluded_aliases(paths: list[Path]) -> set[str]:
+def load_identity_aliases(paths: list[Path], *, role: str) -> set[str]:
     aliases: set[str] = set()
     for path in paths:
         for row in read_jsonl(path):
             row_aliases = identity_aliases(row)
             if not row_aliases:
-                raise ValueError(f"{path}: exclusion row has no id or program/source_entry")
+                raise ValueError(f"{path}: {role} row has no id or program/source_entry")
             aliases.update(row_aliases)
     return aliases
 
@@ -98,11 +101,18 @@ def select_rows(
     corpus_path: Path,
     exclusion_paths: list[Path],
     *,
+    eligibility_paths: list[Path] | None = None,
     limit: int,
     selection_salt: str = DEFAULT_SELECTION_SALT,
     include_external: bool = False,
 ) -> tuple[list[dict[str, Any]], Counter]:
-    excluded = load_excluded_aliases(exclusion_paths)
+    excluded = load_identity_aliases(exclusion_paths, role="exclusion")
+    eligibility_paths = list(eligibility_paths or [])
+    eligible_aliases = (
+        load_identity_aliases(eligibility_paths, role="eligibility")
+        if eligibility_paths
+        else None
+    )
     stats: Counter = Counter()
     candidates: list[tuple[str, dict[str, Any]]] = []
     seen_physical: set[str] = set()
@@ -122,7 +132,11 @@ def select_rows(
             stats["duplicate_identity"] += 1
             continue
         seen_physical.add(identity)
-        if identity_aliases(row) & excluded:
+        aliases = identity_aliases(row)
+        if eligible_aliases is not None and not aliases.intersection(eligible_aliases):
+            stats["eligibility_removed"] += 1
+            continue
+        if aliases & excluded:
             stats["excluded_overlap"] += 1
             continue
         output = dict(row)
@@ -136,11 +150,16 @@ def select_rows(
     return selected, stats
 
 
+def _trace_manifest(paths: list[Path]) -> list[dict[str, str]]:
+    return [{"path": str(path), "sha256": sha256_file(path)} for path in paths]
+
+
 def freeze_validation(
     corpus_path: Path,
     output_dir: Path,
     *,
     exclude_traces: list[Path] | None = None,
+    eligible_traces: list[Path] | None = None,
     limit: int = 500,
     tag: str = "frozen-validation",
     selection_salt: str = DEFAULT_SELECTION_SALT,
@@ -150,6 +169,7 @@ def freeze_validation(
     if limit < 1:
         raise ValueError("limit must be >= 1")
     exclude_traces = list(exclude_traces or [])
+    eligible_traces = list(eligible_traces or [])
     output_dir.mkdir(parents=True, exist_ok=True)
     corpus_out = output_dir / "corpus.jsonl"
     trace_out = output_dir / "trace.jsonl"
@@ -162,6 +182,7 @@ def freeze_validation(
     selected, stats = select_rows(
         corpus_path,
         exclude_traces,
+        eligibility_paths=eligible_traces,
         limit=limit,
         selection_salt=selection_salt,
         include_external=include_external,
@@ -180,10 +201,6 @@ def freeze_validation(
     write_jsonl(corpus_out, selected)
     write_jsonl(trace_out, trace)
 
-    exclusions = [
-        {"path": str(path), "sha256": sha256_file(path)}
-        for path in exclude_traces
-    ]
     manifest = {
         "format": FROZEN_VALIDATION_FORMAT,
         "tag": tag,
@@ -197,9 +214,11 @@ def freeze_validation(
             "sha256": sha256_file(corpus_path),
             "input_rows": int(stats["input_rows"]),
             "eligible": int(stats["eligible"]),
+            "eligibility_removed": int(stats["eligibility_removed"]),
             "excluded_overlap": int(stats["excluded_overlap"]),
         },
-        "exclusion_traces": exclusions,
+        "eligibility_traces": _trace_manifest(eligible_traces),
+        "exclusion_traces": _trace_manifest(exclude_traces),
         "frozen_corpus": {
             "path": str(corpus_out),
             "sha256": sha256_file(corpus_out),
@@ -220,6 +239,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("corpus", type=Path)
     parser.add_argument("output_dir", type=Path)
     parser.add_argument("--exclude-trace", type=Path, action="append", default=[])
+    parser.add_argument("--eligible-trace", type=Path, action="append", default=[])
     parser.add_argument("--limit", type=int, default=500)
     parser.add_argument("--tag", default="frozen-validation")
     parser.add_argument("--selection-salt", default=DEFAULT_SELECTION_SALT)
@@ -231,6 +251,7 @@ def main(argv: list[str] | None = None) -> int:
             args.corpus,
             args.output_dir,
             exclude_traces=args.exclude_trace,
+            eligible_traces=args.eligible_trace,
             limit=args.limit,
             tag=args.tag,
             selection_salt=args.selection_salt,
@@ -243,6 +264,7 @@ def main(argv: list[str] | None = None) -> int:
     print("format:", manifest["format"])
     print("tag:", manifest["tag"])
     print("source rows:", manifest["source_corpus"]["input_rows"])
+    print("eligibility removed:", manifest["source_corpus"]["eligibility_removed"])
     print("excluded overlap:", manifest["source_corpus"]["excluded_overlap"])
     print("eligible:", manifest["source_corpus"]["eligible"])
     print("frozen rows:", manifest["frozen_corpus"]["rows"])
