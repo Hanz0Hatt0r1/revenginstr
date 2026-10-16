@@ -142,6 +142,27 @@ def test_generic_function_pcode_flow_tsv_row_schema() -> None:
         })
 
 
+def test_generic_defined_string_tsv_row_schema() -> None:
+    schema = validator("ghidra-pcode-defined-strings-v1.schema.json")
+    schema.validate({
+        "format": "REVENGINSTR.GhidraPcodeDefinedString/1",
+        "constant_address": "0x401000",
+        "data_address": "00401000",
+        "byte_offset": "0x0",
+        "utf8_base64": "cGF0aC5qc29u",
+        "length": "9",
+    })
+    with pytest.raises(ValidationError):
+        schema.validate({
+            "format": "NEVERGONE.GhidraPcodeDefinedString/1",
+            "constant_address": "0x401000",
+            "data_address": "00401000",
+            "byte_offset": "0x0",
+            "utf8_base64": "cGF0aC5qc29u",
+            "length": "9",
+        })
+
+
 def test_validation_manifest_and_drift_schemas() -> None:
     digest = "a" * 64
     frozen = validator("frozen-validation-v1.schema.json")
