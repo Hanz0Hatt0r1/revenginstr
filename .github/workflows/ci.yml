@@ -27,6 +27,7 @@ jobs:
           bash -n scripts/run_ghidra_receiver_types.sh
           bash -n scripts/run_ghidra_vtable_slots.sh
           bash -n scripts/run_ghidra_function_pcode_flow.sh
+          bash -n scripts/run_ghidra_caller_argument_subtree.sh
       - name: Validate generic exporter contract
         run: |
           python - <<'PY'
