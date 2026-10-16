@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-address-metadata-v1.schema.json",
+  "title": "REVENGINSTR.GhidraAddressMetadata/1 JSONL row",
+  "description": "Generic listing, memory-block, symbol, function, data-type, and 32-bit memory-word metadata at one address.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program", "requested", "address", "block", "primary_symbol", "function_at", "function_containing", "instruction_mnemonic", "data_type", "raw_u32"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraAddressMetadata/1"},
+    "program": {"type": "string"},
+    "requested": {"type": "string", "minLength": 1},
+    "address": {"$ref": "#/$defs/address"},
+    "block": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "start", "end", "read", "write", "execute"],
+          "properties": {
+            "name": {"type": "string"},
+            "start": {"$ref": "#/$defs/address"},
+            "end": {"$ref": "#/$defs/address"},
+            "read": {"type": "boolean"},
+            "write": {"type": "boolean"},
+            "execute": {"type": "boolean"}
+          }
+        }
+      ]
+    },
+    "primary_symbol": {"type": ["string", "null"]},
+    "function_at": {"oneOf": [{"$ref": "#/$defs/functionAt"}, {"type": "null"}]},
+    "function_containing": {"oneOf": [{"$ref": "#/$defs/function"}, {"type": "null"}]},
+    "instruction_mnemonic": {"type": ["string", "null"]},
+    "data_type": {"type": ["string", "null"]},
+    "raw_u32": {"type": ["string", "null"], "pattern": "^0x[0-9a-f]+$"}
+  },
+  "$defs": {
+    "address": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"},
+    "function": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entry", "name", "body"],
+      "properties": {
+        "entry": {"$ref": "#/$defs/address"},
+        "name": {"type": "string"},
+        "body": {"type": ["string", "null"]}
+      }
+    },
+    "functionAt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entry", "name", "body", "is_thunk", "thunk_target"],
+      "properties": {
+        "entry": {"$ref": "#/$defs/address"},
+        "name": {"type": "string"},
+        "body": {"type": ["string", "null"]},
+        "is_thunk": {"type": "boolean"},
+        "thunk_target": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "const": "<error>"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["entry", "name"],
+              "properties": {
+                "entry": {"$ref": "#/$defs/address"},
+                "name": {"type": "string"}
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
