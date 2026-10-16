@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/evidence-v1.schema.json",
+  "title": "REVENGINSTR.Evidence/1 record",
+  "description": "Project-neutral numeric feature summaries. Keep labels, source identities, addresses and class/vtable identities in consumer-owned data, outside features.",
+  "type": "object",
+  "required": ["format", "id", "features"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.Evidence/1"},
+    "id": {"type": "string", "minLength": 1},
+    "features": {
+      "type": "object",
+      "additionalProperties": {"type": ["number", "boolean"]}
+    }
+  }
+}

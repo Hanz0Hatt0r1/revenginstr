@@ -43,6 +43,10 @@ REVENGINSTR.FrozenValidation/1
 REVENGINSTR.DriftAudit/1
 ```
 
+JSON Schemas in `schemas/` define the portable P-code corpus, callgraph metrics,
+and aggregated evidence records. Source identifiers remain join metadata; evidence
+features are numeric or boolean, project-neutral summaries.
+
 ## Boundary
 
 The toolkit may know about architectures such as ARM32 and x86-32 and generic concepts such as P-code, callgraphs, receivers, vtables, family similarity, OOD, selective routing and distribution shift.

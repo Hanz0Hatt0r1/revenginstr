@@ -31,10 +31,31 @@ Stable generic format names use component versions rather than project/model exp
 REVENGINSTR.PcodeCorpus/1
 REVENGINSTR.PcodeAudit/1
 REVENGINSTR.ForeignGuard/1
+REVENGINSTR.CallGraphMetrics/1
+REVENGINSTR.Evidence/1
+REVENGINSTR.ReceiverInference/1
 ```
+
+JSON Schemas for `PcodeCorpus/1`, `CallGraphMetrics/1` and `Evidence/1` live in
+`schemas/`; source identifiers are join metadata, while evidence feature values
+remain numeric or boolean and project-neutral.
 
 Nevergone experiment names such as v5.4/v9/v10 remain historical evaluation/model lineage, not public toolkit API versions.
 
-## First extraction milestone
+## Current extraction state
 
-The first milestone extracts the ARM32/x86-32 portable P-code contract and the foreign-project OOD guard that were validated by the first 1000-function `SHIFT.exe` transfer probe. The next extraction milestone is callgraph/evidence primitives followed by receiver/type/vtable inference.
+`main` contains the portable P-code exporter and leakage audit, foreign-project
+guard, callgraph/evidence aggregation, receiver planning and inference, function
+family mining, selective classifiers and monotone accept-error routing. The
+generic mechanisms are covered by one project-neutral test suite and CI.
+
+The NFS Shift probe uses the shared exporter, audit and foreign guard when a
+sibling `revenginstr` checkout is available, while retaining its historical
+fallback. Nevergone's evidence pipeline similarly calls shared receiver,
+callgraph and aggregation tools when available; its adapters preserve the
+historical Nevergone record formats. Keep those fallbacks until each same-input
+parity check passes in the consumer repository.
+
+The next migrations should move one remaining duplicated implementation at a
+time, with consumer-owned labels, thresholds, binaries, addresses, catalogs and
+frozen validation data staying in their original repositories.
