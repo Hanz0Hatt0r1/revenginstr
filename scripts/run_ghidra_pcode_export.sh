@@ -8,8 +8,9 @@ Usage:
     <project-dir> <project-name> <program-name> <output.jsonl> [max-functions] [name-contains]
 
 The Ghidra project must already contain an analyzed program. The runner uses
--readOnly -noanalysis and an isolated temporary script path so unrelated Ghidra
-scripts are not compiled.
+-recursive -readOnly -noanalysis and an isolated temporary script path so
+programs in project sub-folders are found and unrelated Ghidra scripts are not
+compiled.
 EOF
 }
 
@@ -41,6 +42,7 @@ fi
 
 "$ANALYZE" \
   "$PROJECT_DIR" "$PROJECT_NAME" \
+  -recursive \
   -process "$PROGRAM_NAME" \
   -readOnly \
   -noanalysis \

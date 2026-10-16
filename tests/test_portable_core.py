@@ -91,6 +91,9 @@ def test_generic_exporter_has_project_neutral_contract() -> None:
     assert "SHIFT" not in text
     assert 'text.append("ARCH=")' in text
     assert 'text.append("PTR_SIZE=")' in text
+    assert "resolveCallTarget" in text
+    assert "offset & ~1L" in text
+    assert "functions.getFunctionAt(normalized)" in text
     assert "source_entry" in text
     assert "source_name" in text
 
@@ -100,5 +103,6 @@ def test_generic_runner_is_read_only_and_isolated() -> None:
     text = (root / "scripts/run_ghidra_pcode_export.sh").read_text(encoding="utf-8")
     assert "-readOnly" in text
     assert "-noanalysis" in text
+    assert "-recursive" in text
     assert "mktemp -d" in text
     assert "PortablePcodeCorpusExporter.java" in text

@@ -4,6 +4,7 @@ import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.listing.FunctionIterator;
+import ghidra.program.model.listing.FunctionManager;
 import ghidra.program.model.pcode.HighFunction;
 import ghidra.program.model.pcode.PcodeOp;
 import ghidra.program.model.pcode.PcodeOpAST;
@@ -104,12 +105,29 @@ public class PortablePcodeCorpusExporter extends GhidraScript {
         }
     }
 
+    private Function resolveCallTarget(PcodeOpAST op) {
+        Address target = callTargetAddress(op);
+        if (target == null) return null;
+        FunctionManager functions = currentProgram.getFunctionManager();
+        Function function = functions.getFunctionAt(target);
+        if (function != null) return function;
+
+        // Some ABIs tag code pointers in the low bit. Normalize only as a
+        // fallback and only accept the address when Ghidra has a function there.
+        long offset = target.getOffset();
+        if ((offset & 1L) == 0L) return null;
+        try {
+            Address normalized = target.getAddressSpace().getAddress(offset & ~1L);
+            return functions.getFunctionAt(normalized);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
     private String callKind(PcodeOpAST op) {
         if (op.getOpcode() == PcodeOp.CALLIND) return "call:indirect";
         if (op.getOpcode() != PcodeOp.CALL) return null;
-        Address target = callTargetAddress(op);
-        if (target == null) return "call:unresolved";
-        Function function = currentProgram.getFunctionManager().getFunctionAt(target);
+        Function function = resolveCallTarget(op);
         if (function == null) return "call:unresolved";
         return function.isExternal() ? "call:external" : "call:internal";
     }
