@@ -17,6 +17,7 @@ The repository now owns these generic mechanisms:
 - mass indirect-call receiver/type acquisition;
 - read-only ARM32 Itanium primary-vtable slot export from Ghidra;
 - targeted data and direct-reference export for caller-selected Ghidra addresses;
+- bounded High-P-code field-store candidates scoped by caller-selected function-name fragments and offsets;
 - targeted listing, memory-block, symbol and function metadata export by address;
 - bounded High-P-code indirect-call target evidence;
 - read-only full-program metadata indexing for functions, symbols, strings, references and direct calls;
@@ -48,6 +49,7 @@ REVENGINSTR.GhidraPcodeDefinedString/1
 REVENGINSTR.GhidraAddressReferenceOwner/1
 REVENGINSTR.GhidraAddressReferences/1
 REVENGINSTR.GhidraFunctionInstructions/1
+REVENGINSTR.GhidraFieldStoreCandidates/1
 REVENGINSTR.GhidraFunctionOperand/1
 REVENGINSTR.GhidraAddressMetadata/1
 REVENGINSTR.GhidraIndirectCallEvidence/1
@@ -71,6 +73,8 @@ referenced by constant tokens in a P-code TSV; string values are base64 encoded.
 See `docs/GHIDRA_PCODE_DEFINED_STRINGS.md` for the exporter contract and runner.
 `GhidraAddressReferenceOwner/1` lists direct reference locations for
 caller-supplied addresses; see `docs/GHIDRA_ADDRESS_REFERENCE_OWNERS.md`.
+The `GhidraFieldStoreCandidates/1` TSV contract and bounded STORE exporter are
+documented in `docs/GHIDRA_FIELD_STORE_CANDIDATES.md`.
 
 The generic Ghidra function-instruction export is documented in
 docs/GHIDRA_FUNCTION_INSTRUCTIONS.md.

@@ -35,6 +35,7 @@ jobs:
           bash -n scripts/run_ghidra_address_metadata.sh
           bash -n scripts/run_ghidra_indirect_call_evidence.sh
           bash -n scripts/run_ghidra_program_index.sh
+          bash -n scripts/run_ghidra_field_store_candidates.sh
       - name: Validate generic exporter contract
         run: |
           python - <<'PY'
@@ -45,6 +46,17 @@ jobs:
           assert 'Nevergone' not in text
           assert 'SHIFT' not in text
           print('generic exporter contract: OK')
+          PY
+      - name: Validate field-store exporter boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('ghidra/ExportGhidraFieldStoreCandidates.java').read_text()
+          assert 'PcodeOp.STORE' in text
+          assert 'MAX_ADDRESS_DEPTH = 32' in text
+          for forbidden in ('Nevergone', 'GameScene', 'HDVehicle', 'SHIFT'):
+              assert forbidden not in text
+          print('generic field-store exporter contract: OK')
           PY
       - name: Validate function P-code flow boundary
         run: |
