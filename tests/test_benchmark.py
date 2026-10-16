@@ -8,6 +8,7 @@ import pytest
 from jsonschema import Draft202012Validator
 
 from revenginstr.benchmark import BenchmarkError, run_benchmark
+from revenginstr.benchmark_determinism import _difference_paths, _stable_summary, audit_determinism
 from revenginstr.benchmark_metrics import project
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -246,3 +247,28 @@ def test_validation_projection_preserves_unlabeled_status(tmp_path: Path) -> Non
     assert result["validation"]["frozen_rows"] == 10
     assert result["validation"]["severity"] == "moderate"
     assert "classification" not in result
+
+
+def test_determinism_audit_replays_pinned_pipeline_without_touching_outputs(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    report_path = tmp_path / "determinism.json"
+
+    report, code = audit_determinism(manifest_path, mode="smoke", output_path=report_path)
+
+    assert code == 0
+    assert report["status"] == "deterministic"
+    assert report["deterministic"] is True
+    assert report["difference_paths"] == []
+    assert len(report["runs"]) == 2
+    assert report["runs"][0]["artifact_sha256"] == report["runs"][1]["artifact_sha256"]
+    assert not (tmp_path / "audit.json").exists()
+    Draft202012Validator(json.loads((ROOT / "schemas" / "determinism-audit-v1.schema.json").read_text(encoding="utf-8"))).validate(report)
+
+
+def test_determinism_comparison_ignores_runtime_but_finds_metric_drift() -> None:
+    first = {"stages": [{"id": "audit", "duration_seconds": 0.1, "peak_rss_bytes": 1000}], "metrics": [{"value": 4}]}
+    second = {"stages": [{"id": "audit", "duration_seconds": 0.2, "peak_rss_bytes": 2000}], "metrics": [{"value": 4}]}
+
+    assert _difference_paths(_stable_summary(first), _stable_summary(second)) == []
+    second["metrics"][0]["value"] = 5
+    assert _difference_paths(_stable_summary(first), _stable_summary(second)) == ["/metrics/0/value"]

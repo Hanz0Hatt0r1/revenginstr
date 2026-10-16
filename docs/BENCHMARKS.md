@@ -105,6 +105,24 @@ Artifact summaries include byte sizes. Stage summaries include elapsed time and
 peak process RSS where the platform exposes it through `getrusage`; the memory
 value is `null` with measurement `unavailable` on unsupported platforms.
 
+## Determinism audit
+
+`revenginstr-determinism-audit` runs the selected smoke/full stage set twice
+with identical pinned inputs and isolated temporary output paths. It compares
+artifact hashes (including row-selection traces and predictions), metric and
+projection values, benchmark configuration, manifests, and stage results. The
+report lists JSON Pointers for differences and hashes for each run. Stage
+duration and peak RSS are excluded because they vary between executions. The
+consumer manifest and its declared artifact paths are not modified.
+
+```bash
+revenginstr-determinism-audit benchmark.json --mode smoke --output build/determinism.json
+```
+
+The command requires stage file paths to use `${artifact:ID}` placeholders so
+the runner can safely redirect outputs for both repetitions. It returns 0 when
+the stable summaries match and 2 when they differ or a run fails.
+
 ## Small corpus-audit manifest
 
 This example shows the fields for an input corpus and one audit stage. Replace

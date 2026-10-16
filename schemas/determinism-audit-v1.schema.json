@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/determinism-audit-v1.schema.json",
+  "title": "REVENGINSTR.DeterminismAudit/1",
+  "type": "object",
+  "required": [
+    "format", "benchmark_id", "mode", "tool_version", "status",
+    "deterministic", "difference_paths", "ignored_fields", "runs"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.DeterminismAudit/1"},
+    "benchmark_id": {"type": "string", "minLength": 1},
+    "mode": {"enum": ["smoke", "full"]},
+    "tool_version": {"type": "string"},
+    "status": {"enum": ["deterministic", "nondeterministic", "failed"]},
+    "deterministic": {"type": "boolean"},
+    "difference_paths": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "ignored_fields": {"type": "array", "items": {"type": "string"}},
+    "runs": {"type": "array", "maxItems": 2, "items": {"$ref": "#/$defs/run"}},
+    "error": {"type": "string"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+    "run": {
+      "type": "object",
+      "required": [
+        "status", "manifest_sha256", "configuration_sha256", "artifact_sha256",
+        "metrics_sha256", "projections_sha256", "stage_results"
+      ],
+      "properties": {
+        "status": {"enum": ["passed", "failed", "failed_gates"]},
+        "manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "configuration_sha256": {"$ref": "#/$defs/sha256"},
+        "artifact_sha256": {"type": "object", "additionalProperties": {"$ref": "#/$defs/sha256"}},
+        "metrics_sha256": {"$ref": "#/$defs/sha256"},
+        "projections_sha256": {"$ref": "#/$defs/sha256"},
+        "stage_results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "tool", "status", "exit_code"],
+            "properties": {
+              "id": {"type": "string"},
+              "tool": {"type": "string"},
+              "status": {"enum": ["passed", "failed", "timed_out", "artifact_validation_failed"]},
+              "exit_code": {"type": ["integer", "null"]}
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
