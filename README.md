@@ -2,45 +2,124 @@
 
 Reusable reverse-engineering analysis tooling extracted from the Nevergone and NFS Shift recompilation projects.
 
-`revenginstr` contains project-neutral mechanisms, schemas and analysis code. Game-specific labels, addresses, class names, offsets and semantic evidence remain in consumer repositories.
+`revenginstr` is the project-neutral analysis core. Game-specific labels, addresses, class names, offsets, datasets and semantic evidence remain in consumer repositories.
 
-## Initial scope
+## Current core
+
+The repository now owns these generic mechanisms:
 
 - architecture-normalized high-P-code export from Ghidra;
-- portable corpus/schema validation and leakage checks;
-- cross-project/OOD diagnostics;
-- monotone foreign-project routing guards;
-- shared ML/evidence contracts used by multiple recompilation projects.
+- portable corpus/schema validation and leakage audits;
+- cross-project/OOD diagnostics and monotone foreign-project guards;
+- callgraph metric extraction;
+- mass indirect-call receiver/type acquisition;
+- conservative receiver class/vtable identity inference from consumer-owned catalogs;
+- leakage-safe evidence aggregation;
+- portable P-code function-family mining with deterministic MinHash/LSH;
+- compatibility hash profile for historical Nevergone family groups.
+
+Stable component formats currently include:
+
+```text
+REVENGINSTR.PcodeCorpus/1
+REVENGINSTR.PcodeAudit/1
+REVENGINSTR.ForeignGuard/1
+REVENGINSTR.CallGraphMetrics/1
+REVENGINSTR.ReceiverPlan/1
+REVENGINSTR.GhidraIndirectReceiverType/1
+REVENGINSTR.ReceiverInference/1
+REVENGINSTR.Evidence/1
+REVENGINSTR.FunctionFamilies/1
+```
 
 ## Boundary
 
-The toolkit may know about architectures such as ARM32 and x86-32, and concepts such as P-code, callgraphs, receivers, vtables, family similarity and selective routing. It must not encode Nevergone `GameScene`/Cocos rules or NFS Shift retail addresses/`HDVehicle` offsets.
+The toolkit may know about architectures such as ARM32 and x86-32 and generic concepts such as P-code, callgraphs, receivers, vtables, family similarity, OOD and selective routing.
+
+It must not encode Nevergone `GameScene`/Cocos rules, NFS Shift retail addresses/`HDVehicle` offsets, or any other title-specific semantic truth.
 
 Current consumers:
 
-- `Hanz0Hatt0r1/nevergone-recomp` — reference/training project;
+- `Hanz0Hatt0r1/nevergone-recomp` — reference/training consumer;
 - `Hanz0Hatt0r1/nfs-shift-decompilation` — first cross-project x86-32 consumer.
 
 ## Layout
 
 ```text
-ghidra/                 generic Ghidra exporters
-src/revenginstr/pcode/  portable corpus contracts/audits
-src/revenginstr/ood/    cross-project safety guards
-schemas/                stable data contracts
-tests/                  generic tests
-docs/                   architecture and migration notes
+ghidra/                        generic Ghidra exporters
+scripts/                       read-only/noanalysis Ghidra runners
+src/revenginstr/pcode/         portable corpus audits
+src/revenginstr/ood/           cross-project safety guards
+src/revenginstr/evidence/      callgraph + aggregated evidence
+src/revenginstr/receiver/      receiver planning/inference
+src/revenginstr/family/        portable family features/mining
+schemas/                       stable data contracts
+tests/                         project-neutral tests
+docs/                          architecture/migration notes
 ```
 
-## Install for development
+## Install
+
+For sibling consumer repositories:
 
 ```bash
+cd ~
+git clone https://github.com/Hanz0Hatt0r1/revenginstr.git
+python -m pip install -e ~/revenginstr
+```
+
+Development setup:
+
+```bash
+cd ~/revenginstr
 python -m pip install -e '.[test]'
 pytest
 ```
 
+Nevergone and NFS Shift runners also auto-detect a sibling `~/revenginstr` checkout and can use `PYTHONPATH` directly, so editable installation is convenient rather than mandatory.
+
+## CLI examples
+
+```bash
+revenginstr-pcode-audit corpus.jsonl
+revenginstr-callgraph corpus.jsonl functions.tsv.gz calls.tsv.gz --output callgraph.jsonl
+revenginstr-receiver-plan trace.jsonl receiver-plan.tsv --program game.exe
+revenginstr-receiver-infer receiver-types.tsv catalog.jsonl --output receiver-inference.jsonl
+revenginstr-evidence-aggregate trace.jsonl \
+  --callgraph-metrics callgraph.jsonl \
+  --receiver-types receiver-types.tsv \
+  --receiver-inference receiver-inference.jsonl \
+  --output evidence.jsonl
+revenginstr-family-mine dataset families.jsonl
+```
+
+For an existing analyzed Ghidra project:
+
+```bash
+GHIDRA_HOME=/opt/ghidra \
+  scripts/run_ghidra_pcode_export.sh \
+  /path/to/projects project-name program-name corpus.jsonl 1000
+```
+
+The Ghidra runners are `-readOnly -noanalysis`; they consume an existing analysis database rather than silently changing it.
+
 ## Portable P-code contract
 
-The first stable interchange format is `REVENGINSTR.PcodeCorpus/1`. `model_text` is deliberately free of function names, absolute addresses, direct call target identity, strings/resources, instruction bytes and decompiler C. Outer `program`, `source_entry` and `source_name` fields are audit/join metadata only.
+`model_text` deliberately excludes function names, absolute addresses, direct call target identity, strings/resources, instruction bytes and decompiler C. Outer `program`, `source_entry` and `source_name` fields are audit/join metadata only.
 
-Consumer repositories own their datasets, weak labels, ground truth and semantic gates. Cross-project model output is triage/OOD evidence, not semantic authority.
+Function-family mining excludes headers from the portable view. New projects use the `revenginstr-v1` MinHash profile; Nevergone can request `nevergone-v1` to reproduce its historical seeds during migration.
+
+## Consumer contract
+
+Consumer repositories own:
+
+- binaries and reverse-engineering evidence;
+- datasets and ground-truth/weak labels;
+- class/vtable catalog contents;
+- title-specific addresses and object-layout knowledge;
+- semantic gates and deployment decisions;
+- historical experiment/model lineage.
+
+Cross-project model output is triage/OOD evidence, not semantic authority. Generic algorithms must not close a consumer's semantic proof gate on their own.
+
+See `docs/MIGRATION.md` for the extraction policy.
