@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import collections
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +31,13 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def _numeric(value: Any) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    value = float(value)
+    return value if math.isfinite(value) else None
+
+
 def guarded_row(row: dict[str, Any], similarity_floor: float, contrast_floor: float) -> dict[str, Any]:
     out = dict(row)
     base_action = str(row.get("action"))
@@ -37,20 +45,31 @@ def guarded_row(row: dict[str, Any], similarity_floor: float, contrast_floor: fl
     out["foreign_guard_format"] = FORMAT
     out["foreign_guard_changed"] = False
     out["foreign_guard_reasons"] = []
+
+    class_similarity_floor = _numeric(row.get("ood_accept_threshold"))
+    class_contrast_floor = _numeric(row.get("contrast_accept_threshold"))
+    similarity_floor = max(similarity_floor, class_similarity_floor or 0.0)
+    contrast_floor = max(contrast_floor, class_contrast_floor or 0.0)
     out["foreign_similarity_floor"] = similarity_floor
     out["foreign_contrast_floor"] = contrast_floor
+
+    similarity = _numeric(row.get("family_similarity"))
+    contrast = _numeric(row.get("contrast_margin"))
+    similarity_pass = similarity is not None and similarity >= similarity_floor
+    contrast_pass = contrast is not None and contrast >= contrast_floor
+    out["foreign_similarity_pass"] = similarity_pass
+    out["foreign_contrast_pass"] = contrast_pass
+    out["foreign_guard_pass"] = similarity_pass and contrast_pass
 
     if base_action != "accept":
         return out
 
     reasons: list[str] = []
-    similarity = row.get("family_similarity")
-    contrast = row.get("contrast_margin")
-    if not isinstance(similarity, (int, float)):
+    if similarity is None:
         reasons.append("missing_family_similarity")
     elif float(similarity) < similarity_floor:
         reasons.append("family_similarity_below_floor")
-    if not isinstance(contrast, (int, float)):
+    if contrast is None:
         reasons.append("missing_contrast_margin")
     elif float(contrast) < contrast_floor:
         reasons.append("contrast_margin_below_floor")

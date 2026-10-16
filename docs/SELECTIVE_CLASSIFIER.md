@@ -76,6 +76,10 @@ Each row includes prediction, calibrated correctness confidence, action, predict
 
 A classifier trained on project A may be run on project B only as structural/OOD triage unless project B has independent labels and calibration. The generic `revenginstr-foreign-guard` remains appropriate for foreign-project use because it can only demote `accept -> review`.
 
+The foreign guard also preserves each classifier row's class-specific OOD and
+contrast thresholds. Its configured floors can raise those thresholds; they
+never lower them.
+
 `accept` from a foreign model is never semantic proof by itself.
 
 ## Migration compatibility
