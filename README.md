@@ -23,6 +23,7 @@ The repository now owns these generic mechanisms:
 - bounded High-P-code indirect-call target evidence;
 - read-only full-program metadata indexing for functions, symbols, strings, references and direct calls;
 - targeted machine-instruction, control-flow, reference and P-code export from Ghidra;
+- exact scalar-use inventory with candidate-only mnemonic categories;
 - targeted numeric-operand and referenced-scalar export from Ghidra;
 - conservative receiver class/vtable identity inference from consumer-owned catalogs;
 - leakage-safe evidence aggregation;
@@ -50,6 +51,7 @@ REVENGINSTR.GhidraPcodeDefinedString/1
 REVENGINSTR.GhidraAddressReferenceOwner/1
 REVENGINSTR.GhidraAddressReferences/1
 REVENGINSTR.GhidraFunctionInstructions/1
+REVENGINSTR.GhidraScalarUses/1
 REVENGINSTR.GhidraFieldStoreCandidates/1
 REVENGINSTR.GhidraParameterStoreField/1
 REVENGINSTR.GhidraFunctionOperand/1
@@ -77,6 +79,8 @@ See `docs/GHIDRA_PCODE_DEFINED_STRINGS.md` for the exporter contract and runner.
 caller-supplied addresses; see `docs/GHIDRA_ADDRESS_REFERENCE_OWNERS.md`.
 The `GhidraFieldStoreCandidates/1` TSV contract and bounded STORE exporter are
 documented in `docs/GHIDRA_FIELD_STORE_CANDIDATES.md`.
+Exact scalar-use inventory and its generic Ghidra runner are documented in
+`docs/GHIDRA_SCALAR_USES.md`.
 The parameter-to-field store TSV contract is documented in
 `docs/GHIDRA_PARAMETER_STORE_FIELD.md`.
 
