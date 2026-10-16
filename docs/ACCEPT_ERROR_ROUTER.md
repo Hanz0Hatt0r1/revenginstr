@@ -7,6 +7,9 @@ It is extracted from the Nevergone v9/v10 accept-error work, but the implementat
 contains no Nevergone classes, addresses, thresholds or title-specific evidence.
 It supports any class set produced by a revenginstr selective classifier.
 
+The component is local-first: training and inference operate on local JSONL/joblib
+artifacts and require no remote service once `revenginstr[ml]` is installed.
+
 ## Purpose
 
 A base selective classifier already decides among:
