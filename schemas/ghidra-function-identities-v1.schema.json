@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-function-identities-v1.schema.json",
+  "title": "REVENGINSTR.GhidraFunctionIdentity/1 TSV row",
+  "description": "One metadata-only Ghidra function identity row.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "plan_id", "requested_entry", "resolved_entry", "short_name",
+    "qualified_name", "signature", "is_external"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraFunctionIdentity/1"},
+    "plan_id": {"type": "string", "minLength": 1},
+    "requested_entry": {"type": "string", "minLength": 1},
+    "resolved_entry": {"type": "string", "minLength": 1},
+    "short_name": {"type": "string"},
+    "qualified_name": {"type": "string"},
+    "signature": {"type": "string"},
+    "is_external": {"enum": ["true", "false"]}
+  }
+}
