@@ -1,0 +1,2 @@
+vtable_symbol_start	vtable_symbol_name	address_point	slot_offset	slot_address	raw_value	target_thumb	target_entry	target_name	target_signature	resolution_mode	next_vtable_symbol_start
+0x00002000	_ZTV6Widget	0x00002008	0x0	0x00002008	0x00003001	true	ram:00003000	_ZN6Widget3runEv	void Widget::run()	direct_ghidra_address	-

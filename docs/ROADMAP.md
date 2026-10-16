@@ -276,6 +276,12 @@ For every stable evidence family document:
 
 Every migrated exporter gets a legal synthetic or minimal fixture so parity can be tested without redistributing game binaries.
 
+**Initial fixtures added (2026-10-17):** synthetic decoded TSV payloads now
+cover all five Program Index tables and ARM32 Itanium vtable slots. Contract
+tests check their exact headers, column ordering, and rows against the v1
+schemas. The work remains open for parity fixtures accompanying later exporter
+migrations.
+
 ### M1.4 Consumer boundary
 
 Consumers may own path discovery, proprietary joins, old-command compatibility and title-specific postprocessing. Generic parsing/recovery logic belongs here.

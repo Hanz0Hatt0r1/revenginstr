@@ -29,6 +29,10 @@ The headers and row meanings are frozen for v1. A future in-band format or
 column change requires a new bundle version and matching schemas; do not insert
 columns into these tables in place.
 
+Synthetic decoded payload rows live in `tests/fixtures/ghidra-program-index/`;
+they mirror the decompressed TSV body and are shared parity inputs for consumer
+format adapters.
+
 ```sh
 GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_program_index.sh \
   /path/to/project project-name program-name /path/to/output/program
