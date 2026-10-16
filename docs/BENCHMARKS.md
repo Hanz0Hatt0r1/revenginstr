@@ -123,6 +123,42 @@ The command requires stage file paths to use `${artifact:ID}` placeholders so
 the runner can safely redirect outputs for both repetitions. It returns 0 when
 the stable summaries match and 2 when they differ or a run fails.
 
+## Consumer CI and metric deltas
+
+The reusable workflow at
+`.github/workflows/consumer-benchmark.yml` runs in the calling consumer
+repository. That keeps benchmark manifests, labels, datasets and result
+artifacts with their owner; `revenginstr` receives only the generic runner code.
+The consumer workflow passes a manifest path; it defaults to `revenginstr`'s
+`main` branch, but should pin a reviewed commit or tag for reproducible runs. It
+uploads candidate summaries (and optional deltas) as artifacts of the consumer's
+Actions run.
+
+Example consumer workflow:
+
+```yaml
+name: Frozen benchmark
+on:
+  workflow_dispatch:
+jobs:
+  benchmark:
+    uses: Hanz0Hatt0r1/revenginstr/.github/workflows/consumer-benchmark.yml@main
+    with:
+      manifest_path: benchmarks/frozen/manifest.json
+      baseline_summary_path: benchmarks/frozen/baseline-summary.json
+      mode: full
+      revenginstr_ref: main
+```
+
+For behavior-changing PRs, pass the retained baseline summary path to generate a
+machine-readable metric delta. The baseline and candidate must share mode,
+dataset, split and family-set identities. `revenginstr-benchmark-delta` compares numeric
+manifest gates, class metrics, confusion counts, coverage, calibration,
+receiver status/coverage, reason counts and exact-evidence counts. It reports
+added/removed metrics with a null value on the missing side. Attach the consumer
+workflow artifact or its delta JSON to the PR; do not copy consumer data into
+this repository.
+
 ## Small corpus-audit manifest
 
 This example shows the fields for an input corpus and one audit stage. Replace

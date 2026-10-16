@@ -200,10 +200,18 @@ JSON report lists the differing paths and per-run artifact/metric hashes.
 
 ### M0.5 CI policy
 
-- per-PR unit/schema/synthetic smoke;
-- exporter parity tests for migration changes;
-- manually dispatched or scheduled heavier frozen benchmark;
-- metric deltas attached to behavior-changing PRs.
+- ✅ per-PR unit/schema/synthetic smoke;
+- ✅ generic exporter contract/boundary checks in CI;
+- ✅ migration PRs require exporter parity fixtures in that CI suite;
+- ✅ manual/scheduled heavier frozen benchmark entry point in consumer repos;
+- ✅ machine-readable metric deltas for behavior-changing PRs.
+
+The repository CI runs the full unit/schema/synthetic suite and generic exporter
+boundary checks on every PR; exporter migration PRs must include their parity
+fixtures in that suite. A reusable consumer benchmark workflow supports manual
+or scheduled frozen runs in the consumer repository, where manifests, labels
+and summaries remain owned. The benchmark delta command compares retained
+baseline and candidate summaries for attachment to behavior-changing PRs.
 
 ## Exit criteria
 
@@ -822,7 +830,8 @@ Mitigation: preserve heuristic/sparse baselines, feature ablations and evidence-
 
 # 20. Immediate next action
 
-Continue with **M0.5**: complete the benchmark CI policy with an explicit
-manual/scheduled heavy-benchmark entry point and a repeatable way to retain
-metric deltas for behavior-changing PRs. Unit, schema, synthetic benchmark and
-generic exporter boundary checks already run on every PR.
+Continue with **M1.1**: inventory reusable exporters and runners across the
+three repositories, recording which implementations are canonical in
+`revenginstr`, thin consumer wrappers, consumer-specific, pending migration or
+obsolete. The benchmark and CI policy milestones now have shared schemas,
+replay checks and consumer-owned report retention.

@@ -36,6 +36,7 @@ The repository now owns these generic mechanisms:
 - family-grouped accept-error production routing with monotone `accept -> escalate` correction;
 - deterministic identity-disjoint frozen validation with SHA-256 provenance;
 - a hash-pinned benchmark manifest and dependency-ordered smoke/full runner;
+- standardized benchmark projections, deterministic replay, and summary deltas;
 - unlabeled distribution-shift diagnostics for predictions, routing and evidence coverage;
 - compatibility hash profile for historical Nevergone family groups.
 
@@ -70,11 +71,15 @@ REVENGINSTR.EvidenceSelectiveClassifier/1
 REVENGINSTR.AcceptErrorRouter/1
 REVENGINSTR.FrozenValidation/1
 REVENGINSTR.DriftAudit/1
+REVENGINSTR.BenchmarkManifest/1
+REVENGINSTR.BenchmarkSummary/1
+REVENGINSTR.DeterminismAudit/1
+REVENGINSTR.BenchmarkDelta/1
 ```
 
-JSON Schemas in `schemas/` define the portable P-code corpus, callgraph metrics,
-receiver TSV/inference records and aggregated evidence. Source identifiers remain
-join metadata; evidence features are numeric or boolean, project-neutral summaries.
+JSON Schemas in `schemas/` define portable evidence, benchmark, determinism and
+metric-delta contracts. Source identifiers remain join metadata; evidence
+features are numeric or boolean, project-neutral summaries.
 The `GhidraFunctionPcodeFlow/1` metadata-only TSV contract is documented in
 `docs/GHIDRA_FUNCTION_PCODE_FLOW.md`.
 The `GhidraPcodeDefinedString/1` TSV contract resolves only defined strings

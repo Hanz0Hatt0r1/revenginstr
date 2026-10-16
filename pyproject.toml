@@ -27,6 +27,7 @@ test = ["pytest>=8", "jsonschema>=4"]
 [project.scripts]
 revenginstr-benchmark = "revenginstr.benchmark:main"
 revenginstr-determinism-audit = "revenginstr.benchmark_determinism:main"
+revenginstr-benchmark-delta = "revenginstr.benchmark_delta:main"
 revenginstr-pcode-audit = "revenginstr.pcode.audit:main"
 revenginstr-foreign-guard = "revenginstr.ood.foreign_guard:main"
 revenginstr-callgraph = "revenginstr.evidence.callgraph:main"
