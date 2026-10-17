@@ -119,6 +119,22 @@ must all match. A pair records compatible access locations only: it does not
 assert instruction order, execution-path compatibility, or that the store
 reaches the load as a value.
 
+Parameter-rooted loads can also be traced through P-code data dependencies to
+function returns:
+
+```sh
+revenginstr-receiver-load-return-flow parameter-loads.tsv \
+  function-pcode-flow.tsv --program-id 'consumer:analysis-id' \
+  --output load-return-flow.jsonl --max-graphs 10000
+```
+
+The builder requires each load token to match a `LOAD` definition in the
+P-code artifact, follows output/input tokens to `RETURN`, and retains the
+matching P-code rows as provenance. Its `return_flow` edge shows structural
+data dependence only; it does not classify the function as a getter or assert
+a runtime path or returned semantic role. Call outputs are treated as barriers,
+and an `INDIRECT` reference operand is not treated as the copied value.
+
 ## Minimal example
 
 ```json

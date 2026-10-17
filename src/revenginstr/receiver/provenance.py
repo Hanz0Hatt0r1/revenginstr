@@ -688,5 +688,200 @@ def field_access_pairs_main(argv: list[str] | None = None) -> int:
     return 0
 
 
+def build_parameter_load_return_graphs(
+    load_rows: list[dict[str, str]],
+    pcode_rows: list[dict[str, str]],
+    *,
+    program_id: str,
+    max_graphs: int = DEFAULT_MAX_ARGUMENT_GRAPHS,
+) -> list[dict[str, Any]]:
+    """Trace parameter-rooted load values through P-code uses to RETURN ops."""
+    if not program_id:
+        raise ValueError("program_id must be non-empty")
+    if max_graphs < 1:
+        raise ValueError("max_graphs must be positive")
+
+    definitions: dict[tuple[str, str], dict[str, str]] = {}
+    users: dict[tuple[str, str], list[tuple[dict[str, str], int]]] = {}
+    seen_operations: set[tuple[str, str, int]] = set()
+    for line_no, row in enumerate(pcode_rows, 2):
+        function_entry = row.get("function_entry", "")
+        op_address = row.get("op_address", "")
+        op_time_text = row.get("op_time", "")
+        opcode = row.get("opcode", "")
+        output = row.get("output", "")
+        inputs_text = row.get("inputs", "")
+        if (
+            not function_entry or function_entry == "-"
+            or not op_address or op_address == "-"
+            or not _ascii_decimal(op_time_text)
+            or not opcode or not output or not inputs_text
+        ):
+            raise ValueError(f"P-code flow row {line_no}: invalid operation key")
+        op_time = int(op_time_text)
+        operation_key = (function_entry, op_address, op_time)
+        if operation_key in seen_operations:
+            raise ValueError(f"duplicate P-code flow operation: {operation_key!r}")
+        seen_operations.add(operation_key)
+        if output != "-":
+            definition_key = (function_entry, output)
+            if definition_key in definitions:
+                raise ValueError(f"duplicate P-code output definition: {definition_key!r}")
+            definitions[definition_key] = row
+        inputs = [] if inputs_text == "-" else inputs_text.split(";")
+        if any(not value for value in inputs):
+            raise ValueError(f"P-code flow row {line_no}: invalid input token list")
+        for index, value in enumerate(inputs):
+            users.setdefault((function_entry, value), []).append((row, index))
+
+    seen_loads: set[tuple[Any, ...]] = set()
+    graphs: list[dict[str, Any]] = []
+    for line_no, row in enumerate(load_rows, 2):
+        load_key, _join_key = _parameter_load_identity(row, program_id=program_id, line_no=line_no)
+        if load_key in seen_loads:
+            raise ValueError(f"duplicate parameter load: {load_key!r}")
+        if len(seen_loads) >= max_graphs:
+            raise ValueError(f"parameter load graph budget exceeded: {max_graphs}")
+        seen_loads.add(load_key)
+
+        load_token = row["value_token"]
+        token_match = re.fullmatch(r"def:([A-Z][A-Z0-9_]*)@(.+):([0-9]+):([0-9]+)", load_token)
+        if token_match is None or token_match.group(1) != "LOAD":
+            raise ValueError(f"parameter load row {line_no}: unsupported load value token")
+        _mnemonic, token_address, token_time_text, token_size_text = token_match.groups()
+        load_time = load_key[3]
+        value_size_text = row.get("value_size", "")
+        if (
+            load_time is None
+            or token_address != load_key[2]
+            or int(token_time_text) != load_time
+            or not _ascii_decimal(value_size_text)
+            or int(token_size_text) != int(value_size_text)
+        ):
+            raise ValueError(f"parameter load row {line_no}: load token does not match row identity")
+
+        function_entry = row["function_entry"]
+        start_token = f"def:{token_address}:{token_time_text}:{token_size_text}"
+        load_operation = definitions.get((function_entry, start_token))
+        if (
+            load_operation is None
+            or load_operation.get("opcode") != "LOAD"
+            or load_operation.get("op_address") != token_address
+            or load_operation.get("op_time") != token_time_text
+        ):
+            raise ValueError(f"parameter load row {line_no}: no matching P-code LOAD definition")
+
+        load_source_id = json.dumps(load_key, ensure_ascii=False, separators=(",", ":"))
+        parents: dict[str, tuple[str, dict[str, str]] | None] = {start_token: None}
+        pending = [start_token]
+        return_paths: dict[tuple[str, str, int], list[dict[str, str]]] = {}
+
+        def path_to(value: str) -> list[dict[str, str]]:
+            path: list[dict[str, str]] = []
+            while value != start_token:
+                parent = parents[value]
+                assert parent is not None
+                value, operation = parent
+                path.append(operation)
+            path.reverse()
+            return [load_operation, *path]
+
+        cursor = 0
+        while cursor < len(pending):
+            value = pending[cursor]
+            cursor += 1
+            for user, input_index in users.get((function_entry, value), []):
+                if user["opcode"] in {"CALL", "CALLIND", "CALLOTHER"}:
+                    continue
+                if user["opcode"] == "INDIRECT" and input_index != 0:
+                    continue
+                if user["opcode"] == "RETURN":
+                    return_key = (function_entry, user["op_address"], int(user["op_time"]))
+                    if return_key not in return_paths:
+                        if len(graphs) + len(return_paths) >= max_graphs:
+                            raise ValueError(f"load-return graph budget exceeded: {max_graphs}")
+                        return_paths[return_key] = [*path_to(value), user]
+                    continue
+                output = user["output"]
+                if output != "-" and output not in parents:
+                    parents[output] = (value, user)
+                    pending.append(output)
+
+        for return_key, path in return_paths.items():
+            if len(graphs) >= max_graphs:
+                raise ValueError(f"load-return graph budget exceeded: {max_graphs}")
+            return_source_id = json.dumps(
+                [program_id, *return_key], ensure_ascii=False, separators=(",", ":")
+            )
+            provenance = [{
+                "source_format": PARAMETER_LOAD_FORMAT,
+                "source_id": load_source_id,
+            }]
+            for operation in path:
+                operation_source_id = json.dumps(
+                    [program_id, operation["function_entry"], operation["op_address"],
+                     int(operation["op_time"]), operation["opcode"]],
+                    ensure_ascii=False, separators=(",", ":"),
+                )
+                provenance.append({
+                    "source_format": "REVENGINSTR.GhidraFunctionPcodeFlow/1",
+                    "source_id": operation_source_id,
+                })
+            graph = {
+                "format": FORMAT,
+                "graph_id": json.dumps(
+                    [program_id, load_source_id, return_source_id],
+                    ensure_ascii=False, separators=(",", ":"),
+                ),
+                "nodes": [
+                    {"id": "field_load", "kind": "field_load"},
+                    {"id": "return", "kind": "return"},
+                ],
+                "edges": [{
+                    "id": "load_return_flow",
+                    "from": "field_load",
+                    "to": "return",
+                    "relation": "return_flow",
+                    "evidence_class": "derived_structural",
+                    "provenance": provenance,
+                }],
+            }
+            validate_graph_references(graph)
+            graphs.append(graph)
+
+    graphs.sort(key=lambda graph: graph["graph_id"])
+    return graphs
+
+
+def parameter_load_return_main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Trace parameter-rooted field loads to function returns through P-code uses."
+    )
+    parser.add_argument("parameter_load_tsv", type=Path)
+    parser.add_argument("function_pcode_flow_tsv", type=Path)
+    parser.add_argument("--program-id", required=True, help="Opaque consumer join key for the selected program.")
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--max-graphs", type=int, default=DEFAULT_MAX_ARGUMENT_GRAPHS)
+    args = parser.parse_args(argv)
+
+    from revenginstr.receiver.infer import read_tsv
+
+    load_rows = read_tsv(args.parameter_load_tsv)
+    pcode_rows = read_tsv(args.function_pcode_flow_tsv)
+    graphs = build_parameter_load_return_graphs(
+        load_rows, pcode_rows, program_id=args.program_id, max_graphs=args.max_graphs
+    )
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    with args.output.open("w", encoding="utf-8") as handle:
+        for graph in graphs:
+            handle.write(json.dumps(graph, sort_keys=True) + "\n")
+    print("input parameter loads:", len(load_rows))
+    print("input P-code flow rows:", len(pcode_rows))
+    print("load-return graphs:", len(graphs))
+    print("max graphs:", args.max_graphs)
+    print("output:", args.output)
+    return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())
