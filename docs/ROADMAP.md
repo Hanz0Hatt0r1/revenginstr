@@ -384,7 +384,7 @@ receiver types are fallback joins.
 
 ### M2.3 Bounded interprocedural propagation
 
-**Bounded caller-argument, field-store, field-load, and return anchors implemented:** `revenginstr-receiver-argument-flow` projects bounded subtree roots into actual-argument-to-formal-parameter edges and captures generic call-result producers when explicit in P-code; `revenginstr-receiver-store-flow` projects parameter-to-field-store evidence into destination and stored-value edges. `revenginstr-receiver-argument-store-flow` and `revenginstr-receiver-argument-load-flow` join those artifacts by exact function/parameter keys with provenance from both inputs. `revenginstr-receiver-field-access-pairs` groups same-function stores and loads only when formal parameter and numeric field offset match. `revenginstr-receiver-load-return-flow` traces parameter-rooted loads through P-code def-use chains to `RETURN` operations without assigning getter semantics; `revenginstr-receiver-call-return-flow` traces call-result values through P-code to function returns as a generic factory-return anchor, without assigning factory semantics. The caller-argument exporter can optionally emit direct caller-formal roots; `revenginstr-receiver-argument-propagate` walks those exact links backward under depth and edge caps. `revenginstr-receiver-field-store-load-audit` now joins parameter/offset-compatible pairs to a program-pinned High-P-code CFG and reports bounded paths with no explicit intervening store/call; that status is a candidate path only, not proof of feasible execution or memory reaching-definition. Alias-aware memory reaching definitions remain open.
+**Bounded caller-argument, field-store, field-load, and return anchors implemented:** `revenginstr-receiver-argument-flow` projects bounded subtree roots into actual-argument-to-formal-parameter edges and captures generic call-result producers when explicit in P-code; `revenginstr-receiver-store-flow` projects parameter-to-field-store evidence into destination and stored-value edges. `revenginstr-receiver-argument-store-flow` and `revenginstr-receiver-argument-load-flow` join those artifacts by exact function/parameter keys with provenance from both inputs. `revenginstr-receiver-field-access-pairs` groups same-function stores and loads only when formal parameter and numeric field offset match. `revenginstr-receiver-load-return-flow` traces parameter-rooted loads through P-code def-use chains to `RETURN` operations without assigning getter semantics; `revenginstr-receiver-call-return-flow` traces call-result values through P-code to function returns as a generic factory-return anchor, without assigning factory semantics. The caller-argument exporter can optionally emit direct caller-formal roots; `revenginstr-receiver-argument-propagate` walks those exact links backward under depth and edge caps. `revenginstr-receiver-field-store-load-audit` now joins parameter/offset-compatible pairs to a program-pinned High-P-code CFG and reports bounded paths with no explicit intervening store/call; that status is a candidate path only, not proof of feasible execution or memory reaching-definition. The generic alias-aware interprocedural audit and `/5` consumer are implemented; positive consumer validation remains open.
 
 **Conservative all-path store-dominance audit implemented:** opt-in
 `GhidraFunctionPcodeCFG/2` records the explicit entry block and nullable
@@ -496,14 +496,17 @@ The generic `GhidraDirectCallMemoryEffectClosure/1` builder is merged in
 reachable function flows, bounds total closure work, and terminates direct-call
 cycles by function identity. The follow-up
 [`FieldStoreLoadDominanceAudit/4`](schemas/field-store-load-dominance-audit-v4.schema.json)
-adds an opt-in consumer for closure rows while leaving `/1`–`/3` unchanged;
-consumer replay remains pending.
+adds an opt-in consumer for closure rows while leaving `/1`–`/3` unchanged.
+NFS Shift PRs [#2040](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2040)
+and [#2041](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2041)
+freeze and replay scan22 through `/4` and `/5`; the two pairs remain
+`store_not_dominating_load` in each version.
 
 Remaining propagation work:
 
 1. consumer-validated factory hypotheses linked to call-result-to-return paths;
 2. consumer-validated getter/accessor hypotheses from load-to-return evidence;
-3. validate `/4` against consumer evidence, then extend alias-aware reaching definitions through nested or cyclic direct calls before treating paired field stores and loads as value flow;
+3. validate `/5` with complete caller-root, callee-CFG, and callee-memory-access evidence; then extend alias-aware reaching definitions only if richer consumer evidence demonstrates a concrete gap, before treating paired field stores and loads as value flow;
 4. constructor/vtable anchors.
 
 ### M2.4 Ambiguity handling
@@ -1126,20 +1129,28 @@ Mitigation: preserve heuristic/sparse baselines, feature ablations and evidence-
 **M2.3 consumer capture/replay now covers two consumers.** Nevergone's frozen
 CFG/3 and memory-store sidecar replay is pinned in [PR #729](https://github.com/Hanz0Hatt0r1/nevergone-recomp/pull/729); its two store/load pairs remain unresolved because intervening effects are possible. NFS Shift PRs [#2025](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2025) and [#2026](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2026) freeze ten functions and 28 pairs with no complete write-free callee. PRs [#2027](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2027) and [#2028](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2028) validate write-free call filtering while preserving unknown and indirect-call barriers. Scans 14–23 are frozen in PRs [#2029](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2029), [#2030](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2030), [#2031](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2031), [#2032](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2032), [#2033](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2033), [#2034](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2034), [#2035](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2035), [#2036](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2036), [#2037](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2037), [#2038](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2038), and [#2039](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2039). The 00a sample has no remaining eligible roots under the scanned filters; none of these screens establishes runtime value flow.
 
-NFS Shift [PR #2040](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2040)
-replays scan22 through the transitive closure builder and `/4` audit. The
-closure retains six explicit-write sites and nine indirect-call barriers;
-`/3` and `/4` both keep the two pairs `store_not_dominating_load`, with zero
-status changes or unique candidates. The captured closure is complete for this
-screen, but it provides no positive reaching-definition evidence.
+NFS Shift [PR #2041](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2041)
+replays scan22 with the alias-aware `/5` audit. Its 30 interprocedural effect
+rows contain 12 `unknown_effect` and 18 `indirect_call` barriers. The two field
+pairs remain `store_not_dominating_load` in `/3`, `/4`, and `/5`, with zero
+status changes and zero unique candidates. The captured package has no exact
+caller-formal-root rows, callee CFGs, or callee memory-access facts, so this
+validates fail-closed handling of missing evidence only. It does not validate
+positive alias filtering or runtime value flow.
 
-The next generic action is to merge and validate the opt-in
-`GhidraInterproceduralMemoryEffect/1` builder and versioned `/5` audit. The
-builder propagates only exact caller-formal roots through bounded direct-call
-graphs, compares same-root byte ranges under the physical-space contract, and
-uses a finite monotone fixed point for cycles. Missing argument links, callee
-CFG or memory-access facts, unresolved stores, indirect calls, unknown
-operations, and incomplete or budget-exhausted closures stay barriers.
-Preserve `/1`–`/4`; a structural
-candidate is not runtime value flow. Freeze and replay the new sidecar against
-consumer evidence before using it to filter any call barrier.
+The generic `GhidraInterproceduralMemoryEffect/1` builder and versioned `/5`
+audit are merged in revenginstr PRs [#110](https://github.com/Hanz0Hatt0r1/revenginstr/pull/110)
+and [#111](https://github.com/Hanz0Hatt0r1/revenginstr/pull/111). The builder
+propagates only exact caller-formal roots through bounded direct-call graphs,
+compares same-root byte ranges under the physical-space contract, and uses a
+finite monotone fixed point for cycles. Missing argument links, callee CFG or
+memory-access facts, unresolved stores, indirect calls, unknown operations,
+and incomplete or budget-exhausted closures stay barriers. `/1`–`/4` remain
+unchanged; a structural candidate is not runtime value flow.
+
+Next, capture scan22's exact caller-formal roots, CFG/3 for the four callees,
+and their memory-store-access facts from the existing Ghidra analysis, then
+replay the same frozen audit. If those exports are unavailable or incomplete,
+record the gap and choose another bounded consumer screen; do not infer alias
+facts from decompiler text. Keep positive alias filtering opt-in until a
+consumer replay demonstrates it on complete evidence.

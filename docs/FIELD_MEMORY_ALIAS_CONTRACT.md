@@ -145,16 +145,24 @@ The versioned `/4` consumer keeps `/1`–`/3` unchanged and records the closure
 sidecar hash plus exact call-site ordinals. Synthetic tests cover write-free,
 explicit-write, unknown, missing-flow, indirect, and unresolved statuses.
 NFS Shift [PR #2040](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2040)
-replays scan22 byte-for-byte: the closure has six explicit-write sites and
-nine indirect-call barriers; both pairs remain `store_not_dominating_load` in
-`/3` and `/4`, with zero status changes or unique candidates. The next generic
-implementation is an opt-in alias-aware interprocedural memory-effect audit
-using exact caller-formal roots and same-root range checks. It uses a finite
-monotone fixed point for recursive direct-call closures; missing argument
-roots, callee CFG or memory-access facts, unresolved stores, indirect calls,
-unknown operations, and closures that exceed a configured budget remain
-barriers. This evidence is not enabled in a consumer until its replay is
-frozen.
+replays scan22 through `/4`: the closure has six explicit-write sites and nine
+indirect-call barriers; both pairs remain `store_not_dominating_load`, with
+zero status changes or unique candidates.
+
+The alias-aware `GhidraInterproceduralMemoryEffect/1` builder and `/5` audit
+are merged in revenginstr PRs [#110](https://github.com/Hanz0Hatt0r1/revenginstr/pull/110)
+and [#111](https://github.com/Hanz0Hatt0r1/revenginstr/pull/111). The builder
+uses exact caller-formal roots and same-root byte ranges, and computes a finite
+monotone fixed point over recursive direct-call closures. Missing roots, callee
+CFG or memory-access facts, unresolved stores, indirect calls, unknown
+operations, and closures that exceed a configured budget remain barriers.
+NFS Shift [PR #2041](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2041)
+freezes scan22 `/5` replay: its 30 effect rows contain 12 `unknown_effect` and
+18 `indirect_call` barriers; both field pairs remain `store_not_dominating_load`
+with zero status changes and no unique candidate. The consumer bundle lacks
+caller-formal-root rows, callee CFGs, and callee memory-access facts, so the
+replay validates missing-evidence barriers only. It does not validate positive
+alias filtering or runtime value flow.
 
 `FieldStoreLoadDominanceAudit/1` is not extended in place. With no sidecars the
 command preserves `/1`; supplying only access facts selects `/2`; supplying
@@ -167,5 +175,5 @@ closures whose every STORE is proven outside the tracked byte range can remove
 a direct-call barrier. Run `revenginstr-interprocedural-memory-effects` with
 one `--pcode-flow ENTRY TSV` argument per function in the bounded closure, then
 pass its JSONL output to the dominance audit with
-`--interprocedural-memory-effect-jsonl`. A consumer replay must freeze both
-the sidecar inputs and `/5` output before adopting this filter.
+`--interprocedural-memory-effect-jsonl`. Freeze complete sidecar inputs and
+`/5` output before adopting positive alias filtering in a consumer.
