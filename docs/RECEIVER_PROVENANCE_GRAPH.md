@@ -227,6 +227,28 @@ audit pins both sidecars and their row ordinals; `/1` and `/2` remain unchanged
 when the new option is absent. Even a `/3` unique candidate is structural
 evidence only, not branch-feasible execution or runtime value flow.
 
+For bounded transitive call evidence, build
+[`GhidraDirectCallMemoryEffectClosure/1`](../schemas/ghidra-direct-call-memory-effect-closure-v1.schema.json)
+rows, then pass the closure sidecar with the memory-store facts:
+
+```sh
+revenginstr-receiver-field-store-load-dominance-audit field-access-pairs.jsonl \
+  function-pcode-cfg-v3.jsonl \
+  --memory-store-access-jsonl memory-stores.jsonl \
+  --direct-call-memory-effect-closure-jsonl call-effect-closures.jsonl \
+  --output field-store-load-dominance-audit-v4.jsonl
+```
+
+This emits `FieldStoreLoadDominanceAudit/4`. It excludes a call barrier only
+when the closure row joins to the exact CFG call and reports
+`no_explicit_memory_write`; the closure builder requires all reachable direct
+callee flows, handles cycles by function identity, and retains `STORE`,
+`CALLIND`, missing-flow, unresolved, and unknown-opcode barriers. The audit
+pins the closure sidecar hash and row ordinals. The `/4` option cannot be mixed
+with the `/3` direct-call sidecar in one run, and `/1`–`/3` behavior stays
+unchanged. A unique candidate remains structural evidence, not feasible runtime
+value flow.
+
 Parameter-rooted loads can also be traced through P-code data dependencies to
 function returns:
 
