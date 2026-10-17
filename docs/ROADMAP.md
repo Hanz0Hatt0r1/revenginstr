@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `5886064c7237ea58e843b93cc663fc1457477d84`
+**Repository baseline:** `main` through `4a1933c920461b11b5bc1561acb0311d2d27c3f7`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -354,9 +354,11 @@ Joining field-store, call-argument, and P-code artifacts without guessing missin
 
 ### M2.3 Bounded interprocedural propagation
 
-Add strict-budget propagation for:
+**First bounded caller-argument edge implemented:** `revenginstr-receiver-argument-flow` projects bounded subtree roots into actual-argument-to-formal-parameter edges with source provenance and a configurable graph cap. It does not yet recursively propagate or join separate artifacts.
 
-1. caller arguments;
+Remaining propagation work:
+
+1. recursive caller-argument propagation;
 2. factory returns;
 3. getters/accessors;
 4. field stores to later field loads;
@@ -741,7 +743,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 ## P1 — after measurement is stable
 
 12. ✅ Receiver provenance graph IR schema and reference validator; graph construction is still open.
-13. Interprocedural receiver propagation v1.
+13. Interprocedural receiver propagation v1 (caller-argument edge projection landed; recursive propagation open).
 14. Effect IR schema + extractor v1.
 15. Generic semantic-label/evaluation format.
 16. Structured function summary v1.
