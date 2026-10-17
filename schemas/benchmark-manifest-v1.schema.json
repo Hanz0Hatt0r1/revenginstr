@@ -121,7 +121,7 @@
       "required": ["id", "kind", "artifact"],
       "properties": {
         "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"},
-        "kind": {"enum": ["classifier", "router", "receiver", "receiver_assessment", "validation"]},
+        "kind": {"enum": ["classifier", "router", "receiver", "receiver_assessment", "receiver_candidate_evidence", "validation"]},
         "artifact": {"type": "string", "minLength": 1},
         "mode": {"enum": ["both", "smoke", "full"]},
         "truth_field": {"type": "string", "minLength": 1},

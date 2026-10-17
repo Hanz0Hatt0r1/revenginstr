@@ -230,6 +230,68 @@ def test_receiver_assessment_projection_rejects_invalid_status(tmp_path: Path) -
         )
 
 
+def test_receiver_candidate_evidence_projection_aggregates_dimensions_without_ids(tmp_path: Path) -> None:
+    dimensions = (
+        "exact_vtable_witness", "constructor_factory_witness", "field_layout_compatibility",
+        "slot_compatibility", "caller_provenance", "callgraph_consistency", "runtime_witness",
+    )
+    row = {
+        "format": "REVENGINSTR.ReceiverCandidateEvidence/1", "source_id": "private-source",
+        "source_entry": "private-entry", "call_index": 4, "call_address": "0x1234",
+        "candidate_id": "private-candidate",
+        "dimensions": {
+            name: {"status": "unknown", "evidence_class": None, "provenance": []}
+            for name in dimensions
+        },
+    }
+    row["dimensions"]["exact_vtable_witness"] = {
+        "status": "supported", "evidence_class": "exact_static",
+        "provenance": [{"source_format": "private-source-format/1", "source_id": "private-row"}],
+    }
+    path = tmp_path / "candidate-evidence.jsonl"
+    path.write_text(json.dumps(row) + "\n", encoding="utf-8")
+
+    result = project(
+        {"id": "candidate-evidence", "kind": "receiver_candidate_evidence", "artifact": "evidence"},
+        {"content": "jsonl"}, {"evidence": path},
+    )
+
+    metrics = result["receiver_candidate_evidence"]["dimension_metrics"]
+    assert metrics["exact_vtable_witness"] == {
+        "status_counts": {"supported": 1}, "evidence_class_counts": {"exact_static": 1},
+    }
+    assert metrics["runtime_witness"] == {
+        "status_counts": {"unknown": 1}, "evidence_class_counts": {},
+    }
+    for private_value in ("private-source", "private-entry", "private-candidate", "private-row", "0x1234"):
+        assert private_value not in json.dumps(result)
+
+
+def test_receiver_candidate_evidence_projection_rejects_unproven_support(tmp_path: Path) -> None:
+    dimensions = (
+        "exact_vtable_witness", "constructor_factory_witness", "field_layout_compatibility",
+        "slot_compatibility", "caller_provenance", "callgraph_consistency", "runtime_witness",
+    )
+    row = {
+        "format": "REVENGINSTR.ReceiverCandidateEvidence/1",
+        "dimensions": {
+            name: {"status": "unknown", "evidence_class": None, "provenance": []}
+            for name in dimensions
+        },
+    }
+    row["dimensions"]["exact_vtable_witness"] = {
+        "status": "supported", "evidence_class": "exact_static", "provenance": [],
+    }
+    path = tmp_path / "candidate-evidence.jsonl"
+    path.write_text(json.dumps(row) + "\n", encoding="utf-8")
+
+    with pytest.raises(MetricProjectionError, match="incomplete exact_vtable_witness evidence"):
+        project(
+            {"id": "candidate-evidence", "kind": "receiver_candidate_evidence", "artifact": "evidence"},
+            {"content": "jsonl"}, {"evidence": path},
+        )
+
+
 def test_benchmark_runs_projections_and_fails_exact_evidence_gate(tmp_path: Path) -> None:
     manifest_path = _write_manifest(tmp_path)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -241,6 +303,16 @@ def test_benchmark_runs_projections_and_fails_exact_evidence_gate(tmp_path: Path
             "format": "REVENGINSTR.ReceiverCandidateAssessment/1", "status": "mixed_candidates",
             "candidate_receiver_class_names": ["TypeA", "TypeB"], "unknown_type_candidate_count": 1,
             "compatibility_group_id": None,
+        }],
+        "candidate_evidence": [{
+            "format": "REVENGINSTR.ReceiverCandidateEvidence/1",
+            "dimensions": {
+                name: {"status": "unknown", "evidence_class": None, "provenance": []}
+                for name in (
+                    "exact_vtable_witness", "constructor_factory_witness", "field_layout_compatibility",
+                    "slot_compatibility", "caller_provenance", "callgraph_consistency", "runtime_witness",
+                )
+            },
         }],
     }
     for artifact_id, records in rows.items():
@@ -268,6 +340,7 @@ def test_benchmark_runs_projections_and_fails_exact_evidence_gate(tmp_path: Path
         },
         {"id": "drift", "kind": "validation", "artifact": "drift"},
         {"id": "receiver-assessment", "kind": "receiver_assessment", "artifact": "receiver_assessment"},
+        {"id": "candidate-evidence", "kind": "receiver_candidate_evidence", "artifact": "candidate_evidence"},
     ]
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
@@ -281,6 +354,7 @@ def test_benchmark_runs_projections_and_fails_exact_evidence_gate(tmp_path: Path
     assert summary["projections"][2]["validation"]["labels_available"] is False
     assert summary["projections"][2]["validation"]["frozen_rows"] == 10
     assert summary["projections"][3]["receiver_assessment"]["unknown_candidate_total"] == 1
+    assert summary["projections"][4]["receiver_candidate_evidence"]["dimension_metrics"]["runtime_witness"]["status_counts"] == {"unknown": 1}
 
 
 def test_validation_projection_preserves_unlabeled_status(tmp_path: Path) -> None:

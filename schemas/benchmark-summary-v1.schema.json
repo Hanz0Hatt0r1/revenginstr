@@ -71,7 +71,7 @@
       "required": ["id", "kind", "artifact", "row_count", "exact_evidence"],
       "properties": {
         "id": {"type": "string"},
-        "kind": {"enum": ["classifier", "router", "receiver", "receiver_assessment", "validation"]},
+        "kind": {"enum": ["classifier", "router", "receiver", "receiver_assessment", "receiver_candidate_evidence", "validation"]},
         "artifact": {"type": "string"},
         "row_count": {"type": ["integer", "null"], "minimum": 0},
         "class_distribution": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
@@ -80,6 +80,7 @@
         "calibration": {"$ref": "#/$defs/calibrationMetrics"},
         "receiver": {"$ref": "#/$defs/receiverMetrics"},
         "receiver_assessment": {"$ref": "#/$defs/receiverAssessmentMetrics"},
+        "receiver_candidate_evidence": {"$ref": "#/$defs/receiverCandidateEvidenceMetrics"},
         "reason_counts": {
           "type": "object",
           "properties": {
@@ -178,6 +179,36 @@
         "rows_with_unknown_candidates": {"type": "integer", "minimum": 0},
         "unknown_candidate_total": {"type": "integer", "minimum": 0},
         "compatibility_group_rows": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "receiverCandidateEvidenceMetrics": {
+      "type": "object",
+      "required": ["dimension_metrics"],
+      "properties": {
+        "dimension_metrics": {
+          "type": "object",
+          "required": ["exact_vtable_witness", "constructor_factory_witness", "field_layout_compatibility", "slot_compatibility", "caller_provenance", "callgraph_consistency", "runtime_witness"],
+          "properties": {
+            "exact_vtable_witness": {"$ref": "#/$defs/receiverCandidateEvidenceDimensionMetrics"},
+            "constructor_factory_witness": {"$ref": "#/$defs/receiverCandidateEvidenceDimensionMetrics"},
+            "field_layout_compatibility": {"$ref": "#/$defs/receiverCandidateEvidenceDimensionMetrics"},
+            "slot_compatibility": {"$ref": "#/$defs/receiverCandidateEvidenceDimensionMetrics"},
+            "caller_provenance": {"$ref": "#/$defs/receiverCandidateEvidenceDimensionMetrics"},
+            "callgraph_consistency": {"$ref": "#/$defs/receiverCandidateEvidenceDimensionMetrics"},
+            "runtime_witness": {"$ref": "#/$defs/receiverCandidateEvidenceDimensionMetrics"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "receiverCandidateEvidenceDimensionMetrics": {
+      "type": "object",
+      "required": ["status_counts", "evidence_class_counts"],
+      "properties": {
+        "status_counts": {"$ref": "#/$defs/countMap"},
+        "evidence_class_counts": {"$ref": "#/$defs/countMap"}
       },
       "additionalProperties": false
     },
