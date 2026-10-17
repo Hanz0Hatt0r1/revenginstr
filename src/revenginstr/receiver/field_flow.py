@@ -437,6 +437,15 @@ def _route_blocks(
     return result
 
 
+def _may_write_tracked_space(operation: dict[str, Any], tracked_space: str) -> bool:
+    """Keep possible effects in the tracked P-code space or with unknown space."""
+    opcode = operation["opcode"]
+    if opcode == "STORE":
+        write_space = operation.get("memory_space")
+        return not write_space or write_space == tracked_space
+    return opcode not in _CFG_NON_MEMORY_OPCODES
+
+
 def _find_routes(
     cfg: dict[str, Any],
     start: tuple[int, int],
@@ -444,6 +453,7 @@ def _find_routes(
     *,
     stop_at: tuple[int, int] | None = None,
     classify_effects: bool = False,
+    tracked_memory_space: str | None = None,
     max_expansions: int,
 ) -> tuple[list[int] | None, list[int] | None, int]:
     """Find one clean and, optionally, one effect-bearing CFG witness."""
@@ -474,8 +484,13 @@ def _find_routes(
         expansions += 1
         operations = blocks[block_index]["operations"]
         if position < len(operations):
-            opcode = operations[position]["opcode"]
-            next_effect = effect_seen or (classify_effects and opcode not in _CFG_NON_MEMORY_OPCODES)
+            operation = operations[position]
+            next_effect = effect_seen
+            if classify_effects:
+                next_effect = next_effect or (
+                    True if tracked_memory_space is None
+                    else _may_write_tracked_space(operation, tracked_memory_space)
+                )
             next_states = [(block_index, position + 1, bool(next_effect))]
         else:
             next_states = [(successor, 0, effect_seen) for successor in sorted(blocks[block_index]["successors"])]
@@ -497,9 +512,10 @@ def audit_field_store_load_dominance(
 ) -> list[dict[str, Any]]:
     """Require a candidate store to dominate a paired load with no memory-effect path.
 
-    This deliberately treats every store, call, indirect effect, and unclassified
-    P-code opcode as a possible aliasing write. A positive row is a structural
-    candidate, not a runtime or semantic value-flow claim.
+    A store in a known different P-code address space is outside the tracked
+    space. Same-space and unknown-space stores, calls, indirect effects, and
+    unclassified P-code opcodes remain possible effects. A positive row is a
+    structural candidate, not a runtime or semantic value-flow claim.
     """
     if any(not isinstance(value, str) or _SHA256.fullmatch(value) is None for value in (pair_graph_sha256, cfg_sha256)):
         raise ValueError("input SHA-256 must be lowercase hexadecimal")
@@ -576,7 +592,8 @@ def audit_field_store_load_dominance(
                 budget = max_path_expansions - path_expansions
                 clean_after_store, effect_after_store, used = _find_routes(
                     cfg, (store_location[0], store_location[1] + 1), load_location[:2],
-                    classify_effects=True, max_expansions=budget,
+                    classify_effects=True, tracked_memory_space=store_memory_space,
+                    max_expansions=budget,
                 )
                 path_expansions += used
                 if not store_dominates:

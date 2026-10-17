@@ -60,12 +60,23 @@ def _cfg_rows():
     return [json.loads(CFG_FIXTURE.read_text(encoding="utf-8"))]
 
 
-def _cfg_v2_row(*, store_in_entry: bool = True, effect_on_one_branch: bool = False):
+def _cfg_v2_row(
+    *,
+    store_in_entry: bool = True,
+    effect_on_one_branch: bool = False,
+    intervening_store: bool = False,
+    intervening_store_space: str | None = "register",
+):
     store = {"address": "00401020", "time": 7, "opcode": "STORE", "memory_space": "ram", "memory_width_bytes": 4}
     load = {"address": "00401030", "time": 11, "opcode": "LOAD", "memory_space": "ram", "memory_width_bytes": 4}
     pure = lambda address, time, opcode: {
         "address": address, "time": time, "opcode": opcode, "memory_space": None, "memory_width_bytes": None,
     }
+    branch_operation = (
+        {"address": "00401024", "time": 10, "opcode": "STORE",
+         "memory_space": intervening_store_space, "memory_width_bytes": 4}
+        if intervening_store else pure("00401024", 10, "CALL" if effect_on_one_branch else "INT_ADD")
+    )
     blocks = [
         {"block_index": 0, "start_address": "00401000", "stop_address": "00401021",
          "operations": [pure("00401001", 6, "COPY"), pure("00401021", 8, "CBRANCH")], "successors": [1, 2]},
@@ -73,7 +84,7 @@ def _cfg_v2_row(*, store_in_entry: bool = True, effect_on_one_branch: bool = Fal
          "operations": ([store, pure("00401022", 9, "COPY")] if not store_in_entry else [pure("00401022", 9, "COPY")]),
          "successors": [3]},
         {"block_index": 2, "start_address": "00401024", "stop_address": "00401024",
-         "operations": [pure("00401024", 10, "CALL" if effect_on_one_branch else "INT_ADD")], "successors": [3]},
+         "operations": [branch_operation], "successors": [3]},
         {"block_index": 3, "start_address": "00401030", "stop_address": "00401030",
          "operations": [load], "successors": []},
     ]
@@ -229,6 +240,26 @@ def test_dominance_audit_fails_closed_on_access_shape_or_missing_metadata() -> N
             _pair_graphs(), [_cfg_v2_row()], pair_graph_sha256="a" * 64,
             cfg_sha256="b" * 64, max_path_expansions=1,
         )
+
+
+@pytest.mark.parametrize(
+    ("write_space", "expected_status"),
+    [
+        ("register", "unique_cfg_store_candidate"),
+        ("ram", "possible_intervening_memory_effect"),
+        (None, "possible_intervening_memory_effect"),
+    ],
+)
+def test_dominance_audit_filters_only_known_disjoint_address_spaces(
+    write_space: str | None, expected_status: str,
+) -> None:
+    cfg = _cfg_v2_row(intervening_store=True, intervening_store_space=write_space)
+    Draft202012Validator(CFG_V2_SCHEMA).validate(cfg)
+    [row] = audit_field_store_load_dominance(
+        _pair_graphs(), [cfg], pair_graph_sha256="a" * 64, cfg_sha256="b" * 64,
+    )
+    assert row["status"] == expected_status
+    assert row["memory_effect_path_exists"] is (expected_status != "unique_cfg_store_candidate")
 
 
 def test_cfg_audit_cli_and_benchmark_stage(tmp_path: Path) -> None:
