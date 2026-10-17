@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/function-summary-v1.schema.json",
+  "title": "REVENGINSTR.FunctionSummary/1",
+  "description": "Evidence-backed grouping of FunctionEffectIR facts. It adds no semantic role or reachability claim.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program_id", "function_entry", "source_effect_ir_sha256", "claims"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.FunctionSummary/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "function_entry": {"type": "string", "minLength": 1},
+    "source_effect_ir_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "claims": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/claim"}}
+  },
+  "$defs": {
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "evidence_class", "attributes", "support"],
+      "properties": {
+        "kind": {"enum": ["parameter_field_read", "parameter_field_write", "direct_call", "indirect_call", "return_op"]},
+        "evidence_class": {"enum": ["exact_static", "derived_structural"]},
+        "attributes": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "parameter_index": {"type": "integer", "minimum": 0},
+            "field_offset": {"type": "string", "pattern": "^-?0x[0-9a-f]+$"},
+            "value_size": {"type": "integer", "minimum": 0},
+            "source_parameter_index": {"type": "integer", "minimum": 0},
+            "target_entry": {"type": ["string", "null"]},
+            "target_name": {"type": ["string", "null"]}
+          }
+        },
+        "support": {
+          "type": "array", "minItems": 1, "items": {"$ref": "#/$defs/support"}
+        }
+      },
+      "allOf": [
+        {"if": {"properties": {"kind": {"const": "parameter_field_read"}}, "required": ["kind"]}, "then": {"properties": {"evidence_class": {"const": "derived_structural"}, "attributes": {"required": ["parameter_index", "field_offset", "value_size"], "not": {"anyOf": [{"required": ["source_parameter_index"]}, {"required": ["target_entry"]}, {"required": ["target_name"]}]}}}}},
+        {"if": {"properties": {"kind": {"const": "parameter_field_write"}}, "required": ["kind"]}, "then": {"properties": {"evidence_class": {"const": "derived_structural"}, "attributes": {"required": ["parameter_index", "field_offset", "source_parameter_index"], "not": {"anyOf": [{"required": ["target_entry"]}, {"required": ["target_name"]}]}}}}},
+        {"if": {"properties": {"kind": {"enum": ["direct_call", "indirect_call"]}}, "required": ["kind"]}, "then": {"properties": {"evidence_class": {"const": "exact_static"}, "attributes": {"required": ["target_entry", "target_name"], "not": {"anyOf": [{"required": ["parameter_index"]}, {"required": ["field_offset"]}, {"required": ["value_size"]}, {"required": ["source_parameter_index"]}]}}}}},
+        {"if": {"properties": {"kind": {"const": "return_op"}}, "required": ["kind"]}, "then": {"properties": {"evidence_class": {"const": "exact_static"}, "attributes": {"maxProperties": 0}}}}
+      ]
+    },
+    "support": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["effect_id", "provenance"],
+      "properties": {
+        "effect_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "provenance": {
+          "type": "object", "additionalProperties": false,
+          "required": ["source_format", "artifact_sha256", "record_index"],
+          "properties": {
+            "source_format": {"type": "string", "minLength": 1},
+            "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "record_index": {"type": "integer", "minimum": 1}
+          }
+        }
+      }
+    }
+  }
+}

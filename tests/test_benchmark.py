@@ -368,6 +368,7 @@ def test_benchmark_runs_function_effect_ir_stage(tmp_path: Path) -> None:
         "parameter_load": "ghidra-parameter-load-field-v1.schema.json",
         "pcode_flow": "ghidra-function-pcode-flow-v1.schema.json",
         "function_effect_ir": "function-effect-ir-v1.schema.json",
+        "function_summary": "function-summary-v1.schema.json",
     }
     for schema_id, filename in schema_files.items():
         schema_path = ROOT / "schemas" / filename
@@ -401,6 +402,11 @@ def test_benchmark_runs_function_effect_ir_stage(tmp_path: Path) -> None:
         "content": "jsonl", "format": "REVENGINSTR.FunctionEffectIR/1",
         "schema": "function_effect_ir",
     }
+    manifest["artifacts"]["function_summaries"] = {
+        "path": "function-summaries.jsonl", "role": "output", "kind": "file",
+        "content": "jsonl", "format": "REVENGINSTR.FunctionSummary/1",
+        "schema": "function_summary",
+    }
     manifest["stages"].append({
         "id": "function_effect_ir", "tool": "function-effect-ir",
         "args": [
@@ -412,6 +418,12 @@ def test_benchmark_runs_function_effect_ir_stage(tmp_path: Path) -> None:
         ],
         "inputs": list(fixture_paths), "outputs": ["function_effects"],
     })
+    manifest["stages"].append({
+        "id": "structured_summary", "tool": "structured-summary",
+        "args": ["${artifact:function_effects}", "--output", "${artifact:function_summaries}"],
+        "inputs": ["function_effects"], "outputs": ["function_summaries"],
+        "depends_on": ["function_effect_ir"],
+    })
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
     summary, code = run_benchmark(
@@ -420,7 +432,7 @@ def test_benchmark_runs_function_effect_ir_stage(tmp_path: Path) -> None:
 
     assert code == 0
     assert summary["status"] == "passed"
-    assert summary["stages"][-1]["tool"] == "function-effect-ir"
+    assert summary["stages"][-1]["tool"] == "structured-summary"
     records = [
         json.loads(line)
         for line in (tmp_path / "function-effects.jsonl").read_text(encoding="utf-8").splitlines()
@@ -432,6 +444,14 @@ def test_benchmark_runs_function_effect_ir_stage(tmp_path: Path) -> None:
     for record in records:
         validator.validate(record)
     assert len(records) == 2
+    function_summaries = [
+        json.loads(line)
+        for line in (tmp_path / "function-summaries.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    summary_schema = json.loads((ROOT / "schemas/function-summary-v1.schema.json").read_text(encoding="utf-8"))
+    for record in function_summaries:
+        Draft202012Validator(summary_schema).validate(record)
+    assert len(function_summaries) == len(records)
 
 
 def test_benchmark_runs_semantic_role_evaluation_stage(tmp_path: Path) -> None:
