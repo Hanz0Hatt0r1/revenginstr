@@ -79,6 +79,8 @@ REVENGINSTR.BenchmarkDelta/1
 REVENGINSTR.FunctionEffectIR/1
 REVENGINSTR.FunctionSummary/1
 REVENGINSTR.AnalysisFeedback/1
+REVENGINSTR.AnalysisDecisionLedgerEvent/1
+REVENGINSTR.AnalysisDecisionLedgerAudit/1
 ```
 
 JSON Schemas in `schemas/` define portable evidence, benchmark, determinism and
@@ -105,6 +107,8 @@ The parameter-to-field store TSV contract is documented in
 `docs/GHIDRA_PARAMETER_STORE_FIELD.md`.
 The consumer-owned reviewer feedback contract is documented in
 [`docs/ANALYSIS_FEEDBACK.md`](docs/ANALYSIS_FEEDBACK.md).
+The convergence-state and decision-ledger contracts are documented in
+[`docs/ANALYSIS_DECISION_LEDGER.md`](docs/ANALYSIS_DECISION_LEDGER.md).
 The function-level evidence projection and compact structured summary are
 documented in [`docs/FUNCTION_EFFECT_IR.md`](docs/FUNCTION_EFFECT_IR.md) and
 [`docs/FUNCTION_SUMMARY.md`](docs/FUNCTION_SUMMARY.md).
@@ -211,6 +215,8 @@ revenginstr-effect-ir --program-id 'analysis:opaque-id' \
   --parameter-loads parameter-loads.tsv --output function-effects.jsonl
 revenginstr-structured-summary function-effects.jsonl \
   --output function-summaries.jsonl
+revenginstr-decision-ledger-audit decision-events.jsonl \
+  --output decision-ledger-audit.json
 revenginstr-freeze-validation wide-corpus.jsonl validation/unseen500 \
   --exclude-trace training-trace.jsonl --limit 500 --tag unseen500-v1
 revenginstr-drift-audit model-v2/oof_predictions.jsonl validation/unseen500/routed.jsonl \
