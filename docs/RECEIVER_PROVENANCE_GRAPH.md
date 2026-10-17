@@ -37,6 +37,20 @@ call keys, invalid presence flags, and unknown input formats fail closed.
 revenginstr-receiver-graph receiver-types.tsv --output receiver-graphs.jsonl
 ```
 
+The bounded direct-call exporter can also be projected into one-hop actual
+argument-to-formal-parameter edges:
+
+```sh
+revenginstr-receiver-argument-flow caller-argument-subtree.tsv \
+  --output argument-flow-graphs.jsonl --max-graphs 10000
+```
+
+Only root rows (`edge_kind=root`, `depth=0`) become edges. Summary and descendant
+rows are counted and skipped. Duplicate roots, malformed keys, unsupported row
+formats, and exceeding the graph budget fail closed. This does not recursively
+propagate through callees, interpret argument types, or combine distinct input
+artifacts; it preserves one exact static call-argument relation per graph.
+
 ## Minimal example
 
 ```json

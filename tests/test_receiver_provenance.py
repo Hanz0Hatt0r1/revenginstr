@@ -8,8 +8,11 @@ from jsonschema import Draft202012Validator, ValidationError
 
 from revenginstr.receiver.provenance import (
     FORMAT,
+    CALLER_ARGUMENT_FORMAT,
     RECEIVER_TYPE_FORMAT,
+    build_caller_argument_graphs,
     build_receiver_graphs,
+    caller_argument_main,
     main,
     validate_graph_references,
 )
@@ -172,3 +175,78 @@ def test_builder_cli_writes_graph_jsonl_and_reports_omissions(tmp_path: Path, ca
     assert main([str(source), "--output", str(output)]) == 0
     assert json.loads(output.read_text(encoding="utf-8"))["graph_id"] == "sample:1000#0"
     assert "calls without receiver: 1" in capsys.readouterr().out
+
+
+def caller_argument_row(**overrides: str) -> dict[str, str]:
+    row = {
+        "format": CALLER_ARGUMENT_FORMAT,
+        "row_type": "node",
+        "plan_id": "plan:sample",
+        "callee_entry": "00401000",
+        "parameter_index": "1",
+        "caller_entry": "00402000",
+        "caller_call_site": "00402010",
+        "node_id": "0",
+        "parent_node_id": "-1",
+        "depth": "0",
+        "edge_kind": "root",
+    }
+    row.update(overrides)
+    return row
+
+
+def test_builder_projects_bounded_root_to_formal_parameter() -> None:
+    root = caller_argument_row()
+    child = caller_argument_row(node_id="1", parent_node_id="0", depth="1", edge_kind="base")
+    summary = caller_argument_row(row_type="summary")
+
+    graphs, skipped = build_caller_argument_graphs([child, summary, root])
+
+    assert skipped == 2
+    assert len(graphs) == 1
+    graph = graphs[0]
+    assert [node["kind"] for node in graph["nodes"]] == ["call_argument", "parameter"]
+    edge = graph["edges"][0]
+    assert (edge["from"], edge["to"], edge["relation"]) == (
+        "caller_argument", "callee_parameter", "argument_flow"
+    )
+    assert edge["evidence_class"] == "exact_static"
+    assert edge["provenance"][0]["source_format"] == CALLER_ARGUMENT_FORMAT
+    Draft202012Validator(json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))).validate(graph)
+
+
+@pytest.mark.parametrize(
+    ("rows", "kwargs", "message"),
+    [
+        ([caller_argument_row(format="consumer/1")], {}, "unsupported format"),
+        ([caller_argument_row(row_type="other")], {}, "invalid row_type"),
+        ([caller_argument_row(parameter_index="x")], {}, "invalid root key"),
+        ([caller_argument_row(parent_node_id="0")], {}, "invalid root key"),
+        ([caller_argument_row(), caller_argument_row()], {}, "duplicate caller argument root"),
+        ([caller_argument_row(), caller_argument_row(caller_call_site="00402020")], {"max_graphs": 1}, "budget exceeded"),
+        ([], {"max_graphs": 0}, "max_graphs must be positive"),
+    ],
+)
+def test_caller_argument_builder_fails_closed(rows, kwargs, message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        build_caller_argument_graphs(rows, **kwargs)
+
+
+def test_caller_argument_cli_writes_graph_jsonl_and_reports_skips(tmp_path: Path, capsys) -> None:
+    source = tmp_path / "caller-argument-subtree.tsv"
+    source.write_text(
+        "format\trow_type\tplan_id\tcallee_entry\tparameter_index\tcaller_entry\t"
+        "caller_call_site\tnode_id\tparent_node_id\tdepth\tedge_kind\n"
+        f"{CALLER_ARGUMENT_FORMAT}\tnode\tplan:sample\t00401000\t1\t00402000\t"
+        "00402010\t0\t-1\t0\troot\n"
+        f"{CALLER_ARGUMENT_FORMAT}\tnode\tplan:sample\t00401000\t1\t00402000\t"
+        "00402010\t1\t0\t1\tbase\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "argument-flow.jsonl"
+
+    assert caller_argument_main([
+        str(source), "--output", str(output), "--max-graphs", "1"
+    ]) == 0
+    assert len(output.read_text(encoding="utf-8").splitlines()) == 1
+    assert "subtree/summary rows skipped: 1" in capsys.readouterr().out
