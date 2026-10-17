@@ -2,12 +2,12 @@
 
 This inventory records where reusable Ghidra export and analysis mechanisms
 live and which consumer compatibility layers remain. It uses the fetched
-`origin/main` snapshots checked on 2026-10-17 and refreshed after the first
-same-program bounded P-code parity report:
+`origin/main` snapshots checked on 2026-10-17 and refreshed after the second
+same-program bounded P-code parity root:
 
 | Repository | Snapshot |
 |---|---|
-| `Hanz0Hatt0r1/revenginstr` | `4db31ef8` |
+| `Hanz0Hatt0r1/revenginstr` | `4105a763` |
 | `Hanz0Hatt0r1/nevergone-recomp` | `985bf294` |
 | `Hanz0Hatt0r1/nfs-shift-decompilation` | `e660406e` |
 
@@ -20,7 +20,7 @@ in their consumer repositories.
 | Capability | Canonical implementation | Nevergone boundary | NFS Shift boundary | Classification / next action |
 |---|---|---|---|---|
 | Portable high P-code corpus, corpus audit and foreign-project guard | `PortablePcodeCorpusExporter.java`, `revenginstr.pcode.audit`, `revenginstr.ood.foreign_guard` | `ExportMlPcodeCorpus.java` remains a legacy-format fallback; its comment records 2,000-function parity. New exports use the shared runner. | `run_shift_cross_project_pcode_probe.sh` calls the shared exporter, audit and guard; classifier transfer remains opt-in. | Canonical here, with consumer-owned format/data adapters. Keep corpus rows, labels and model configuration in each consumer. |
-| One-function P-code flow and bounded forward/reverse callgraph export | `ExportFunctionPcodeFlow.java`, `ExportBoundedCallGraphPcodeFlow.java`, `ExportBoundedReverseCallGraphPcodeFlow.java`; shared TSV contract, runner and `revenginstr-export-parity` in `revenginstr` | Nevergone's single-function exporter source is byte-identical to the shared source. Its bounded local exporters retain consumer-specific traversal priorities; the shared versions accept generic priority rules. One same-program bounded forward/reverse comparison now reports byte-identical output under equivalent priority policies; details and hashes stay in the [consumer evidence report](https://github.com/Hanz0Hatt0r1/nevergone-recomp/blob/main/docs/evidence/ghidra-export-parity.md). The runner selects shared scripts when available and keeps local fallbacks. | No consumer-local flow exporters appear in the inspected NFS `origin/main` tree; its cross-project probe uses the shared portable corpus path. | Shared implementations are canonical. Keep the Nevergone compatibility fallbacks until parity coverage spans additional roots and bounds. |
+| One-function P-code flow and bounded forward/reverse callgraph export | `ExportFunctionPcodeFlow.java`, `ExportBoundedCallGraphPcodeFlow.java`, `ExportBoundedReverseCallGraphPcodeFlow.java`; shared TSV contract, runner and `revenginstr-export-parity` in `revenginstr` | Nevergone's single-function exporter source is byte-identical to the shared source. Its bounded local exporters retain consumer-specific traversal priorities; the shared versions accept generic priority rules. Same-program bounded parity now covers two roots across three outputs (two forward, one reverse), byte-identical under equivalent priority policies; details and hashes stay in the [consumer evidence report](https://github.com/Hanz0Hatt0r1/nevergone-recomp/blob/main/docs/evidence/ghidra-export-parity.md). The runner selects shared scripts when available and keeps local fallbacks. | No consumer-local flow exporters appear in the inspected NFS `origin/main` tree; its cross-project probe uses the shared portable corpus path. | Shared implementations are canonical. Keep the Nevergone compatibility fallbacks until parity coverage spans additional roots and bounds. |
 | Generic address/reference and program-index export | `ExportGhidraAddressReferences.java`, `ExportGhidraAddressReferenceOwners.java`, `ExportGhidraAddressMetadata.java`, `ExportGhidraProgramIndex.java` and shared runners | `ExportAddressReferenceOwners.java` adapts shared rows to the retained Nevergone format; `run_nevergone_program_index.sh` delegates to the shared runner first. | `run_shift_global_references.sh` uses the shared address-reference exporter and a small output adapter. | Canonical here, with thin consumer adapters. Preserve consumer joins and historical file contracts at the boundary. |
 | Instruction, slice, operand, scalar and compact-stream export | `ExportGhidraFunctionInstructions.java`, `ExportGhidraInstructionSlices.java`, `ExportGhidraFunctionOperands.java`, `ExportGhidraScalarUses.java`, `ExportGhidraCompactInstructionStream.java` | Shared-first runners are present for selected probes; consumer-specific joins remain local. | `run_shift_function_instructions.sh`, `run_shift_instruction_slices.sh`, `run_shift_scalar_uses.sh` and the manager compact-stream runner call generic exporters and adapt output tags. Legacy `Shift*Exporter.java` sources remain as fallbacks. | Canonical here with thin adapters; local `Shift*` exporter implementations are duplicate compatibility fallbacks pending per-format parity checks. |
 | Structural stores, parameters and defined strings | `ExportGhidraFieldStoreCandidates.java`, `ExportGhidraParameterStoreField.java`, `ExportGhidraPcodeDefinedStrings.java` | `ExportPcodeDefinedStrings.java` adapts shared rows to its historical TSV. The current-frame probe delegates to the shared field-store runner when available. `ExportParameterStoreField.java` remains a full local analysis implementation. | P1/vehicle and resource exporters that consume these primitives remain title-specific. | Canonical shared extraction with a thin defined-strings wrapper; Nevergone parameter-store logic is a duplicate pending same-input parity review. |
@@ -52,9 +52,10 @@ classification and validation; consumers retain path discovery and local joins.
 
 ## Follow-up from this snapshot
 
-1. Expand Nevergone same-program parity coverage across additional roots and
-   traversal bounds. Keep hash-only reports and invocation details in the
-   consumer; retain the local bounded fallbacks until those cases are covered.
+1. Expand Nevergone same-program parity coverage with reverse traversal and
+   additional bounds on the second root. Keep hash-only reports and invocation
+   details in the consumer; retain the local bounded fallbacks until those
+   cases are covered.
 2. For NFS Shift's remaining direct `Export*` sources, record which scripts
    invoke them and add same-input parity fixtures before making any wrapper
    shared-first.

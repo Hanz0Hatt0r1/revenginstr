@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `8ea9f4677c654e3f9976d1c043ec59933c7629bc`
+**Repository baseline:** `main` through `4105a7634dc226901a0d46013797cbfd9bb839f6`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -283,11 +283,12 @@ audit/schema validation and check exact TSV headers, column ordering, and rows
 against their v1 schemas. `revenginstr-export-parity` compares two UTF-8 TSV
 outputs in row order and emits hashes/counts plus the first mismatch without
 retaining record values. Nevergone now records byte-identical bounded forward
-and reverse outputs from the same analyzed program under equivalent priority
-rules; the [report and invocation details](https://github.com/Hanz0Hatt0r1/nevergone-recomp/blob/main/docs/evidence/ghidra-export-parity.md)
-stay in that consumer. Expand parity coverage across more roots and bounds
-before retiring the local fallbacks. The work remains open for fixtures
-accompanying later exporter migrations.
+and reverse outputs on one root and a forward output on a second root from the
+same analyzed program under equivalent priority rules. The [report and
+invocation details](https://github.com/Hanz0Hatt0r1/nevergone-recomp/blob/main/docs/evidence/ghidra-export-parity.md)
+stay in that consumer. Expand reverse coverage and additional bounds before
+retiring the local fallbacks. The work remains open for fixtures accompanying
+later exporter migrations.
 The synthetic address-reference-owner TSV fixture now covers a resolved
 reference and the no-reference sentinel row against its v1 schema.
 
