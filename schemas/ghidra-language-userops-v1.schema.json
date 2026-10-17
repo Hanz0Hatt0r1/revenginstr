@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-language-userops-v1.schema.json",
+  "title": "REVENGINSTR.GhidraLanguageUserops/1 report",
+  "type": "object",
+  "required": ["format", "language_id", "userop_count", "userops"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraLanguageUserops/1"},
+    "language_id": {"type": "string", "minLength": 1},
+    "userop_count": {"type": "integer", "minimum": 0},
+    "userops": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["index", "name"],
+        "properties": {
+          "index": {"type": "integer", "minimum": 0},
+          "name": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
