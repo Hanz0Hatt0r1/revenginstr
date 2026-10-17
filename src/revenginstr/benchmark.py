@@ -35,6 +35,7 @@ TOOLS = {
     "receiver-argument-propagate": ("revenginstr.receiver.provenance", "recursive_argument_main"),
     "receiver-call-return-flow": ("revenginstr.receiver.provenance", "call_return_main"),
     "direct-call-memory-effects": ("revenginstr.receiver.call_effects", "main"),
+    "direct-call-memory-effect-closure": ("revenginstr.receiver.call_effect_closure", "main"),
     "receiver-field-store-load-audit": ("revenginstr.receiver.field_flow", "main"),
     "receiver-field-store-load-dominance-audit": ("revenginstr.receiver.field_flow", "dominance_main"),
     "function-effect-ir": ("revenginstr.effect_ir", "main"),
