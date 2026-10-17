@@ -7,7 +7,7 @@ parity-audit addition:
 
 | Repository | Snapshot |
 |---|---|
-| `Hanz0Hatt0r1/revenginstr` | `26896cc9` |
+| `Hanz0Hatt0r1/revenginstr` | `a9bac53d` |
 | `Hanz0Hatt0r1/nevergone-recomp` | `d057305b` |
 | `Hanz0Hatt0r1/nfs-shift-decompilation` | `e660406e` |
 
