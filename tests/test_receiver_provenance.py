@@ -218,6 +218,20 @@ def test_builder_projects_bounded_root_to_formal_parameter() -> None:
     Draft202012Validator(json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))).validate(graph)
 
 
+@pytest.mark.parametrize("opcode", ["CALL", "CALLIND"])
+def test_caller_argument_graph_records_generic_call_result(opcode: str) -> None:
+    graphs, _skipped = build_caller_argument_graphs([
+        caller_argument_row(defining_opcode=opcode)
+    ])
+
+    graph = graphs[0]
+    assert {node["kind"] for node in graph["nodes"]} == {"call_argument", "parameter", "return"}
+    return_edge = next(edge for edge in graph["edges"] if edge["relation"] == "return_flow")
+    assert (return_edge["from"], return_edge["to"]) == ("call_result", "caller_argument")
+    assert return_edge["provenance"] == graph["edges"][0]["provenance"]
+    Draft202012Validator(json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))).validate(graph)
+
+
 @pytest.mark.parametrize(
     ("rows", "kwargs", "message"),
     [

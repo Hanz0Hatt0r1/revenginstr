@@ -50,6 +50,9 @@ rows are counted and skipped. Duplicate roots, malformed keys, unsupported row
 formats, and exceeding the graph budget fail closed. This does not recursively
 propagate through callees, interpret argument types, or combine distinct input
 artifacts; it preserves one exact static call-argument relation per graph.
+If a root value is directly defined by `CALL` or `CALLIND`, the graph also
+records a generic call-result-to-argument edge from the same source row. It
+does not classify that call as a factory/getter or infer its target semantics.
 
 Parameter-to-parameter field-store evidence can be anchored with an explicit
 program join key:

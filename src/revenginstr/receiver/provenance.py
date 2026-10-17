@@ -177,24 +177,37 @@ def build_caller_argument_graphs(
         seen_roots.add(key)
 
         graph_id = json.dumps(key, ensure_ascii=False, separators=(",", ":"))
+        provenance = [{
+            "source_format": CALLER_ARGUMENT_FORMAT,
+            "source_id": graph_id,
+        }]
+        nodes = [
+            {"id": "caller_argument", "kind": "call_argument"},
+            {"id": "callee_parameter", "kind": "parameter"},
+        ]
+        edges = [{
+            "id": "argument_flow",
+            "from": "caller_argument",
+            "to": "callee_parameter",
+            "relation": "argument_flow",
+            "evidence_class": "exact_static",
+            "provenance": provenance,
+        }]
+        if row.get("defining_opcode") in {"CALL", "CALLIND"}:
+            nodes.insert(1, {"id": "call_result", "kind": "return"})
+            edges.append({
+                "id": "call_return",
+                "from": "call_result",
+                "to": "caller_argument",
+                "relation": "return_flow",
+                "evidence_class": "exact_static",
+                "provenance": provenance,
+            })
         graph: dict[str, Any] = {
             "format": FORMAT,
             "graph_id": graph_id,
-            "nodes": [
-                {"id": "caller_argument", "kind": "call_argument"},
-                {"id": "callee_parameter", "kind": "parameter"},
-            ],
-            "edges": [{
-                "id": "argument_flow",
-                "from": "caller_argument",
-                "to": "callee_parameter",
-                "relation": "argument_flow",
-                "evidence_class": "exact_static",
-                "provenance": [{
-                    "source_format": CALLER_ARGUMENT_FORMAT,
-                    "source_id": graph_id,
-                }],
-            }],
+            "nodes": nodes,
+            "edges": edges,
         }
         validate_graph_references(graph)
         graphs.append(graph)
