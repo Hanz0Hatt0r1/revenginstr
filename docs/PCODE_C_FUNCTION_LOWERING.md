@@ -37,9 +37,11 @@ language address-space ID, pointer size, addressable unit size, and endianness
 from the table. Function-local P-code unique space is kept in a bounded local
 byte array.
 
-The current subset covers scalar varnodes up to 8 bytes, integer and boolean
-operations listed in `src/revenginstr/pcode/c_lowering.py`, integer division
-and remainder, 4-byte and 8-byte floating arithmetic/conversions, `LOAD`,
+The current subset covers scalar varnodes up to 8 bytes, raw 10-byte copies,
+binary80 conversions and arithmetic on x86 hosts with a 64-bit-significand
+`long double`, integer and boolean operations listed in
+`src/revenginstr/pcode/c_lowering.py`, integer division and remainder, 4-byte
+and 8-byte floating arithmetic/conversions, `LOAD`,
 `STORE`, direct conditional and unconditional branches within the function,
 same-instruction conditional repeat branches, P-code-relative branches within
 one instruction, computed jumps, direct
@@ -49,8 +51,11 @@ callback, keyed by Ghidra's language userop index. Function-local P-code unique
 space is compacted while preserving overlapping byte ranges. Computed jumps
 dispatch to Ghidra's in-function flow targets, or to any instruction start in
 the function when Ghidra supplies no target list; an outside target fails at
-runtime. Relative branch targets outside the current instruction's P-code,
-x87/vector widths above 8 bytes, and functions without P-code for non-NOP
+runtime. Binary80 helpers use the calling thread's current x87 control state;
+the consumer must keep it aligned with the guest state for matching rounding.
+On non-x86 hosts or hosts without binary80 `long double`, those operations
+return an error. Relative branch targets outside the current instruction's
+P-code, 16-byte vector values, and functions without P-code for non-NOP
 instructions fail closed.
 Generated Linux programs that use floating math must link with `-lm`. This
 backend is an executable lowering milestone, not full NFS Shift recompilation

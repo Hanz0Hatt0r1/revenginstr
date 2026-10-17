@@ -3,6 +3,7 @@ from __future__ import annotations
 import gzip
 import hashlib
 import json
+import platform
 import shutil
 import subprocess
 from pathlib import Path
@@ -166,7 +167,7 @@ def test_codegen_executes_float_arithmetic_and_signed_conversions(tmp_path: Path
     if compiler is None:
         pytest.skip("C compiler not available")
     harness = r'''
-typedef struct { uint8_t registers[64]; } TestState;
+typedef struct { uint8_t registers[64]; uint8_t ram[512]; } TestState;
 static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {
     TestState *state = (TestState *)opaque;
     if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
@@ -197,6 +198,113 @@ int main(void) {
     executable = tmp_path / "float"
     c_path.write_text(source + "\n" + harness, encoding="utf-8")
     subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
+def test_codegen_executes_binary80_conversions_arithmetic_copy_and_truncation(tmp_path: Path) -> None:
+    if platform.machine().lower() not in {"x86_64", "amd64", "i386", "i486", "i586", "i686", "x86"}:
+        pytest.skip("binary80 runtime requires an x86 host with 80-bit long double")
+    row = _function_row()
+    row["instructions"] = [
+        {"address": "0x00401000", "mnemonic": "FLD", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "FLOAT2FLOAT", "output": _varnode("unique", "0x100", 10),
+            "inputs": [_varnode("const", "0x3fc00000", 4, constant=True)],
+        }]},
+        {"address": "0x00401001", "mnemonic": "FLD", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "FLOAT2FLOAT", "output": _varnode("unique", "0x120", 10),
+            "inputs": [_varnode("const", "0x40100000", 4, constant=True)],
+        }]},
+        {"address": "0x00401002", "mnemonic": "FADD", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "FLOAT_ADD", "output": _varnode("unique", "0x140", 10),
+            "inputs": [_varnode("unique", "0x100", 10), _varnode("unique", "0x120", 10)],
+        }]},
+        {"address": "0x00401003", "mnemonic": "FCMP", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "FLOAT_EQUAL", "output": _varnode("register", "0x10", 1),
+            "inputs": [_varnode("unique", "0x140", 10),
+                       _varnode("const", "0x4000f000000000000000", 10, constant=True)],
+        }]},
+        {"address": "0x00401004", "mnemonic": "FST", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "COPY", "output": _varnode("register", "0x20", 10),
+            "inputs": [_varnode("unique", "0x140", 10)],
+        }]},
+        {"address": "0x00401005", "mnemonic": "FST", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "STORE", "output": None,
+            "inputs": [_varnode("const", "0x1a1", 4, constant=True),
+                       _varnode("const", "0x100", 4, constant=True), _varnode("unique", "0x140", 10)],
+        }]},
+        {"address": "0x00401006", "mnemonic": "FLD", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "LOAD", "output": _varnode("register", "0x30", 10),
+            "inputs": [_varnode("const", "0x1a1", 4, constant=True),
+                       _varnode("const", "0x100", 4, constant=True)],
+        }]},
+        {"address": "0x00401007", "mnemonic": "FIST", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "TRUNC", "output": _varnode("register", "0x4", 4),
+            "inputs": [_varnode("unique", "0x140", 10)],
+        }]},
+        {"address": "0x00401008", "mnemonic": "FILD", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "INT2FLOAT", "output": _varnode("unique", "0x180", 10),
+            "inputs": [_varnode("const", "0xfffffffe", 4, constant=True)],
+        }]},
+        {"address": "0x00401009", "mnemonic": "FSTP", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "FLOAT2FLOAT", "output": _varnode("register", "0x8", 4),
+            "inputs": [_varnode("unique", "0x180", 10)],
+        }]},
+        {"address": "0x0040100a", "mnemonic": "FSTP", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "FLOAT2FLOAT", "output": _varnode("register", "0x0", 4),
+            "inputs": [_varnode("unique", "0x140", 10)],
+        }]},
+        {"address": "0x0040100b", "mnemonic": "RET", "flow_type": "TERMINATOR", "flows": [], "pcode": [{
+            "opcode": "RETURN", "output": None, "inputs": [_varnode("register", "0x20", 4)],
+        }]},
+    ]
+    row["instruction_count"] = len(row["instructions"])
+    source, operation_count = compile_function(row, _address_spaces())
+    assert operation_count == 12
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    harness = r'''
+typedef struct { uint8_t registers[64]; uint8_t ram[512]; } TestState;
+static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {
+    TestState *state = (TestState *)opaque;
+    uint8_t *base = strcmp(space, "register") == 0 ? state->registers :
+                    strcmp(space, "ram") == 0 ? state->ram : NULL;
+    size_t limit = strcmp(space, "register") == 0 ? sizeof(state->registers) : sizeof(state->ram);
+    if (!base || offset + size > limit) return -1;
+    memcpy(out, base + offset, size);
+    return 0;
+}
+static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t size, const uint8_t *in) {
+    TestState *state = (TestState *)opaque;
+    uint8_t *base = strcmp(space, "register") == 0 ? state->registers :
+                    strcmp(space, "ram") == 0 ? state->ram : NULL;
+    size_t limit = strcmp(space, "register") == 0 ? sizeof(state->registers) : sizeof(state->ram);
+    if (!base || offset + size > limit) return -1;
+    memcpy(base + offset, in, size);
+    return 0;
+}
+int rvi_00401000(RviPcodeContext *ctx);
+int main(void) {
+    TestState state = {{0}, {0}};
+    RviPcodeContext context = {&state, read_bytes, write_bytes, NULL, NULL};
+    if (rvi_00401000(&context) != 0) return 1;
+    uint32_t sum = 0, truncated = 0, converted = 0;
+    memcpy(&sum, state.registers, 4);
+    memcpy(&truncated, state.registers + 4, 4);
+    memcpy(&converted, state.registers + 8, 4);
+    const uint8_t expected80[10] = {0, 0, 0, 0, 0, 0, 0, 0xf0, 0, 0x40};
+    if (sum != 0x40700000 || truncated != 3 || converted != 0xc0000000) return 2;
+    if (state.registers[0x10] != 1 || memcmp(state.registers + 0x20, expected80, 10) != 0) return 3;
+    if (memcmp(state.ram + 0x100, expected80, 10) != 0 ||
+        memcmp(state.registers + 0x30, expected80, 10) != 0) return 4;
+    return 0;
+}
+'''
+    c_path = tmp_path / "binary80.c"
+    executable = tmp_path / "binary80"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", "-O0", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
     subprocess.run([str(executable)], check=True)
 
 
