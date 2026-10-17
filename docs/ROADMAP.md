@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `b466fd4326dbed02a4393dfc8e0875ba3d749ad1`
+**Repository baseline:** `main` through `42e707dd1f3dd74e9aab7fec91af392a848d702b`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -297,6 +297,9 @@ call-result-to-return sequences; these drive the generic dataflow tests and are
 validated operation-by-operation against the shared row schema.
 Paired caller-argument subtree and exact formal-root TSV fixtures now exercise
 recursive argument propagation and validate both exporter row schemas.
+Paired synthetic parameter-to-field store/load TSV fixtures now match the
+exporter's emitted headers column-for-column and validate every row against
+their published schemas.
 
 ### M1.4 Consumer boundary
 
