@@ -288,6 +288,8 @@ rules; the [report and invocation details](https://github.com/Hanz0Hatt0r1/never
 stay in that consumer. Expand parity coverage across more roots and bounds
 before retiring the local fallbacks. The work remains open for fixtures
 accompanying later exporter migrations.
+The synthetic address-reference-owner TSV fixture now covers a resolved
+reference and the no-reference sentinel row against its v1 schema.
 
 ### M1.4 Consumer boundary
 

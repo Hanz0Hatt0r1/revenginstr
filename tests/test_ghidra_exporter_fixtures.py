@@ -15,6 +15,7 @@ FIXTURE_SCHEMAS = {
     "ghidra-program-index/xrefs.tsv": "ghidra-program-index-xrefs-v1.schema.json",
     "ghidra-program-index/calls.tsv": "ghidra-program-index-calls-v1.schema.json",
     "ghidra-arm32-vtable-slots.tsv": "ghidra-arm32-itanium-vtable-slots-v1.schema.json",
+    "ghidra-address-reference-owners.tsv": "ghidra-address-reference-owners-v1.schema.json",
 }
 
 
@@ -30,3 +31,17 @@ def test_synthetic_ghidra_export_fixtures_match_v1_contracts() -> None:
         assert rows, fixture
         for row in rows:
             validator.validate(row)
+
+
+def test_address_reference_owner_fixture_preserves_empty_target_row() -> None:
+    with (ROOT / "tests/fixtures/ghidra-address-reference-owners.tsv").open(
+        encoding="utf-8", newline=""
+    ) as handle:
+        rows = list(csv.DictReader(handle, delimiter="\t"))
+    assert rows[0]["reference_from"] == "00402004"
+    assert rows[0]["containing_function_entry"] == "00402000"
+    assert rows[1]["target_address"] == "00401004"
+    assert all(rows[1][key] == "-" for key in (
+        "reference_from", "reference_type", "reference_source", "operand_index",
+        "from_symbol", "from_instruction", "containing_function_entry", "containing_function_name",
+    ))
