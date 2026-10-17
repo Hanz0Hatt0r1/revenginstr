@@ -51,11 +51,19 @@ TMP_SCRIPT_DIR=$(mktemp -d)
 trap 'rm -rf -- "$TMP_SCRIPT_DIR"' EXIT
 cp "$ROOT/ghidra/ExportGhidraParameterStoreField.java" "$TMP_SCRIPT_DIR/ExportGhidraParameterStoreField.java"
 
-"$ANALYZE" \
+RUN_LOG="$TMP_SCRIPT_DIR/analyze.log"
+if ! "$ANALYZE" \
   "$PROJECT_DIR" "$PROJECT_NAME" \
   -recursive \
   -process "$PROGRAM_NAME" \
   -readOnly \
   -noanalysis \
   -scriptPath "$TMP_SCRIPT_DIR" \
-  -postScript ExportGhidraParameterStoreField.java "${POST_SCRIPT_ARGS[@]}"
+  -postScript ExportGhidraParameterStoreField.java "${POST_SCRIPT_ARGS[@]}" \
+  2>&1 | tee "$RUN_LOG"; then
+  exit 1
+fi
+if ! grep -Fqx 'GHIDRA_PARAMETER_STORE_FIELD_FORMAT=REVENGINSTR.GhidraParameterStoreField/1' "$RUN_LOG"; then
+  echo "error: Ghidra did not report successful parameter-store export completion" >&2
+  exit 1
+fi
