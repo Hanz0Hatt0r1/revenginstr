@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `f2c7ddc4532a3ed50e6ee0f080ef019cf4572a8c`
+**Repository baseline:** `main` through `7c05d5c0e7193f3507e634b8f8369f61350723d2`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -348,9 +348,9 @@ Every unresolved receiver query receives one stable primary reason, including:
 
 ### M2.2 Receiver provenance graph
 
-Introduce a canonical graph IR whose nodes can represent parameters, locals, loads/stores, returns, call arguments, PHIs, globals, constructors/factories, singleton/default instances and vtable writes.
+**Graph contract v1 implemented:** [`ReceiverProvenanceGraph/1`](../schemas/receiver-provenance-graph-v1.schema.json) defines graph-local ids, the generic receiver-flow node/relation vocabulary, evidence classes, and source-record provenance. A generic reference validator rejects duplicate ids and dangling endpoints. The schema and synthetic contract test contain no consumer labels, addresses, or catalogs.
 
-Every edge carries provenance and evidence class.
+The next increment is a consumer-populated graph builder that joins typed receiver, field-store, call-argument, and P-code artifacts without guessing missing joins. Every emitted edge must retain source-record provenance and evidence class; interprocedural propagation remains M2.3.
 
 ### M2.3 Bounded interprocedural propagation
 
@@ -740,7 +740,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 
 ## P1 — after measurement is stable
 
-12. Receiver provenance graph IR.
+12. ✅ Receiver provenance graph IR schema and reference validator; graph construction is still open.
 13. Interprocedural receiver propagation v1.
 14. Effect IR schema + extractor v1.
 15. Generic semantic-label/evaluation format.
