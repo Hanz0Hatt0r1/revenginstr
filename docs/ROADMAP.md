@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `d5d85a4fbcb74fe1ce27f7ef9822839788965044`
+**Repository baseline:** `main` through `3118c6b09720d9a94efa83eec20bcc3316219b89`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -692,7 +692,12 @@ Persist previous state, new state, evidence added, responsible rule/model, confi
 
 ### M6.5 Human feedback
 
-Generic feedback schema: confirmed, rejected, partially correct, ambiguous, needs-more-evidence. Feedback retains reviewer/provenance quality and does not automatically become training truth.
+**Initial feedback contract implemented:** [`AnalysisFeedback/1`](../schemas/analysis-feedback-v1.schema.json)
+supports confirmed, rejected, partially-correct, ambiguous, and
+needs-more-evidence outcomes. Consumer-owned rows pin their target and cited
+evidence, retain opaque reviewer metadata and reviewer-assessed provenance
+quality, and require `training_eligible: false`; separate label adjudication
+remains necessary before training use.
 
 ### M6.6 Cost-aware prioritization
 
