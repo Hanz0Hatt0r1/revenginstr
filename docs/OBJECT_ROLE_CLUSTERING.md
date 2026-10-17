@@ -16,8 +16,11 @@ revenginstr-object-role-features function-effects.jsonl \
   --output object-role-features.jsonl
 ```
 
-`FunctionEffectIR/1` is required; the receiver, vtable-slot, and callgraph
-inputs are optional. The command writes a companion
+`FunctionEffectIR/1` and `/2` are supported; the receiver, vtable-slot, and
+callgraph inputs are optional. Version 2 contributes the `memory_read` and
+`memory_write` kinds as structural features, while raw memory operand tokens
+remain in the source IR and are not used as feature values. The command writes
+a companion
 `object-role-features.jsonl.manifest.json` using
 [`ObjectRoleFeatureExtractionManifest/1`](../schemas/object-role-feature-extraction-manifest-v1.schema.json),
 pinning every supplied input and row count. All inputs must come from the same
