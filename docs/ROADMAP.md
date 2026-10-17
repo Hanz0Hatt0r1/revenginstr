@@ -814,9 +814,12 @@ Explicit dependencies, for example:
 and explicit dependencies. `revenginstr-analysis-invalidation-plan` validates
 producer joins and acyclicity, returns deterministic topological order, and
 reports downstream invalidations with direct or dependency causes. It only
-plans; it does not execute analyzers or select evidence requests. Cost-aware
-planning, artifact version caching, and end-to-end consumer convergence remain
-open.
+plans; it does not execute analyzers or select evidence requests.
+`revenginstr-analysis-task-cache-keys` now computes a content-addressed key per
+task from source artifact hashes, task configuration, implementation hash,
+and dependency keys. It does not execute tasks or restore outputs; persistent
+cache lookup/restoration, cost-aware scheduling, and end-to-end consumer
+convergence remain open.
 
 ### M6.2 Evidence request planner
 

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/analysis-task-cache-inputs-v1.schema.json",
+  "title": "REVENGINSTR.AnalysisTaskCacheInputs/1 input",
+  "description": "Content hashes for source artifacts and implementation hashes for every task.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "artifact_hashes", "task_implementation_hashes"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.AnalysisTaskCacheInputs/1"},
+    "artifact_hashes": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/artifactHash"}
+    },
+    "task_implementation_hashes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/implementationHash"}
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "artifactHash": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "sha256"],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/identifier"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "implementationHash": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "implementation_sha256"],
+      "properties": {
+        "task_id": {"$ref": "#/$defs/identifier"},
+        "implementation_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}
