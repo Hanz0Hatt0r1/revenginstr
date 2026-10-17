@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/object-role-feature-set-v1.schema.json",
+  "title": "REVENGINSTR.ObjectRoleFeatureSet/1 JSONL row",
+  "description": "One function's normalized opaque feature hashes grouped by evidence source, with source hashes and record ordinals for every feature.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program_id", "function_entry", "features"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.ObjectRoleFeatureSet/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "function_entry": {"type": "string", "minLength": 1},
+    "features": {"type": "array", "items": {"$ref": "#/$defs/feature"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["group", "feature_sha256", "support"],
+      "properties": {
+        "group": {"enum": ["receiver", "field", "vtable_slot", "callgraph", "effect_ir"]},
+        "feature_sha256": {"$ref": "#/$defs/sha256"},
+        "support": {
+          "type": "array", "minItems": 1,
+          "items": {"$ref": "#/$defs/source"}
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_format", "source_sha256", "source_record_index"],
+      "properties": {
+        "source_format": {"type": "string", "minLength": 1},
+        "source_sha256": {"$ref": "#/$defs/sha256"},
+        "source_record_index": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

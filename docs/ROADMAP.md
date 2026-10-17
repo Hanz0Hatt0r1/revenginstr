@@ -685,6 +685,13 @@ graphs, confidence per edge, and consumer evaluation remain open.
 
 Cluster methods using receiver, field, vtable, callgraph and Effect-IR similarity.
 
+**Initial feature contract and clustering kernel implemented:**
+`ObjectRoleFeatureSet/1` carries opaque, group-scoped feature hashes and source
+provenance; `revenginstr-object-role-clusters` reports per-group Jaccard
+similarity, accepted pairs, and their connected components. It emits no role
+labels, class identities, inheritance claims, or calibrated confidence.
+Consumer feature adapters and family-isolated evaluation remain open.
+
 ## M5.6 Evaluation contract
 
 **Paired evaluator v1 implemented:** `revenginstr-semantic-role-evaluate`

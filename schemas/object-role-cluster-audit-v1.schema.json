@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/object-role-cluster-audit-v1.schema.json",
+  "title": "REVENGINSTR.ObjectRoleClusterAudit/1 report",
+  "description": "Provenance-linked similarity candidates over caller-normalized structural feature groups; no semantic role or object identity is inferred.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program_id", "claim_scope", "config", "source", "candidate_pairs", "clusters"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.ObjectRoleClusterAudit/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "claim_scope": {
+      "const": "Similarity candidates only; no semantic role, class label, inheritance, or object identity is inferred."
+    },
+    "config": {"$ref": "#/$defs/config"},
+    "source": {"$ref": "#/$defs/source"},
+    "candidate_pairs": {"type": "array", "items": {"$ref": "#/$defs/candidatePair"}},
+    "clusters": {"type": "array", "items": {"$ref": "#/$defs/cluster"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "featureGroup": {"enum": ["receiver", "field", "vtable_slot", "callgraph", "effect_ir"]},
+    "score": {"type": "number", "minimum": 0, "maximum": 1},
+    "config": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["similarity_threshold", "min_shared_groups", "max_candidate_pairs"],
+      "properties": {
+        "similarity_threshold": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "min_shared_groups": {"type": "integer", "minimum": 1, "maximum": 5},
+        "max_candidate_pairs": {"type": "integer", "minimum": 1}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feature_set_sha256", "function_count", "feature_count", "candidate_pairs_considered",
+        "candidate_pair_count", "cluster_count"
+      ],
+      "properties": {
+        "feature_set_sha256": {"$ref": "#/$defs/sha256"},
+        "function_count": {"type": "integer", "minimum": 1},
+        "feature_count": {"type": "integer", "minimum": 0},
+        "candidate_pairs_considered": {"type": "integer", "minimum": 0},
+        "candidate_pair_count": {"type": "integer", "minimum": 0},
+        "cluster_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "candidatePair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pair_id", "left_function_entry", "right_function_entry", "similarity",
+        "group_scores", "shared_groups", "shared_features"
+      ],
+      "properties": {
+        "pair_id": {"$ref": "#/$defs/sha256"},
+        "left_function_entry": {"type": "string", "minLength": 1},
+        "right_function_entry": {"type": "string", "minLength": 1},
+        "similarity": {"$ref": "#/$defs/score"},
+        "group_scores": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "receiver": {"$ref": "#/$defs/score"},
+            "field": {"$ref": "#/$defs/score"},
+            "vtable_slot": {"$ref": "#/$defs/score"},
+            "callgraph": {"$ref": "#/$defs/score"},
+            "effect_ir": {"$ref": "#/$defs/score"}
+          }
+        },
+        "shared_groups": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {"$ref": "#/$defs/featureGroup"}
+        },
+        "shared_features": {
+          "type": "array", "minItems": 1, "items": {"$ref": "#/$defs/sharedFeature"}
+        }
+      }
+    },
+    "sharedFeature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["group", "feature_sha256"],
+      "properties": {
+        "group": {"$ref": "#/$defs/featureGroup"},
+        "feature_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "cluster": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cluster_id", "member_function_entries", "pair_ids"],
+      "properties": {
+        "cluster_id": {"$ref": "#/$defs/sha256"},
+        "member_function_entries": {
+          "type": "array", "minItems": 2, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "pair_ids": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {"$ref": "#/$defs/sha256"}
+        }
+      }
+    }
+  }
+}
