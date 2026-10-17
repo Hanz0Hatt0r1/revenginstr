@@ -1,0 +1,3 @@
+format	constant_address	data_address	byte_offset	utf8_base64	length
+REVENGINSTR.GhidraPcodeDefinedString/1	0x401000	00401000	0x0	aGVsbG8=	5
+REVENGINSTR.GhidraPcodeDefinedString/1	0x401102	00401100	0x2	QfCfmIBC	4
