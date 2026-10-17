@@ -355,6 +355,85 @@ def test_benchmark_runs_parameter_load_return_flow_stage(tmp_path: Path) -> None
     assert graph["edges"][0]["relation"] == "return_flow"
 
 
+def test_benchmark_runs_function_effect_ir_stage(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    fixture_paths = {
+        "parameter_stores": ROOT / "tests/fixtures/parameter-field/parameter-stores.tsv",
+        "parameter_loads": ROOT / "tests/fixtures/parameter-field/parameter-loads.tsv",
+        "pcode_flow": ROOT / "tests/fixtures/receiver-flow-pcode.tsv",
+    }
+    schema_files = {
+        "parameter_store": "ghidra-parameter-store-field-v1.schema.json",
+        "parameter_load": "ghidra-parameter-load-field-v1.schema.json",
+        "pcode_flow": "ghidra-function-pcode-flow-v1.schema.json",
+        "function_effect_ir": "function-effect-ir-v1.schema.json",
+    }
+    for schema_id, filename in schema_files.items():
+        schema_path = ROOT / "schemas" / filename
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        manifest["schemas"][schema_id] = {
+            "path": str(schema_path),
+            "version": schema["title"],
+            "sha256": _sha256(schema_path),
+        }
+
+    formats = {
+        "parameter_stores": "REVENGINSTR.GhidraParameterStoreField/1",
+        "parameter_loads": "REVENGINSTR.GhidraParameterLoadField/1",
+    }
+    schema_ids = {
+        "parameter_stores": "parameter_store",
+        "parameter_loads": "parameter_load",
+        "pcode_flow": "pcode_flow",
+    }
+    for artifact_id, path in fixture_paths.items():
+        artifact = {
+            "path": str(path), "role": "input", "kind": "file", "content": "tsv",
+            "sha256": _sha256(path), "schema": schema_ids[artifact_id],
+        }
+        if artifact_id in formats:
+            artifact["format"] = formats[artifact_id]
+        manifest["artifacts"][artifact_id] = artifact
+
+    manifest["artifacts"]["function_effects"] = {
+        "path": "function-effects.jsonl", "role": "output", "kind": "file",
+        "content": "jsonl", "format": "REVENGINSTR.FunctionEffectIR/1",
+        "schema": "function_effect_ir",
+    }
+    manifest["stages"].append({
+        "id": "function_effect_ir", "tool": "function-effect-ir",
+        "args": [
+            "--program-id", "analysis:sample",
+            "--parameter-stores", "${artifact:parameter_stores}",
+            "--parameter-loads", "${artifact:parameter_loads}",
+            "--pcode-flow", "${artifact:pcode_flow}",
+            "--output", "${artifact:function_effects}",
+        ],
+        "inputs": list(fixture_paths), "outputs": ["function_effects"],
+    })
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    summary, code = run_benchmark(
+        manifest_path, mode="smoke", output_path=tmp_path / "summary.json"
+    )
+
+    assert code == 0
+    assert summary["status"] == "passed"
+    assert summary["stages"][-1]["tool"] == "function-effect-ir"
+    records = [
+        json.loads(line)
+        for line in (tmp_path / "function-effects.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    effect_schema = json.loads(
+        (ROOT / "schemas/function-effect-ir-v1.schema.json").read_text(encoding="utf-8")
+    )
+    validator = Draft202012Validator(effect_schema)
+    for record in records:
+        validator.validate(record)
+    assert len(records) == 2
+
+
 def test_benchmark_runs_call_return_flow_stage(tmp_path: Path) -> None:
     manifest_path = _write_manifest(tmp_path)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))

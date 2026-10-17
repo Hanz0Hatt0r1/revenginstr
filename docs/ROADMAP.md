@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `0a3dd71544da1a97767bc086fc094b3079221151`
+**Repository baseline:** `main` through `f413895740ee3e5c00673f22eabfb0e2a0237099`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -166,7 +166,8 @@ Support `smoke` and `full` modes.
 The initial runner is available as `revenginstr-benchmark`. It validates pinned
 input artifacts and schemas, runs allowlisted tools in dependency order without
 a shell, and emits a versioned hash/runtime/metric-gate summary. Bounded
-caller-argument-to-field-store graph construction is now an allowlisted stage.
+caller-argument-to-field-store graph construction and the initial
+`FunctionEffectIR/1` projection are allowlisted stages.
 
 ### M0.3 Summary schema
 
@@ -524,6 +525,15 @@ Move from structural/domain classification to auditable behavioral understanding
 
 ## M5.1 Effect IR schema
 
+**Initial `FunctionEffectIR/1` projection implemented:** the generic CLI groups
+parameter-rooted field reads/writes and P-code direct/indirect call and return
+operations by function and is available as a pinned benchmark stage. Each fact
+retains exact source-artifact hashes and record ordinals; read/write facts
+remain `derived_structural`, and call/return operations remain `exact_static`.
+This version assigns no roles or API categories and makes no store-to-load
+reachability claim. Other effect classes remain open for separately evidenced
+additions.
+
 Define a normalized function-level representation containing evidence-backed facts about:
 
 ### Memory/object effects
@@ -791,7 +801,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 
 12. ✅ Receiver provenance graph IR schema and reference validator; graph construction is still open.
 13. Interprocedural receiver propagation v1 (bounded caller-argument and field-store anchors plus exact one-hop joins landed; recursive propagation and store/load joins remain open).
-14. Effect IR schema + extractor v1.
+14. ✅ Initial Effect IR schema + structural extractor v1; additional effect classes and semantic evaluation remain open.
 15. Generic semantic-label/evaluation format.
 16. Structured function summary v1.
 17. Semantic role baseline.
