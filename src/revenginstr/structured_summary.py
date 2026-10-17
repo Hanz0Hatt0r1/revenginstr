@@ -119,6 +119,11 @@ def _validate_effect_ir(records: list[dict[str, Any]], source_sha256: str) -> No
             _attributes(effect, effect_where)
 
 
+def validate_function_effect_ir(records: list[dict[str, Any]], source_sha256: str) -> None:
+    """Validate a FunctionEffectIR population and its pinned source digest."""
+    _validate_effect_ir(records, source_sha256)
+
+
 def _attributes(effect: dict[str, Any], where: str) -> dict[str, Any]:
     kind = effect["kind"]
     nullable = ("parameter_index", "field_offset", "value_size", "value_token", "source_parameter_index", "target_entry", "target_name")

@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/object-role-feature-extraction-manifest-v1.schema.json",
+  "title": "REVENGINSTR.ObjectRoleFeatureExtractionManifest/1 report",
+  "description": "Hashes and row counts for all inputs used to derive an ObjectRoleFeatureSet/1 JSONL artifact.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program_id", "input_artifacts", "function_count", "feature_count"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.ObjectRoleFeatureExtractionManifest/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "input_artifacts": {"$ref": "#/$defs/inputArtifacts"},
+    "function_count": {"type": "integer", "minimum": 1},
+    "feature_count": {"type": "integer", "minimum": 0}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "requiredArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "row_count"],
+      "properties": {
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "row_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "optionalArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "row_count"],
+      "properties": {
+        "sha256": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "row_count": {"type": "integer", "minimum": 0}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"sha256": {"type": "null"}}, "required": ["sha256"]},
+          "then": {"properties": {"row_count": {"const": 0}}}
+        }
+      ]
+    },
+    "inputArtifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["function_effect_ir", "receiver_inference", "vtable_slots", "callgraph_metrics"],
+      "properties": {
+        "function_effect_ir": {"$ref": "#/$defs/requiredArtifact"},
+        "receiver_inference": {"$ref": "#/$defs/optionalArtifact"},
+        "vtable_slots": {"$ref": "#/$defs/optionalArtifact"},
+        "callgraph_metrics": {"$ref": "#/$defs/optionalArtifact"}
+      }
+    }
+  }
+}

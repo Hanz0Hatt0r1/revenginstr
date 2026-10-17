@@ -690,7 +690,11 @@ Cluster methods using receiver, field, vtable, callgraph and Effect-IR similarit
 provenance; `revenginstr-object-role-clusters` reports per-group Jaccard
 similarity, accepted pairs, and their connected components. It emits no role
 labels, class identities, inheritance claims, or calibrated confidence.
-Consumer feature adapters and family-isolated evaluation remain open.
+**Generic feature extraction added:** `revenginstr-object-role-features` uses
+Function Effect IR plus optional receiver inference, vtable slots, and callgraph
+metrics. It pins all input artifacts and retains source record provenance while
+excluding class and function names. Consumer-specific feature adapters and
+family-isolated evaluation remain open.
 
 ## M5.6 Evaluation contract
 
