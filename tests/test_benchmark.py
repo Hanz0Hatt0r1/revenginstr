@@ -107,6 +107,64 @@ def test_benchmark_runs_a_pinned_smoke_pipeline_and_records_hashes(tmp_path: Pat
     assert json.loads((tmp_path / "summary.json").read_text(encoding="utf-8")) == summary
 
 
+def test_benchmark_runs_receiver_argument_store_flow_stage(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    argument_path = tmp_path / "argument-roots.tsv"
+    argument_path.write_text(
+        "format\trow_type\tplan_id\tcallee_entry\tparameter_index\tcaller_entry\t"
+        "caller_call_site\tnode_id\tparent_node_id\tdepth\tedge_kind\n"
+        "REVENGINSTR.GhidraCallerArgumentSubtree/1\tnode\tplan\t00401000\t0\t"
+        "00402000\t00402010\t0\t-1\t0\troot\n",
+        encoding="utf-8",
+    )
+    store_path = tmp_path / "parameter-stores.tsv"
+    store_path.write_text(
+        "format\tfunction_entry\tstore_address\tstore_time\tdestination_parameter_index\t"
+        "destination_offset\tsource_parameter_index\tstatus\n"
+        "REVENGINSTR.GhidraParameterStoreField/1\t00401000\t00401020\t7\t0\t"
+        "0x24\t1\tparameter_to_parameter_field\n",
+        encoding="utf-8",
+    )
+    graph_schema_path = ROOT / "schemas" / "receiver-provenance-graph-v1.schema.json"
+    manifest["schemas"]["receiver_graph"] = {
+        "path": str(graph_schema_path), "version": "REVENGINSTR.ReceiverProvenanceGraph/1",
+        "sha256": _sha256(graph_schema_path),
+    }
+    manifest["artifacts"].update({
+        "argument_roots": {
+            "path": str(argument_path), "role": "input", "kind": "file",
+            "content": "tsv", "sha256": _sha256(argument_path),
+        },
+        "parameter_stores": {
+            "path": str(store_path), "role": "input", "kind": "file",
+            "content": "tsv", "sha256": _sha256(store_path),
+        },
+        "joined_graphs": {
+            "path": "joined-graphs.jsonl", "role": "output", "kind": "file",
+            "content": "jsonl", "format": "REVENGINSTR.ReceiverProvenanceGraph/1",
+            "schema": "receiver_graph",
+        },
+    })
+    manifest["stages"].append({
+        "id": "argument_store_flow", "tool": "receiver-argument-store-flow",
+        "args": [
+            "${artifact:argument_roots}", "${artifact:parameter_stores}",
+            "--program-id", "analysis:sample", "--output", "${artifact:joined_graphs}",
+        ],
+        "inputs": ["argument_roots", "parameter_stores"], "outputs": ["joined_graphs"],
+    })
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    summary, code = run_benchmark(manifest_path, mode="smoke", output_path=tmp_path / "summary.json")
+
+    assert code == 0
+    assert summary["status"] == "passed"
+    assert summary["stages"][1]["tool"] == "receiver-argument-store-flow"
+    graph = json.loads((tmp_path / "joined-graphs.jsonl").read_text(encoding="utf-8"))
+    assert {edge["relation"] for edge in graph["edges"]} == {"argument_flow", "field_store", "data_flow"}
+
+
 def test_benchmark_fails_a_metric_gate_and_returns_nonzero(tmp_path: Path) -> None:
     manifest_path = _write_manifest(tmp_path, minimum_rows=2)
     summary, code = run_benchmark(manifest_path, output_path=tmp_path / "summary.json")
