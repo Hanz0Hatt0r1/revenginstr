@@ -86,11 +86,17 @@ freeze 28 exact pairs across ten functions; no complete write-free callee was
 present in that subset. The expanded consumer replay in [PR
 #2027](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2027)
 covers 31 pairs across twelve functions. One complete write-free direct call
-joins to the exact CFG witness in `00619b7d`; an `unknown_effect` direct call
-also lies on that witness, so `/3` leaves the pair unresolved. This exercises
+joins to an exact CFG witness; an `unknown_effect` direct call also lies on
+that witness, so `/3` leaves the pair unresolved. This exercises
 the on-path filter boundary without a status promotion or value-flow claim.
-Labels, addresses, raw rows, and measured outcomes stay in their consumer
-repository.
+NFS PR [#2028](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2028)
+extends the frozen consumer replay to thirteen functions and 33 pairs. It has
+two complete write-free calls on each of two witnesses, with indirect calls
+still present on both paths; neither pair is promoted. NFS PR
+[#2029](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2029)
+records a further screen of 22 functions with no parameter-rooted stores and
+no field pairs. Labels, addresses, raw rows, and measured outcomes stay in
+their consumer repository.
 
 `FieldStoreLoadDominanceAudit/1` is not extended in place. With no sidecars the
 command preserves `/1`; supplying only access facts selects `/2`; supplying

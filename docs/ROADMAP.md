@@ -432,11 +432,21 @@ and [#2026](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2026)
 freeze ten functions and 28 exact parameter-field pairs; no call in those rows
 has a complete write-free callee. The expanded consumer replay in [PR
 #2027](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2027)
-adds two functions and 3 complete write-free direct-call rows. In `00619b7d`,
-one eligible call lies on the exact store-to-load witness, while a neighboring
-`unknown_effect` call remains on that path. `/3` therefore keeps the pair
+adds two functions and 3 complete write-free direct-call rows. In that NFS
+case, one eligible call lies on the exact store-to-load witness, while a
+neighboring `unknown_effect` call remains on that path. `/3` therefore keeps the pair
 `possible_intervening_memory_effect`; the replay exercises the filter boundary
-without promoting a unique candidate or establishing value flow.
+without promoting a unique candidate or establishing value flow. The follow-up
+replay in [PR #2028](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2028)
+extends the consumer bundle to thirteen functions and 33 pairs. Two complete
+write-free calls occur on two exact witnesses, but each witness also contains
+indirect calls, so `/3` keeps both pairs unresolved. [PR
+#2029](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2029)
+freezes an additional read-only screen of 22 functions; none has a
+parameter-rooted store and therefore none yields a field pair. The scan10–13
+screen records 630 additional exports and 23 ordered pairs without any `/2` to
+`/3` status change. The NFS evidence remains fail-closed and supplies no
+positive reaching-definition or runtime value-flow result.
 See the [call and memory effect contract](FIELD_MEMORY_ALIAS_CONTRACT.md).
 
 Remaining propagation work:
@@ -1064,6 +1074,11 @@ Mitigation: preserve heuristic/sparse baselines, feature ablations and evidence-
 # 20. Immediate next action
 
 **M2.3 consumer capture/replay now covers two consumers.** Nevergone's frozen
-CFG/3 and memory-store sidecar replay is pinned in [PR #729](https://github.com/Hanz0Hatt0r1/nevergone-recomp/pull/729); its two store/load pairs remain unresolved because intervening effects are possible. NFS Shift PRs [#2025](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2025) and [#2026](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2026) freeze ten functions and 28 pairs with no complete write-free callee. The expanded replay in [PR #2027](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2027) covers 12 functions and 31 pairs; one complete write-free direct call is on an exact witness, but an adjacent unknown-effect call remains a barrier and `/3` stays unresolved. This exercises the filter boundary without establishing value flow. Labels, raw rows, and measured outcomes stay in their consumer repositories.
+CFG/3 and memory-store sidecar replay is pinned in [PR #729](https://github.com/Hanz0Hatt0r1/nevergone-recomp/pull/729); its two store/load pairs remain unresolved because intervening effects are possible. NFS Shift PRs [#2025](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2025) and [#2026](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2026) freeze ten functions and 28 pairs with no complete write-free callee. PR [#2027](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2027) adds a write-free call on a witness alongside an unknown-effect call; PR [#2028](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2028) adds two write-free calls with indirect-call barriers on both witnessed paths; `/3` leaves all these rows unresolved. PR [#2029](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2029) freezes 22 more functions that produce no parameter-rooted stores or field pairs. Scans 10–14 have not found the positive `/3` upgrade case. Labels, raw rows, and measured outcomes stay in their consumer repositories.
 
-Next, look for a consumer pair where a complete write-free direct call is the only remaining effect on the candidate path and `/3` can report a unique structural candidate while every unknown, indirect, nested, and missing effect remains a barrier. Keep `/1` and `/2` unchanged. If the evidence does not provide that case, preserve the unresolved result and make no value-flow claim.
+Next, continue screening the remaining consumer corpus for a pair where a
+complete write-free direct call is the only remaining effect on the candidate
+path and `/3` can report a unique structural candidate while unknown, indirect,
+nested, and missing effects remain barriers. Keep `/1` and `/2` unchanged. If
+the evidence does not provide that case, preserve the unresolved result and
+make no value-flow claim.
