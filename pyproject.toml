@@ -44,6 +44,7 @@ revenginstr-receiver-load-return-flow = "revenginstr.receiver.provenance:paramet
 revenginstr-receiver-argument-propagate = "revenginstr.receiver.provenance:recursive_argument_main"
 revenginstr-receiver-call-return-flow = "revenginstr.receiver.provenance:call_return_main"
 revenginstr-direct-call-memory-effects = "revenginstr.receiver.call_effects:main"
+revenginstr-direct-call-memory-effect-closure = "revenginstr.receiver.call_effect_closure:main"
 revenginstr-receiver-field-store-load-audit = "revenginstr.receiver.field_flow:main"
 revenginstr-receiver-field-store-load-dominance-audit = "revenginstr.receiver.field_flow:dominance_main"
 revenginstr-family-mine = "revenginstr.family.mine:main"
