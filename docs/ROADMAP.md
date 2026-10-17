@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `6b5820503e4f854a7c530b40e8f1d7d36d753783`
+**Repository baseline:** `main` through `7535a196f37751487982f882e645d18113897a95`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -166,9 +166,9 @@ Support `smoke` and `full` modes.
 The initial runner is available as `revenginstr-benchmark`. It validates pinned
 input artifacts and schemas, runs allowlisted tools in dependency order without
 a shell, and emits a versioned hash/runtime/metric-gate summary. Bounded
-caller-argument-to-field-store graph construction and the initial
-`FunctionEffectIR/1`, `FunctionSummary/1`, and decision-ledger audit are
-allowlisted stages.
+caller-argument-to-field-store graph construction, the initial
+`FunctionEffectIR/1`, `FunctionSummary/1`, decision-ledger audit, and bounded
+field-store/load CFG path audit are allowlisted stages.
 
 ### M0.3 Summary schema
 
@@ -302,6 +302,10 @@ recursive argument propagation and validate both exporter row schemas.
 Paired synthetic parameter-to-field store/load TSV fixtures now match the
 exporter's emitted headers column-for-column and validate every row against
 their published schemas.
+The synthetic High-P-code CFG fixture pins program/function identity,
+operation sequence locations, and branch successors; the field-store/load
+path-audit test exercises safe and effect-blocked routes without making a
+memory reaching-definition claim.
 The defined-string exporter now has a synthetic TSV fixture that checks its
 wire header, schema rows, canonical Base64 decoding, and Java UTF-16 length
 accounting, including a non-BMP character.
@@ -380,13 +384,13 @@ receiver types are fallback joins.
 
 ### M2.3 Bounded interprocedural propagation
 
-**Bounded caller-argument, field-store, field-load, and return anchors implemented:** `revenginstr-receiver-argument-flow` projects bounded subtree roots into actual-argument-to-formal-parameter edges and captures generic call-result producers when explicit in P-code; `revenginstr-receiver-store-flow` projects parameter-to-field-store evidence into destination and stored-value edges. `revenginstr-receiver-argument-store-flow` and `revenginstr-receiver-argument-load-flow` join those artifacts by exact function/parameter keys with provenance from both inputs. `revenginstr-receiver-field-access-pairs` groups same-function stores and loads only when formal parameter and numeric field offset match. `revenginstr-receiver-load-return-flow` traces parameter-rooted loads through P-code def-use chains to `RETURN` operations without assigning getter semantics; `revenginstr-receiver-call-return-flow` traces call-result values through P-code to function returns as a generic factory-return anchor, without assigning factory semantics. The caller-argument exporter can optionally emit direct caller-formal roots; `revenginstr-receiver-argument-propagate` walks those exact links backward under depth and edge caps. Store-to-load value-flow checks remain open.
+**Bounded caller-argument, field-store, field-load, and return anchors implemented:** `revenginstr-receiver-argument-flow` projects bounded subtree roots into actual-argument-to-formal-parameter edges and captures generic call-result producers when explicit in P-code; `revenginstr-receiver-store-flow` projects parameter-to-field-store evidence into destination and stored-value edges. `revenginstr-receiver-argument-store-flow` and `revenginstr-receiver-argument-load-flow` join those artifacts by exact function/parameter keys with provenance from both inputs. `revenginstr-receiver-field-access-pairs` groups same-function stores and loads only when formal parameter and numeric field offset match. `revenginstr-receiver-load-return-flow` traces parameter-rooted loads through P-code def-use chains to `RETURN` operations without assigning getter semantics; `revenginstr-receiver-call-return-flow` traces call-result values through P-code to function returns as a generic factory-return anchor, without assigning factory semantics. The caller-argument exporter can optionally emit direct caller-formal roots; `revenginstr-receiver-argument-propagate` walks those exact links backward under depth and edge caps. `revenginstr-receiver-field-store-load-audit` now joins parameter/offset-compatible pairs to a program-pinned High-P-code CFG and reports bounded paths with no explicit intervening store/call; that status is a candidate path only, not proof of feasible execution or memory reaching-definition. Alias-aware memory reaching definitions remain open.
 
 Remaining propagation work:
 
 1. consumer-validated factory hypotheses linked to call-result-to-return paths;
 2. consumer-validated getter/accessor hypotheses from load-to-return evidence;
-3. establish instruction order and reaching-definition/path compatibility before treating paired field stores and loads as value flow;
+3. extend instruction-order/path compatibility into alias-aware reaching definitions before treating paired field stores and loads as value flow;
 4. constructor/vtable anchors.
 
 ### M2.4 Ambiguity handling
@@ -965,8 +969,8 @@ Mitigation: preserve heuristic/sparse baselines, feature ablations and evidence-
 
 # 20. Immediate next action
 
-Continue with **M1.3**: expand synthetic/parity fixtures as shared exporter
-verticals migrate, keeping game binaries and labels consumer-owned. Keep the
-schema registry and generated-artifact checks current in every format change.
-The benchmark and CI policy milestones now have shared schemas, replay checks
-and consumer-owned report retention.
+Continue with **M2.3**: use the new CFG path artifact as a bounded audit input
+in consumer-owned frozen validation workflows, then evaluate whether an
+alias-aware reaching-definition layer can be supported without weakening
+provenance or treating CFG reachability as value flow. Keep labels, binary
+rows, and measured outcomes in their consumer repositories.

@@ -119,6 +119,34 @@ must all match. A pair records compatible access locations only: it does not
 assert instruction order, execution-path compatibility, or that the store
 reaches the load as a value.
 
+To audit a same-program candidate path, first export the selected functions'
+High-P-code CFGs with the same opaque `program_id`:
+
+```sh
+GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_function_pcode_cfg.sh \
+  /path/to/projects project-name program-name function-pcode-cfg.jsonl \
+  'consumer:analysis-id' 00401000 00402000
+
+revenginstr-receiver-field-store-load-audit field-access-pairs.jsonl \
+  function-pcode-cfg.jsonl --output field-store-load-path-audit.jsonl
+```
+
+The audit matches store/load operation locations to exact High-P-code
+address/time pairs and searches for a bounded CFG path that contains no
+explicit intervening `STORE`, `CALL`, `CALLIND`, or `CALLOTHER`. The output
+records `candidate_path_compatible`, `intervening_store_or_call`,
+`no_cfg_path`, or `event_not_located`, together with both input hashes and
+source-row identities. Program identity is part of the join, so matching
+addresses in another Ghidra project are rejected.
+
+`candidate_path_compatible` means only that at least one CFG path has none of
+those listed barriers. It does not establish branch feasibility, account for
+aliasing or writes hidden behind unmodeled effects, or prove that the store
+reaches the load as a memory value. The result is an audit candidate, not
+value-flow evidence. The search has a global expansion cap, adjustable with
+`--max-path-expansions`; exceeding it fails the command instead of returning a
+partial audit.
+
 Parameter-rooted loads can also be traced through P-code data dependencies to
 function returns:
 

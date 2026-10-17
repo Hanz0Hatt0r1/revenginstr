@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/field-store-load-path-audit-v1.schema.json",
+  "title": "REVENGINSTR.FieldStoreLoadPathAudit/1 JSONL row",
+  "description": "Conservative CFG path candidate for same-parameter, same-offset field accesses; it does not assert memory reaching-definition.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program_id", "function_entry", "parameter_index", "field_offset", "source_parameter_index", "status", "store", "load", "path_block_indices", "provenance"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.FieldStoreLoadPathAudit/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "function_entry": {"type": "string", "minLength": 1},
+    "parameter_index": {"type": "integer", "minimum": 0},
+    "field_offset": {"type": "string", "pattern": "^-?0x[0-9a-f]+$"},
+    "source_parameter_index": {"type": "integer", "minimum": 0},
+    "status": {"enum": ["candidate_path_compatible", "intervening_store_or_call", "no_cfg_path", "event_not_located"]},
+    "store": {"$ref": "#/$defs/access"},
+    "load": {"$ref": "#/$defs/access"},
+    "path_block_indices": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pair_graph_sha256", "pair_graph_record_index", "cfg_sha256", "cfg_record_index", "path_expansion_cap", "path_expansions_before", "path_expansions_used", "store_source_id", "load_source_id"],
+      "properties": {
+        "pair_graph_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "pair_graph_record_index": {"type": "integer", "minimum": 1},
+        "cfg_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "cfg_record_index": {"type": "integer", "minimum": 1},
+        "path_expansion_cap": {"type": "integer", "minimum": 1},
+        "path_expansions_before": {"type": "integer", "minimum": 0},
+        "path_expansions_used": {"type": "integer", "minimum": 0},
+        "store_source_id": {"type": "string", "minLength": 1},
+        "load_source_id": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "$defs": {
+    "access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["address", "time", "block_index"],
+      "properties": {
+        "address": {"type": "string", "minLength": 1},
+        "time": {"type": ["integer", "null"], "minimum": 0},
+        "block_index": {"type": ["integer", "null"], "minimum": 0}
+      }
+    }
+  }
+}
