@@ -465,6 +465,39 @@ def argument_store_main(argv: list[str] | None = None) -> int:
     return 0
 
 
+def _parameter_load_identity(
+    row: dict[str, str], *, program_id: str, line_no: int
+) -> tuple[tuple[Any, ...], tuple[str, int]]:
+    if row.get("format") != PARAMETER_LOAD_FORMAT:
+        raise ValueError(f"parameter load row {line_no}: unsupported format")
+    if row.get("status") != "parameter_field_load":
+        raise ValueError(f"parameter load row {line_no}: unsupported status")
+
+    function_entry = row.get("function_entry", "")
+    load_address = row.get("load_address", "")
+    load_time_text = row.get("load_time", "")
+    parameter_text = row.get("base_parameter_index", "")
+    offset_text = row.get("field_offset", "")
+    value_token = row.get("value_token", "")
+    if (
+        not function_entry or function_entry == "-"
+        or not load_address or load_address == "-"
+        or (load_time_text != "-" and not _ascii_decimal(load_time_text))
+        or not _ascii_decimal(parameter_text)
+        or re.fullmatch(r"-?0x[0-9a-f]+", offset_text) is None
+        or not value_token
+    ):
+        raise ValueError(f"parameter load row {line_no}: invalid load key")
+
+    load_time = None if load_time_text == "-" else int(load_time_text)
+    parameter_index = int(parameter_text)
+    identity = (
+        program_id, function_entry, load_address, load_time,
+        parameter_index, int(offset_text, 0), value_token,
+    )
+    return identity, (function_entry, parameter_index)
+
+
 def build_argument_load_graphs(
     argument_rows: list[dict[str, str]],
     load_rows: list[dict[str, str]],
@@ -487,33 +520,7 @@ def build_argument_load_graphs(
     seen_loads: set[tuple[Any, ...]] = set()
     joined_graphs: list[dict[str, Any]] = []
     for line_no, row in enumerate(load_rows, 2):
-        if row.get("format") != PARAMETER_LOAD_FORMAT:
-            raise ValueError(f"parameter load row {line_no}: unsupported format")
-        if row.get("status") != "parameter_field_load":
-            raise ValueError(f"parameter load row {line_no}: unsupported status")
-
-        function_entry = row.get("function_entry", "")
-        load_address = row.get("load_address", "")
-        load_time_text = row.get("load_time", "")
-        parameter_text = row.get("base_parameter_index", "")
-        offset_text = row.get("field_offset", "")
-        value_token = row.get("value_token", "")
-        if (
-            not function_entry or function_entry == "-"
-            or not load_address or load_address == "-"
-            or (load_time_text != "-" and not _ascii_decimal(load_time_text))
-            or not _ascii_decimal(parameter_text)
-            or re.fullmatch(r"-?0x[0-9a-f]+", offset_text) is None
-            or not value_token
-        ):
-            raise ValueError(f"parameter load row {line_no}: invalid load key")
-
-        load_time = None if load_time_text == "-" else int(load_time_text)
-        parameter_index = int(parameter_text)
-        load_key = (
-            program_id, function_entry, load_address, load_time,
-            parameter_index, int(offset_text, 0), value_token,
-        )
+        load_key, join_key = _parameter_load_identity(row, program_id=program_id, line_no=line_no)
         if load_key in seen_loads:
             raise ValueError(f"duplicate parameter load: {load_key!r}")
         if len(seen_loads) >= max_graphs:
@@ -521,7 +528,7 @@ def build_argument_load_graphs(
         seen_loads.add(load_key)
 
         source_id = json.dumps(load_key, ensure_ascii=False, separators=(",", ":"))
-        for argument_graph in roots_by_formal.get((function_entry, parameter_index), []):
+        for argument_graph in roots_by_formal.get(join_key, []):
             if len(joined_graphs) >= max_graphs:
                 raise ValueError(f"argument-load graph budget exceeded: {max_graphs}")
             edges = [dict(edge) for edge in argument_graph["edges"]]
@@ -578,6 +585,104 @@ def argument_load_main(argv: list[str] | None = None) -> int:
     print("input caller argument rows:", len(argument_rows))
     print("input parameter loads:", len(load_rows))
     print("joined graphs:", len(graphs))
+    print("max graphs:", args.max_graphs)
+    print("output:", args.output)
+    return 0
+
+
+def build_field_access_pair_graphs(
+    store_rows: list[dict[str, str]],
+    load_rows: list[dict[str, str]],
+    *,
+    program_id: str,
+    max_graphs: int = DEFAULT_MAX_ARGUMENT_GRAPHS,
+) -> list[dict[str, Any]]:
+    """Pair same-function field accesses rooted at one parameter and offset."""
+    if not program_id:
+        raise ValueError("program_id must be non-empty")
+    if max_graphs < 1:
+        raise ValueError("max_graphs must be positive")
+
+    store_graphs = build_parameter_store_graphs(
+        store_rows, program_id=program_id, max_graphs=max_graphs
+    )
+    loads_by_access: dict[tuple[str, int, int], list[str]] = {}
+    seen_loads: set[tuple[Any, ...]] = set()
+    for line_no, row in enumerate(load_rows, 2):
+        load_key, _join_key = _parameter_load_identity(row, program_id=program_id, line_no=line_no)
+        if load_key in seen_loads:
+            raise ValueError(f"duplicate parameter load: {load_key!r}")
+        if len(seen_loads) >= max_graphs:
+            raise ValueError(f"parameter load graph budget exceeded: {max_graphs}")
+        seen_loads.add(load_key)
+        _program_id, function_entry, _address, _time, parameter_index, offset, _value = load_key
+        source_id = json.dumps(load_key, ensure_ascii=False, separators=(",", ":"))
+        loads_by_access.setdefault((function_entry, parameter_index, offset), []).append(source_id)
+
+    joined_graphs: list[dict[str, Any]] = []
+    for store_graph in store_graphs:
+        store_key = json.loads(store_graph["graph_id"])
+        _program_id, function_entry, _address, _time, parameter_index, offset, _source = store_key
+        access_key = (function_entry, parameter_index, offset)
+        for load_source_id in loads_by_access.get(access_key, []):
+            if len(joined_graphs) >= max_graphs:
+                raise ValueError(f"field access pair graph budget exceeded: {max_graphs}")
+            edges = [dict(edge) for edge in store_graph["edges"]]
+            edges.append({
+                "id": "compatible_field_load",
+                "from": f"parameter:{parameter_index}",
+                "to": "field_load",
+                "relation": "field_load",
+                "evidence_class": "exact_static",
+                "provenance": [{
+                    "source_format": PARAMETER_LOAD_FORMAT,
+                    "source_id": load_source_id,
+                }],
+            })
+            graph = {
+                "format": FORMAT,
+                "graph_id": json.dumps(
+                    [program_id, store_graph["graph_id"], load_source_id],
+                    ensure_ascii=False, separators=(",", ":"),
+                ),
+                "nodes": [
+                    *store_graph["nodes"],
+                    {"id": "field_load", "kind": "field_load"},
+                ],
+                "edges": edges,
+            }
+            validate_graph_references(graph)
+            joined_graphs.append(graph)
+
+    joined_graphs.sort(key=lambda graph: graph["graph_id"])
+    return joined_graphs
+
+
+def field_access_pairs_main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Pair same-function parameter field accesses by exact base and offset."
+    )
+    parser.add_argument("parameter_store_tsv", type=Path)
+    parser.add_argument("parameter_load_tsv", type=Path)
+    parser.add_argument("--program-id", required=True, help="Opaque consumer join key for the selected program.")
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--max-graphs", type=int, default=DEFAULT_MAX_ARGUMENT_GRAPHS)
+    args = parser.parse_args(argv)
+
+    from revenginstr.receiver.infer import read_tsv
+
+    store_rows = read_tsv(args.parameter_store_tsv)
+    load_rows = read_tsv(args.parameter_load_tsv)
+    graphs = build_field_access_pair_graphs(
+        store_rows, load_rows, program_id=args.program_id, max_graphs=args.max_graphs
+    )
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    with args.output.open("w", encoding="utf-8") as handle:
+        for graph in graphs:
+            handle.write(json.dumps(graph, sort_keys=True) + "\n")
+    print("input parameter stores:", len(store_rows))
+    print("input parameter loads:", len(load_rows))
+    print("compatible field access pairs:", len(graphs))
     print("max graphs:", args.max_graphs)
     print("output:", args.output)
     return 0

@@ -22,8 +22,8 @@ checks graph-local id uniqueness and rejects dangling endpoints.
 The graph is descriptive evidence only. It does not resolve receiver classes,
 infer dispatch slots, transfer call targets, or affect routing. Builders
 project typed receiver-call anchors and bounded argument/load/store
-relationships. Recursive interprocedural propagation and field store/load
-joins remain follow-up work.
+relationships. Recursive interprocedural propagation and store-to-load value
+flow remain follow-up work.
 
 The initial `revenginstr-receiver-graph` command projects
 `GhidraIndirectReceiverType/1` rows into call-anchor graphs. It emits a graph
@@ -103,6 +103,21 @@ with provenance from both input artifacts. The load offset and result token
 remain in the referenced load row. This describes a read through the passed
 parameter; it does not establish that a separately observed store reaches the
 same object or field.
+
+Same-function parameter field accesses can be grouped when the formal
+parameter and numeric field offset match:
+
+```sh
+revenginstr-receiver-field-access-pairs parameter-stores.tsv \
+  parameter-loads.tsv --program-id 'consumer:analysis-id' \
+  --output field-access-pairs.jsonl --max-graphs 10000
+```
+
+Each graph retains the store and load source rows on separate edges from their
+shared parameter node. Function entry, parameter index, and numeric offset
+must all match. A pair records compatible access locations only: it does not
+assert instruction order, execution-path compatibility, or that the store
+reaches the load as a value.
 
 ## Minimal example
 
