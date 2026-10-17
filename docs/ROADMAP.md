@@ -424,10 +424,15 @@ and family counts without exporting row identities.
 the exact hash-pinned evaluation population and reports aggregate accuracy,
 calibration, route coverage, and class counts without exporting ids. The tool
 does not assign ID/OOD semantics; callers define subgroup names and membership.
+`revenginstr-classifier-ablation-audit` compares caller-produced P-code-only
+and evidence-aware family-grouped OOF runs when they share the same seed,
+folds, dataset fingerprint, ids, families, and labels. It reports paired error
+changes and aggregate per-class/routing deltas without exporting identities;
+the caller remains responsible for actually removing the named feature group.
 
 ## Work
 
-- evidence ablations for P-code, callgraph, receiver, field, external-call and family features;
+- consumer-run ablations for P-code, callgraph, receiver, field, external-call and family features, compared with the paired OOF audit;
 - coarse Effect-IR features once M5 begins;
 - retained hard-negative sets;
 

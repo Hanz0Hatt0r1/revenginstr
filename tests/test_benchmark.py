@@ -1071,3 +1071,95 @@ def test_benchmark_runs_selective_subgroup_audit_stage(tmp_path: Path) -> None:
     result = json.loads((tmp_path / "subgroup-audit.json").read_text(encoding="utf-8"))
     assert result["source"]["evaluation_rows"] == 2
     assert result["groups"]["partition-x"]["accuracy"] == 1.0
+
+
+def test_benchmark_runs_classifier_ablation_audit_stage(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    benchmark = json.loads(manifest_path.read_text(encoding="utf-8"))
+    inputs = {}
+    for name, format_name, predictions in [
+        ("baseline", "REVENGINSTR.SelectiveClassifier/1", [
+            ("a", "alpha", "alpha"), ("b", "beta", "beta"),
+        ]),
+        ("candidate", "REVENGINSTR.EvidenceSelectiveClassifier/1", [
+            ("a", "alpha", "alpha"), ("b", "beta", "alpha"),
+        ]),
+    ]:
+        model_path = tmp_path / f"{name}-model.json"
+        model_path.write_text(json.dumps({
+                "format": format_name,
+                "task": "domain",
+            "classes": ["alpha", "beta"],
+            "functions": 2,
+            "families": 2,
+            "dataset_fingerprint_sha256": "a" * 64,
+            "calibration": {"source": "family_grouped_oof", "folds": 2, "seed": 5},
+        }), encoding="utf-8")
+        prediction_path = tmp_path / f"{name}-oof.jsonl"
+        prediction_path.write_text("".join(json.dumps({
+            "format": format_name, "id": record_id, "family_id": f"family-{record_id}",
+            "truth": truth, "prediction": predicted, "correct": truth == predicted,
+            "confidence": 0.8, "action": "accept" if truth == predicted else "review",
+        }) + "\n" for record_id, truth, predicted in predictions), encoding="utf-8")
+        inputs[name] = {
+            "manifest_path": model_path.name,
+            "manifest_sha256": _sha256(model_path),
+            "oof_predictions_path": prediction_path.name,
+            "oof_predictions_sha256": _sha256(prediction_path),
+        }
+        benchmark["artifacts"].update({
+            f"{name}_model": {
+                "path": str(model_path), "role": "input", "kind": "file",
+                "content": "json", "sha256": _sha256(model_path),
+            },
+            f"{name}_oof": {
+                "path": str(prediction_path), "role": "input", "kind": "file",
+                "content": "jsonl", "sha256": _sha256(prediction_path),
+            },
+        })
+
+    ablation_set_path = tmp_path / "ablation-set.json"
+    ablation_set = {
+        "format": "REVENGINSTR.ClassifierAblationSet/1",
+        "baseline": "baseline",
+        "variants": inputs,
+    }
+    ablation_set_path.write_text(json.dumps(ablation_set), encoding="utf-8")
+    set_schema = ROOT / "schemas" / "classifier-ablation-set-v1.schema.json"
+    report_schema = ROOT / "schemas" / "classifier-ablation-audit-v1.schema.json"
+    benchmark["schemas"].update({
+        "ablation_set": {
+            "path": str(set_schema), "version": "REVENGINSTR.ClassifierAblationSet/1",
+            "sha256": _sha256(set_schema),
+        },
+        "ablation_audit": {
+            "path": str(report_schema), "version": "REVENGINSTR.ClassifierAblationAudit/1",
+            "sha256": _sha256(report_schema),
+        },
+    })
+    benchmark["artifacts"].update({
+        "ablation_set": {
+            "path": str(ablation_set_path), "role": "input", "kind": "file",
+            "content": "json", "sha256": _sha256(ablation_set_path), "schema": "ablation_set",
+        },
+        "ablation_audit": {
+            "path": "ablation-audit.json", "role": "output", "kind": "file",
+            "content": "json", "format": "REVENGINSTR.ClassifierAblationAudit/1",
+            "schema": "ablation_audit",
+        },
+    })
+    benchmark["stages"].append({
+        "id": "classifier_ablation_audit", "tool": "classifier-ablation-audit",
+        "args": ["${artifact:ablation_set}", "--output", "${artifact:ablation_audit}"],
+        "inputs": ["ablation_set"],
+        "outputs": ["ablation_audit"],
+    })
+    manifest_path.write_text(json.dumps(benchmark, indent=2) + "\n", encoding="utf-8")
+
+    summary, code = run_benchmark(manifest_path, mode="smoke", output_path=tmp_path / "summary.json")
+
+    assert code == 0
+    assert summary["status"] == "passed"
+    assert summary["stages"][-1]["tool"] == "classifier-ablation-audit"
+    report = json.loads((tmp_path / "ablation-audit.json").read_text(encoding="utf-8"))
+    assert report["variants"]["candidate"]["comparison_to_baseline"]["introduced_errors"] == 1
