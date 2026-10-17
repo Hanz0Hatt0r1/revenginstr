@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-language-address-spaces-v1.schema.json",
+  "title": "REVENGINSTR.GhidraLanguageAddressSpaces/1 report",
+  "type": "object",
+  "required": ["format", "language_id", "big_endian", "default_space", "default_data_space", "address_spaces"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraLanguageAddressSpaces/1"},
+    "language_id": {"type": "string", "minLength": 1},
+    "big_endian": {"type": "boolean"},
+    "default_space": {"type": "string", "minLength": 1},
+    "default_data_space": {"type": ["string", "null"]},
+    "address_spaces": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/addressSpace"}
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "addressSpace": {
+      "type": "object",
+      "required": ["space_id", "name", "pointer_size", "addressable_unit_size", "memory", "loaded_memory", "constant", "register", "stack", "unique", "external", "overlay"],
+      "properties": {
+        "space_id": {"type": "string", "pattern": "^0x[0-9a-f]+$"},
+        "name": {"type": "string", "minLength": 1},
+        "pointer_size": {"type": "integer", "minimum": 1},
+        "addressable_unit_size": {"type": "integer", "minimum": 1},
+        "memory": {"type": "boolean"},
+        "loaded_memory": {"type": "boolean"},
+        "constant": {"type": "boolean"},
+        "register": {"type": "boolean"},
+        "stack": {"type": "boolean"},
+        "unique": {"type": "boolean"},
+        "external": {"type": "boolean"},
+        "overlay": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    }
+  }
+}

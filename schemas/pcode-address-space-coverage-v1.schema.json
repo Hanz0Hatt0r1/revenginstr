@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/pcode-address-space-coverage-v1.schema.json",
+  "title": "REVENGINSTR.PcodeAddressSpaceCoverage/1 report",
+  "type": "object",
+  "required": ["format", "source", "corpus", "used_address_spaces", "unmapped_address_spaces"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.PcodeAddressSpaceCoverage/1"},
+    "source": {
+      "type": "object",
+      "required": ["program", "language_id", "corpus_sha256", "manifest_sha256", "address_spaces_sha256"],
+      "properties": {
+        "program": {"type": "string", "minLength": 1},
+        "language_id": {"type": "string", "minLength": 1},
+        "corpus_sha256": {"$ref": "#/$defs/sha256"},
+        "manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "address_spaces_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "corpus": {
+      "type": "object",
+      "required": ["functions", "instructions", "pcode_operations", "load_operations", "store_operations"],
+      "properties": {
+        "functions": {"type": "integer", "minimum": 1},
+        "instructions": {"type": "integer", "minimum": 0},
+        "pcode_operations": {"type": "integer", "minimum": 0},
+        "load_operations": {"type": "integer", "minimum": 0},
+        "store_operations": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "used_address_spaces": {"type": "array", "items": {"$ref": "#/$defs/usedSpace"}},
+    "unmapped_address_spaces": {"type": "array", "items": {"$ref": "#/$defs/unmappedSpace"}}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "baseSpace": {
+      "type": "object",
+      "required": ["space_id", "load_operations", "store_operations", "operations"],
+      "properties": {
+        "space_id": {"type": "string", "pattern": "^0x[0-9a-f]+$"},
+        "load_operations": {"type": "integer", "minimum": 0},
+        "store_operations": {"type": "integer", "minimum": 0},
+        "operations": {"type": "integer", "minimum": 1}
+      }
+    },
+    "usedSpace": {
+      "allOf": [
+        {"$ref": "#/$defs/baseSpace"},
+        {"type": "object", "required": ["name"], "properties": {"name": {"type": "string", "minLength": 1}, "space_id": {}, "load_operations": {}, "store_operations": {}, "operations": {}}, "additionalProperties": false}
+      ]
+    },
+    "unmappedSpace": {
+      "allOf": [
+        {"$ref": "#/$defs/baseSpace"},
+        {"type": "object", "properties": {"space_id": {}, "load_operations": {}, "store_operations": {}, "operations": {}}, "additionalProperties": false}
+      ]
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}
