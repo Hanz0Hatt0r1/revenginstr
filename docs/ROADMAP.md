@@ -724,6 +724,14 @@ open.
 
 ### M6.2 Evidence request planner
 
+**Initial bounded planner implemented:**
+`EvidenceRequestCandidates/1` accepts only caller-approved action types with
+finite per-action limits, and `revenginstr-evidence-request-plan` ranks them by
+caller-supplied downstream leverage and uncertainty reduction per cost under
+a fixed budget. It emits a plan only; the consumer still provides, reviews,
+and executes any evidence action. Calibration of the supplied value/cost
+estimates and end-to-end consumer convergence remain open.
+
 For unresolved/high-value functions choose only from reviewed bounded actions, such as:
 
 - deeper P-code/function slice;

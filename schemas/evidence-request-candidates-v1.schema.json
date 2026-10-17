@@ -1,0 +1,298 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/evidence-request-candidates-v1.schema.json",
+  "title": "REVENGINSTR.EvidenceRequestCandidates/1 input",
+  "description": "Caller-reviewed bounded evidence actions with cost and expected-value estimates.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "candidates"
+  ],
+  "properties": {
+    "format": {
+      "const": "REVENGINSTR.EvidenceRequestCandidates/1"
+    },
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/candidate"
+      }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+    },
+    "bounds": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "max_depth": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "max_items": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "max_steps": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 600000
+        }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "request_id",
+        "subject_id",
+        "subject_kind",
+        "action_type",
+        "bounds",
+        "cost_units",
+        "expected_uncertainty_reduction",
+        "downstream_leverage",
+        "rationale_codes",
+        "approval_status",
+        "approval_sha256"
+      ],
+      "properties": {
+        "request_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "subject_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "subject_kind": {
+          "enum": [
+            "function",
+            "family",
+            "dispatch",
+            "claim"
+          ]
+        },
+        "action_type": {
+          "enum": [
+            "function_slice",
+            "callers_callees",
+            "field_store_recovery",
+            "constructor_vtable_anchor",
+            "consumer_native_probe",
+            "family_example",
+            "human_review"
+          ]
+        },
+        "bounds": {
+          "$ref": "#/$defs/bounds"
+        },
+        "cost_units": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000
+        },
+        "expected_uncertainty_reduction": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "downstream_leverage": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000
+        },
+        "rationale_codes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "unresolved_dispatch",
+              "missing_receiver_provenance",
+              "field_flow_gap",
+              "out_of_distribution",
+              "evidence_conflict",
+              "high_downstream_leverage",
+              "human_requested"
+            ]
+          }
+        },
+        "approval_status": {
+          "const": "approved"
+        },
+        "approval_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action_type": {
+                "const": "function_slice"
+              }
+            },
+            "required": [
+              "action_type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "bounds": {
+                "required": [
+                  "max_items"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action_type": {
+                "const": "callers_callees"
+              }
+            },
+            "required": [
+              "action_type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "bounds": {
+                "required": [
+                  "max_depth",
+                  "max_items"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action_type": {
+                "const": "field_store_recovery"
+              }
+            },
+            "required": [
+              "action_type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "bounds": {
+                "required": [
+                  "max_items"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action_type": {
+                "const": "constructor_vtable_anchor"
+              }
+            },
+            "required": [
+              "action_type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "bounds": {
+                "required": [
+                  "max_items"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action_type": {
+                "const": "consumer_native_probe"
+              }
+            },
+            "required": [
+              "action_type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "bounds": {
+                "required": [
+                  "max_steps",
+                  "timeout_ms"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action_type": {
+                "const": "family_example"
+              }
+            },
+            "required": [
+              "action_type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "bounds": {
+                "required": [
+                  "max_items"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action_type": {
+                "const": "human_review"
+              }
+            },
+            "required": [
+              "action_type"
+            ]
+          },
+          "then": {
+            "properties": {
+              "bounds": {
+                "properties": {
+                  "max_items": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "max_items"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
