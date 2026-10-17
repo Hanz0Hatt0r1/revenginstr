@@ -581,6 +581,13 @@ Each field retains evidence lineage.
 
 ## M5.2 Semantic role taxonomy
 
+**Initial generic taxonomy and contracts implemented:**
+[`SemanticRoleLabel/1`](../schemas/semantic-role-label-v1.schema.json) accepts
+adjudicated consumer-owned multi-label rows, and
+[`SemanticRolePrediction/1`](../schemas/semantic-role-prediction-v1.schema.json)
+uses the same bounded role keys. The schema carries opaque row/family/dataset
+identities only; no consumer labels or data are stored here.
+
 Initial roles should remain bounded and multi-label-capable:
 
 - lifecycle/init/shutdown;
@@ -613,6 +620,13 @@ Recover candidate state fields and transition graphs from repeated comparisons/w
 Cluster methods using receiver, field, vtable, callgraph and Effect-IR similarity.
 
 ## M5.6 Evaluation contract
+
+**Paired evaluator v1 implemented:** `revenginstr-semantic-role-evaluate`
+requires exact function ids and matching family/dataset/split identities, and
+reports aggregate per-role, micro/macro-F1, and exact-match metrics. It can
+verify function-id and family disjointness against a caller-supplied
+training-family artifact; without that artifact it explicitly reports
+`not_checked`. Frozen consumer gold sets and the >=500-row target remain open.
 
 Provide a generic semantic-label schema. First consumer gold set target: >=500 functions, growing toward 1,000+ across projects.
 
@@ -802,7 +816,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 12. ✅ Receiver provenance graph IR schema and reference validator; graph construction is still open.
 13. Interprocedural receiver propagation v1 (bounded caller-argument and field-store anchors plus exact one-hop joins landed; recursive propagation and store/load joins remain open).
 14. ✅ Initial Effect IR schema + structural extractor v1; additional effect classes and semantic evaluation remain open.
-15. Generic semantic-label/evaluation format.
+15. ✅ Initial generic semantic-label/evaluation format and paired scorer; family-isolated consumer gold sets remain open.
 16. Structured function summary v1.
 17. Semantic role baseline.
 18. State-machine candidate detector.

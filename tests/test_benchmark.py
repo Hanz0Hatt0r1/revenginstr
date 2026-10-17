@@ -434,6 +434,72 @@ def test_benchmark_runs_function_effect_ir_stage(tmp_path: Path) -> None:
     assert len(records) == 2
 
 
+def test_benchmark_runs_semantic_role_evaluation_stage(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    fixture_dir = ROOT / "tests/fixtures/semantic-role"
+    fixture_paths = {
+        "role_labels": fixture_dir / "labels.jsonl",
+        "role_predictions": fixture_dir / "predictions.jsonl",
+        "training_families": fixture_dir / "training-families.jsonl",
+    }
+    schema_files = {
+        "role_labels": "semantic-role-label-v1.schema.json",
+        "role_predictions": "semantic-role-prediction-v1.schema.json",
+        "training_families": "function-families-v1.schema.json",
+        "role_evaluation": "semantic-role-evaluation-v1.schema.json",
+    }
+    for schema_id, filename in schema_files.items():
+        schema_path = ROOT / "schemas" / filename
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        manifest["schemas"][schema_id] = {
+            "path": str(schema_path),
+            "version": schema["title"],
+            "sha256": _sha256(schema_path),
+        }
+
+    formats = {
+        "role_labels": "REVENGINSTR.SemanticRoleLabel/1",
+        "role_predictions": "REVENGINSTR.SemanticRolePrediction/1",
+        "training_families": "REVENGINSTR.FunctionFamilies/1",
+    }
+    for artifact_id, path in fixture_paths.items():
+        manifest["artifacts"][artifact_id] = {
+            "path": str(path), "role": "input", "kind": "file", "content": "jsonl",
+            "format": formats[artifact_id], "sha256": _sha256(path), "schema": artifact_id,
+        }
+    manifest["artifacts"]["role_evaluation"] = {
+        "path": "semantic-role-evaluation.json", "role": "output", "kind": "file",
+        "content": "json", "format": "REVENGINSTR.SemanticRoleEvaluation/1",
+        "schema": "role_evaluation",
+    }
+    manifest["stages"].append({
+        "id": "semantic_role_evaluation", "tool": "semantic-role-evaluate",
+        "args": [
+            "${artifact:role_labels}", "${artifact:role_predictions}",
+            "--training-families", "${artifact:training_families}",
+            "--output", "${artifact:role_evaluation}",
+        ],
+        "inputs": list(fixture_paths), "outputs": ["role_evaluation"],
+    })
+    manifest["metrics"].append({
+        "name": "role_micro_f1", "artifact": "role_evaluation",
+        "json_pointer": "/micro_f1", "minimum": 0.0,
+    })
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    summary, code = run_benchmark(
+        manifest_path, mode="smoke", output_path=tmp_path / "summary.json"
+    )
+
+    assert code == 0
+    assert summary["status"] == "passed"
+    assert summary["stages"][-1]["tool"] == "semantic-role-evaluate"
+    report = json.loads((tmp_path / "semantic-role-evaluation.json").read_text(encoding="utf-8"))
+    assert report["family_disjointness"] == "verified"
+    assert report["rows"] == 4
+
+
 def test_benchmark_runs_call_return_flow_stage(tmp_path: Path) -> None:
     manifest_path = _write_manifest(tmp_path)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))

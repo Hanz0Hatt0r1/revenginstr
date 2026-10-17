@@ -60,6 +60,7 @@ revenginstr-freeze-validation = "revenginstr.validation.frozen:main"
 revenginstr-drift-audit = "revenginstr.validation.drift:main"
 revenginstr-export-parity = "revenginstr.evidence.export_parity:main"
 revenginstr-effect-ir = "revenginstr.effect_ir:main"
+revenginstr-semantic-role-evaluate = "revenginstr.semantic_roles:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
