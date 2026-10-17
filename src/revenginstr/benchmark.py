@@ -38,6 +38,7 @@ TOOLS = {
     "selective-train": ("revenginstr.ml.selective", "train_main"),
     "selective-infer": ("revenginstr.ml.selective", "infer_main"),
     "selective-threshold-sweep": ("revenginstr.ml.threshold_sweep", "main"),
+    "selective-threshold-evaluate": ("revenginstr.ml.threshold_evaluate", "main"),
     "evidence-selective-train": ("revenginstr.ml.evidence_selective", "train_main"),
     "evidence-selective-infer": ("revenginstr.ml.evidence_selective", "infer_main"),
     "accept-router-train": ("revenginstr.ml.accept_error_router", "train_main"),
