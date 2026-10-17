@@ -75,6 +75,9 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
         boolean includeMemoryMetadata = sawMemoryMetadataFlag;
 
         DecompInterface decompiler = new DecompInterface();
+        if (!decompiler.toggleCCode(false) || !decompiler.toggleSyntaxTree(true)) {
+            throw new IllegalStateException("Could not configure P-code-only decompilation");
+        }
         if (!decompiler.openProgram(currentProgram)) throw new IllegalStateException("Could not open program");
         try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
                 new FileOutputStream(output), StandardCharsets.UTF_8))) {

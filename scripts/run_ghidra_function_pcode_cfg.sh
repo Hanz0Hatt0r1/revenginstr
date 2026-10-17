@@ -18,10 +18,11 @@ ANALYZE="$GHIDRA_HOME/support/analyzeHeadless"
 [[ -x "$ANALYZE" ]] || { echo "error: analyzeHeadless not executable: $ANALYZE" >&2; exit 1; }
 mkdir -p "$(dirname -- "$OUTPUT")"
 TMP_SCRIPT_DIR=$(mktemp -d)
-trap 'rm -rf -- "$TMP_SCRIPT_DIR"' EXIT
+TMP_LOG_DIR=$(mktemp -d)
+trap 'rm -rf -- "$TMP_SCRIPT_DIR" "$TMP_LOG_DIR"' EXIT
 cp "$ROOT/ghidra/ExportFunctionPcodeCFG.java" "$TMP_SCRIPT_DIR/ExportFunctionPcodeCFG.java"
 
-RUN_LOG="$TMP_SCRIPT_DIR/analyze.log"
+RUN_LOG="$TMP_LOG_DIR/analyze.log"
 if ! "$ANALYZE" \
   "$PROJECT_DIR" "$PROJECT_NAME" \
   -recursive \
@@ -33,7 +34,7 @@ if ! "$ANALYZE" \
   2>&1 | tee "$RUN_LOG"; then
   exit 1
 fi
-if ! grep -Eq '^GHIDRA_FUNCTION_PCODE_CFG_FORMAT=REVENGINSTR\.GhidraFunctionPcodeCFG/[123]$' "$RUN_LOG"; then
+if ! grep -Eq 'GHIDRA_FUNCTION_PCODE_CFG_FORMAT=REVENGINSTR\.GhidraFunctionPcodeCFG/[123]([^0-9]|$)' "$RUN_LOG"; then
   echo "error: Ghidra did not report successful function CFG export completion" >&2
   exit 1
 fi
