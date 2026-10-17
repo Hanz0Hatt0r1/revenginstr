@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-memory-store-access-v1.schema.json",
+  "title": "REVENGINSTR.GhidraMemoryStoreAccess/1 JSONL row",
+  "description": "One High-P-code STORE location fact with an exact operation key and either a proven parameter-rooted constant offset or an explicit unresolved state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "program_id", "function_entry", "address", "time", "opcode",
+    "memory_space", "memory_physical_space", "memory_width_bytes",
+    "memory_pointer_width_bytes", "memory_space_size_bits",
+    "memory_addressable_unit_bytes", "pointer_token", "root_parameter_index",
+    "offset_bytes", "location_status", "destination_pattern", "address_expression_ops"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraMemoryStoreAccess/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "function_entry": {"type": "string", "minLength": 1},
+    "address": {"type": "string", "minLength": 1},
+    "time": {"type": "integer", "minimum": 0},
+    "opcode": {"const": "STORE"},
+    "memory_space": {"type": ["string", "null"], "minLength": 1},
+    "memory_physical_space": {"type": ["string", "null"], "minLength": 1},
+    "memory_width_bytes": {"type": ["integer", "null"], "minimum": 1},
+    "memory_pointer_width_bytes": {"type": ["integer", "null"], "minimum": 1},
+    "memory_space_size_bits": {"type": ["integer", "null"], "minimum": 1},
+    "memory_addressable_unit_bytes": {"type": ["integer", "null"], "minimum": 1},
+    "pointer_token": {"type": "string", "minLength": 1},
+    "root_parameter_index": {"type": ["integer", "null"], "minimum": 0},
+    "offset_bytes": {"type": ["integer", "null"]},
+    "location_status": {"enum": ["parameter_rooted_constant_offset", "unresolved"]},
+    "destination_pattern": {"type": "string", "minLength": 1},
+    "address_expression_ops": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["address", "time", "opcode"],
+        "properties": {
+          "address": {"type": "string", "minLength": 1},
+          "time": {"type": "integer", "minimum": 0},
+          "opcode": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"location_status": {"const": "parameter_rooted_constant_offset"}}},
+      "then": {"properties": {
+        "memory_space": {"type": "string", "minLength": 1},
+        "memory_width_bytes": {"type": "integer", "minimum": 1},
+        "memory_pointer_width_bytes": {"type": "integer", "minimum": 1},
+        "memory_space_size_bits": {"type": "integer", "minimum": 1},
+        "memory_addressable_unit_bytes": {"type": "integer", "minimum": 1},
+        "root_parameter_index": {"type": "integer", "minimum": 0},
+        "offset_bytes": {"type": "integer"}
+      }}
+    }
+  ]
+}

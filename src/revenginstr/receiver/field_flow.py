@@ -17,6 +17,12 @@ CFG_FORMAT = "REVENGINSTR.GhidraFunctionPcodeCFG/1"
 CFG_FORMAT_V2 = "REVENGINSTR.GhidraFunctionPcodeCFG/2"
 CFG_FORMAT_V3 = "REVENGINSTR.GhidraFunctionPcodeCFG/3"
 REACHING_FORMAT = "REVENGINSTR.FieldStoreLoadDominanceAudit/1"
+REACHING_FORMAT_V2 = "REVENGINSTR.FieldStoreLoadDominanceAudit/2"
+MEMORY_STORE_ACCESS_FORMAT = "REVENGINSTR.GhidraMemoryStoreAccess/1"
+REACHING_CLAIM_SCOPE_V2 = (
+    "Conservative single-function High-P-code structural candidate; only known different physical spaces "
+    "and same-root non-overlapping byte ranges are excluded; no branch-feasibility or runtime value-flow claim."
+)
 HAZARD_OPCODES = {"STORE", "CALL", "CALLIND", "CALLOTHER"}
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
@@ -255,6 +261,170 @@ def _index_cfg(
     return indexed
 
 
+def _index_memory_store_accesses(
+    records: list[dict[str, Any]],
+    cfg_by_function: dict[tuple[str, str], tuple[int, dict[str, Any]]],
+) -> tuple[
+    dict[tuple[str, str, str, int], dict[str, Any]],
+    dict[tuple[str, str], list[int]],
+    dict[tuple[str, str, str, int], int],
+]:
+    indexed: dict[tuple[str, str, str, int], dict[str, Any]] = {}
+    indices_by_function: dict[tuple[str, str], list[int]] = {}
+    record_indices: dict[tuple[str, str, str, int], int] = {}
+    space_metadata: dict[tuple[str, str], tuple[str | None, int | None, int | None, int | None]] = {}
+    expected_fields = {
+        "format", "program_id", "function_entry", "address", "time", "opcode",
+        "memory_space", "memory_physical_space", "memory_width_bytes",
+        "memory_pointer_width_bytes", "memory_space_size_bits",
+        "memory_addressable_unit_bytes", "pointer_token", "root_parameter_index",
+        "offset_bytes", "location_status", "destination_pattern", "address_expression_ops",
+    }
+    for record_index, fact in enumerate(records, 1):
+        where = f"memory store access record {record_index}"
+        if (
+            not isinstance(fact, dict)
+            or set(fact) != expected_fields
+            or fact.get("format") != MEMORY_STORE_ACCESS_FORMAT
+            or fact.get("opcode") != "STORE"
+        ):
+            raise ValueError(f"{where}: unexpected format or fields")
+        if any(not isinstance(fact.get(key), str) or not fact[key] for key in ("program_id", "function_entry", "address")):
+            raise ValueError(f"{where}: invalid operation identity")
+        time = _int(fact.get("time"), f"{where} operation time")
+        for key in ("memory_space", "memory_physical_space"):
+            value = fact[key]
+            if value is not None and (not isinstance(value, str) or not value):
+                raise ValueError(f"{where}: invalid {key}")
+        for key in (
+            "memory_width_bytes", "memory_pointer_width_bytes",
+            "memory_space_size_bits", "memory_addressable_unit_bytes",
+        ):
+            value = fact[key]
+            if value is not None and _int(value, f"{where} {key}") == 0:
+                raise ValueError(f"{where}: {key} must be positive")
+        root_parameter = fact["root_parameter_index"]
+        if root_parameter is not None:
+            _int(root_parameter, f"{where} root parameter")
+        offset = fact["offset_bytes"]
+        if offset is not None and (not isinstance(offset, int) or isinstance(offset, bool)):
+            raise ValueError(f"{where}: invalid byte offset")
+        if not isinstance(fact["location_status"], str) or fact["location_status"] not in {
+            "parameter_rooted_constant_offset", "unresolved",
+        }:
+            raise ValueError(f"{where}: invalid location status")
+        if fact["location_status"] == "parameter_rooted_constant_offset" and any(
+            fact[key] is None for key in (
+                "memory_space", "memory_width_bytes", "memory_pointer_width_bytes",
+                "memory_space_size_bits", "memory_addressable_unit_bytes",
+                "root_parameter_index", "offset_bytes",
+            )
+        ):
+            raise ValueError(f"{where}: resolved location is missing required fields")
+        for key in ("pointer_token", "destination_pattern"):
+            if not isinstance(fact[key], str) or not fact[key]:
+                raise ValueError(f"{where}: invalid {key}")
+        derivation = fact["address_expression_ops"]
+        if not isinstance(derivation, list):
+            raise ValueError(f"{where}: invalid address expression operations")
+        for operation_ref in derivation:
+            if (
+                not isinstance(operation_ref, dict)
+                or set(operation_ref) != {"address", "time", "opcode"}
+                or not isinstance(operation_ref.get("address"), str)
+                or not operation_ref["address"]
+                or not isinstance(operation_ref.get("opcode"), str)
+                or not operation_ref["opcode"]
+            ):
+                raise ValueError(f"{where}: malformed address expression operation")
+            _int(operation_ref.get("time"), f"{where} address expression operation time")
+
+        program_id = fact["program_id"]
+        function_entry = fact["function_entry"]
+        function_key = (program_id, function_entry)
+        key = (program_id, function_entry, fact["address"], time)
+        if key in indexed:
+            raise ValueError(f"{where}: duplicate operation identity")
+        cfg_item = cfg_by_function.get(function_key)
+        if cfg_item is None:
+            raise ValueError(f"{where}: missing CFG for program {program_id} function {function_entry}")
+        cfg = cfg_item[1]
+        operation_location = cfg["operations"].get((fact["address"], time))
+        if operation_location is None or operation_location[2] != "STORE":
+            raise ValueError(f"{where}: operation does not match CFG STORE")
+        if cfg["format"] in {CFG_FORMAT_V2, CFG_FORMAT_V3}:
+            cfg_detail = cfg["operation_details"][(fact["address"], time)]
+            if fact["memory_space"] != cfg_detail["memory_space"] or fact["memory_width_bytes"] != cfg_detail["memory_width_bytes"]:
+                raise ValueError(f"{where}: memory shape disagrees with CFG")
+            if cfg["format"] == CFG_FORMAT_V3 and (
+                fact["memory_physical_space"] != cfg_detail["memory_physical_space"]
+                or fact["memory_pointer_width_bytes"] != cfg_detail["memory_pointer_width_bytes"]
+            ):
+                raise ValueError(f"{where}: physical memory metadata disagrees with CFG/3")
+        for operation_ref in derivation:
+            ref_location = cfg["operations"].get((operation_ref["address"], operation_ref["time"]))
+            if ref_location is None or ref_location[2] != operation_ref["opcode"]:
+                raise ValueError(f"{where}: address derivation does not match CFG operation")
+        indices_by_function.setdefault(function_key, []).append(record_index)
+
+        memory_space = fact["memory_space"]
+        if memory_space is not None:
+            space_key = (program_id, memory_space)
+            current = (
+                fact["memory_physical_space"], fact["memory_pointer_width_bytes"],
+                fact["memory_space_size_bits"], fact["memory_addressable_unit_bytes"],
+            )
+            previous = space_metadata.get(space_key)
+            if previous is not None and any(
+                old is not None and new is not None and old != new
+                for old, new in zip(previous, current)
+            ):
+                raise ValueError(f"{where}: inconsistent metadata for logical space {memory_space!r}")
+            if previous is None:
+                space_metadata[space_key] = current
+            else:
+                space_metadata[space_key] = tuple(
+                    new if new is not None else old for old, new in zip(previous, current)
+                )
+        indexed[key] = fact
+        record_indices[key] = record_index
+    return indexed, indices_by_function, record_indices
+
+
+def _memory_store_non_alias_reason(
+    tracked: dict[str, Any], write: dict[str, Any], *,
+    parameter_index: int, field_offset: int, field_width: int,
+) -> str | None:
+    tracked_physical = tracked["memory_physical_space"]
+    write_physical = write["memory_physical_space"]
+    if tracked_physical is not None and write_physical is not None and tracked_physical != write_physical:
+        return "different_physical_space"
+    if tracked["memory_space"] != write["memory_space"]:
+        return None
+    if tracked["location_status"] != "parameter_rooted_constant_offset":
+        return None
+    if write["location_status"] != "parameter_rooted_constant_offset":
+        return None
+    if tracked["root_parameter_index"] != parameter_index or write["root_parameter_index"] != parameter_index:
+        return None
+    if tracked["offset_bytes"] != field_offset or tracked["memory_width_bytes"] != field_width:
+        return None
+    geometry_fields = (
+        "memory_pointer_width_bytes", "memory_space_size_bits", "memory_addressable_unit_bytes",
+    )
+    if any(tracked[field] is None or tracked[field] != write[field] for field in geometry_fields):
+        return None
+    modulus = (1 << tracked["memory_space_size_bits"]) * tracked["memory_addressable_unit_bytes"]
+    pointer_modulus = 1 << (8 * tracked["memory_pointer_width_bytes"])
+    write_width = write["memory_width_bytes"]
+    if modulus != pointer_modulus or write_width is None or field_width >= modulus or write_width >= modulus:
+        return None
+    delta = (write["offset_bytes"] - field_offset) % modulus
+    if delta >= field_width and modulus - delta >= write_width:
+        return "same_root_disjoint_byte_ranges"
+    return None
+
+
 def _has_hazard(operations: list[dict[str, Any]], start: int, stop: int) -> bool:
     return any(operation["opcode"] in HAZARD_OPCODES for operation in operations[start:stop])
 
@@ -467,10 +637,15 @@ def _route_blocks(
 def _may_write_tracked_space(
     operation: dict[str, Any], tracked_space: str, *,
     tracked_physical_space: str | None = None, physical_space_aware: bool = False,
+    access_facts_enabled: bool = False,
+    non_alias_store_locations: set[tuple[str, int]] | None = None,
 ) -> bool:
     """Keep possible effects in the tracked P-code space or with unknown space."""
     opcode = operation["opcode"]
     if opcode == "STORE":
+        if access_facts_enabled:
+            location = (operation["address"], operation["time"])
+            return non_alias_store_locations is None or location not in non_alias_store_locations
         if physical_space_aware:
             write_space = operation.get("memory_physical_space")
             return not write_space or not tracked_physical_space or write_space == tracked_physical_space
@@ -489,6 +664,8 @@ def _find_routes(
     tracked_memory_space: str | None = None,
     tracked_physical_space: str | None = None,
     physical_space_aware: bool = False,
+    access_facts_enabled: bool = False,
+    non_alias_store_locations: set[tuple[str, int]] | None = None,
     max_expansions: int,
 ) -> tuple[list[int] | None, list[int] | None, int]:
     """Find one clean and, optionally, one effect-bearing CFG witness."""
@@ -528,6 +705,8 @@ def _find_routes(
                         operation, tracked_memory_space,
                         tracked_physical_space=tracked_physical_space,
                         physical_space_aware=physical_space_aware,
+                        access_facts_enabled=access_facts_enabled,
+                        non_alias_store_locations=non_alias_store_locations,
                     )
                 )
             next_states = [(block_index, position + 1, bool(next_effect))]
@@ -546,8 +725,11 @@ def audit_field_store_load_dominance(
     *,
     pair_graph_sha256: str,
     cfg_sha256: str,
+    memory_store_access_rows: list[dict[str, Any]] | None = None,
+    memory_store_access_sha256: str | None = None,
     max_pairs: int = 100_000,
     max_path_expansions: int = 1_000_000,
+    max_memory_access_comparisons: int = 1_000_000,
 ) -> list[dict[str, Any]]:
     """Require a candidate store to dominate a paired load with no memory-effect path.
 
@@ -562,10 +744,26 @@ def audit_field_store_load_dominance(
         raise ValueError("max_pairs must be positive")
     if max_path_expansions < 1:
         raise ValueError("max_path_expansions must be positive")
+    if max_memory_access_comparisons < 1:
+        raise ValueError("max_memory_access_comparisons must be positive")
+    access_facts_enabled = memory_store_access_rows is not None
+    if access_facts_enabled:
+        if not isinstance(memory_store_access_sha256, str) or _SHA256.fullmatch(memory_store_access_sha256) is None:
+            raise ValueError("memory store access SHA-256 must be lowercase hexadecimal")
+    elif memory_store_access_sha256 is not None:
+        raise ValueError("memory store access SHA-256 requires memory store access rows")
     cfg_by_function = _index_cfg(cfg_records)
+    if access_facts_enabled:
+        memory_access_by_operation, memory_access_indices_by_function, _memory_access_record_indices = (
+            _index_memory_store_accesses(memory_store_access_rows, cfg_by_function)
+        )
+    else:
+        memory_access_by_operation = {}
+        memory_access_indices_by_function = {}
     output = []
     seen_pairs: set[str] = set()
     path_expansions = 0
+    memory_access_comparisons = 0
     for pair_index, graph in enumerate(pair_graphs, 1):
         identity = _pair_identity(graph, pair_index)
         if graph["graph_id"] in seen_pairs:
@@ -581,6 +779,7 @@ def audit_field_store_load_dominance(
             )
         cfg_record_index, cfg = cfg_item
         before = path_expansions
+        memory_comparisons_before = memory_access_comparisons
         store_location = None if identity["store_time"] is None else cfg["operations"].get(
             (identity["store_address"], identity["store_time"])
         )
@@ -598,6 +797,51 @@ def audit_field_store_load_dominance(
         load_memory_space = None if load_detail is None else load_detail.get("memory_space")
         store_width = None if store_detail is None else store_detail.get("memory_width_bytes")
         load_width = None if load_detail is None else load_detail.get("memory_width_bytes")
+        memory_access_indices = memory_access_indices_by_function.get(
+            (identity["program_id"], identity["function_entry"]), []
+        )
+        non_alias_store_locations: set[tuple[str, int]] = set()
+        candidate_access_fact = None
+        candidate_access_complete = not access_facts_enabled
+        if access_facts_enabled and store_location is not None and identity["store_time"] is not None:
+            candidate_access_fact = memory_access_by_operation.get((
+                identity["program_id"], identity["function_entry"],
+                identity["store_address"], identity["store_time"],
+            ))
+            if candidate_access_fact is not None and candidate_access_fact["location_status"] == "parameter_rooted_constant_offset":
+                if (
+                    candidate_access_fact["root_parameter_index"] != identity["parameter_index"]
+                    or candidate_access_fact["offset_bytes"] != identity["field_offset"]
+                ):
+                    raise ValueError(f"field-access pair {pair_index}: memory fact disagrees with paired store root or offset")
+                if candidate_access_fact["memory_width_bytes"] != store_width:
+                    raise ValueError(f"field-access pair {pair_index}: memory fact disagrees with paired store width")
+                if cfg["format"] == CFG_FORMAT_V3 and load_detail is not None and (
+                    candidate_access_fact["memory_physical_space"] != load_detail["memory_physical_space"]
+                    or candidate_access_fact["memory_pointer_width_bytes"] != load_detail["memory_pointer_width_bytes"]
+                ):
+                    raise ValueError(f"field-access pair {pair_index}: paired accesses disagree on CFG/3 space metadata")
+                candidate_access_complete = True
+                for (address, operation_time), operation_location in cfg["operations"].items():
+                    if operation_location[2] != "STORE" or (address, operation_time) == (
+                        identity["store_address"], identity["store_time"],
+                    ):
+                        continue
+                    memory_access_comparisons += 1
+                    if memory_access_comparisons > max_memory_access_comparisons:
+                        raise ValueError(
+                            f"memory access comparison budget exceeded: {max_memory_access_comparisons}"
+                        )
+                    write_fact = memory_access_by_operation.get((
+                        identity["program_id"], identity["function_entry"], address, operation_time,
+                    ))
+                    if write_fact is not None and _memory_store_non_alias_reason(
+                        candidate_access_fact, write_fact,
+                        parameter_index=identity["parameter_index"],
+                        field_offset=identity["field_offset"],
+                        field_width=store_width if isinstance(store_width, int) else 0,
+                    ) is not None:
+                        non_alias_store_locations.add((address, operation_time))
         entry_index = cfg["entry_block_index"]
         entry_to_store = None
         bypass_store = None
@@ -611,6 +855,8 @@ def audit_field_store_load_dominance(
             status = "incomplete_evidence"
         elif store_memory_space != load_memory_space or store_width != load_width:
             status = "access_shape_mismatch"
+        elif access_facts_enabled and not candidate_access_complete:
+            status = "incomplete_evidence"
         else:
             budget = max_path_expansions - path_expansions
             entry_to_store, _unused, used = _find_routes(
@@ -636,6 +882,8 @@ def audit_field_store_load_dominance(
                         store_detail.get("memory_physical_space") if cfg["format"] == CFG_FORMAT_V3 else None
                     ),
                     physical_space_aware=cfg["format"] == CFG_FORMAT_V3,
+                    access_facts_enabled=access_facts_enabled,
+                    non_alias_store_locations=non_alias_store_locations,
                     max_expansions=budget,
                 )
                 path_expansions += used
@@ -664,8 +912,8 @@ def audit_field_store_load_dominance(
                 "width_bytes": None if detail is None else detail.get("memory_width_bytes"),
             }
 
-        output.append({
-            "format": REACHING_FORMAT,
+        result = {
+            "format": REACHING_FORMAT_V2 if access_facts_enabled else REACHING_FORMAT,
             "program_id": identity["program_id"],
             "function_entry": identity["function_entry"],
             "parameter_index": identity["parameter_index"],
@@ -687,7 +935,7 @@ def audit_field_store_load_dominance(
                 "clean_store_to_load": clean_after_store or [],
                 "memory_effect_store_to_load": effect_after_store or [],
             },
-            "claim_scope": "Conservative single-function High-P-code structural candidate; no branch-feasibility, alias-disambiguation, or runtime value-flow claim.",
+            "claim_scope": REACHING_CLAIM_SCOPE_V2 if access_facts_enabled else "Conservative single-function High-P-code structural candidate; no branch-feasibility, alias-disambiguation, or runtime value-flow claim.",
             "provenance": {
                 "pair_graph_sha256": pair_graph_sha256,
                 "pair_graph_record_index": pair_index,
@@ -697,7 +945,16 @@ def audit_field_store_load_dominance(
                 "path_expansions_before": before,
                 "path_expansions_used": path_expansions - before,
             },
-        })
+        }
+        if access_facts_enabled:
+            result["provenance"].update({
+                "memory_store_access_sha256": memory_store_access_sha256,
+                "memory_store_access_record_indices": memory_access_indices,
+                "memory_access_comparison_cap": max_memory_access_comparisons,
+                "memory_access_comparisons_before": memory_comparisons_before,
+                "memory_access_comparisons_used": memory_access_comparisons - memory_comparisons_before,
+            })
+        output.append(result)
     return output
 
 
@@ -730,16 +987,24 @@ def dominance_main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Audit whether a paired field store is the unique conservative CFG candidate at a load.")
     parser.add_argument("field_access_pairs", type=Path)
     parser.add_argument("function_pcode_cfg", type=Path)
+    parser.add_argument("--memory-store-access-jsonl", type=Path)
     parser.add_argument("--max-pairs", type=int, default=100_000)
     parser.add_argument("--max-path-expansions", type=int, default=1_000_000)
+    parser.add_argument("--max-memory-access-comparisons", type=int, default=1_000_000)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     pair_sha, pair_graphs = _read_jsonl(args.field_access_pairs)
     cfg_sha, cfg_records = _read_jsonl(args.function_pcode_cfg)
+    if args.memory_store_access_jsonl is None:
+        access_sha, access_rows = None, None
+    else:
+        access_sha, access_rows = _read_jsonl(args.memory_store_access_jsonl)
     rows = audit_field_store_load_dominance(
         pair_graphs, cfg_records, pair_graph_sha256=pair_sha,
+        memory_store_access_rows=access_rows, memory_store_access_sha256=access_sha,
         cfg_sha256=cfg_sha, max_pairs=args.max_pairs,
         max_path_expansions=args.max_path_expansions,
+        max_memory_access_comparisons=args.max_memory_access_comparisons,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", encoding="utf-8") as handle:
