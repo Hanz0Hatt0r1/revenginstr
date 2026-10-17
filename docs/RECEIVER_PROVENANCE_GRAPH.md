@@ -180,8 +180,30 @@ The benchmark tool id is `receiver-field-store-load-dominance-audit`.
 CFG/3 can distinguish logical from physical address spaces. With CFG/3, the
 dominance audit excludes an intervening `STORE` only when its known physical
 space differs from the tracked access; a missing physical-space value remains
-a barrier. CFG/2 retains its logical-space behavior for compatibility. Neither
-version compares pointer bases or access ranges.
+a barrier. CFG/2 retains its logical-space behavior for compatibility. The CFG
+formats themselves do not carry pointer bases or access ranges.
+
+The optional `GhidraMemoryStoreAccess/1` sidecar enables the versioned
+`FieldStoreLoadDominanceAudit/2` comparison for resolved parameter-rooted
+stores. Export it with the parameter-store runner described in
+[the exporter contract](GHIDRA_PARAMETER_STORE_FIELD.md), then pass it to the
+same audit command:
+
+```sh
+revenginstr-receiver-field-store-load-dominance-audit field-access-pairs.jsonl \
+  function-pcode-cfg.jsonl --memory-store-access-jsonl memory-stores.jsonl \
+  --output field-store-load-dominance-audit-v2.jsonl
+```
+
+With the sidecar present, CFG `STORE`s remain effect barriers unless a matching
+fact proves either a different known physical space or a non-overlapping byte
+range rooted at the same exact formal parameter as the candidate. Range
+comparison uses circular byte intervals only when the exported address-space
+and pointer geometry agree; incomplete geometry, unknown/unresolved facts,
+missing rows, and different roots remain barriers. Calls and unclassified
+operations are unaffected. The output pins the third input hash and sidecar
+record ordinals. Without the option, the command continues to emit the
+backward-compatible `/1` audit.
 
 Parameter-rooted loads can also be traced through P-code data dependencies to
 function returns:

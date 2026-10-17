@@ -403,13 +403,18 @@ Nevergone evidence demonstrates why this distinction matters: both pairs have
 intervening explicit stores, so the current evidence cannot support a positive
 reaching-definition result.
 
-The next alias-aware extension is bounded by the
-[field memory alias contract](FIELD_MEMORY_ALIAS_CONTRACT.md). It requires
-exact operation-key joins, a proven base root plus signed byte offset and
-width, fail-closed behavior for unresolved writes, a versioned output that
-pins its access-facts input, and a consumer-owned frozen validation. Logical
-P-code space separation remains distinct from physical-overlay or runtime
-alias claims.
+**Alias-aware memory access facts and versioned dominance audit implemented:**
+the parameter-store exporter can optionally emit one
+`GhidraMemoryStoreAccess/1` record for every P-code `STORE`, including
+unresolved locations. The opt-in `FieldStoreLoadDominanceAudit/2` joins those
+facts to exact CFG operation keys, pins all three input hashes and record
+ordinals, and only excludes known different physical spaces or proven
+same-parameter-root disjoint byte intervals. Circular ranges are compared
+only when exported pointer/address-space geometry agrees; missing, unknown,
+or unresolved facts remain possible effects. `/1` remains unchanged when no
+sidecar is provided. Generic synthetic validation is in place; a consumer
+frozen evidence run is still required before interpreting positives as a
+consumer result. See the [field memory alias contract](FIELD_MEMORY_ALIAS_CONTRACT.md).
 
 Remaining propagation work:
 
@@ -994,12 +999,10 @@ Mitigation: preserve heuristic/sparse baselines, feature ablations and evidence-
 
 # 20. Immediate next action
 
-Continue with **M2.3**: the Nevergone consumer now freezes and replays the
-CFG/1 dominance audit as `incomplete_evidence`, preserving the rows as negative
-evidence. Capture and freeze a consumer CFG/2 run when a Ghidra database can be
-opened within the available disk budget. The shared minimum metadata and
-fail-closed comparison rules are now specified in
-`FIELD_MEMORY_ALIAS_CONTRACT.md`; next implement them as a versioned access-fact
-input/output path, then freeze consumer evidence before any same-space
-non-aliasing result is enabled. Keep labels, binary rows, and measured outcomes
-in their consumer repositories.
+Continue with **M2.3 consumer validation**: the Nevergone consumer previously
+froze and replayed the CFG/1 dominance audit as `incomplete_evidence`, keeping
+those rows as negative evidence. Next capture/freeze CFG/3 plus the new
+memory-store sidecar and expected outputs when the Ghidra database fits the
+available disk budget. Until that consumer run is reviewed, shared `/2`
+positives remain generic structural candidates. Keep labels, binary rows, and
+measured outcomes in their consumer repositories.
