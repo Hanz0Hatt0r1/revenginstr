@@ -51,6 +51,21 @@ formats, and exceeding the graph budget fail closed. This does not recursively
 propagate through callees, interpret argument types, or combine distinct input
 artifacts; it preserves one exact static call-argument relation per graph.
 
+Parameter-to-parameter field-store evidence can be anchored with an explicit
+program join key:
+
+```sh
+revenginstr-receiver-store-flow parameter-stores.tsv \
+  --program-id 'consumer:analysis-id' --output parameter-store-graphs.jsonl
+```
+
+Each graph has one store node, a destination-parameter-to-store edge, and a
+stored-value-parameter-to-store edge. Both edges point to the same source row,
+so they are correlated parts of one STORE observation. The field offset and
+numeric parameter indices remain auditable in the source row and are not given
+class semantics; the opaque graph id is only a join key. No field-to-load join
+or class/type claim is made.
+
 ## Minimal example
 
 ```json
