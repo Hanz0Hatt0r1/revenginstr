@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `3118c6b09720d9a94efa83eec20bcc3316219b89`
+**Repository baseline:** `main` through `6b5820503e4f854a7c530b40e8f1d7d36d753783`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -167,7 +167,8 @@ The initial runner is available as `revenginstr-benchmark`. It validates pinned
 input artifacts and schemas, runs allowlisted tools in dependency order without
 a shell, and emits a versioned hash/runtime/metric-gate summary. Bounded
 caller-argument-to-field-store graph construction and the initial
-`FunctionEffectIR/1` and `FunctionSummary/1` projections are allowlisted stages.
+`FunctionEffectIR/1`, `FunctionSummary/1`, and decision-ledger audit are
+allowlisted stages.
 
 ### M0.3 Summary schema
 
@@ -677,7 +678,8 @@ The planner must never synthesize arbitrary executable probes on its own.
 
 ### M6.3 Convergence states
 
-Standardize terminal states:
+**Terminal states standardized (2026-10-17):** `AnalysisDecisionLedgerEvent/1`
+uses the six bounded terminal states below; unsupported states fail validation.
 
 - `accepted_exact`;
 - `accepted_high_confidence`;
@@ -688,7 +690,12 @@ Standardize terminal states:
 
 ### M6.4 Decision ledger
 
-Persist previous state, new state, evidence added, responsible rule/model, confidence delta and artifact references.
+**Initial ledger and audit implemented:** `revenginstr-decision-ledger-audit`
+checks unique event IDs, contiguous per-subject indexes and prior-state
+continuity plus stable subject artifact provenance. Events retain evidence
+additions, responsible actor, reason codes, confidence delta and provenance;
+the hash-pinned audit emits aggregate counts without subject or analysis
+identities. Transition policy remains consumer-owned.
 
 ### M6.5 Human feedback
 

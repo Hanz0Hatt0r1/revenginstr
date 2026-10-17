@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/analysis-decision-ledger-audit-v1.schema.json",
+  "title": "REVENGINSTR.AnalysisDecisionLedgerAudit/1",
+  "description": "Aggregate integrity audit of a consumer-owned decision event ledger; subject and analysis identities are omitted.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "source_sha256", "events", "subjects", "analyses", "terminal_state_counts", "reason_counts", "transition_counts"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.AnalysisDecisionLedgerAudit/1"},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "events": {"type": "integer", "minimum": 0},
+    "subjects": {"type": "integer", "minimum": 0},
+    "analyses": {"type": "integer", "minimum": 0},
+    "terminal_state_counts": {"$ref": "#/$defs/stateCounts"},
+    "reason_counts": {"$ref": "#/$defs/reasonCounts"},
+    "transition_counts": {"type": "array", "items": {"$ref": "#/$defs/transition"}}
+  },
+  "$defs": {
+    "state": {"enum": ["accepted_exact", "accepted_high_confidence", "review_required", "escalated_conflict", "unsupported", "budget_exhausted"]},
+    "nullableState": {"oneOf": [{"$ref": "#/$defs/state"}, {"type": "null"}]},
+    "reason": {"enum": ["exact_evidence", "high_confidence", "out_of_distribution", "evidence_conflict", "unsupported_pattern", "missing_evidence", "budget_exhausted", "human_review"]},
+    "stateCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accepted_exact", "accepted_high_confidence", "review_required", "escalated_conflict", "unsupported", "budget_exhausted"],
+      "properties": {
+        "accepted_exact": {"type": "integer", "minimum": 0},
+        "accepted_high_confidence": {"type": "integer", "minimum": 0},
+        "review_required": {"type": "integer", "minimum": 0},
+        "escalated_conflict": {"type": "integer", "minimum": 0},
+        "unsupported": {"type": "integer", "minimum": 0},
+        "budget_exhausted": {"type": "integer", "minimum": 0}
+      }
+    },
+    "reasonCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exact_evidence", "high_confidence", "out_of_distribution", "evidence_conflict", "unsupported_pattern", "missing_evidence", "budget_exhausted", "human_review"],
+      "properties": {
+        "exact_evidence": {"type": "integer", "minimum": 0},
+        "high_confidence": {"type": "integer", "minimum": 0},
+        "out_of_distribution": {"type": "integer", "minimum": 0},
+        "evidence_conflict": {"type": "integer", "minimum": 0},
+        "unsupported_pattern": {"type": "integer", "minimum": 0},
+        "missing_evidence": {"type": "integer", "minimum": 0},
+        "budget_exhausted": {"type": "integer", "minimum": 0},
+        "human_review": {"type": "integer", "minimum": 0}
+      }
+    },
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["previous_state", "state", "count"],
+      "properties": {
+        "previous_state": {"$ref": "#/$defs/nullableState"},
+        "state": {"$ref": "#/$defs/state"},
+        "count": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

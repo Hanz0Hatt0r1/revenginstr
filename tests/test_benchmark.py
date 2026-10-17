@@ -520,6 +520,46 @@ def test_benchmark_runs_semantic_role_evaluation_stage(tmp_path: Path) -> None:
     assert report["rows"] == 4
 
 
+def test_benchmark_runs_decision_ledger_audit_stage(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    fixture = ROOT / "tests/fixtures/decision-ledger/events.jsonl"
+    schema_files = {
+        "ledger_event": "analysis-decision-ledger-event-v1.schema.json",
+        "ledger_audit": "analysis-decision-ledger-audit-v1.schema.json",
+    }
+    for schema_id, filename in schema_files.items():
+        schema_path = ROOT / "schemas" / filename
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        manifest["schemas"][schema_id] = {
+            "path": str(schema_path), "version": schema["title"], "sha256": _sha256(schema_path),
+        }
+    manifest["artifacts"]["ledger_events"] = {
+        "path": str(fixture), "role": "input", "kind": "file", "content": "jsonl",
+        "format": "REVENGINSTR.AnalysisDecisionLedgerEvent/1",
+        "sha256": _sha256(fixture), "schema": "ledger_event",
+    }
+    manifest["artifacts"]["ledger_audit"] = {
+        "path": "ledger-audit.json", "role": "output", "kind": "file", "content": "json",
+        "format": "REVENGINSTR.AnalysisDecisionLedgerAudit/1", "schema": "ledger_audit",
+    }
+    manifest["stages"].append({
+        "id": "decision_ledger_audit", "tool": "decision-ledger-audit",
+        "args": ["${artifact:ledger_events}", "--output", "${artifact:ledger_audit}"],
+        "inputs": ["ledger_events"], "outputs": ["ledger_audit"],
+    })
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    summary, code = run_benchmark(manifest_path, mode="smoke", output_path=tmp_path / "summary.json")
+    assert code == 0
+    assert summary["status"] == "passed"
+    assert summary["stages"][-1]["tool"] == "decision-ledger-audit"
+    report = json.loads((tmp_path / "ledger-audit.json").read_text(encoding="utf-8"))
+    schema = json.loads((ROOT / "schemas/analysis-decision-ledger-audit-v1.schema.json").read_text(encoding="utf-8"))
+    Draft202012Validator(schema).validate(report)
+    assert report["subjects"] == 6
+
+
 def test_benchmark_runs_call_return_flow_stage(tmp_path: Path) -> None:
     manifest_path = _write_manifest(tmp_path)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))

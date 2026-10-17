@@ -62,6 +62,7 @@ revenginstr-export-parity = "revenginstr.evidence.export_parity:main"
 revenginstr-effect-ir = "revenginstr.effect_ir:main"
 revenginstr-structured-summary = "revenginstr.structured_summary:main"
 revenginstr-semantic-role-evaluate = "revenginstr.semantic_roles:main"
+revenginstr-decision-ledger-audit = "revenginstr.decision_ledger:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
