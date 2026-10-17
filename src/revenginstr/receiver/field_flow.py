@@ -21,9 +21,11 @@ REACHING_FORMAT = "REVENGINSTR.FieldStoreLoadDominanceAudit/1"
 REACHING_FORMAT_V2 = "REVENGINSTR.FieldStoreLoadDominanceAudit/2"
 REACHING_FORMAT_V3 = "REVENGINSTR.FieldStoreLoadDominanceAudit/3"
 REACHING_FORMAT_V4 = "REVENGINSTR.FieldStoreLoadDominanceAudit/4"
+REACHING_FORMAT_V5 = "REVENGINSTR.FieldStoreLoadDominanceAudit/5"
 MEMORY_STORE_ACCESS_FORMAT = "REVENGINSTR.GhidraMemoryStoreAccess/1"
 DIRECT_CALL_MEMORY_EFFECT_FORMAT = "REVENGINSTR.GhidraDirectCallMemoryEffect/1"
 DIRECT_CALL_MEMORY_EFFECT_CLOSURE_FORMAT = "REVENGINSTR.GhidraDirectCallMemoryEffectClosure/1"
+INTERPROCEDURAL_MEMORY_EFFECT_FORMAT = "REVENGINSTR.GhidraInterproceduralMemoryEffect/1"
 REACHING_CLAIM_SCOPE_V2 = (
     "Conservative single-function High-P-code structural candidate; only known different physical spaces "
     "and same-root non-overlapping byte ranges are excluded; no branch-feasibility or runtime value-flow claim."
@@ -37,6 +39,12 @@ REACHING_CLAIM_SCOPE_V4 = (
     "Conservative single-function High-P-code structural candidate; only known different physical spaces, "
     "same-root non-overlapping byte ranges, and direct calls with complete, hash-pinned transitive "
     "write-free P-code closures are excluded; no branch-feasibility or runtime value-flow claim."
+)
+REACHING_CLAIM_SCOPE_V5 = (
+    "Conservative single-function High-P-code structural candidate; direct calls are excluded only when a "
+    "hash-pinned interprocedural audit proves every reachable STORE is outside the tracked byte range; "
+    "missing argument roots, unresolved stores, indirect calls, unknown operations, and incomplete closures "
+    "remain barriers; no branch-feasibility or runtime value-flow claim."
 )
 HAZARD_OPCODES = {"STORE", "CALL", "CALLIND", "CALLOTHER"}
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -926,6 +934,151 @@ def _find_routes(
     return clean_path, effect_path, expansions
 
 
+def _index_interprocedural_memory_effects(
+    records: list[dict[str, Any]],
+    cfg_by_function: dict[tuple[str, str], tuple[int, dict[str, Any]]],
+) -> tuple[
+    dict[tuple[str, str, str, str, int], dict[str, Any]],
+    dict[tuple[str, str, str], list[int]],
+]:
+    indexed: dict[tuple[str, str, str, str, int], dict[str, Any]] = {}
+    indices_by_pair: dict[tuple[str, str, str], list[int]] = {}
+    expected_fields = {
+        "format", "program_id", "function_entry", "field_pair_id", "address", "time",
+        "opcode", "callee_entry", "status", "effect_opcodes", "aliasing_store_record_indices",
+        "non_aliasing_store_record_indices", "provenance",
+    }
+    provenance_fields = {
+        "field_access_pair_graph_sha256", "field_access_pair_graph_record_index", "cfg_sha256",
+        "memory_store_access_sha256", "memory_store_access_record_indices",
+        "tracked_memory_store_access_record_index", "caller_parameter_roots_sha256",
+        "caller_parameter_root_record_indices", "caller_pcode_flow_sha256",
+        "caller_pcode_flow_record_index", "pcode_flow_manifest_sha256", "closure_sha256",
+        "closure_function_entries", "unknown_operation_ids", "memory_access_comparisons",
+    }
+    hash_fields = {
+        "field_access_pair_graph_sha256", "cfg_sha256", "memory_store_access_sha256",
+        "caller_parameter_roots_sha256", "caller_pcode_flow_sha256", "pcode_flow_manifest_sha256",
+    }
+    statuses = {
+        "no_aliasing_memory_effect", "possible_aliasing_write", "unknown_effect",
+        "missing_callee_flow", "unresolved_target", "indirect_call",
+    }
+
+    def indices(value: Any, where: str) -> list[int]:
+        if not isinstance(value, list):
+            raise ValueError(f"{where}: expected record-index list")
+        parsed = [_int(item, where) for item in value]
+        if any(item == 0 for item in parsed) or parsed != sorted(set(parsed)):
+            raise ValueError(f"{where}: indices must be positive, unique, and sorted")
+        return parsed
+
+    for record_index, fact in enumerate(records, 1):
+        where = f"interprocedural memory effect record {record_index}"
+        if (
+            not isinstance(fact, dict)
+            or set(fact) != expected_fields
+            or fact.get("format") != INTERPROCEDURAL_MEMORY_EFFECT_FORMAT
+        ):
+            raise ValueError(f"{where}: unexpected format or fields")
+        for key in ("program_id", "function_entry", "field_pair_id", "address"):
+            if not isinstance(fact.get(key), str) or not fact[key]:
+                raise ValueError(f"{where}: invalid {key}")
+        time = _int(fact.get("time"), f"{where} operation time")
+        opcode = fact.get("opcode")
+        status = fact.get("status")
+        callee_entry = fact.get("callee_entry")
+        if opcode not in {"CALL", "CALLIND"} or status not in statuses:
+            raise ValueError(f"{where}: invalid opcode or status")
+        if callee_entry is not None and (not isinstance(callee_entry, str) or not callee_entry):
+            raise ValueError(f"{where}: invalid callee entry")
+        effects = fact.get("effect_opcodes")
+        if (
+            not isinstance(effects, list)
+            or any(not isinstance(item, str) or not item for item in effects)
+            or effects != sorted(set(effects))
+        ):
+            raise ValueError(f"{where}: invalid effect opcode list")
+        aliasing = indices(fact.get("aliasing_store_record_indices"), f"{where} aliasing stores")
+        non_aliasing = indices(fact.get("non_aliasing_store_record_indices"), f"{where} non-aliasing stores")
+        if set(aliasing) & set(non_aliasing):
+            raise ValueError(f"{where}: a store cannot be both aliasing and non-aliasing")
+        provenance = fact.get("provenance")
+        if not isinstance(provenance, dict) or set(provenance) != provenance_fields:
+            raise ValueError(f"{where}: invalid provenance fields")
+        for field in hash_fields:
+            if not isinstance(provenance[field], str) or _SHA256.fullmatch(provenance[field]) is None:
+                raise ValueError(f"{where}: invalid {field}")
+        closure_sha = provenance["closure_sha256"]
+        if closure_sha is not None and (not isinstance(closure_sha, str) or _SHA256.fullmatch(closure_sha) is None):
+            raise ValueError(f"{where}: invalid closure SHA-256")
+        pair_row = _int(provenance["field_access_pair_graph_record_index"], f"{where} pair row")
+        caller_row = _int(provenance["caller_pcode_flow_record_index"], f"{where} caller P-code row")
+        tracked_index = _int(provenance["tracked_memory_store_access_record_index"], f"{where} tracked memory row")
+        comparisons = _int(provenance["memory_access_comparisons"], f"{where} memory comparisons")
+        if pair_row == 0 or caller_row == 0 or tracked_index == 0:
+            raise ValueError(f"{where}: provenance indices must be positive")
+        memory_indices = indices(provenance["memory_store_access_record_indices"], f"{where} memory stores")
+        indices(provenance["caller_parameter_root_record_indices"], f"{where} parameter roots")
+        closure_entries = provenance["closure_function_entries"]
+        if (
+            not isinstance(closure_entries, list)
+            or any(not isinstance(entry, str) or not entry for entry in closure_entries)
+            or closure_entries != sorted(set(closure_entries))
+        ):
+            raise ValueError(f"{where}: invalid closure function entries")
+        unknown_ids = provenance["unknown_operation_ids"]
+        if (
+            not isinstance(unknown_ids, list)
+            or any(not isinstance(value, str) or not value for value in unknown_ids)
+            or unknown_ids != sorted(set(unknown_ids))
+        ):
+            raise ValueError(f"{where}: invalid unknown operation identities")
+        if not set(aliasing + non_aliasing) <= set(memory_indices):
+            raise ValueError(f"{where}: store classifications reference an unpinned memory row")
+        has_closure = bool(closure_entries)
+        if has_closure != (closure_sha is not None):
+            raise ValueError(f"{where}: closure rows and digest disagree")
+        if has_closure:
+            if set(aliasing + non_aliasing) != set(memory_indices) or comparisons != len(memory_indices):
+                raise ValueError(f"{where}: closure STORE facts are not fully classified")
+        elif memory_indices or aliasing or non_aliasing or comparisons:
+            raise ValueError(f"{where}: incomplete closure claims STORE evidence")
+        if not has_closure and provenance["caller_parameter_root_record_indices"]:
+            raise ValueError(f"{where}: incomplete closure claims parameter-root evidence")
+        if status == "no_aliasing_memory_effect":
+            valid = (
+                opcode == "CALL" and callee_entry in closure_entries and not aliasing
+                and not unknown_ids and set(non_aliasing) == set(memory_indices)
+            )
+        elif status == "possible_aliasing_write":
+            valid = opcode == "CALL" and callee_entry in closure_entries and bool(aliasing) and not unknown_ids
+        elif status == "unknown_effect":
+            valid = opcode == "CALL" and callee_entry in closure_entries and bool(unknown_ids)
+        elif status == "missing_callee_flow":
+            valid = opcode == "CALL" and isinstance(callee_entry, str) and not closure_entries and bool(unknown_ids)
+        elif status == "unresolved_target":
+            valid = opcode == "CALL" and callee_entry is None and not closure_entries and bool(unknown_ids)
+        else:
+            valid = opcode == "CALLIND" and callee_entry is None and not closure_entries and bool(unknown_ids)
+        if not valid:
+            raise ValueError(f"{where}: status and evidence disagree")
+
+        function_key = (fact["program_id"], fact["function_entry"])
+        cfg_item = cfg_by_function.get(function_key)
+        if cfg_item is None:
+            raise ValueError(f"{where}: missing CFG for caller function")
+        operation = cfg_item[1]["operations"].get((fact["address"], time))
+        if operation is None or operation[2] != opcode:
+            raise ValueError(f"{where}: operation does not match CFG call")
+        key = (*function_key, fact["field_pair_id"], fact["address"], time)
+        if key in indexed:
+            raise ValueError(f"{where}: duplicate pair/call identity")
+        indexed[key] = fact
+        indices_by_pair.setdefault((*function_key, fact["field_pair_id"]), []).append(record_index)
+    return indexed, indices_by_pair
+
+
 def audit_field_store_load_dominance(
     pair_graphs: list[dict[str, Any]],
     cfg_records: list[dict[str, Any]],
@@ -938,6 +1091,8 @@ def audit_field_store_load_dominance(
     direct_call_memory_effect_sha256: str | None = None,
     direct_call_memory_effect_closure_rows: list[dict[str, Any]] | None = None,
     direct_call_memory_effect_closure_sha256: str | None = None,
+    interprocedural_memory_effect_rows: list[dict[str, Any]] | None = None,
+    interprocedural_memory_effect_sha256: str | None = None,
     max_pairs: int = 100_000,
     max_path_expansions: int = 1_000_000,
     max_memory_access_comparisons: int = 1_000_000,
@@ -960,9 +1115,10 @@ def audit_field_store_load_dominance(
     access_facts_enabled = memory_store_access_rows is not None
     direct_call_effects_enabled = direct_call_memory_effect_rows is not None
     call_effect_closures_enabled = direct_call_memory_effect_closure_rows is not None
-    if direct_call_effects_enabled and call_effect_closures_enabled:
-        raise ValueError("direct-call /1 effects and transitive closure sidecars are mutually exclusive")
-    call_effects_enabled = direct_call_effects_enabled or call_effect_closures_enabled
+    interprocedural_effects_enabled = interprocedural_memory_effect_rows is not None
+    if sum((direct_call_effects_enabled, call_effect_closures_enabled, interprocedural_effects_enabled)) > 1:
+        raise ValueError("direct-call, transitive-closure, and interprocedural sidecars are mutually exclusive")
+    call_effects_enabled = direct_call_effects_enabled or call_effect_closures_enabled or interprocedural_effects_enabled
     if access_facts_enabled:
         if not isinstance(memory_store_access_sha256, str) or _SHA256.fullmatch(memory_store_access_sha256) is None:
             raise ValueError("memory store access SHA-256 must be lowercase hexadecimal")
@@ -971,6 +1127,8 @@ def audit_field_store_load_dominance(
     if call_effects_enabled:
         if not access_facts_enabled:
             raise ValueError("direct call memory effects require memory store access rows")
+    interprocedural_effect_by_operation = {}
+    interprocedural_effect_indices_by_pair = {}
     if direct_call_effects_enabled:
         if not isinstance(direct_call_memory_effect_sha256, str) or _SHA256.fullmatch(direct_call_memory_effect_sha256) is None:
             raise ValueError("direct call memory effect SHA-256 must be lowercase hexadecimal")
@@ -981,14 +1139,20 @@ def audit_field_store_load_dominance(
             raise ValueError("direct call memory effect closure SHA-256 must be lowercase hexadecimal")
     elif direct_call_memory_effect_closure_sha256 is not None:
         raise ValueError("direct call memory effect closure SHA-256 requires closure rows")
+    if interprocedural_effects_enabled:
+        if not isinstance(interprocedural_memory_effect_sha256, str) or _SHA256.fullmatch(interprocedural_memory_effect_sha256) is None:
+            raise ValueError("interprocedural memory effect SHA-256 must be lowercase hexadecimal")
+    elif interprocedural_memory_effect_sha256 is not None:
+        raise ValueError("interprocedural memory effect SHA-256 requires interprocedural rows")
     cfg_by_function = _index_cfg(cfg_records)
     if access_facts_enabled:
-        memory_access_by_operation, memory_access_indices_by_function, _memory_access_record_indices = (
+        memory_access_by_operation, memory_access_indices_by_function, memory_access_record_indices = (
             _index_memory_store_accesses(memory_store_access_rows, cfg_by_function)
         )
     else:
         memory_access_by_operation = {}
         memory_access_indices_by_function = {}
+        memory_access_record_indices = {}
     if direct_call_effects_enabled:
         call_effect_by_operation, call_effect_indices_by_function = _index_direct_call_memory_effects(
             direct_call_memory_effect_rows, cfg_by_function,
@@ -997,6 +1161,44 @@ def audit_field_store_load_dominance(
         call_effect_by_operation, call_effect_indices_by_function = _index_direct_call_memory_effect_closures(
             direct_call_memory_effect_closure_rows, cfg_by_function,
         )
+    elif interprocedural_effects_enabled:
+        interprocedural_effect_by_operation, interprocedural_effect_indices_by_pair = (
+            _index_interprocedural_memory_effects(interprocedural_memory_effect_rows, cfg_by_function)
+        )
+        pair_rows = {}
+        for pair_index, graph in enumerate(pair_graphs, 1):
+            identity = _pair_identity(graph, pair_index)
+            pair_key = (identity["program_id"], identity["function_entry"], graph["graph_id"])
+            pair_rows[pair_key] = (pair_index, identity)
+        for pair_key, record_indices in interprocedural_effect_indices_by_pair.items():
+            pair_row = pair_rows.get(pair_key)
+            if pair_row is None:
+                raise ValueError("interprocedural sidecar references an unknown field-access pair")
+            pair_index, identity = pair_row
+            tracked_key = (
+                identity["program_id"], identity["function_entry"],
+                identity["store_address"], identity["store_time"],
+            )
+            tracked_access_index = memory_access_record_indices.get(tracked_key)
+            for effect_index in record_indices:
+                fact = interprocedural_memory_effect_rows[effect_index - 1]
+                provenance = fact["provenance"]
+                if (
+                    provenance["field_access_pair_graph_sha256"] != pair_graph_sha256
+                    or provenance["field_access_pair_graph_record_index"] != pair_index
+                    or provenance["tracked_memory_store_access_record_index"] != tracked_access_index
+                ):
+                    raise ValueError(f"interprocedural memory effect record {effect_index}: pair provenance mismatch")
+                for memory_index in provenance["memory_store_access_record_indices"]:
+                    if memory_index > len(memory_store_access_rows):
+                        raise ValueError(f"interprocedural memory effect record {effect_index}: memory row index is out of range")
+                    memory_fact = memory_store_access_rows[memory_index - 1]
+                    if (
+                        memory_fact["program_id"] != fact["program_id"]
+                        or memory_fact["function_entry"] not in provenance["closure_function_entries"]
+                    ):
+                        raise ValueError(f"interprocedural memory effect record {effect_index}: closure store identity mismatch")
+        call_effect_by_operation, call_effect_indices_by_function = {}, {}
     else:
         call_effect_by_operation = {}
         call_effect_indices_by_function = {}
@@ -1040,15 +1242,42 @@ def audit_field_store_load_dominance(
         memory_access_indices = memory_access_indices_by_function.get(
             (identity["program_id"], identity["function_entry"]), []
         )
-        call_effect_indices = call_effect_indices_by_function.get(
-            (identity["program_id"], identity["function_entry"]), []
-        )
-        no_effect_call_locations = {
-            (address, operation_time)
-            for (program_id, function_entry, address, operation_time), fact in call_effect_by_operation.items()
-            if (program_id, function_entry) == (identity["program_id"], identity["function_entry"])
-            and fact["status"] == "no_explicit_memory_write"
-        }
+        if interprocedural_effects_enabled:
+            pair_key = (identity["program_id"], identity["function_entry"], graph["graph_id"])
+            call_effect_indices = interprocedural_effect_indices_by_pair.get(pair_key, [])
+            tracked_key = (
+                identity["program_id"], identity["function_entry"],
+                identity["store_address"], identity["store_time"],
+            )
+            tracked_access_index = memory_access_record_indices.get(tracked_key)
+            for effect_index in call_effect_indices:
+                fact = interprocedural_memory_effect_rows[effect_index - 1]
+                provenance = fact["provenance"]
+                if (
+                    provenance["field_access_pair_graph_sha256"] != pair_graph_sha256
+                    or provenance["field_access_pair_graph_record_index"] != pair_index
+                    or provenance["cfg_sha256"] != cfg_sha256
+                    or provenance["memory_store_access_sha256"] != memory_store_access_sha256
+                    or provenance["tracked_memory_store_access_record_index"] != tracked_access_index
+                ):
+                    raise ValueError(f"field-access pair {pair_index}: interprocedural sidecar provenance mismatch")
+            no_effect_call_locations = {
+                (address, operation_time)
+                for (program_id, function_entry, pair_id, address, operation_time), fact
+                in interprocedural_effect_by_operation.items()
+                if (program_id, function_entry, pair_id) == pair_key
+                and fact["status"] == "no_aliasing_memory_effect"
+            }
+        else:
+            call_effect_indices = call_effect_indices_by_function.get(
+                (identity["program_id"], identity["function_entry"]), []
+            )
+            no_effect_call_locations = {
+                (address, operation_time)
+                for (program_id, function_entry, address, operation_time), fact in call_effect_by_operation.items()
+                if (program_id, function_entry) == (identity["program_id"], identity["function_entry"])
+                and fact["status"] == "no_explicit_memory_write"
+            }
         non_alias_store_locations: set[tuple[str, int]] = set()
         candidate_access_fact = None
         candidate_access_complete = not access_facts_enabled
@@ -1164,7 +1393,8 @@ def audit_field_store_load_dominance(
 
         result = {
             "format": (
-                REACHING_FORMAT_V4 if call_effect_closures_enabled
+                REACHING_FORMAT_V5 if interprocedural_effects_enabled
+                else REACHING_FORMAT_V4 if call_effect_closures_enabled
                 else REACHING_FORMAT_V3 if direct_call_effects_enabled
                 else REACHING_FORMAT_V2 if access_facts_enabled else REACHING_FORMAT
             ),
@@ -1190,7 +1420,8 @@ def audit_field_store_load_dominance(
                 "memory_effect_store_to_load": effect_after_store or [],
             },
             "claim_scope": (
-                REACHING_CLAIM_SCOPE_V4 if call_effect_closures_enabled
+                REACHING_CLAIM_SCOPE_V5 if interprocedural_effects_enabled
+                else REACHING_CLAIM_SCOPE_V4 if call_effect_closures_enabled
                 else REACHING_CLAIM_SCOPE_V3 if direct_call_effects_enabled
                 else REACHING_CLAIM_SCOPE_V2 if access_facts_enabled
                 else "Conservative single-function High-P-code structural candidate; no branch-feasibility, alias-disambiguation, or runtime value-flow claim."
@@ -1222,6 +1453,11 @@ def audit_field_store_load_dominance(
             result["provenance"].update({
                 "direct_call_memory_effect_closure_sha256": direct_call_memory_effect_closure_sha256,
                 "direct_call_memory_effect_closure_record_indices": call_effect_indices,
+            })
+        if interprocedural_effects_enabled:
+            result["provenance"].update({
+                "interprocedural_memory_effect_sha256": interprocedural_memory_effect_sha256,
+                "interprocedural_memory_effect_record_indices": call_effect_indices,
             })
         output.append(result)
     return output
@@ -1259,6 +1495,7 @@ def dominance_main(argv: list[str] | None = None) -> int:
     parser.add_argument("--memory-store-access-jsonl", type=Path)
     parser.add_argument("--direct-call-memory-effect-jsonl", type=Path)
     parser.add_argument("--direct-call-memory-effect-closure-jsonl", type=Path)
+    parser.add_argument("--interprocedural-memory-effect-jsonl", type=Path)
     parser.add_argument("--max-pairs", type=int, default=100_000)
     parser.add_argument("--max-path-expansions", type=int, default=1_000_000)
     parser.add_argument("--max-memory-access-comparisons", type=int, default=1_000_000)
@@ -1278,6 +1515,12 @@ def dominance_main(argv: list[str] | None = None) -> int:
         call_effect_closure_sha, call_effect_closure_rows = None, None
     else:
         call_effect_closure_sha, call_effect_closure_rows = _read_jsonl(args.direct_call_memory_effect_closure_jsonl)
+    if args.interprocedural_memory_effect_jsonl is None:
+        interprocedural_memory_effect_sha, interprocedural_memory_effect_rows = None, None
+    else:
+        interprocedural_memory_effect_sha, interprocedural_memory_effect_rows = _read_jsonl(
+            args.interprocedural_memory_effect_jsonl
+        )
     rows = audit_field_store_load_dominance(
         pair_graphs, cfg_records, pair_graph_sha256=pair_sha,
         memory_store_access_rows=access_rows, memory_store_access_sha256=access_sha,
@@ -1285,6 +1528,8 @@ def dominance_main(argv: list[str] | None = None) -> int:
         direct_call_memory_effect_sha256=call_effect_sha,
         direct_call_memory_effect_closure_rows=call_effect_closure_rows,
         direct_call_memory_effect_closure_sha256=call_effect_closure_sha,
+        interprocedural_memory_effect_rows=interprocedural_memory_effect_rows,
+        interprocedural_memory_effect_sha256=interprocedural_memory_effect_sha,
         cfg_sha256=cfg_sha, max_pairs=args.max_pairs,
         max_path_expansions=args.max_path_expansions,
         max_memory_access_comparisons=args.max_memory_access_comparisons,

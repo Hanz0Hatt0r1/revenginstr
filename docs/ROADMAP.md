@@ -1126,9 +1126,19 @@ Mitigation: preserve heuristic/sparse baselines, feature ablations and evidence-
 **M2.3 consumer capture/replay now covers two consumers.** Nevergone's frozen
 CFG/3 and memory-store sidecar replay is pinned in [PR #729](https://github.com/Hanz0Hatt0r1/nevergone-recomp/pull/729); its two store/load pairs remain unresolved because intervening effects are possible. NFS Shift PRs [#2025](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2025) and [#2026](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2026) freeze ten functions and 28 pairs with no complete write-free callee. PRs [#2027](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2027) and [#2028](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2028) validate write-free call filtering while preserving unknown and indirect-call barriers. Scans 14–23 are frozen in PRs [#2029](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2029), [#2030](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2030), [#2031](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2031), [#2032](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2032), [#2033](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2033), [#2034](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2034), [#2035](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2035), [#2036](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2036), [#2037](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2037), [#2038](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2038), and [#2039](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2039). The 00a sample has no remaining eligible roots under the scanned filters; none of these screens establishes runtime value flow.
 
-The next action is to replay the existing scan22 evidence through the generic
-transitive closure builder and compare `/3` with `/4`. Retain exact CFG joins
-and barriers for missing nested flows, `CALLIND`, unknown effects, and any
-reachable STORE. Freeze the closure inputs and audit outputs in the NFS
-consumer repository. If the captured flows cannot close a call graph, keep the
-result unresolved and record which exports a follow-up capture needs.
+NFS Shift [PR #2040](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2040)
+replays scan22 through the transitive closure builder and `/4` audit. The
+closure retains six explicit-write sites and nine indirect-call barriers;
+`/3` and `/4` both keep the two pairs `store_not_dominating_load`, with zero
+status changes or unique candidates. The captured closure is complete for this
+screen, but it provides no positive reaching-definition evidence.
+
+The next generic action is to merge and validate the opt-in
+`GhidraInterproceduralMemoryEffect/1` builder and versioned `/5` audit. The
+builder propagates only exact caller-formal roots through bounded direct-call
+graphs, compares same-root byte ranges under the physical-space contract, and
+uses a finite monotone fixed point for cycles. Missing argument links,
+unresolved stores, indirect calls, unknown operations, and incomplete or
+budget-exhausted closures stay barriers. Preserve `/1`–`/4`; a structural
+candidate is not runtime value flow. Freeze and replay the new sidecar against
+consumer evidence before using it to filter any call barrier.

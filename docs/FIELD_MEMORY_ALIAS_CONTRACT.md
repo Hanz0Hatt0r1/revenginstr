@@ -143,11 +143,28 @@ The generic transitive call-effect builder is merged in
 [revenginstr PR #108](https://github.com/Hanz0Hatt0r1/revenginstr/pull/108).
 The versioned `/4` consumer keeps `/1`–`/3` unchanged and records the closure
 sidecar hash plus exact call-site ordinals. Synthetic tests cover write-free,
-explicit-write, unknown, missing-flow, indirect, and unresolved statuses;
-consumer replay remains the next validation step.
+explicit-write, unknown, missing-flow, indirect, and unresolved statuses.
+NFS Shift [PR #2040](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2040)
+replays scan22 byte-for-byte: the closure has six explicit-write sites and
+nine indirect-call barriers; both pairs remain `store_not_dominating_load` in
+`/3` and `/4`, with zero status changes or unique candidates. The next generic
+implementation is an opt-in alias-aware interprocedural memory-effect audit
+using exact caller-formal roots and same-root range checks. It uses a finite
+monotone fixed point for recursive direct-call closures; missing argument
+roots, unresolved stores, indirect calls, unknown operations, and closures
+that exceed a configured budget remain barriers. This evidence is not enabled
+in a consumer until its replay is frozen.
 
 `FieldStoreLoadDominanceAudit/1` is not extended in place. With no sidecars the
 command preserves `/1`; supplying only access facts selects `/2`; supplying
 access facts and direct-call effects selects `/3`; supplying access facts and
 transitive closure rows selects `/4`. The `/3` and `/4` versions record their
-respective call-sidecar hashes and exact row ordinals.
+respective call-sidecar hashes and exact row ordinals. Supplying access facts
+and `GhidraInterproceduralMemoryEffect/1` selects `/5`; each row pins the pair,
+CFG, memory-access, caller-root, and P-code flow evidence. Only complete
+closures whose every STORE is proven outside the tracked byte range can remove
+a direct-call barrier. Run `revenginstr-interprocedural-memory-effects` with
+one `--pcode-flow ENTRY TSV` argument per function in the bounded closure, then
+pass its JSONL output to the dominance audit with
+`--interprocedural-memory-effect-jsonl`. A consumer replay must freeze both
+the sidecar inputs and `/5` output before adopting this filter.
