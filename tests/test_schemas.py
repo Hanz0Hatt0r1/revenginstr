@@ -112,9 +112,14 @@ def test_generic_receiver_tsv_row_schema(tmp_path: Path) -> None:
 
 def test_generic_function_pcode_flow_tsv_row_schema() -> None:
     schema = validator("ghidra-function-pcode-flow-v1.schema.json")
-    fixture = ROOT / "tests/fixtures/ghidra-function-pcode-flow.tsv"
-    with fixture.open(encoding="utf-8", newline="") as handle:
-        schema.validate(next(csv.DictReader(handle, delimiter="\t")))
+    fixtures = [
+        ROOT / "tests/fixtures/ghidra-function-pcode-flow.tsv",
+        ROOT / "tests/fixtures/receiver-flow-pcode.tsv",
+    ]
+    for fixture in fixtures:
+        with fixture.open(encoding="utf-8", newline="") as handle:
+            for row in csv.DictReader(handle, delimiter="\t"):
+                schema.validate(row)
     with pytest.raises(ValidationError):
         schema.validate({
             "function_entry": "00401000",
