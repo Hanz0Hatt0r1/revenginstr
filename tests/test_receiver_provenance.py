@@ -11,6 +11,8 @@ from revenginstr.receiver.provenance import (
     CALLER_ARGUMENT_FORMAT,
     PARAMETER_STORE_FORMAT,
     RECEIVER_TYPE_FORMAT,
+    argument_store_main,
+    build_argument_store_graphs,
     build_caller_argument_graphs,
     build_parameter_store_graphs,
     build_receiver_graphs,
@@ -349,3 +351,83 @@ def test_parameter_store_cli_writes_graph_jsonl(tmp_path: Path, capsys) -> None:
     assert graph["format"] == FORMAT
     assert "analysis:sample" in graph["graph_id"]
     assert "store graphs: 1" in capsys.readouterr().out
+
+
+def test_argument_store_join_uses_exact_callee_and_formal_parameter_keys() -> None:
+    argument_rows = [
+        caller_argument_row(parameter_index="0"),
+        caller_argument_row(parameter_index="1", caller_call_site="00402020"),
+        caller_argument_row(parameter_index="2", caller_call_site="00402030"),
+    ]
+    store_rows = [
+        parameter_store_row(),
+        parameter_store_row(function_entry="00409999", store_address="004099a0"),
+    ]
+
+    graphs = build_argument_store_graphs(
+        argument_rows, store_rows, program_id="analysis:sample"
+    )
+
+    assert len(graphs) == 2
+    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+    for graph in graphs:
+        Draft202012Validator(schema).validate(graph)
+        validate_graph_references(graph)
+        identity = json.loads(graph["graph_id"])
+        argument_identity = json.loads(identity[1])
+        parameter_index = argument_identity[2]
+        edges = {(edge["from"], edge["to"], edge["relation"]) for edge in graph["edges"]}
+        assert ("caller_argument", "callee_parameter", "argument_flow") in edges
+        if parameter_index == 0:
+            assert ("callee_parameter", "field_store", "field_store") in edges
+        else:
+            assert ("callee_parameter", "field_store", "data_flow") in edges
+        assert any(
+            edge["provenance"][0]["source_format"] == CALLER_ARGUMENT_FORMAT
+            for edge in graph["edges"] if edge["relation"] == "argument_flow"
+        )
+        assert any(
+            edge["provenance"][0]["source_format"] == PARAMETER_STORE_FORMAT
+            for edge in graph["edges"] if edge["relation"] in {"field_store", "data_flow"}
+        )
+
+
+def test_argument_store_join_fails_when_join_expands_past_budget() -> None:
+    arguments = [
+        caller_argument_row(caller_call_site="00402010"),
+        caller_argument_row(caller_call_site="00402020"),
+    ]
+    stores = [
+        parameter_store_row(store_address="00401020"),
+        parameter_store_row(store_address="00401024"),
+    ]
+
+    with pytest.raises(ValueError, match="argument-store graph budget exceeded"):
+        build_argument_store_graphs(arguments, stores, program_id="p", max_graphs=2)
+
+
+def test_argument_store_cli_writes_joined_graph(tmp_path: Path, capsys) -> None:
+    arguments = tmp_path / "arguments.tsv"
+    arguments.write_text(
+        "format\trow_type\tplan_id\tcallee_entry\tparameter_index\tcaller_entry\t"
+        "caller_call_site\tnode_id\tparent_node_id\tdepth\tedge_kind\n"
+        f"{CALLER_ARGUMENT_FORMAT}\tnode\tplan\t00401000\t0\t00402000\t"
+        "00402010\t0\t-1\t0\troot\n",
+        encoding="utf-8",
+    )
+    stores = tmp_path / "stores.tsv"
+    stores.write_text(
+        "format\tfunction_entry\tstore_address\tstore_time\tdestination_parameter_index\t"
+        "destination_offset\tsource_parameter_index\tstatus\n"
+        f"{PARAMETER_STORE_FORMAT}\t00401000\t00401020\t7\t0\t0x24\t1\t"
+        "parameter_to_parameter_field\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "joined.jsonl"
+
+    assert argument_store_main([
+        str(arguments), str(stores), "--program-id", "analysis:sample", "--output", str(output)
+    ]) == 0
+    graph = json.loads(output.read_text(encoding="utf-8"))
+    assert {edge["relation"] for edge in graph["edges"]} == {"argument_flow", "field_store", "data_flow"}
+    assert "joined graphs: 1" in capsys.readouterr().out

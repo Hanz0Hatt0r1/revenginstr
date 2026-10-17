@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `bbf32905b833e6017d7c05c7912986531a0e1fda`
+**Repository baseline:** `main` through `9043d8fe12bd3dbe27e7c231d5d7344feb5705af`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -350,11 +350,15 @@ Every unresolved receiver query receives one stable primary reason, including:
 
 **Graph contract v1 and receiver-anchor projection implemented:** [`ReceiverProvenanceGraph/1`](../schemas/receiver-provenance-graph-v1.schema.json) defines graph-local ids, the generic receiver-flow node/relation vocabulary, evidence classes, and source-record provenance. The generic validator rejects duplicate ids and dangling endpoints. `revenginstr-receiver-graph` projects typed receiver TSV rows with an observed receiver operand into receiver-to-call graphs, retaining source-record provenance and rejecting invalid joins/formats. The schema and synthetic contract test contain no consumer labels, addresses, or catalogs.
 
-Joining field-store, call-argument, and P-code artifacts without guessing missing joins remains open. Every emitted edge must retain source-record provenance and evidence class; interprocedural propagation remains M2.3.
+`revenginstr-receiver-argument-store-flow` now joins bounded caller roots to
+parameter-store rows only on exact callee/function entry and formal parameter
+index. Both source rows remain explicit on their respective edges. Joining
+P-code load evidence and any weaker identities remains open; no names, offsets,
+or inferred receiver types are used as fallback joins.
 
 ### M2.3 Bounded interprocedural propagation
 
-**Bounded caller-argument and field-store anchors implemented:** `revenginstr-receiver-argument-flow` projects bounded subtree roots into actual-argument-to-formal-parameter edges and captures generic call-result producers when explicit in P-code; `revenginstr-receiver-store-flow` projects parameter-to-field-store evidence into destination and stored-value edges. All edges retain source provenance, and builders have configurable graph caps. They do not yet recursively propagate or join distinct artifacts.
+**Bounded caller-argument and field-store anchors implemented:** `revenginstr-receiver-argument-flow` projects bounded subtree roots into actual-argument-to-formal-parameter edges and captures generic call-result producers when explicit in P-code; `revenginstr-receiver-store-flow` projects parameter-to-field-store evidence into destination and stored-value edges. `revenginstr-receiver-argument-store-flow` joins those artifacts by exact function/parameter keys with provenance from both inputs. Builders have configurable graph caps; recursive propagation and field-load joins remain open.
 
 Remaining propagation work:
 

@@ -364,5 +364,105 @@ def parameter_store_main(argv: list[str] | None = None) -> int:
     return 0
 
 
+def build_argument_store_graphs(
+    argument_rows: list[dict[str, str]],
+    store_rows: list[dict[str, str]],
+    *,
+    program_id: str,
+    max_graphs: int = DEFAULT_MAX_ARGUMENT_GRAPHS,
+) -> list[dict[str, Any]]:
+    """Join caller roots to callee stores only on exact function/parameter keys."""
+    if not program_id:
+        raise ValueError("program_id must be non-empty")
+    if max_graphs < 1:
+        raise ValueError("max_graphs must be positive")
+
+    argument_graphs, _skipped = build_caller_argument_graphs(argument_rows, max_graphs=max_graphs)
+    store_graphs = build_parameter_store_graphs(
+        store_rows, program_id=program_id, max_graphs=max_graphs
+    )
+    roots_by_formal: dict[tuple[str, int], list[dict[str, Any]]] = {}
+    # The existing builders serialize their validated join keys into graph ids.
+    for graph in argument_graphs:
+        identity = json.loads(graph["graph_id"])
+        roots_by_formal.setdefault((identity[1], identity[2]), []).append(graph)
+
+    joined_graphs: list[dict[str, Any]] = []
+    for store_graph in store_graphs:
+        identity = json.loads(store_graph["graph_id"])
+        _program_id, function_entry, _address, _time, destination_index, _offset, source_index = identity
+        for parameter_index in {destination_index, source_index}:
+            for argument_graph in roots_by_formal.get((function_entry, parameter_index), []):
+                if len(joined_graphs) >= max_graphs:
+                    raise ValueError(f"argument-store graph budget exceeded: {max_graphs}")
+
+                store_node_ids: dict[str, str] = {}
+                store_nodes_by_id: dict[str, dict[str, str]] = {}
+                for node in store_graph["nodes"]:
+                    if node["kind"] == "field_store":
+                        node_id = "field_store"
+                    elif node["id"] == f"parameter:{parameter_index}":
+                        node_id = "callee_parameter"
+                    else:
+                        node_id = f"store_{node['id']}"
+                    store_node_ids[node["id"]] = node_id
+                    store_nodes_by_id.setdefault(node_id, {"id": node_id, "kind": node["kind"]})
+
+                edges = [dict(edge) for edge in argument_graph["edges"]]
+                for edge in store_graph["edges"]:
+                    edges.append({
+                        **edge,
+                        "id": f"store_{edge['id']}",
+                        "from": store_node_ids[edge["from"]],
+                        "to": store_node_ids[edge["to"]],
+                    })
+                argument_node_ids = {node["id"] for node in argument_graph["nodes"]}
+                graph = {
+                    "format": FORMAT,
+                    "graph_id": json.dumps(
+                        [program_id, argument_graph["graph_id"], store_graph["graph_id"]],
+                        ensure_ascii=False, separators=(",", ":"),
+                    ),
+                    "nodes": [*argument_graph["nodes"], *(
+                        node for node_id, node in store_nodes_by_id.items()
+                        if node_id not in argument_node_ids
+                    )],
+                    "edges": edges,
+                }
+                validate_graph_references(graph)
+                joined_graphs.append(graph)
+
+    joined_graphs.sort(key=lambda graph: graph["graph_id"])
+    return joined_graphs
+
+
+def argument_store_main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Join exact caller-argument roots to parameter field stores.")
+    parser.add_argument("caller_argument_subtree_tsv", type=Path)
+    parser.add_argument("parameter_store_tsv", type=Path)
+    parser.add_argument("--program-id", required=True, help="Opaque consumer join key for the selected program.")
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--max-graphs", type=int, default=DEFAULT_MAX_ARGUMENT_GRAPHS)
+    args = parser.parse_args(argv)
+
+    from revenginstr.receiver.infer import read_tsv
+
+    argument_rows = read_tsv(args.caller_argument_subtree_tsv)
+    store_rows = read_tsv(args.parameter_store_tsv)
+    graphs = build_argument_store_graphs(
+        argument_rows, store_rows, program_id=args.program_id, max_graphs=args.max_graphs
+    )
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    with args.output.open("w", encoding="utf-8") as handle:
+        for graph in graphs:
+            handle.write(json.dumps(graph, sort_keys=True) + "\n")
+    print("input caller argument rows:", len(argument_rows))
+    print("input parameter stores:", len(store_rows))
+    print("joined graphs:", len(graphs))
+    print("max graphs:", args.max_graphs)
+    print("output:", args.output)
+    return 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())
