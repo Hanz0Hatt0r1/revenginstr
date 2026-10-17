@@ -49,6 +49,15 @@ def pcode_flow_fixture(function_entry: str) -> list[dict[str, str]]:
         ]
 
 
+def caller_argument_fixtures() -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+    fixture_dir = ROOT / "tests/fixtures/caller-argument"
+    with (fixture_dir / "arguments.tsv").open(encoding="utf-8", newline="") as handle:
+        arguments = list(csv.DictReader(handle, delimiter="\t"))
+    with (fixture_dir / "parameter-roots.tsv").open(encoding="utf-8", newline="") as handle:
+        roots = list(csv.DictReader(handle, delimiter="\t"))
+    return arguments, roots
+
+
 @pytest.fixture
 def graph() -> dict:
     return {
@@ -239,33 +248,7 @@ def caller_parameter_root_row(**overrides: str) -> dict[str, str]:
 
 
 def test_recursive_argument_graph_follows_only_exact_formal_roots() -> None:
-    arguments = [
-        caller_argument_row(
-            plan_id="plan-inner", callee_entry="00401000", parameter_index="0",
-            caller_entry="00402000", caller_call_site="00402010",
-        ),
-        caller_argument_row(
-            plan_id="plan-outer", callee_entry="00402000", parameter_index="0",
-            caller_entry="00403000", caller_call_site="00403010",
-        ),
-        caller_argument_row(
-            plan_id="plan-unused", callee_entry="00409900", parameter_index="1",
-            caller_entry="00408800", caller_call_site="00408810",
-        ),
-    ]
-    roots = [
-        caller_parameter_root_row(
-            plan_id="plan-inner", caller_parameter_index="0",
-        ),
-        caller_parameter_root_row(
-            plan_id="plan-outer", callee_entry="00402000", caller_entry="00403000",
-            caller_call_site="00403010", caller_parameter_index="1",
-        ),
-        caller_parameter_root_row(
-            plan_id="plan-unused", callee_entry="00409900", parameter_index="1",
-            caller_entry="00408800", caller_call_site="00408810", caller_parameter_index="2",
-        ),
-    ]
+    arguments, roots = caller_argument_fixtures()
 
     graph = build_recursive_argument_graph(
         arguments, roots, target_entry="00401000", target_parameter_index=0,

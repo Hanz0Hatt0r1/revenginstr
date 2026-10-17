@@ -133,6 +133,19 @@ def test_generic_function_pcode_flow_tsv_row_schema() -> None:
         })
 
 
+def test_caller_argument_fixtures_match_export_schemas() -> None:
+    fixture_dir = ROOT / "tests/fixtures/caller-argument"
+    argument_schema = validator("ghidra-caller-argument-subtree-v1.schema.json")
+    with (fixture_dir / "arguments.tsv").open(encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle, delimiter="\t"):
+            argument_schema.validate(row)
+
+    root_schema = validator("ghidra-caller-argument-parameter-root-v1.schema.json")
+    with (fixture_dir / "parameter-roots.tsv").open(encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle, delimiter="\t"):
+            root_schema.validate(row)
+
+
 def test_generic_defined_string_tsv_row_schema() -> None:
     schema = validator("ghidra-pcode-defined-strings-v1.schema.json")
     schema.validate({
