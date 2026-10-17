@@ -16,6 +16,27 @@ from pathlib import Path
 from typing import Any
 
 FORMAT = "REVENGINSTR.ReceiverInference/1"
+FAILURE_FORMAT = "REVENGINSTR.ReceiverFailureReason/1"
+
+PRIMARY_FAILURE_REASON_CODES = frozenset({
+    "ambiguous_phi",
+    "ambiguous_receiver_vtable",
+    "caller_argument_propagation_gap",
+    "factory_return_gap",
+    "field_load_store_propagation_gap",
+    "insufficient_receiver_type_evidence",
+    "linker_veneer_artifact",
+    "missing_root_provenance",
+    "missing_vtable_catalog_entry",
+    "mixed_receiver_candidates",
+    "nested_container_object_gap",
+    "non_virtual_call_indirect",
+    "pcode_decompiler_limitation",
+    "receiver_not_single_pointer",
+    "singleton_default_instance_gap",
+    "slot_ambiguity",
+    "unsupported_pattern",
+})
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -122,9 +143,40 @@ def candidates(typed_sources: list[tuple[Any, str]], class_vtables: dict[str, se
     return result
 
 
-def infer(receiver_rows: list[dict[str, str]], catalog_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def primary_failure_reason(status: str, typed_sources: list[tuple[Any, str]],
+                           class_vtables: dict[str, set[str]],
+                           terminal_to_classes: dict[str, set[str]]) -> str | None:
+    if status == "resolved_unique_vtable":
+        return None
+    if status == "receiver_not_single_pointer":
+        return "receiver_not_single_pointer"
+    if status == "ambiguous_receiver_class":
+        return "mixed_receiver_candidates"
+    if status == "ambiguous_class_vtable":
+        return "ambiguous_receiver_vtable"
+    if status != "unresolved_receiver_class":
+        raise AssertionError(f"unmapped receiver inference status: {status}")
+
+    type_names = [clean_type_name(raw) for raw, _source_kind in typed_sources]
+    type_names = [name for name in type_names if name is not None]
+    if any(
+        name not in class_vtables
+        and len(terminal_to_classes.get(terminal_class_name(name), set())) > 1
+        for name in type_names
+    ):
+        return "mixed_receiver_candidates"
+    return "missing_vtable_catalog_entry" if type_names else "insufficient_receiver_type_evidence"
+
+
+def _infer(
+    receiver_rows: list[dict[str, str]],
+    catalog_rows: list[dict[str, Any]],
+    *,
+    include_failure_reasons: bool,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     class_vtables, terminal_to_classes = build_catalog(catalog_rows)
     output: list[dict[str, Any]] = []
+    failure_rows: list[dict[str, Any]] = []
     seen_keys: set[tuple[str, int]] = set()
 
     for line_no, receiver in enumerate(receiver_rows, 2):
@@ -194,7 +246,11 @@ def infer(receiver_rows: list[dict[str, str]], catalog_rows: list[dict[str, Any]
         base["candidate_receiver_class_names"] = class_names
 
         if not class_names:
-            status = "receiver_not_single_pointer" if pointer_depth != 1 and not flow_names and not flow_displays else "unresolved_receiver_class"
+            status = (
+                "receiver_not_single_pointer"
+                if pointer_depth != 1 and not flow_names and not flow_displays
+                else "unresolved_receiver_class"
+            )
         elif len(class_names) > 1:
             status = "ambiguous_receiver_class"
         else:
@@ -216,7 +272,34 @@ def infer(receiver_rows: list[dict[str, str]], catalog_rows: list[dict[str, Any]
                 base["receiver_vtable_id"] = vtables[0]
         base["status"] = status
         output.append(base)
-    return output
+
+        if not include_failure_reasons:
+            continue
+        reason = primary_failure_reason(status, typed_sources, class_vtables, terminal_to_classes)
+        if reason is not None:
+            if reason not in PRIMARY_FAILURE_REASON_CODES:
+                raise AssertionError(f"unregistered receiver failure reason: {reason}")
+            failure_rows.append({
+                "format": FAILURE_FORMAT,
+                "source_id": source_id,
+                "source_entry": source_entry(source_id),
+                "call_index": call_index,
+                "call_address": receiver.get("call_address"),
+                "status": status,
+                "primary_failure_reason": reason,
+            })
+    return output, failure_rows
+
+
+def infer_with_failure_reasons(
+    receiver_rows: list[dict[str, str]], catalog_rows: list[dict[str, Any]]
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    return _infer(receiver_rows, catalog_rows, include_failure_reasons=True)
+
+
+def infer(receiver_rows: list[dict[str, str]], catalog_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return the unchanged ReceiverInference/1 rows."""
+    return _infer(receiver_rows, catalog_rows, include_failure_reasons=False)[0]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -224,19 +307,34 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("receiver_types_tsv", type=Path)
     parser.add_argument("catalog", type=Path)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--failure-reasons-output", type=Path)
     args = parser.parse_args(argv)
 
-    rows = infer(read_tsv(args.receiver_types_tsv), read_jsonl(args.catalog))
+    receiver_rows = read_tsv(args.receiver_types_tsv)
+    catalog_rows = read_jsonl(args.catalog)
+    if args.failure_reasons_output is None:
+        rows = infer(receiver_rows, catalog_rows)
+        failure_rows = []
+    else:
+        rows, failure_rows = infer_with_failure_reasons(receiver_rows, catalog_rows)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     counts: Counter[str] = Counter(row["status"] for row in rows)
     resolved_functions = {row["source_id"] for row in rows if row["status"] == "resolved_unique_vtable"}
     with args.output.open("w", encoding="utf-8") as handle:
         for row in rows:
             handle.write(json.dumps(row, sort_keys=True) + "\n")
+    if args.failure_reasons_output is not None:
+        args.failure_reasons_output.parent.mkdir(parents=True, exist_ok=True)
+        with args.failure_reasons_output.open("w", encoding="utf-8") as handle:
+            for row in failure_rows:
+                handle.write(json.dumps(row, sort_keys=True) + "\n")
     print("format:", FORMAT)
     print("calls considered:", len(rows))
     print("functions with resolved receiver vtable:", len(resolved_functions))
     print("statuses:", dict(sorted(counts.items())))
+    if args.failure_reasons_output is not None:
+        reason_counts = Counter(row["primary_failure_reason"] for row in failure_rows)
+        print("primary failure reasons:", dict(sorted(reason_counts.items())))
     print("dispatch slots inferred: 0")
     print("affects routing: no")
     print("output:", args.output)

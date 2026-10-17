@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/receiver-failure-reason-v1.schema.json",
+  "title": "REVENGINSTR.ReceiverFailureReason/1 record",
+  "description": "One stable primary reason for an unresolved receiver inference query. This optional sidecar preserves the existing ReceiverInference/1 wire contract.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "source_id",
+    "source_entry",
+    "call_index",
+    "call_address",
+    "status",
+    "primary_failure_reason"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.ReceiverFailureReason/1"},
+    "source_id": {"type": "string", "minLength": 1},
+    "source_entry": {"type": "string", "minLength": 1},
+    "call_index": {"type": "integer", "minimum": 0},
+    "call_address": {"type": ["string", "null"]},
+    "status": {
+      "enum": [
+        "receiver_not_single_pointer",
+        "unresolved_receiver_class",
+        "ambiguous_receiver_class",
+        "ambiguous_class_vtable"
+      ]
+    },
+    "primary_failure_reason": {
+      "enum": [
+        "ambiguous_phi",
+        "ambiguous_receiver_vtable",
+        "caller_argument_propagation_gap",
+        "factory_return_gap",
+        "field_load_store_propagation_gap",
+        "insufficient_receiver_type_evidence",
+        "linker_veneer_artifact",
+        "missing_root_provenance",
+        "missing_vtable_catalog_entry",
+        "mixed_receiver_candidates",
+        "nested_container_object_gap",
+        "non_virtual_call_indirect",
+        "pcode_decompiler_limitation",
+        "receiver_not_single_pointer",
+        "singleton_default_instance_gap",
+        "slot_ambiguity",
+        "unsupported_pattern"
+      ]
+    }
+  }
+}

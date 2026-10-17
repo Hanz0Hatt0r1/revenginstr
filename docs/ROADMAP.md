@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `8284a53af5039800cc910f34a52fbd07c704209e`
+**Repository baseline:** `main` through `f2c7ddc4532a3ed50e6ee0f080ef019cf4572a8c`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -318,6 +318,16 @@ Increase hard unseen receiver coverage without weakening exact evidence safety.
 ## Work
 
 ### M2.1 Residual failure taxonomy
+
+The receiver inference CLI can emit a
+[`ReceiverFailureReason/1`](RECEIVER_FAILURE_REASONS.md) sidecar with exactly
+one stable primary code for each unresolved row. It leaves the existing
+`ReceiverInference/1` output and schema unchanged. Current type/catalog evidence
+supports `receiver_not_single_pointer`, `insufficient_receiver_type_evidence`,
+`missing_vtable_catalog_entry`, `mixed_receiver_candidates`, and
+`ambiguous_receiver_vtable`. The sidecar schema reserves the remaining
+provenance and dataflow codes below; they are emitted only when the
+corresponding evidence is available, not inferred from missing type names.
 
 Every unresolved receiver query receives one stable primary reason, including:
 
