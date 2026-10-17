@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `151f6ee345e9e23b99e94f521af943c07aa253a5`
+**Repository baseline:** `main` through `5c8488336d50ecff5c950f2a8bff96beebda5b60`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -354,7 +354,7 @@ Joining field-store, call-argument, and P-code artifacts without guessing missin
 
 ### M2.3 Bounded interprocedural propagation
 
-**Bounded caller-argument and field-store anchors implemented:** `revenginstr-receiver-argument-flow` projects bounded subtree roots into actual-argument-to-formal-parameter edges; `revenginstr-receiver-store-flow` projects parameter-to-field-store evidence into destination and stored-value edges. Both retain source provenance and have configurable graph caps. They do not yet recursively propagate or join distinct artifacts.
+**Bounded caller-argument and field-store anchors implemented:** `revenginstr-receiver-argument-flow` projects bounded subtree roots into actual-argument-to-formal-parameter edges and captures generic call-result producers when explicit in P-code; `revenginstr-receiver-store-flow` projects parameter-to-field-store evidence into destination and stored-value edges. All edges retain source provenance, and builders have configurable graph caps. They do not yet recursively propagate or join distinct artifacts.
 
 Remaining propagation work:
 
