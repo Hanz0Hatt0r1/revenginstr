@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `e1f694704d04faedfef8a3d3ce725b68ef65d1b7`
+**Repository baseline:** `main` through `72e8dbec753d7ffa6fcbdb69ba4eec29e6609a12`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -303,6 +303,9 @@ their published schemas.
 The defined-string exporter now has a synthetic TSV fixture that checks its
 wire header, schema rows, canonical Base64 decoding, and Java UTF-16 length
 accounting, including a non-BMP character.
+Synthetic function-identity plan/output TSVs now cover exact and containing
+resolution requests, preserve their plan keys, and validate both wire headers
+and row schemas.
 
 ### M1.4 Consumer boundary
 
