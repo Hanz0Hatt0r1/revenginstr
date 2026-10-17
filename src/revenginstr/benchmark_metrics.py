@@ -12,6 +12,17 @@ class MetricProjectionError(ValueError):
     """A projection input does not satisfy its declared metric contract."""
 
 
+_RECEIVER_EVIDENCE_DIMENSIONS = (
+    "exact_vtable_witness", "constructor_factory_witness", "field_layout_compatibility",
+    "slot_compatibility", "caller_provenance", "callgraph_consistency", "runtime_witness",
+)
+_RECEIVER_EVIDENCE_STATES = {"supported", "contradicted", "unknown", "not_applicable"}
+_RECEIVER_EVIDENCE_CLASSES = {
+    "exact_static", "runtime_native", "derived_structural", "model_prediction",
+    "human_review", "interventional_probe",
+}
+
+
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     with path.open("r", encoding="utf-8") as handle:
@@ -195,6 +206,53 @@ def _receiver_assessment(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _receiver_candidate_evidence(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    status_counts = {name: Counter() for name in _RECEIVER_EVIDENCE_DIMENSIONS}
+    evidence_class_counts = {name: Counter() for name in _RECEIVER_EVIDENCE_DIMENSIONS}
+    for row_number, row in enumerate(rows, 1):
+        if row.get("format") != "REVENGINSTR.ReceiverCandidateEvidence/1":
+            raise MetricProjectionError(f"candidate evidence row {row_number}: unsupported format")
+        dimensions = row.get("dimensions")
+        if not isinstance(dimensions, dict) or set(dimensions) != set(_RECEIVER_EVIDENCE_DIMENSIONS):
+            raise MetricProjectionError(f"candidate evidence row {row_number}: invalid dimensions")
+        for name in _RECEIVER_EVIDENCE_DIMENSIONS:
+            dimension = dimensions[name]
+            if not isinstance(dimension, dict):
+                raise MetricProjectionError(f"candidate evidence row {row_number}: invalid {name}")
+            status = dimension.get("status")
+            evidence_class = dimension.get("evidence_class")
+            provenance = dimension.get("provenance")
+            if not isinstance(status, str) or status not in _RECEIVER_EVIDENCE_STATES:
+                raise MetricProjectionError(f"candidate evidence row {row_number}: invalid {name} status")
+            if not isinstance(provenance, list):
+                raise MetricProjectionError(f"candidate evidence row {row_number}: invalid {name} provenance")
+            if status in {"supported", "contradicted"}:
+                if (not isinstance(evidence_class, str) or evidence_class not in _RECEIVER_EVIDENCE_CLASSES
+                        or not provenance):
+                    raise MetricProjectionError(f"candidate evidence row {row_number}: incomplete {name} evidence")
+                if any(not isinstance(item, dict) or not all(
+                    isinstance(item.get(field), str) and item[field]
+                    for field in ("source_format", "source_id")
+                ) for item in provenance):
+                    raise MetricProjectionError(f"candidate evidence row {row_number}: invalid {name} provenance")
+                evidence_class_counts[name][evidence_class] += 1
+            elif evidence_class is not None or provenance:
+                raise MetricProjectionError(f"candidate evidence row {row_number}: {name} must not claim evidence")
+            status_counts[name][status] += 1
+    return {
+        "row_count": len(rows),
+        "receiver_candidate_evidence": {
+            "dimension_metrics": {
+                name: {
+                    "status_counts": dict(sorted(status_counts[name].items())),
+                    "evidence_class_counts": dict(sorted(evidence_class_counts[name].items())),
+                }
+                for name in _RECEIVER_EVIDENCE_DIMENSIONS
+            },
+        },
+    }
+
+
 def _validation(report: Any) -> dict[str, Any]:
     if not isinstance(report, dict):
         raise MetricProjectionError("validation report must be a JSON object")
@@ -299,6 +357,8 @@ def project(config: dict[str, Any], artifact: dict[str, Any], paths: dict[str, P
             projected = _receiver(rows, config)
         elif kind == "receiver_assessment":
             projected = _receiver_assessment(rows)
+        elif kind == "receiver_candidate_evidence":
+            projected = _receiver_candidate_evidence(rows)
         else:
             projected = _classification(rows, config)
         if kind == "classifier" and "classification" not in projected:

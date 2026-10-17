@@ -85,6 +85,32 @@ def test_delta_reports_receiver_assessment_changes() -> None:
     assert added["delta"] is None
 
 
+def test_delta_reports_receiver_candidate_evidence_by_dimension() -> None:
+    baseline = _summary(macro_f1=0.8, precision=0.75)
+    candidate = _summary(macro_f1=0.8, precision=0.75)
+    for summary, supported in ((baseline, 1), (candidate, 3)):
+        summary["projections"].append({
+            "id": "candidate-evidence", "kind": "receiver_candidate_evidence", "artifact": "evidence.jsonl",
+            "row_count": 3, "exact_evidence": None,
+            "receiver_candidate_evidence": {"dimension_metrics": {
+                "exact_vtable_witness": {
+                    "status_counts": {"supported": supported, "unknown": 3 - supported},
+                    "evidence_class_counts": {"exact_static": supported},
+                },
+            }},
+        })
+
+    delta = compare_summaries(baseline, candidate, baseline_sha256="a" * 64, candidate_sha256="b" * 64)
+    values = {item["name"]: item for item in delta["metrics"]}
+
+    assert values[
+        "/projections/candidate-evidence/receiver_candidate_evidence/dimension_metrics/exact_vtable_witness/status_counts/supported"
+    ]["delta"] == 2
+    assert values[
+        "/projections/candidate-evidence/receiver_candidate_evidence/dimension_metrics/exact_vtable_witness/evidence_class_counts/exact_static"
+    ]["delta"] == 2
+
+
 def test_delta_requires_matching_dataset_split_and_family_identity() -> None:
     baseline = _summary(macro_f1=0.8, precision=0.75)
     candidate = _summary(macro_f1=0.9, precision=0.875)

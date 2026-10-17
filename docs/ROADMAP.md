@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `45ee988c76b9f363b0255c770457614a55a6147d`
+**Repository baseline:** `main` through `bbf32905b833e6017d7c05c7912986531a0e1fda`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -370,19 +370,20 @@ Remaining propagation work:
 
 ### M2.5 Candidate scoring
 
-**Evidence vector schema implemented:** `ReceiverCandidateEvidence/1` exposes exact vtable, constructor/factory, field/layout, slot, caller, callgraph, and runtime witness dimensions as separate states with provenance. It defines no aggregate score or decision; consumers retain candidate identities and evidence.
+**Evidence vector schema and benchmark projection implemented:** `ReceiverCandidateEvidence/1` exposes exact vtable, constructor/factory, field/layout, slot, caller, callgraph, and runtime witness dimensions as separate states with provenance. Frozen benchmark summaries can count states and evidence classes per dimension without combining correlated evidence; the contract still defines no aggregate score or decision. Consumers retain candidate identities and evidence.
 
 ### M2.6 Frozen receiver benchmark
 
 Provide a reusable receiver evaluation harness that consumers can populate with sealed unseen cases.
 
-The generic benchmark runner now projects `ReceiverCandidateAssessment/1`
+The generic benchmark runner projects `ReceiverCandidateAssessment/1`
 sidecars into status counts, candidate-count distributions, unknown-candidate
-counts, and compatibility-group row counts. Consumers can combine the
-projection with exact-evidence gates against sealed expected outputs; only
-aggregate metrics enter the shared summary. This completes the reusable
-harness contract, while the coverage and exact-evidence exit targets still
-require consumer-owned frozen datasets and results.
+counts, and compatibility-group row counts. It also summarizes the separate
+dimensions in `ReceiverCandidateEvidence/1`. Consumers can combine these
+projections with exact-evidence gates against sealed expected outputs; only
+aggregate metrics enter shared summaries. This completes the reusable harness
+contract, while coverage and exact-evidence exit targets still require
+consumer-owned frozen datasets and results.
 
 ## Exit criteria
 

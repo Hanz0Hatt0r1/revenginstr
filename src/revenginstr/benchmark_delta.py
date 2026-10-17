@@ -98,6 +98,12 @@ def numeric_metrics(summary: dict[str, Any]) -> dict[str, float | None]:
             add(f"{prefix}/receiver_assessment/status_counts/{_pointer_part(group)}", counts)
         for count, rows in assessment.get("candidate_count_counts", {}).items():
             add(f"{prefix}/receiver_assessment/candidate_count_counts/{_pointer_part(count)}", rows)
+        candidate_evidence = projection.get("receiver_candidate_evidence", {})
+        for dimension, values in candidate_evidence.get("dimension_metrics", {}).items():
+            for status, count in values.get("status_counts", {}).items():
+                add(f"{prefix}/receiver_candidate_evidence/dimension_metrics/{_pointer_part(dimension)}/status_counts/{_pointer_part(status)}", count)
+            for evidence_class, count in values.get("evidence_class_counts", {}).items():
+                add(f"{prefix}/receiver_candidate_evidence/dimension_metrics/{_pointer_part(dimension)}/evidence_class_counts/{_pointer_part(evidence_class)}", count)
         exact = projection.get("exact_evidence")
         if isinstance(exact, dict):
             for name in ("actual_rows", "expected_rows", "compared_rows", "mismatched_rows", "missing_rows", "unexpected_rows", "mismatch_rows"):

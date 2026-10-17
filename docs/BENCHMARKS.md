@@ -72,6 +72,12 @@ optional `exact_evidence` gate can compare candidate assessments to sealed
 consumer expectations while keeping record identities and values out of the
 summary.
 
+`receiver_candidate_evidence` projections accept `ReceiverCandidateEvidence/1`
+and report status and evidence-class counts separately for each dimension.
+They do not combine correlated evidence into a score. Consumer artifacts
+should pin the candidate-evidence schema in the manifest; exact comparisons can
+use consumer-chosen identity keys without copying them into the summary.
+
 An optional `exact_evidence` block compares actual and expected JSONL records by
 consumer-chosen key fields and compares only the listed evidence fields. The
 summary contains compared/mismatched/missing/unexpected row counts, never the
@@ -115,6 +121,11 @@ Example:
         "compare_fields": ["status", "candidate_receiver_class_names"],
         "maximum_mismatches": 0
       }
+    },
+    {
+      "id": "receiver_candidate_evidence",
+      "kind": "receiver_candidate_evidence",
+      "artifact": "receiver_candidate_evidence"
     }
   ]
 }
@@ -171,10 +182,11 @@ jobs:
 
 For behavior-changing PRs, pass the retained baseline summary path to generate a
 machine-readable metric delta. The baseline and candidate must share mode,
-dataset, split and family-set identities. `revenginstr-benchmark-delta` compares numeric
-manifest gates, class metrics, confusion counts, coverage, calibration,
-receiver status/coverage and candidate-assessment distributions, reason counts
-and exact-evidence counts. It reports
+dataset, split and family-set identities. `revenginstr-benchmark-delta`
+compares numeric manifest gates, class metrics, confusion counts, coverage,
+calibration, receiver status/coverage and candidate-assessment distributions,
+reason counts, candidate evidence states by dimension, and exact-evidence
+counts. It reports
 added/removed metrics with a null value on the missing side. Attach the consumer
 workflow artifact or its delta JSON to the PR; do not copy consumer data into
 this repository.
