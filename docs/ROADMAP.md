@@ -391,10 +391,12 @@ receiver types are fallback joins.
 `LOAD`/`STORE` address-space and width fields. The new
 `revenginstr-receiver-field-store-load-dominance-audit` requires an exact
 program/function pair, a reachable store that dominates the load, matching
-space/width, and no possible-effect path between them. Every other store,
-call-like operation, and unclassified opcode is treated as a possible memory
-effect. The output says `unique_cfg_store_candidate`; it does not resolve
-aliases, model branch feasibility, or assert runtime value flow. The prior
+space/width, and no possible-effect path between them. Same-space and
+unknown-space stores, call-like operations, and unclassified opcodes remain
+possible effects; a store in a known different P-code address space does not
+modify the tracked address space in this structural model. The output says
+`unique_cfg_store_candidate`; it does not compare pointer bases, offsets, or
+access-range overlap, model branch feasibility, or assert runtime value flow. The prior
 Nevergone evidence demonstrates why this distinction matters: both pairs have
 intervening explicit stores, so the current evidence cannot support a positive
 reaching-definition result.
@@ -982,8 +984,10 @@ Mitigation: preserve heuristic/sparse baselines, feature ablations and evidence-
 
 # 20. Immediate next action
 
-Continue with **M2.3**: add the CFG/2 dominance audit to a consumer-owned frozen
-workflow and preserve the current Nevergone rows as negative evidence. Then
-specify the minimum memory-location/alias and effect metadata needed before
-unrelated writes can be proven non-aliasing. Keep labels, binary rows, and
-measured outcomes in their consumer repositories.
+Continue with **M2.3**: the Nevergone consumer now freezes and replays the
+CFG/1 dominance audit as `incomplete_evidence`, preserving the rows as negative
+evidence. Capture and freeze a consumer CFG/2 run when a Ghidra database can be
+opened within the available disk budget. Then specify the minimum memory-
+location/alias and effect metadata needed before same-space writes can be
+proven non-aliasing. Keep labels, binary rows, and measured outcomes in their
+consumer repositories.
