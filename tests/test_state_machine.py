@@ -139,6 +139,16 @@ def test_state_machine_candidate_requires_exact_compare_branch_and_same_field_wr
     assert "state_value" not in json.dumps(candidate)
 
 
+def test_state_machine_accepts_parameter_load_exporter_token_alias() -> None:
+    cfg, pcode, loads, stores = fixture()
+    loads[0]["value_token"] = "def:LOAD@00401000:0:4"
+
+    report = _build(cfg, pcode, loads, stores)
+
+    assert report["source"]["parameter_load_rows"] == 1
+    assert report["source"]["candidate_count"] == 1
+
+
 @pytest.mark.parametrize("mutation", [
     "no_branch_dataflow", "compare_used_as_branch_target", "common_successor",
     "different_field", "load_after_compare",
