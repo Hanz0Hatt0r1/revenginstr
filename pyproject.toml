@@ -46,6 +46,7 @@ revenginstr-receiver-call-return-flow = "revenginstr.receiver.provenance:call_re
 revenginstr-family-mine = "revenginstr.family.mine:main"
 revenginstr-selective-train = "revenginstr.ml.selective:train_main"
 revenginstr-selective-infer = "revenginstr.ml.selective:infer_main"
+revenginstr-selective-threshold-sweep = "revenginstr.ml.threshold_sweep:main"
 revenginstr-evidence-selective-train = "revenginstr.ml.evidence_selective:train_main"
 revenginstr-evidence-selective-infer = "revenginstr.ml.evidence_selective:infer_main"
 revenginstr-accept-router-train = "revenginstr.ml.accept_error_router:train_main"

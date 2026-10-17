@@ -482,6 +482,77 @@ def test_benchmark_runs_recursive_argument_propagation_stage(tmp_path: Path) -> 
     assert {edge["relation"] for edge in graph["edges"]} == {"argument_flow"}
 
 
+def test_benchmark_runs_selective_threshold_sweep_stage(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    classifier_manifest_path = tmp_path / "classifier-manifest.json"
+    classifier_manifest_path.write_text(json.dumps({
+        "format": "REVENGINSTR.SelectiveClassifier/1",
+        "classes": ["alpha", "beta"],
+        "calibration": {"source": "family_grouped_oof"},
+        "functions": 4,
+        "families": 4,
+        "class_distribution": {"alpha": 2, "beta": 2},
+    }), encoding="utf-8")
+    predictions_path = tmp_path / "oof-predictions.jsonl"
+    predictions_path.write_text(
+        "".join(json.dumps({
+            "format": "REVENGINSTR.SelectiveClassifier/1",
+            "id": record_id,
+            "family_id": f"family-{record_id}",
+            "truth": truth,
+            "prediction": prediction,
+            "correct": truth == prediction,
+            "confidence": confidence,
+        }) + "\n" for record_id, truth, prediction, confidence in [
+            ("a0", "alpha", "alpha", 0.95),
+            ("a1", "alpha", "alpha", 0.85),
+            ("b0", "beta", "beta", 0.90),
+            ("b1", "beta", "alpha", 0.60),
+        ]),
+        encoding="utf-8",
+    )
+    sweep_schema_path = ROOT / "schemas" / "selective-threshold-sweep-v1.schema.json"
+    manifest["schemas"]["threshold_sweep"] = {
+        "path": str(sweep_schema_path), "version": "REVENGINSTR.SelectiveThresholdSweep/1",
+        "sha256": _sha256(sweep_schema_path),
+    }
+    manifest["artifacts"].update({
+        "classifier_manifest": {
+            "path": str(classifier_manifest_path), "role": "input", "kind": "file",
+            "content": "json", "sha256": _sha256(classifier_manifest_path),
+        },
+        "oof_predictions": {
+            "path": str(predictions_path), "role": "input", "kind": "file",
+            "content": "jsonl", "sha256": _sha256(predictions_path),
+        },
+        "threshold_sweep": {
+            "path": "threshold-sweep.json", "role": "output", "kind": "file",
+            "content": "json", "format": "REVENGINSTR.SelectiveThresholdSweep/1",
+            "schema": "threshold_sweep",
+        },
+    })
+    manifest["stages"].append({
+        "id": "threshold_sweep", "tool": "selective-threshold-sweep",
+        "args": [
+            "${artifact:classifier_manifest}", "${artifact:oof_predictions}",
+            "--output", "${artifact:threshold_sweep}",
+            "--target-precision", "0.8", "--min-examples", "1",
+        ],
+        "inputs": ["classifier_manifest", "oof_predictions"], "outputs": ["threshold_sweep"],
+    })
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    summary, code = run_benchmark(manifest_path, mode="smoke", output_path=tmp_path / "summary.json")
+
+    assert code == 0
+    assert summary["status"] == "passed"
+    assert summary["stages"][-1]["tool"] == "selective-threshold-sweep"
+    sweep = json.loads((tmp_path / "threshold-sweep.json").read_text(encoding="utf-8"))
+    assert sweep["classes"]["alpha"]["sweeps"][0]["status"] == "feasible"
+    assert sweep["source"]["prediction_rows"] == 4
+
+
 def test_benchmark_fails_a_metric_gate_and_returns_nonzero(tmp_path: Path) -> None:
     manifest_path = _write_manifest(tmp_path, minimum_rows=2)
     summary, code = run_benchmark(manifest_path, output_path=tmp_path / "summary.json")

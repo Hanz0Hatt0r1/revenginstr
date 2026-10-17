@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `df02f983672a68e094d17260f0d1b2260ab2feab`
+**Repository baseline:** `main` through `0e2f59ff879d4dc084e37b61d6f2ec2f5f293b25`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -410,9 +410,14 @@ Stretch: >=50% useful unseen coverage with no material rise in mixed-receiver fa
 
 Improve classification while keeping transferability, calibration and leakage resistance.
 
+Family-grouped classwise correctness calibration and routing thresholds are
+already learned during training. `revenginstr-selective-threshold-sweep` now
+adds an audit-only per-class precision/coverage sweep over the exact OOF files
+and manifest, with both input hashes retained; it does not modify routing.
+
 ## Work
 
-- per-class threshold and calibration sweeps;
+- expand threshold sweeps with frozen family-held-out evaluation and reliability data;
 - error buckets for major confusion pairs;
 - evidence ablations for P-code, callgraph, receiver, field, external-call and family features;
 - coarse Effect-IR features once M5 begins;
