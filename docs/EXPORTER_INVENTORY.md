@@ -7,7 +7,7 @@ Nevergone parity root and NFS Shift source-to-runner audit:
 
 | Repository | Snapshot |
 |---|---|
-| `Hanz0Hatt0r1/revenginstr` | `8284a53a` |
+| `Hanz0Hatt0r1/revenginstr` | `f2c7ddc4` |
 | `Hanz0Hatt0r1/nevergone-recomp` | `e988acb1` |
 | `Hanz0Hatt0r1/nfs-shift-decompilation` | `c6ed81ca` |
 

@@ -1,6 +1,19 @@
 from __future__ import annotations
 
-from revenginstr.receiver.infer import infer
+import json
+from pathlib import Path
+
+from jsonschema import Draft202012Validator
+
+from revenginstr.receiver.infer import (
+    PRIMARY_FAILURE_REASON_CODES,
+    infer,
+    infer_with_failure_reasons,
+    main,
+)
+
+
+SCHEMA = Path(__file__).resolve().parents[1] / "schemas" / "receiver-failure-reason-v1.schema.json"
 
 
 def test_receiver_inference_resolves_unique_direct_type() -> None:
@@ -31,6 +44,7 @@ def test_receiver_inference_resolves_unique_direct_type() -> None:
     assert row["status"] == "resolved_unique_vtable"
     assert row["class_name"] == "Game::Vehicle"
     assert row["receiver_vtable_id"] == "vtbl:vehicle"
+    assert "primary_failure_reason" not in row
     assert row["affects_routing"] is False
     assert row["dispatch_slot_offset"] is None
 
@@ -71,6 +85,7 @@ def test_receiver_inference_rejects_ambiguous_terminal_name() -> None:
     ]
     row = infer(receiver_rows, catalog)[0]
     assert row["status"] == "unresolved_receiver_class"
+    assert "primary_failure_reason" not in row
     assert row["receiver_vtable_id"] is None
 
 
@@ -91,3 +106,111 @@ def test_receiver_inference_detects_multi_vtable_class() -> None:
     row = infer(receiver_rows, catalog)[0]
     assert row["status"] == "ambiguous_class_vtable"
     assert row["candidate_receiver_vtable_ids"] == ["v1", "v2"]
+
+def test_receiver_failure_reasons_cover_observable_residuals() -> None:
+    receiver_rows = [
+        {
+            "source_id": "sample:5000", "call_index": "0", "receiver_pointer_depth": "1",
+            "pointee_type_name": "UnknownType", "flow_single_pointer_pointee_names_json": "[]",
+            "flow_single_pointer_pointee_displays_json": "[]",
+        },
+        {
+            "source_id": "sample:6000", "call_index": "0", "receiver_pointer_depth": "1",
+            "flow_single_pointer_pointee_names_json": "[]",
+            "flow_single_pointer_pointee_displays_json": "[]",
+        },
+        {
+            "source_id": "sample:7000", "call_index": "0", "receiver_pointer_depth": "2",
+            "flow_single_pointer_pointee_names_json": "[]",
+            "flow_single_pointer_pointee_displays_json": "[]",
+        },
+        {
+            "source_id": "sample:8000", "call_index": "0", "receiver_pointer_depth": "1",
+            "pointee_type_name": "Vehicle", "flow_single_pointer_pointee_names_json": "[]",
+            "flow_single_pointer_pointee_displays_json": "[]",
+        },
+        {
+            "source_id": "sample:9000", "call_index": "0", "receiver_pointer_depth": "1",
+            "pointee_type_name": "Game::Multi", "flow_single_pointer_pointee_names_json": "[]",
+            "flow_single_pointer_pointee_displays_json": "[]",
+        },
+        {
+            "source_id": "sample:a000", "call_index": "0", "receiver_pointer_depth": "1",
+            "pointee_type_name": "Game::Known", "flow_single_pointer_pointee_names_json": "[\"Game::Other\"]",
+            "flow_single_pointer_pointee_displays_json": "[]",
+        },
+    ]
+    catalog = [
+        {"class_name": "KnownType", "receiver_vtable_id": "v1"},
+        {"class_name": "A::Vehicle", "receiver_vtable_id": "a"},
+        {"class_name": "B::Vehicle", "receiver_vtable_id": "b"},
+        {"class_name": "Game::Known", "receiver_vtable_id": "known"},
+        {"class_name": "Game::Other", "receiver_vtable_id": "other"},
+        {"class_name": "Game::Multi", "receiver_vtable_id": "m1"},
+        {"class_name": "Game::Multi", "receiver_vtable_id": "m2"},
+    ]
+
+    rows, failures = infer_with_failure_reasons(receiver_rows, catalog)
+
+    assert len(rows) == 6
+    assert [row["primary_failure_reason"] for row in failures] == [
+        "missing_vtable_catalog_entry",
+        "insufficient_receiver_type_evidence",
+        "receiver_not_single_pointer",
+        "mixed_receiver_candidates",
+        "ambiguous_receiver_vtable",
+        "mixed_receiver_candidates",
+    ]
+    assert rows[-1]["status"] == "ambiguous_receiver_class"
+    schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
+    validator = Draft202012Validator(schema)
+    for row in failures:
+        validator.validate(row)
+    assert set(schema["properties"]["primary_failure_reason"]["enum"]) == PRIMARY_FAILURE_REASON_CODES
+    assert {row["primary_failure_reason"] for row in failures} <= PRIMARY_FAILURE_REASON_CODES
+    assert all("primary_failure_reason" not in row for row in rows)
+
+
+def test_failure_reason_sidecar_only_contains_unresolved_rows() -> None:
+    receiver_rows = [{
+        "source_id": "sample:1000",
+        "call_index": "0",
+        "receiver_pointer_depth": "1",
+        "pointee_type_name": "Widget",
+        "flow_single_pointer_pointee_names_json": "[]",
+        "flow_single_pointer_pointee_displays_json": "[]",
+    }]
+    catalog = [{"class_name": "Widget", "receiver_vtable_id": "v1"}]
+
+    rows, failures = infer_with_failure_reasons(receiver_rows, catalog)
+
+    assert rows[0]["status"] == "resolved_unique_vtable"
+    assert failures == []
+
+
+def test_receiver_inference_cli_writes_optional_reason_sidecar(tmp_path: Path) -> None:
+    receiver_types = tmp_path / "receiver-types.tsv"
+    receiver_types.write_text(
+        "source_id\tcall_index\tcall_address\treceiver_pointer_depth\t"
+        "pointee_type_name\tflow_single_pointer_pointee_names_json\t"
+        "flow_single_pointer_pointee_displays_json\n"
+        "sample:1000\t0\t1010\t1\tUnknownType\t[]\t[]\n",
+        encoding="utf-8",
+    )
+    catalog = tmp_path / "catalog.jsonl"
+    catalog.write_text(
+        '{"class_name":"KnownType","receiver_vtable_id":"v1"}\n', encoding="utf-8"
+    )
+    output = tmp_path / "inference.jsonl"
+    failures_path = tmp_path / "failure-reasons.jsonl"
+
+    assert main([
+        str(receiver_types), str(catalog), "--output", str(output),
+        "--failure-reasons-output", str(failures_path),
+    ]) == 0
+
+    inference_row = json.loads(output.read_text(encoding="utf-8"))
+    failure_row = json.loads(failures_path.read_text(encoding="utf-8"))
+    assert "primary_failure_reason" not in inference_row
+    assert failure_row["primary_failure_reason"] == "missing_vtable_catalog_entry"
+    Draft202012Validator(json.loads(SCHEMA.read_text(encoding="utf-8"))).validate(failure_row)
