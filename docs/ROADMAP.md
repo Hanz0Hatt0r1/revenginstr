@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `7c05d5c0e7193f3507e634b8f8369f61350723d2`
+**Repository baseline:** `main` through `5886064c7237ea58e843b93cc663fc1457477d84`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -348,9 +348,9 @@ Every unresolved receiver query receives one stable primary reason, including:
 
 ### M2.2 Receiver provenance graph
 
-**Graph contract v1 implemented:** [`ReceiverProvenanceGraph/1`](../schemas/receiver-provenance-graph-v1.schema.json) defines graph-local ids, the generic receiver-flow node/relation vocabulary, evidence classes, and source-record provenance. A generic reference validator rejects duplicate ids and dangling endpoints. The schema and synthetic contract test contain no consumer labels, addresses, or catalogs.
+**Graph contract v1 and receiver-anchor projection implemented:** [`ReceiverProvenanceGraph/1`](../schemas/receiver-provenance-graph-v1.schema.json) defines graph-local ids, the generic receiver-flow node/relation vocabulary, evidence classes, and source-record provenance. The generic validator rejects duplicate ids and dangling endpoints. `revenginstr-receiver-graph` projects typed receiver TSV rows with an observed receiver operand into receiver-to-call graphs, retaining source-record provenance and rejecting invalid joins/formats. The schema and synthetic contract test contain no consumer labels, addresses, or catalogs.
 
-The next increment is a consumer-populated graph builder that joins typed receiver, field-store, call-argument, and P-code artifacts without guessing missing joins. Every emitted edge must retain source-record provenance and evidence class; interprocedural propagation remains M2.3.
+Joining field-store, call-argument, and P-code artifacts without guessing missing joins remains open. Every emitted edge must retain source-record provenance and evidence class; interprocedural propagation remains M2.3.
 
 ### M2.3 Bounded interprocedural propagation
 
