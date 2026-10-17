@@ -355,6 +355,80 @@ def test_benchmark_runs_parameter_load_return_flow_stage(tmp_path: Path) -> None
     assert graph["edges"][0]["relation"] == "return_flow"
 
 
+def test_benchmark_runs_recursive_argument_propagation_stage(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    argument_path = tmp_path / "argument-roots.tsv"
+    argument_path.write_text(
+        "format\trow_type\tplan_id\tcallee_entry\tparameter_index\tcaller_entry\t"
+        "caller_call_site\tnode_id\tparent_node_id\tdepth\tedge_kind\n"
+        "REVENGINSTR.GhidraCallerArgumentSubtree/1\tnode\tplan-inner\t00401000\t0\t"
+        "00402000\t00402010\t0\t-1\t0\troot\n"
+        "REVENGINSTR.GhidraCallerArgumentSubtree/1\tnode\tplan-outer\t00402000\t0\t"
+        "00403000\t00403010\t0\t-1\t0\troot\n",
+        encoding="utf-8",
+    )
+    parameter_root_path = tmp_path / "caller-parameter-roots.tsv"
+    parameter_root_path.write_text(
+        "format\tplan_id\tcallee_entry\tparameter_index\tcaller_entry\tcaller_call_site\t"
+        "caller_parameter_index\targument_node_id\tstatus\n"
+        "REVENGINSTR.GhidraCallerArgumentParameterRoot/1\tplan-inner\t00401000\t0\t"
+        "00402000\t00402010\t0\t0\tdirect_parameter_root\n"
+        "REVENGINSTR.GhidraCallerArgumentParameterRoot/1\tplan-outer\t00402000\t0\t"
+        "00403000\t00403010\t1\t0\tdirect_parameter_root\n",
+        encoding="utf-8",
+    )
+    parameter_root_schema = ROOT / "schemas" / "ghidra-caller-argument-parameter-root-v1.schema.json"
+    graph_schema = ROOT / "schemas" / "receiver-provenance-graph-v1.schema.json"
+    manifest["schemas"].update({
+        "parameter_roots": {
+            "path": str(parameter_root_schema),
+            "version": "REVENGINSTR.GhidraCallerArgumentParameterRoot/1",
+            "sha256": _sha256(parameter_root_schema),
+        },
+        "receiver_graph": {
+            "path": str(graph_schema), "version": "REVENGINSTR.ReceiverProvenanceGraph/1",
+            "sha256": _sha256(graph_schema),
+        },
+    })
+    manifest["artifacts"].update({
+        "argument_roots": {
+            "path": str(argument_path), "role": "input", "kind": "file", "content": "tsv",
+            "format": "REVENGINSTR.GhidraCallerArgumentSubtree/1", "sha256": _sha256(argument_path),
+        },
+        "caller_parameter_roots": {
+            "path": str(parameter_root_path), "role": "input", "kind": "file", "content": "tsv",
+            "format": "REVENGINSTR.GhidraCallerArgumentParameterRoot/1",
+            "sha256": _sha256(parameter_root_path), "schema": "parameter_roots",
+        },
+        "propagated_graph": {
+            "path": "propagated.jsonl", "role": "output", "kind": "file",
+            "content": "jsonl", "format": "REVENGINSTR.ReceiverProvenanceGraph/1",
+            "schema": "receiver_graph",
+        },
+    })
+    manifest["stages"].append({
+        "id": "argument_propagation", "tool": "receiver-argument-propagate",
+        "args": [
+            "${artifact:argument_roots}", "${artifact:caller_parameter_roots}",
+            "--target-entry", "00401000", "--target-parameter-index", "0",
+            "--program-id", "analysis:sample", "--output", "${artifact:propagated_graph}",
+        ],
+        "inputs": ["argument_roots", "caller_parameter_roots"],
+        "outputs": ["propagated_graph"],
+    })
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    summary, code = run_benchmark(manifest_path, mode="smoke", output_path=tmp_path / "summary.json")
+
+    assert code == 0
+    assert summary["status"] == "passed"
+    assert summary["stages"][1]["tool"] == "receiver-argument-propagate"
+    graph = json.loads((tmp_path / "propagated.jsonl").read_text(encoding="utf-8"))
+    assert len(graph["edges"]) == 2
+    assert {edge["relation"] for edge in graph["edges"]} == {"argument_flow"}
+
+
 def test_benchmark_fails_a_metric_gate_and_returns_nonzero(tmp_path: Path) -> None:
     manifest_path = _write_manifest(tmp_path, minimum_rows=2)
     summary, code = run_benchmark(manifest_path, output_path=tmp_path / "summary.json")

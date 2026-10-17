@@ -12,7 +12,9 @@ RECEIVER_TYPE_FORMAT = "REVENGINSTR.GhidraIndirectReceiverType/1"
 CALLER_ARGUMENT_FORMAT = "REVENGINSTR.GhidraCallerArgumentSubtree/1"
 PARAMETER_STORE_FORMAT = "REVENGINSTR.GhidraParameterStoreField/1"
 PARAMETER_LOAD_FORMAT = "REVENGINSTR.GhidraParameterLoadField/1"
+CALLER_PARAMETER_ROOT_FORMAT = "REVENGINSTR.GhidraCallerArgumentParameterRoot/1"
 DEFAULT_MAX_ARGUMENT_GRAPHS = 10_000
+DEFAULT_MAX_PROPAGATION_DEPTH = 8
 
 
 def validate_graph_references(graph: dict[str, Any]) -> None:
@@ -879,6 +881,182 @@ def parameter_load_return_main(argv: list[str] | None = None) -> int:
     print("input P-code flow rows:", len(pcode_rows))
     print("load-return graphs:", len(graphs))
     print("max graphs:", args.max_graphs)
+    print("output:", args.output)
+    return 0
+
+
+def build_recursive_argument_graph(
+    argument_rows: list[dict[str, str]],
+    parameter_root_rows: list[dict[str, str]],
+    *,
+    target_entry: str,
+    target_parameter_index: int,
+    program_id: str,
+    max_depth: int = DEFAULT_MAX_PROPAGATION_DEPTH,
+    max_edges: int = DEFAULT_MAX_ARGUMENT_GRAPHS,
+) -> dict[str, Any] | None:
+    """Walk exact caller-formal roots backwards from one target formal parameter."""
+    if not program_id:
+        raise ValueError("program_id must be non-empty")
+    if not target_entry or target_entry == "-" or target_parameter_index < 0:
+        raise ValueError("target parameter key is invalid")
+    if max_depth < 1:
+        raise ValueError("max_depth must be positive")
+    if max_edges < 1:
+        raise ValueError("max_edges must be positive")
+
+    argument_graphs, _skipped = build_caller_argument_graphs(argument_rows)
+    argument_roots: dict[tuple[str, str, int, str, str, int], dict[str, Any]] = {}
+    for graph in argument_graphs:
+        identity = json.loads(graph["graph_id"])
+        argument_roots[tuple(identity)] = graph
+
+    incoming: dict[tuple[str, int], list[dict[str, Any]]] = {}
+    seen_roots: set[tuple[str, str, int, str, str, int]] = set()
+    for line_no, row in enumerate(parameter_root_rows, 2):
+        if row.get("format") != CALLER_PARAMETER_ROOT_FORMAT:
+            raise ValueError(f"caller parameter root row {line_no}: unsupported format")
+        if row.get("status") != "direct_parameter_root":
+            raise ValueError(f"caller parameter root row {line_no}: unsupported status")
+
+        plan_id = row.get("plan_id", "")
+        callee_entry = row.get("callee_entry", "")
+        callee_parameter_text = row.get("parameter_index", "")
+        caller_entry = row.get("caller_entry", "")
+        call_site = row.get("caller_call_site", "")
+        caller_parameter_text = row.get("caller_parameter_index", "")
+        node_text = row.get("argument_node_id", "")
+        if (
+            not plan_id
+            or not callee_entry or callee_entry == "-"
+            or not caller_entry or caller_entry == "-"
+            or not call_site or call_site == "-"
+            or not _ascii_decimal(callee_parameter_text)
+            or not _ascii_decimal(caller_parameter_text)
+            or not _ascii_decimal(node_text)
+        ):
+            raise ValueError(f"caller parameter root row {line_no}: invalid root key")
+
+        root_key = (
+            plan_id, callee_entry, int(callee_parameter_text), caller_entry,
+            call_site, int(node_text),
+        )
+        if root_key in seen_roots:
+            raise ValueError(f"duplicate caller parameter root: {root_key!r}")
+        seen_roots.add(root_key)
+        argument_graph = argument_roots.get(root_key)
+        if argument_graph is None:
+            raise ValueError(f"caller parameter root row {line_no}: no matching argument root")
+
+        source_key = (caller_entry, int(caller_parameter_text))
+        target_key = (callee_entry, int(callee_parameter_text))
+        source_id = json.dumps(
+            [program_id, *root_key, source_key[1]], ensure_ascii=False, separators=(",", ":")
+        )
+        edge_key = (source_key, target_key, argument_graph["graph_id"], source_id)
+        incoming.setdefault(target_key, []).append({
+            "key": edge_key,
+            "source": source_key,
+            "target": target_key,
+            "argument_source_id": argument_graph["graph_id"],
+            "parameter_source_id": source_id,
+        })
+
+    target = (target_entry, target_parameter_index)
+    depths = {target: 0}
+    pending = [target]
+    selected: dict[tuple[Any, ...], dict[str, Any]] = {}
+    cursor = 0
+    while cursor < len(pending):
+        callee = pending[cursor]
+        cursor += 1
+        next_depth = depths[callee] + 1
+        for edge in incoming.get(callee, []):
+            selected[edge["key"]] = edge
+            if len(selected) > max_edges:
+                raise ValueError(f"recursive argument edge budget exceeded: {max_edges}")
+            caller = edge["source"]
+            if caller in depths:
+                continue
+            if next_depth > max_depth:
+                raise ValueError(f"recursive argument depth exceeded: {max_depth}")
+            depths[caller] = next_depth
+            pending.append(caller)
+
+    if not selected:
+        return None
+
+    parameter_keys = sorted({target, *(edge["source"] for edge in selected.values())})
+    node_ids = {key: f"parameter_{index}" for index, key in enumerate(parameter_keys)}
+    edges = []
+    for index, edge in enumerate(sorted(selected.values(), key=lambda item: item["key"])):
+        edges.append({
+            "id": f"argument_flow_{index}",
+            "from": node_ids[edge["source"]],
+            "to": node_ids[edge["target"]],
+            "relation": "argument_flow",
+            "evidence_class": "exact_static",
+            "provenance": [
+                {
+                    "source_format": CALLER_ARGUMENT_FORMAT,
+                    "source_id": edge["argument_source_id"],
+                },
+                {
+                    "source_format": CALLER_PARAMETER_ROOT_FORMAT,
+                    "source_id": edge["parameter_source_id"],
+                },
+            ],
+        })
+    graph = {
+        "format": FORMAT,
+        "graph_id": json.dumps(
+            [program_id, target_entry, target_parameter_index,
+             sorted(edge["parameter_source_id"] for edge in selected.values())],
+            ensure_ascii=False, separators=(",", ":"),
+        ),
+        "nodes": [{"id": node_ids[key], "kind": "parameter"} for key in parameter_keys],
+        "edges": edges,
+    }
+    validate_graph_references(graph)
+    return graph
+
+
+def recursive_argument_main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Propagate exact caller-formal roots recursively to one selected parameter."
+    )
+    parser.add_argument("caller_argument_subtree_tsv", type=Path)
+    parser.add_argument("caller_parameter_roots_tsv", type=Path)
+    parser.add_argument("--target-entry", required=True)
+    parser.add_argument("--target-parameter-index", type=int, required=True)
+    parser.add_argument("--program-id", required=True, help="Opaque consumer join key for the selected program.")
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--max-depth", type=int, default=DEFAULT_MAX_PROPAGATION_DEPTH)
+    parser.add_argument("--max-edges", type=int, default=DEFAULT_MAX_ARGUMENT_GRAPHS)
+    args = parser.parse_args(argv)
+
+    from revenginstr.receiver.infer import read_tsv
+
+    argument_rows = read_tsv(args.caller_argument_subtree_tsv)
+    parameter_root_rows = read_tsv(args.caller_parameter_roots_tsv)
+    graph = build_recursive_argument_graph(
+        argument_rows,
+        parameter_root_rows,
+        target_entry=args.target_entry,
+        target_parameter_index=args.target_parameter_index,
+        program_id=args.program_id,
+        max_depth=args.max_depth,
+        max_edges=args.max_edges,
+    )
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    with args.output.open("w", encoding="utf-8") as handle:
+        if graph is not None:
+            handle.write(json.dumps(graph, sort_keys=True) + "\n")
+    print("input caller argument rows:", len(argument_rows))
+    print("input caller parameter roots:", len(parameter_root_rows))
+    print("propagation graphs:", 0 if graph is None else 1)
+    print("max depth:", args.max_depth)
+    print("max edges:", args.max_edges)
     print("output:", args.output)
     return 0
 

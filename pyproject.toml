@@ -41,6 +41,7 @@ revenginstr-receiver-argument-store-flow = "revenginstr.receiver.provenance:argu
 revenginstr-receiver-argument-load-flow = "revenginstr.receiver.provenance:argument_load_main"
 revenginstr-receiver-field-access-pairs = "revenginstr.receiver.provenance:field_access_pairs_main"
 revenginstr-receiver-load-return-flow = "revenginstr.receiver.provenance:parameter_load_return_main"
+revenginstr-receiver-argument-propagate = "revenginstr.receiver.provenance:recursive_argument_main"
 revenginstr-family-mine = "revenginstr.family.mine:main"
 revenginstr-selective-train = "revenginstr.ml.selective:train_main"
 revenginstr-selective-infer = "revenginstr.ml.selective:infer_main"
