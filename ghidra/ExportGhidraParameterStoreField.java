@@ -369,6 +369,9 @@ public class ExportGhidraParameterStoreField extends GhidraScript {
         if (memoryAccessOutput != null && !outputPaths.add(memoryAccessOutput.getCanonicalPath()))
             throw new IllegalArgumentException("output paths must be different files");
         DecompInterface decompiler = new DecompInterface();
+        if (!decompiler.toggleCCode(false) || !decompiler.toggleSyntaxTree(true)) {
+            throw new IllegalStateException("Could not configure P-code-only decompilation");
+        }
         if (!decompiler.openProgram(currentProgram)) throw new IllegalStateException("Could not open program");
         DecompileResults results = decompiler.decompileFunction(function, 60, monitor);
         if (results == null || !results.decompileCompleted() || results.getHighFunction() == null) {

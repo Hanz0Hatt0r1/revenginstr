@@ -48,10 +48,11 @@ ANALYZE="$GHIDRA_HOME/support/analyzeHeadless"
 [[ -x "$ANALYZE" ]] || { echo "error: analyzeHeadless not executable: $ANALYZE" >&2; exit 1; }
 mkdir -p "$(dirname -- "$OUTPUT")"
 TMP_SCRIPT_DIR=$(mktemp -d)
-trap 'rm -rf -- "$TMP_SCRIPT_DIR"' EXIT
+TMP_LOG_DIR=$(mktemp -d)
+trap 'rm -rf -- "$TMP_SCRIPT_DIR" "$TMP_LOG_DIR"' EXIT
 cp "$ROOT/ghidra/ExportGhidraParameterStoreField.java" "$TMP_SCRIPT_DIR/ExportGhidraParameterStoreField.java"
 
-RUN_LOG="$TMP_SCRIPT_DIR/analyze.log"
+RUN_LOG="$TMP_LOG_DIR/analyze.log"
 if ! "$ANALYZE" \
   "$PROJECT_DIR" "$PROJECT_NAME" \
   -recursive \
@@ -63,7 +64,7 @@ if ! "$ANALYZE" \
   2>&1 | tee "$RUN_LOG"; then
   exit 1
 fi
-if ! grep -Fqx 'GHIDRA_PARAMETER_STORE_FIELD_FORMAT=REVENGINSTR.GhidraParameterStoreField/1' "$RUN_LOG"; then
+if ! grep -Fq 'GHIDRA_PARAMETER_STORE_FIELD_FORMAT=REVENGINSTR.GhidraParameterStoreField/1' "$RUN_LOG"; then
   echo "error: Ghidra did not report successful parameter-store export completion" >&2
   exit 1
 fi

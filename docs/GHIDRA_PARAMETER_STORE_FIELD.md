@@ -18,7 +18,8 @@ Run against an already analyzed program:
 The runner uses read-only, no-analysis mode and an isolated script directory.
 The exporter follows bounded High-P-code address expressions and strips
 value-preserving operations before matching the source and destination
-parameters.
+parameters. It requests the High-P-code syntax tree without generating unused
+C-code markup.
 
 It can additionally write `GhidraMemoryStoreAccess/1` JSONL facts for every
 High-P-code `STORE` in the selected function, including stores whose address

@@ -53,7 +53,19 @@ def test_ghidra_runners_accept_their_exporter_completion_marker(
     support = fake_ghidra / "support"
     support.mkdir(parents=True)
     analyzer = support / "analyzeHeadless"
-    analyzer.write_text(f"#!/usr/bin/env bash\nprintf '%s\\n'\nexit 0\n" % marker, encoding="utf-8")
+    analyzer.write_text(
+        "#!/usr/bin/env bash\n"
+        "while (($#)); do\n"
+        "  if [[ \"$1\" == \"-scriptPath\" ]]; then\n"
+        "    python3 -c 'import shutil,sys; shutil.rmtree(sys.argv[1])' \"$2\"\n"
+        "    break\n"
+        "  fi\n"
+        "  shift\n"
+        "done\n"
+        f"printf '%s\\n' 'INFO Export.java> {marker} (GhidraScript)'\n"
+        "exit 0\n",
+        encoding="utf-8",
+    )
     analyzer.chmod(0o755)
     output = subprocess.run(
         ["bash", str(ROOT / "scripts" / runner), *arguments],

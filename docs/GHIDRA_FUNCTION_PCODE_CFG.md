@@ -18,8 +18,9 @@ GHIDRA_HOME=/opt/ghidra \
 The project is opened read-only with analysis disabled. The runner requests
 only the listed function entries. Basic-block indices follow Ghidra's returned
 block order; successor indices are sorted, and operation rows follow each
-block's P-code iterator order. Operation addresses and sequence times use the
-same High-P-code identity as the parameter store/load exporter.
+block's P-code iterator order. The exporter requests the High-P-code syntax
+tree without generating unused C-code markup. Operation addresses and sequence
+times use the same High-P-code identity as the parameter store/load exporter.
 
 The schema is [`GhidraFunctionPcodeCFG/1`](../schemas/ghidra-function-pcode-cfg-v1.schema.json).
 `program_id` is an opaque join key, not a binary fingerprint or a game label;
