@@ -67,3 +67,5 @@ def test_parameter_store_runner_is_read_only_and_isolated() -> None:
     assert "-noanalysis" in runner
     assert "mktemp -d" in runner
     assert "ExportGhidraParameterStoreField.java" in runner
+    assert "--load-output" in runner
+    assert '"${POST_SCRIPT_ARGS[@]}"' in runner

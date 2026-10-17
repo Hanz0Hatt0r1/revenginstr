@@ -166,12 +166,29 @@ public class ExportGhidraParameterStoreField extends GhidraScript {
         return -1;
     }
 
+    private String valueToken(Varnode node) {
+        if (node == null) return "-";
+        PcodeOp def = node.getDef();
+        if (def != null) {
+            SequenceNumber sequence = def.getSeqnum();
+            return "def:" + def.getMnemonic() + "@" + cell(sequence.getTarget()) + ":" +
+                sequence.getTime() + ":" + node.getSize();
+        }
+        return "input:" + cell(node.getAddress()) + ":" + node.getSize();
+    }
+
     public void run() throws Exception {
         String[] args = getScriptArgs();
-        if (args.length != 2) throw new IllegalArgumentException(
-            "Usage: ExportGhidraParameterStoreField.java <function-address-or-name> <output.tsv>");
+        if (args.length != 2 && args.length != 4) throw new IllegalArgumentException(
+            "Usage: ExportGhidraParameterStoreField.java <function-address-or-name> <stores.tsv> [--load-output <loads.tsv>]");
+        if (args.length == 4 && !"--load-output".equals(args[2]))
+            throw new IllegalArgumentException("Expected --load-output before the load TSV path");
 
         Function function = resolveFunction(args[0]);
+        File storeOutput = new File(args[1]);
+        File loadOutput = args.length == 4 ? new File(args[3]) : null;
+        if (loadOutput != null && storeOutput.getCanonicalFile().equals(loadOutput.getCanonicalFile()))
+            throw new IllegalArgumentException("store and load outputs must be different files");
         DecompInterface decompiler = new DecompInterface();
         if (!decompiler.openProgram(currentProgram)) throw new IllegalStateException("Could not open program");
         DecompileResults results = decompiler.decompileFunction(function, 60, monitor);
@@ -181,19 +198,49 @@ public class ExportGhidraParameterStoreField extends GhidraScript {
         }
         HighFunction high = results.getHighFunction();
 
-        File output = new File(args[1]);
-        if (output.getParentFile() != null) output.getParentFile().mkdirs();
-        int rows = 0;
-        try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream(output), StandardCharsets.UTF_8))) {
-            out.write("format\tfunction_entry\tfunction_name\tstore_address\tstore_time\t" +
+        if (storeOutput.getParentFile() != null) storeOutput.getParentFile().mkdirs();
+        if (loadOutput != null && loadOutput.getParentFile() != null) loadOutput.getParentFile().mkdirs();
+        int storeRows = 0;
+        int loadRows = 0;
+        try (BufferedWriter storeOut = new BufferedWriter(new OutputStreamWriter(
+                    new FileOutputStream(storeOutput), StandardCharsets.UTF_8));
+             BufferedWriter loadOut = loadOutput == null ? null : new BufferedWriter(new OutputStreamWriter(
+                    new FileOutputStream(loadOutput), StandardCharsets.UTF_8))) {
+            storeOut.write("format\tfunction_entry\tfunction_name\tstore_address\tstore_time\t" +
                 "destination_parameter_index\tdestination_offset\tdestination_pattern\t" +
                 "source_parameter_index\tvalue_size\tstatus");
-            out.newLine();
+            storeOut.newLine();
+            if (loadOut != null) {
+                loadOut.write("format\tfunction_entry\tfunction_name\tload_address\tload_time\t" +
+                    "base_parameter_index\tfield_offset\taddress_pattern\tvalue_size\tvalue_token\tstatus");
+                loadOut.newLine();
+            }
 
             Iterator<PcodeOpAST> ops = high.getPcodeOps();
             while (ops.hasNext() && !monitor.isCancelled()) {
                 PcodeOpAST op = ops.next();
+                if (loadOut != null && op.getOpcode() == PcodeOp.LOAD && op.getNumInputs() >= 2) {
+                    AddressExpr address = decodeAddress(op.getInput(1));
+                    int baseParameter = parameterIndex(high, address.base);
+                    Varnode value = op.getOutput();
+                    if (baseParameter >= 0 && address.offset != null && value != null) {
+                        SequenceNumber sequence = op.getSeqnum();
+                        loadOut.write(String.join("\t",
+                            "REVENGINSTR.GhidraParameterLoadField/1",
+                            cell(function.getEntryPoint()),
+                            cell(function.getName(true)),
+                            cell(sequence == null ? null : sequence.getTarget()),
+                            sequence == null ? "-" : Integer.toString(sequence.getTime()),
+                            Integer.toString(baseParameter),
+                            hex(address.offset),
+                            address.pattern,
+                            Integer.toString(value.getSize()),
+                            valueToken(value),
+                            "parameter_field_load"));
+                        loadOut.newLine();
+                        loadRows++;
+                    }
+                }
                 if (op.getOpcode() != PcodeOp.STORE || op.getNumInputs() < 3) continue;
                 AddressExpr destination = decodeAddress(op.getInput(1));
                 int destinationParameter = parameterIndex(high, destination.base);
@@ -203,7 +250,7 @@ public class ExportGhidraParameterStoreField extends GhidraScript {
 
                 SequenceNumber sequence = op.getSeqnum();
                 Varnode value = op.getInput(2);
-                out.write(String.join("\t",
+                storeOut.write(String.join("\t",
                     FORMAT,
                     cell(function.getEntryPoint()),
                     cell(function.getName(true)),
@@ -215,8 +262,8 @@ public class ExportGhidraParameterStoreField extends GhidraScript {
                     Integer.toString(sourceParameter),
                     value == null ? "-" : Integer.toString(value.getSize()),
                     "parameter_to_parameter_field"));
-                out.newLine();
-                rows++;
+                storeOut.newLine();
+                storeRows++;
             }
         } finally {
             decompiler.dispose();
@@ -224,8 +271,13 @@ public class ExportGhidraParameterStoreField extends GhidraScript {
 
         println("GHIDRA_PARAMETER_STORE_FIELD_FORMAT=" + FORMAT);
         println("GHIDRA_PARAMETER_STORE_FIELD_FUNCTION=" + function.getEntryPoint() + ":" + function.getName(true));
-        println("GHIDRA_PARAMETER_STORE_FIELD_ROWS=" + rows);
-        println("GHIDRA_PARAMETER_STORE_FIELD_OUTPUT=" + output.getAbsolutePath());
+        println("GHIDRA_PARAMETER_STORE_FIELD_ROWS=" + storeRows);
+        println("GHIDRA_PARAMETER_STORE_FIELD_OUTPUT=" + storeOutput.getAbsolutePath());
+        if (loadOutput != null) {
+            println("GHIDRA_PARAMETER_LOAD_FIELD_FORMAT=REVENGINSTR.GhidraParameterLoadField/1");
+            println("GHIDRA_PARAMETER_LOAD_FIELD_ROWS=" + loadRows);
+            println("GHIDRA_PARAMETER_LOAD_FIELD_OUTPUT=" + loadOutput.getAbsolutePath());
+        }
         println("GHIDRA_PARAMETER_STORE_FIELD_SEMANTIC_CLAIM=none");
     }
 }

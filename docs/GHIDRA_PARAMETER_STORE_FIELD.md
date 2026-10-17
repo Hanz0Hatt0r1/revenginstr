@@ -19,3 +19,7 @@ The runner uses read-only, no-analysis mode and an isolated script directory.
 The exporter follows bounded High-P-code address expressions and strips
 value-preserving operations before matching the source and destination
 parameters.
+
+It can also emit a parameter-rooted field-load sidecar in the same decompilation
+pass. See [parameter-rooted field loads](GHIDRA_PARAMETER_LOAD_FIELD.md). The
+optional sidecar does not imply that a load and store access the same object.
