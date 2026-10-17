@@ -71,7 +71,7 @@
       "required": ["id", "kind", "artifact", "row_count", "exact_evidence"],
       "properties": {
         "id": {"type": "string"},
-        "kind": {"enum": ["classifier", "router", "receiver", "validation"]},
+        "kind": {"enum": ["classifier", "router", "receiver", "receiver_assessment", "validation"]},
         "artifact": {"type": "string"},
         "row_count": {"type": ["integer", "null"], "minimum": 0},
         "class_distribution": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
@@ -79,6 +79,7 @@
         "coverage": {"$ref": "#/$defs/coverageMetrics"},
         "calibration": {"$ref": "#/$defs/calibrationMetrics"},
         "receiver": {"$ref": "#/$defs/receiverMetrics"},
+        "receiver_assessment": {"$ref": "#/$defs/receiverAssessmentMetrics"},
         "reason_counts": {
           "type": "object",
           "properties": {
@@ -165,6 +166,18 @@
         "status_counts": {"$ref": "#/$defs/countMap"},
         "resolved_rows": {"type": "integer", "minimum": 0},
         "coverage": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+      },
+      "additionalProperties": false
+    },
+    "receiverAssessmentMetrics": {
+      "type": "object",
+      "required": ["status_counts", "candidate_count_counts", "rows_with_unknown_candidates", "unknown_candidate_total", "compatibility_group_rows"],
+      "properties": {
+        "status_counts": {"$ref": "#/$defs/countMap"},
+        "candidate_count_counts": {"$ref": "#/$defs/countMap"},
+        "rows_with_unknown_candidates": {"type": "integer", "minimum": 0},
+        "unknown_candidate_total": {"type": "integer", "minimum": 0},
+        "compatibility_group_rows": {"type": "integer", "minimum": 0}
       },
       "additionalProperties": false
     },

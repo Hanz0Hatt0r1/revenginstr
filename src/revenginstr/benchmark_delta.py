@@ -90,6 +90,14 @@ def numeric_metrics(summary: dict[str, Any]) -> dict[str, float | None]:
                 add(f"{prefix}/receiver/{name}", receiver[name])
         for status, count in receiver.get("status_counts", {}).items():
             add(f"{prefix}/receiver/status_counts/{_pointer_part(status)}", count)
+        assessment = projection.get("receiver_assessment", {})
+        for name in ("rows_with_unknown_candidates", "unknown_candidate_total", "compatibility_group_rows"):
+            if name in assessment:
+                add(f"{prefix}/receiver_assessment/{name}", assessment[name])
+        for group, counts in assessment.get("status_counts", {}).items():
+            add(f"{prefix}/receiver_assessment/status_counts/{_pointer_part(group)}", counts)
+        for count, rows in assessment.get("candidate_count_counts", {}).items():
+            add(f"{prefix}/receiver_assessment/candidate_count_counts/{_pointer_part(count)}", rows)
         exact = projection.get("exact_evidence")
         if isinstance(exact, dict):
             for name in ("actual_rows", "expected_rows", "compared_rows", "mismatched_rows", "missing_rows", "unexpected_rows", "mismatch_rows"):

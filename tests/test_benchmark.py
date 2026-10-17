@@ -9,7 +9,7 @@ from jsonschema import Draft202012Validator
 
 from revenginstr.benchmark import BenchmarkError, run_benchmark
 from revenginstr.benchmark_determinism import _difference_paths, _stable_summary, audit_determinism
-from revenginstr.benchmark_metrics import project
+from revenginstr.benchmark_metrics import MetricProjectionError, project
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -182,6 +182,54 @@ def test_receiver_projection_exact_evidence_compares_without_emitting_keys(tmp_p
     assert "opaque-id" not in json.dumps(result)
 
 
+def test_receiver_assessment_projection_reports_aggregate_candidate_metrics(tmp_path: Path) -> None:
+    assessments = tmp_path / "assessments.jsonl"
+    rows = [
+        {
+            "format": "REVENGINSTR.ReceiverCandidateAssessment/1", "source_id": "private-id",
+            "source_entry": "private-entry", "call_index": 1, "call_address": "0x1234",
+            "status": "compatible_subtype_candidates", "candidate_receiver_class_names": ["A", "B"],
+            "unknown_type_candidate_count": 2, "compatibility_group_id": "private-group",
+        },
+        {
+            "format": "REVENGINSTR.ReceiverCandidateAssessment/1", "source_id": "private-id",
+            "source_entry": "private-entry", "call_index": 2, "call_address": None,
+            "status": "no_known_candidates", "candidate_receiver_class_names": [],
+            "unknown_type_candidate_count": 0, "compatibility_group_id": None,
+        },
+    ]
+    assessments.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+
+    result = project(
+        {"id": "receiver-assessment", "kind": "receiver_assessment", "artifact": "assessments"},
+        {"content": "jsonl"}, {"assessments": assessments},
+    )
+
+    assert result["row_count"] == 2
+    assert result["receiver_assessment"] == {
+        "status_counts": {"compatible_subtype_candidates": 1, "no_known_candidates": 1},
+        "candidate_count_counts": {"0": 1, "2": 1},
+        "rows_with_unknown_candidates": 1,
+        "unknown_candidate_total": 2,
+        "compatibility_group_rows": 1,
+    }
+    summary_text = json.dumps(result)
+    for private_value in ("private-id", "private-entry", "private-group", "0x1234", '"A"'):
+        assert private_value not in summary_text
+
+
+def test_receiver_assessment_projection_rejects_invalid_status(tmp_path: Path) -> None:
+    assessments = tmp_path / "assessments.jsonl"
+    assessments.write_text(json.dumps({
+        "format": "REVENGINSTR.ReceiverCandidateAssessment/1", "status": "maybe",
+    }) + "\n", encoding="utf-8")
+    with pytest.raises(MetricProjectionError, match="invalid candidate status"):
+        project(
+            {"id": "receiver-assessment", "kind": "receiver_assessment", "artifact": "assessments"},
+            {"content": "jsonl"}, {"assessments": assessments},
+        )
+
+
 def test_benchmark_runs_projections_and_fails_exact_evidence_gate(tmp_path: Path) -> None:
     manifest_path = _write_manifest(tmp_path)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -189,6 +237,11 @@ def test_benchmark_runs_projections_and_fails_exact_evidence_gate(tmp_path: Path
         "predictions": [{"truth": "alpha", "prediction": "alpha", "action": "accept", "confidence": 0.9}],
         "receiver_actual": [{"key": "opaque", "status": "resolved_unique_vtable"}],
         "receiver_expected": [{"key": "opaque", "status": "unresolved_receiver_class"}],
+        "receiver_assessment": [{
+            "format": "REVENGINSTR.ReceiverCandidateAssessment/1", "status": "mixed_candidates",
+            "candidate_receiver_class_names": ["TypeA", "TypeB"], "unknown_type_candidate_count": 1,
+            "compatibility_group_id": None,
+        }],
     }
     for artifact_id, records in rows.items():
         artifact_path = tmp_path / f"{artifact_id}.jsonl"
@@ -214,6 +267,7 @@ def test_benchmark_runs_projections_and_fails_exact_evidence_gate(tmp_path: Path
             },
         },
         {"id": "drift", "kind": "validation", "artifact": "drift"},
+        {"id": "receiver-assessment", "kind": "receiver_assessment", "artifact": "receiver_assessment"},
     ]
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
@@ -226,6 +280,7 @@ def test_benchmark_runs_projections_and_fails_exact_evidence_gate(tmp_path: Path
     assert summary["projections"][1]["exact_evidence"]["mismatch_rows"] == 1
     assert summary["projections"][2]["validation"]["labels_available"] is False
     assert summary["projections"][2]["validation"]["frozen_rows"] == 10
+    assert summary["projections"][3]["receiver_assessment"]["unknown_candidate_total"] == 1
 
 
 def test_validation_projection_preserves_unlabeled_status(tmp_path: Path) -> None:

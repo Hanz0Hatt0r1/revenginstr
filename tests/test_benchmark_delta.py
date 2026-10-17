@@ -57,6 +57,34 @@ def test_delta_reports_numeric_metric_and_projection_changes() -> None:
     assert values["/metrics/corpus_rows"]["delta"] == 0.0
 
 
+def test_delta_reports_receiver_assessment_changes() -> None:
+    baseline = _summary(macro_f1=0.8, precision=0.75)
+    candidate = _summary(macro_f1=0.8, precision=0.75)
+    before = {
+        "status_counts": {"mixed_candidates": 3}, "candidate_count_counts": {"2": 3},
+        "rows_with_unknown_candidates": 1, "unknown_candidate_total": 2, "compatibility_group_rows": 1,
+    }
+    after = {
+        "status_counts": {"mixed_candidates": 1}, "candidate_count_counts": {"2": 2, "3": 1},
+        "rows_with_unknown_candidates": 0, "unknown_candidate_total": 0, "compatibility_group_rows": 2,
+    }
+    for summary, metrics in ((baseline, before), (candidate, after)):
+        summary["projections"].append({
+            "id": "receiver_assessment", "kind": "receiver_assessment", "artifact": "assessment.jsonl",
+            "row_count": 3, "receiver_assessment": metrics, "exact_evidence": None,
+        })
+
+    delta = compare_summaries(baseline, candidate, baseline_sha256="a" * 64, candidate_sha256="b" * 64)
+    values = {item["name"]: item for item in delta["metrics"]}
+
+    assert values["/projections/receiver_assessment/receiver_assessment/unknown_candidate_total"]["delta"] == -2
+    assert values["/projections/receiver_assessment/receiver_assessment/status_counts/mixed_candidates"]["delta"] == -2
+    added = values["/projections/receiver_assessment/receiver_assessment/candidate_count_counts/3"]
+    assert added["baseline"] is None
+    assert added["candidate"] == 1.0
+    assert added["delta"] is None
+
+
 def test_delta_requires_matching_dataset_split_and_family_identity() -> None:
     baseline = _summary(macro_f1=0.8, precision=0.75)
     candidate = _summary(macro_f1=0.9, precision=0.875)

@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `a1748a98edcfa881ce09617f0524fa977ed1e96c`
+**Repository baseline:** `main` through `45ee988c76b9f363b0255c770457614a55a6147d`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -375,6 +375,14 @@ Remaining propagation work:
 ### M2.6 Frozen receiver benchmark
 
 Provide a reusable receiver evaluation harness that consumers can populate with sealed unseen cases.
+
+The generic benchmark runner now projects `ReceiverCandidateAssessment/1`
+sidecars into status counts, candidate-count distributions, unknown-candidate
+counts, and compatibility-group row counts. Consumers can combine the
+projection with exact-evidence gates against sealed expected outputs; only
+aggregate metrics enter the shared summary. This completes the reusable
+harness contract, while the coverage and exact-evidence exit targets still
+require consumer-owned frozen datasets and results.
 
 ## Exit criteria
 

@@ -64,6 +64,14 @@ map available OOD, conflict and failure reason columns into count maps; absent
 reason data is not inferred. A validation projection summarizes frozen
 selection or drift reports without treating unlabeled rows as accuracy.
 
+`receiver_assessment` projections accept `ReceiverCandidateAssessment/1`
+JSONL and report status counts, candidate-count distribution, rows and total
+unknown typed candidates, and rows with a consumer-declared compatibility
+group. These are descriptive counts, not correctness or routing metrics. The
+optional `exact_evidence` gate can compare candidate assessments to sealed
+consumer expectations while keeping record identities and values out of the
+summary.
+
 An optional `exact_evidence` block compares actual and expected JSONL records by
 consumer-chosen key fields and compares only the listed evidence fields. The
 summary contains compared/mismatched/missing/unexpected row counts, never the
@@ -94,6 +102,17 @@ Example:
         "expected_artifact": "receiver_expected",
         "key_fields": ["source_id", "call_index"],
         "compare_fields": ["status", "receiver_vtable_id"],
+        "maximum_mismatches": 0
+      }
+    },
+    {
+      "id": "receiver_candidate_assessment",
+      "kind": "receiver_assessment",
+      "artifact": "receiver_candidate_assessments",
+      "exact_evidence": {
+        "expected_artifact": "receiver_candidate_assessments_expected",
+        "key_fields": ["source_id", "call_index"],
+        "compare_fields": ["status", "candidate_receiver_class_names"],
         "maximum_mismatches": 0
       }
     }
@@ -154,7 +173,8 @@ For behavior-changing PRs, pass the retained baseline summary path to generate a
 machine-readable metric delta. The baseline and candidate must share mode,
 dataset, split and family-set identities. `revenginstr-benchmark-delta` compares numeric
 manifest gates, class metrics, confusion counts, coverage, calibration,
-receiver status/coverage, reason counts and exact-evidence counts. It reports
+receiver status/coverage and candidate-assessment distributions, reason counts
+and exact-evidence counts. It reports
 added/removed metrics with a null value on the missing side. Attach the consumer
 workflow artifact or its delta JSON to the PR; do not copy consumer data into
 this repository.

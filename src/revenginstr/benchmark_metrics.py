@@ -151,6 +151,50 @@ def _receiver(rows: list[dict[str, Any]], config: dict[str, Any]) -> dict[str, A
     }
 
 
+def _receiver_assessment(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    statuses = {
+        "no_known_candidates", "same_type_convergence", "compatible_subtype_candidates",
+        "mixed_candidates", "partially_unknown_candidates",
+    }
+    status_counts: Counter[str] = Counter()
+    candidate_count_counts: Counter[str] = Counter()
+    rows_with_unknown_candidates = 0
+    unknown_candidate_total = 0
+    compatibility_group_rows = 0
+    for row_number, row in enumerate(rows, 1):
+        if row.get("format") != "REVENGINSTR.ReceiverCandidateAssessment/1":
+            raise MetricProjectionError(f"assessment row {row_number}: unsupported format")
+        status = row.get("status")
+        if not isinstance(status, str) or status not in statuses:
+            raise MetricProjectionError(f"assessment row {row_number}: invalid candidate status")
+        candidates = row.get("candidate_receiver_class_names")
+        if (not isinstance(candidates, list)
+                or any(not isinstance(candidate, str) or not candidate for candidate in candidates)
+                or len(set(candidates)) != len(candidates)):
+            raise MetricProjectionError(f"assessment row {row_number}: invalid candidate list")
+        unknown = row.get("unknown_type_candidate_count")
+        if isinstance(unknown, bool) or not isinstance(unknown, int) or unknown < 0:
+            raise MetricProjectionError(f"assessment row {row_number}: invalid unknown candidate count")
+        group_id = row.get("compatibility_group_id")
+        if group_id is not None and not isinstance(group_id, str):
+            raise MetricProjectionError(f"assessment row {row_number}: invalid compatibility group")
+        status_counts[status] += 1
+        candidate_count_counts[str(len(candidates))] += 1
+        rows_with_unknown_candidates += unknown > 0
+        unknown_candidate_total += unknown
+        compatibility_group_rows += group_id is not None
+    return {
+        "row_count": len(rows),
+        "receiver_assessment": {
+            "status_counts": dict(sorted(status_counts.items())),
+            "candidate_count_counts": dict(sorted(candidate_count_counts.items(), key=lambda item: int(item[0]))),
+            "rows_with_unknown_candidates": rows_with_unknown_candidates,
+            "unknown_candidate_total": unknown_candidate_total,
+            "compatibility_group_rows": compatibility_group_rows,
+        },
+    }
+
+
 def _validation(report: Any) -> dict[str, Any]:
     if not isinstance(report, dict):
         raise MetricProjectionError("validation report must be a JSON object")
@@ -251,7 +295,12 @@ def project(config: dict[str, Any], artifact: dict[str, Any], paths: dict[str, P
         rows = _read_jsonl(path)
         if not rows:
             raise MetricProjectionError(f"{kind} projection artifact is empty")
-        projected = _receiver(rows, config) if kind == "receiver" else _classification(rows, config)
+        if kind == "receiver":
+            projected = _receiver(rows, config)
+        elif kind == "receiver_assessment":
+            projected = _receiver_assessment(rows)
+        else:
+            projected = _classification(rows, config)
         if kind == "classifier" and "classification" not in projected:
             raise MetricProjectionError("classifier projection requires truth and prediction fields")
         reason_fields = config.get("reason_fields", {})
