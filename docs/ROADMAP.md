@@ -713,6 +713,15 @@ Explicit dependencies, for example:
 
 `P-code -> callgraph -> receiver provenance -> vtable/slot -> Effect IR -> classifier -> semantic role -> router`.
 
+**Initial task graph and invalidation plan implemented:**
+`AnalysisTaskGraph/1` pins task configuration hashes, artifact inputs/outputs,
+and explicit dependencies. `revenginstr-analysis-invalidation-plan` validates
+producer joins and acyclicity, returns deterministic topological order, and
+reports downstream invalidations with direct or dependency causes. It only
+plans; it does not execute analyzers or select evidence requests. Cost-aware
+planning, artifact version caching, and end-to-end consumer convergence remain
+open.
+
 ### M6.2 Evidence request planner
 
 For unresolved/high-value functions choose only from reviewed bounded actions, such as:

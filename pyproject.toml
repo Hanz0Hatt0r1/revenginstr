@@ -66,6 +66,7 @@ revenginstr-effect-ir = "revenginstr.effect_ir:main"
 revenginstr-structured-summary = "revenginstr.structured_summary:main"
 revenginstr-semantic-role-evaluate = "revenginstr.semantic_roles:main"
 revenginstr-decision-ledger-audit = "revenginstr.decision_ledger:main"
+revenginstr-analysis-invalidation-plan = "revenginstr.analysis_task_graph:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

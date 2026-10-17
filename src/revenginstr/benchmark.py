@@ -41,6 +41,7 @@ TOOLS = {
     "structured-summary": ("revenginstr.structured_summary", "main"),
     "semantic-role-evaluate": ("revenginstr.semantic_roles", "main"),
     "decision-ledger-audit": ("revenginstr.decision_ledger", "main"),
+    "analysis-invalidation-plan": ("revenginstr.analysis_task_graph", "main"),
     "family-mine": ("revenginstr.family.mine", "main"),
     "selective-train": ("revenginstr.ml.selective", "train_main"),
     "selective-infer": ("revenginstr.ml.selective", "infer_main"),
