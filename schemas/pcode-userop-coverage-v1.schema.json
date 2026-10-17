@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/pcode-userop-coverage-v1.schema.json",
+  "title": "REVENGINSTR.PcodeUseropCoverage/1 report",
+  "type": "object",
+  "required": ["format", "source", "corpus", "used_userops", "unmapped_userops"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.PcodeUseropCoverage/1"},
+    "source": {
+      "type": "object",
+      "required": ["program", "language_id", "corpus_sha256", "manifest_sha256", "userop_table_sha256"],
+      "properties": {
+        "program": {"type": "string", "minLength": 1},
+        "language_id": {"type": "string", "minLength": 1},
+        "corpus_sha256": {"$ref": "#/$defs/sha256"},
+        "manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "userop_table_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "additionalProperties": false
+    },
+    "corpus": {
+      "type": "object",
+      "required": ["functions", "instructions", "pcode_operations", "callother_operations"],
+      "properties": {
+        "functions": {"type": "integer", "minimum": 1},
+        "instructions": {"type": "integer", "minimum": 0},
+        "pcode_operations": {"type": "integer", "minimum": 0},
+        "callother_operations": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "used_userops": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["index", "name", "uses"],
+        "properties": {
+          "index": {"type": "integer", "minimum": 0},
+          "name": {"type": ["string", "null"]},
+          "uses": {"type": "integer", "minimum": 1}
+        },
+        "additionalProperties": false
+      }
+    },
+    "unmapped_userops": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["index", "uses"],
+        "properties": {
+          "index": {"type": "integer", "minimum": 0},
+          "uses": {"type": "integer", "minimum": 1}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}
