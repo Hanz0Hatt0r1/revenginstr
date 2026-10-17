@@ -17,6 +17,7 @@ from typing import Any
 
 FORMAT = "REVENGINSTR.ReceiverInference/1"
 FAILURE_FORMAT = "REVENGINSTR.ReceiverFailureReason/1"
+ASSESSMENT_FORMAT = "REVENGINSTR.ReceiverCandidateAssessment/1"
 
 PRIMARY_FAILURE_REASON_CODES = frozenset({
     "ambiguous_phi",
@@ -143,6 +144,67 @@ def candidates(typed_sources: list[tuple[Any, str]], class_vtables: dict[str, se
     return result
 
 
+def build_compatibility_groups(catalog_rows: list[dict[str, Any]]) -> dict[str, str]:
+    """Read optional consumer-declared compatibility groups from the catalog."""
+    groups_by_class: dict[str, set[str]] = defaultdict(set)
+    for row in catalog_rows:
+        class_name = row.get("class_name")
+        group_id = row.get("receiver_compatibility_group_id")
+        if isinstance(class_name, str) and class_name and isinstance(group_id, str):
+            if group_id and group_id != "-":
+                groups_by_class[class_name].add(group_id)
+    return {
+        class_name: next(iter(group_ids))
+        for class_name, group_ids in groups_by_class.items()
+        if len(group_ids) == 1
+    }
+
+
+def candidate_assessment(
+    typed_sources: list[tuple[Any, str]],
+    class_vtables: dict[str, set[str]],
+    terminal_to_classes: dict[str, set[str]],
+    compatibility_groups: dict[str, str],
+) -> tuple[str, list[str], int, str | None]:
+    possible_classes: set[str] = set()
+    unknown_types: set[str] = set()
+    for raw, _source_kind in typed_sources:
+        cleaned = clean_type_name(raw)
+        if cleaned is None:
+            continue
+        resolved = resolve_type(cleaned, class_vtables, terminal_to_classes)
+        if resolved:
+            possible_classes.update(name for name, _match in resolved)
+        elif cleaned not in class_vtables:
+            terminal_matches = terminal_to_classes.get(terminal_class_name(cleaned), set())
+            if len(terminal_matches) > 1:
+                possible_classes.update(terminal_matches)
+            else:
+                unknown_types.add(cleaned)
+
+    candidates = sorted(possible_classes)
+    unknown_count = len(unknown_types)
+    group_ids = {compatibility_groups.get(name) for name in candidates}
+    compatible = (
+        len(candidates) > 1
+        and None not in group_ids
+        and len(group_ids) == 1
+    )
+    common_group = next(iter(group_ids)) if compatible else None
+
+    if not candidates:
+        status = "no_known_candidates"
+    elif len(candidates) == 1:
+        status = "partially_unknown_candidates" if unknown_count else "same_type_convergence"
+    elif compatible and unknown_count:
+        status = "partially_unknown_candidates"
+    elif compatible:
+        status = "compatible_subtype_candidates"
+    else:
+        status = "mixed_candidates"
+    return status, candidates, unknown_count, common_group
+
+
 def primary_failure_reason(status: str, typed_sources: list[tuple[Any, str]],
                            class_vtables: dict[str, set[str]],
                            terminal_to_classes: dict[str, set[str]]) -> str | None:
@@ -173,10 +235,15 @@ def _infer(
     catalog_rows: list[dict[str, Any]],
     *,
     include_failure_reasons: bool,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    include_candidate_assessments: bool = False,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     class_vtables, terminal_to_classes = build_catalog(catalog_rows)
+    compatibility_groups = (
+        build_compatibility_groups(catalog_rows) if include_candidate_assessments else {}
+    )
     output: list[dict[str, Any]] = []
     failure_rows: list[dict[str, Any]] = []
+    assessment_rows: list[dict[str, Any]] = []
     seen_keys: set[tuple[str, int]] = set()
 
     for line_no, receiver in enumerate(receiver_rows, 2):
@@ -273,6 +340,22 @@ def _infer(
         base["status"] = status
         output.append(base)
 
+        if include_candidate_assessments:
+            assessment_status, assessment_candidates, unknown_count, group_id = candidate_assessment(
+                typed_sources, class_vtables, terminal_to_classes, compatibility_groups
+            )
+            assessment_rows.append({
+                "format": ASSESSMENT_FORMAT,
+                "source_id": source_id,
+                "source_entry": source_entry(source_id),
+                "call_index": call_index,
+                "call_address": receiver.get("call_address"),
+                "status": assessment_status,
+                "candidate_receiver_class_names": assessment_candidates,
+                "unknown_type_candidate_count": unknown_count,
+                "compatibility_group_id": group_id,
+            })
+
         if not include_failure_reasons:
             continue
         reason = primary_failure_reason(status, typed_sources, class_vtables, terminal_to_classes)
@@ -288,13 +371,28 @@ def _infer(
                 "status": status,
                 "primary_failure_reason": reason,
             })
-    return output, failure_rows
+    return output, failure_rows, assessment_rows
 
 
 def infer_with_failure_reasons(
     receiver_rows: list[dict[str, str]], catalog_rows: list[dict[str, Any]]
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    return _infer(receiver_rows, catalog_rows, include_failure_reasons=True)
+    rows, failures, _assessments = _infer(
+        receiver_rows, catalog_rows, include_failure_reasons=True
+    )
+    return rows, failures
+
+
+def infer_with_candidate_assessments(
+    receiver_rows: list[dict[str, str]], catalog_rows: list[dict[str, Any]]
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    rows, _failures, assessments = _infer(
+        receiver_rows,
+        catalog_rows,
+        include_failure_reasons=False,
+        include_candidate_assessments=True,
+    )
+    return rows, assessments
 
 
 def infer(receiver_rows: list[dict[str, str]], catalog_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -308,15 +406,23 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("catalog", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--failure-reasons-output", type=Path)
+    parser.add_argument("--candidate-assessments-output", type=Path)
     args = parser.parse_args(argv)
 
     receiver_rows = read_tsv(args.receiver_types_tsv)
     catalog_rows = read_jsonl(args.catalog)
-    if args.failure_reasons_output is None:
+    include_assessments = args.candidate_assessments_output is not None
+    if args.failure_reasons_output is None and not include_assessments:
         rows = infer(receiver_rows, catalog_rows)
         failure_rows = []
+        assessment_rows = []
     else:
-        rows, failure_rows = infer_with_failure_reasons(receiver_rows, catalog_rows)
+        rows, failure_rows, assessment_rows = _infer(
+            receiver_rows,
+            catalog_rows,
+            include_failure_reasons=args.failure_reasons_output is not None,
+            include_candidate_assessments=include_assessments,
+        )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     counts: Counter[str] = Counter(row["status"] for row in rows)
     resolved_functions = {row["source_id"] for row in rows if row["status"] == "resolved_unique_vtable"}
@@ -328,6 +434,11 @@ def main(argv: list[str] | None = None) -> int:
         with args.failure_reasons_output.open("w", encoding="utf-8") as handle:
             for row in failure_rows:
                 handle.write(json.dumps(row, sort_keys=True) + "\n")
+    if args.candidate_assessments_output is not None:
+        args.candidate_assessments_output.parent.mkdir(parents=True, exist_ok=True)
+        with args.candidate_assessments_output.open("w", encoding="utf-8") as handle:
+            for row in assessment_rows:
+                handle.write(json.dumps(row, sort_keys=True) + "\n")
     print("format:", FORMAT)
     print("calls considered:", len(rows))
     print("functions with resolved receiver vtable:", len(resolved_functions))
@@ -335,6 +446,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.failure_reasons_output is not None:
         reason_counts = Counter(row["primary_failure_reason"] for row in failure_rows)
         print("primary failure reasons:", dict(sorted(reason_counts.items())))
+    if args.candidate_assessments_output is not None:
+        assessment_counts = Counter(row["status"] for row in assessment_rows)
+        print("candidate assessments:", dict(sorted(assessment_counts.items())))
     print("dispatch slots inferred: 0")
     print("affects routing: no")
     print("output:", args.output)

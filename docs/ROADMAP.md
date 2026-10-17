@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `5c8488336d50ecff5c950f2a8bff96beebda5b60`
+**Repository baseline:** `main` through `4bdf2f0c4c32576f0cb5d1b8a2c2b347c4efe3fb`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -366,7 +366,7 @@ Remaining propagation work:
 
 ### M2.4 Ambiguity handling
 
-Distinguish same-type convergence, compatible subtype candidates, mixed candidates and partially unknown candidates. Mixed candidates are quarantined rather than collapsed for coverage.
+**Optional assessment sidecar implemented:** `ReceiverCandidateAssessment/1` distinguishes same-type convergence, consumer-declared compatible subtype candidates, mixed candidates, partially unknown candidates, and no known candidates. It retains all ambiguous terminal-name candidates and leaves `ReceiverInference/1`, routing, and transfer permissions unchanged. Consumer catalogs supply compatibility groups; absent or conflicting groups fail toward `mixed_candidates`.
 
 ### M2.5 Candidate scoring
 
