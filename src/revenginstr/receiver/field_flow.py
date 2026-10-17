@@ -9,6 +9,7 @@ from collections import deque
 from pathlib import Path
 from typing import Any
 
+from revenginstr.pcode.opcodes import NO_EXPLICIT_MEMORY_WRITE_OPCODES
 from .provenance import FORMAT as GRAPH_FORMAT
 from .provenance import PARAMETER_LOAD_FORMAT, PARAMETER_STORE_FORMAT, validate_graph_references
 
@@ -18,10 +19,17 @@ CFG_FORMAT_V2 = "REVENGINSTR.GhidraFunctionPcodeCFG/2"
 CFG_FORMAT_V3 = "REVENGINSTR.GhidraFunctionPcodeCFG/3"
 REACHING_FORMAT = "REVENGINSTR.FieldStoreLoadDominanceAudit/1"
 REACHING_FORMAT_V2 = "REVENGINSTR.FieldStoreLoadDominanceAudit/2"
+REACHING_FORMAT_V3 = "REVENGINSTR.FieldStoreLoadDominanceAudit/3"
 MEMORY_STORE_ACCESS_FORMAT = "REVENGINSTR.GhidraMemoryStoreAccess/1"
+DIRECT_CALL_MEMORY_EFFECT_FORMAT = "REVENGINSTR.GhidraDirectCallMemoryEffect/1"
 REACHING_CLAIM_SCOPE_V2 = (
     "Conservative single-function High-P-code structural candidate; only known different physical spaces "
     "and same-root non-overlapping byte ranges are excluded; no branch-feasibility or runtime value-flow claim."
+)
+REACHING_CLAIM_SCOPE_V3 = (
+    "Conservative single-function High-P-code structural candidate; only known different physical spaces, "
+    "same-root non-overlapping byte ranges, and directly resolved calls with complete write-free P-code "
+    "summaries are excluded; no branch-feasibility or runtime value-flow claim."
 )
 HAZARD_OPCODES = {"STORE", "CALL", "CALLIND", "CALLOTHER"}
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -391,6 +399,103 @@ def _index_memory_store_accesses(
     return indexed, indices_by_function, record_indices
 
 
+def _index_direct_call_memory_effects(
+    records: list[dict[str, Any]],
+    cfg_by_function: dict[tuple[str, str], tuple[int, dict[str, Any]]],
+) -> tuple[dict[tuple[str, str, str, int], dict[str, Any]], dict[tuple[str, str], list[int]]]:
+    indexed: dict[tuple[str, str, str, int], dict[str, Any]] = {}
+    indices_by_function: dict[tuple[str, str], list[int]] = {}
+    expected_fields = {
+        "format", "program_id", "function_entry", "address", "time", "opcode",
+        "callee_entry", "status", "effect_opcodes", "provenance",
+    }
+    expected_provenance = {
+        "caller_pcode_flow_sha256", "caller_pcode_flow_record_index",
+        "callee_pcode_flow_sha256", "callee_pcode_flow_record_count",
+    }
+    allowed_statuses = {
+        "no_explicit_memory_write", "explicit_memory_write", "unknown_effect",
+        "unresolved_target", "indirect_call", "missing_callee_flow",
+    }
+    for record_index, fact in enumerate(records, 1):
+        where = f"direct call memory effect record {record_index}"
+        if (
+            not isinstance(fact, dict)
+            or set(fact) != expected_fields
+            or fact.get("format") != DIRECT_CALL_MEMORY_EFFECT_FORMAT
+        ):
+            raise ValueError(f"{where}: unexpected format or fields")
+        if any(not isinstance(fact.get(key), str) or not fact[key] for key in ("program_id", "function_entry", "address")):
+            raise ValueError(f"{where}: invalid operation identity")
+        time = _int(fact.get("time"), f"{where} operation time")
+        opcode = fact.get("opcode")
+        if opcode not in {"CALL", "CALLIND"}:
+            raise ValueError(f"{where}: invalid call opcode")
+        status = fact.get("status")
+        if status not in allowed_statuses:
+            raise ValueError(f"{where}: invalid status")
+        callee_entry = fact.get("callee_entry")
+        if callee_entry is not None and (not isinstance(callee_entry, str) or not callee_entry):
+            raise ValueError(f"{where}: invalid callee entry")
+        effect_opcodes = fact.get("effect_opcodes")
+        if (
+            not isinstance(effect_opcodes, list)
+            or any(not isinstance(value, str) or not value for value in effect_opcodes)
+            or len(effect_opcodes) != len(set(effect_opcodes))
+            or effect_opcodes != sorted(effect_opcodes)
+        ):
+            raise ValueError(f"{where}: invalid effect opcode set")
+        provenance = fact.get("provenance")
+        if not isinstance(provenance, dict) or set(provenance) != expected_provenance:
+            raise ValueError(f"{where}: invalid provenance")
+        caller_sha = provenance.get("caller_pcode_flow_sha256")
+        if not isinstance(caller_sha, str) or _SHA256.fullmatch(caller_sha) is None:
+            raise ValueError(f"{where}: invalid caller P-code flow hash")
+        _int(provenance.get("caller_pcode_flow_record_index"), f"{where} caller P-code flow row")
+        callee_sha = provenance.get("callee_pcode_flow_sha256")
+        if callee_sha is not None and (not isinstance(callee_sha, str) or _SHA256.fullmatch(callee_sha) is None):
+            raise ValueError(f"{where}: invalid callee P-code flow hash")
+        callee_count = _int(provenance.get("callee_pcode_flow_record_count"), f"{where} callee P-code flow row count")
+
+        has_callee = callee_entry is not None
+        has_callee_flow = callee_sha is not None and callee_count > 0
+        if status == "no_explicit_memory_write":
+            if opcode != "CALL" or not has_callee or not has_callee_flow or effect_opcodes:
+                raise ValueError(f"{where}: write-free status lacks a complete resolved direct callee flow")
+        elif status == "explicit_memory_write":
+            if opcode != "CALL" or not has_callee_flow or "STORE" not in effect_opcodes:
+                raise ValueError(f"{where}: explicit write status lacks a STORE witness")
+        elif status == "unknown_effect":
+            if opcode != "CALL" or not has_callee_flow or not effect_opcodes or "STORE" in effect_opcodes:
+                raise ValueError(f"{where}: unknown status lacks an unmodeled-op witness")
+        elif status == "missing_callee_flow":
+            if opcode != "CALL" or not has_callee or callee_sha is not None or callee_count != 0 or effect_opcodes:
+                raise ValueError(f"{where}: missing-flow status has inconsistent provenance")
+        elif status == "unresolved_target":
+            if opcode != "CALL" or has_callee or callee_sha is not None or callee_count != 0 or effect_opcodes:
+                raise ValueError(f"{where}: unresolved-target status has inconsistent provenance")
+        elif status == "indirect_call":
+            if opcode != "CALLIND" or has_callee or callee_sha is not None or callee_count != 0 or effect_opcodes:
+                raise ValueError(f"{where}: indirect-call status has inconsistent provenance")
+
+        program_id = fact["program_id"]
+        function_entry = fact["function_entry"]
+        function_key = (program_id, function_entry)
+        key = (program_id, function_entry, fact["address"], time)
+        if key in indexed:
+            raise ValueError(f"{where}: duplicate operation identity")
+        cfg_item = cfg_by_function.get(function_key)
+        if cfg_item is None:
+            raise ValueError(f"{where}: missing CFG for program {program_id} function {function_entry}")
+        cfg = cfg_item[1]
+        operation_location = cfg["operations"].get((fact["address"], time))
+        if operation_location is None or operation_location[2] != opcode:
+            raise ValueError(f"{where}: operation does not match CFG call")
+        indexed[key] = fact
+        indices_by_function.setdefault(function_key, []).append(record_index)
+    return indexed, indices_by_function
+
+
 def _memory_store_non_alias_reason(
     tracked: dict[str, Any], write: dict[str, Any], *,
     parameter_index: int, field_offset: int, field_width: int,
@@ -596,21 +701,6 @@ def audit_field_store_load_paths(
     return output
 
 
-_CFG_NON_MEMORY_OPCODES = {
-    "BRANCH", "CBRANCH", "BRANCHIND", "RETURN", "LOAD", "COPY", "CAST",
-    "INT_EQUAL", "INT_NOTEQUAL", "INT_SLESS", "INT_SLESSEQUAL", "INT_LESS", "INT_LESSEQUAL",
-    "INT_ZEXT", "INT_SEXT", "INT_ADD", "INT_SUB", "INT_CARRY", "INT_SCARRY", "INT_SBORROW",
-    "INT_2COMP", "INT_NEGATE", "INT_XOR", "INT_AND", "INT_OR", "INT_LEFT", "INT_RIGHT",
-    "INT_SRIGHT", "INT_MULT", "INT_DIV", "INT_SDIV", "INT_REM", "INT_SREM",
-    "BOOL_NEGATE", "BOOL_XOR", "BOOL_AND", "BOOL_OR", "FLOAT_EQUAL", "FLOAT_NOTEQUAL",
-    "FLOAT_LESS", "FLOAT_LESSEQUAL", "FLOAT_NAN", "FLOAT_ADD", "FLOAT_DIV", "FLOAT_MULT",
-    "FLOAT_SUB", "FLOAT_NEG", "FLOAT_ABS", "FLOAT_SQRT", "FLOAT_INT2FLOAT",
-    "FLOAT_FLOAT2FLOAT", "FLOAT_TRUNC", "FLOAT_CEIL", "FLOAT_FLOOR", "FLOAT_ROUND",
-    "MULTIEQUAL", "PIECE", "SUBPIECE", "PTRADD", "PTRSUB", "SEGMENTOP", "INSERT",
-    "EXTRACT", "POPCOUNT", "LZCOUNT",
-}
-
-
 def _route_blocks(
     parents: dict[tuple[int, int, bool], tuple[int, int, bool] | None],
     state: tuple[int, int, bool],
@@ -639,6 +729,7 @@ def _may_write_tracked_space(
     tracked_physical_space: str | None = None, physical_space_aware: bool = False,
     access_facts_enabled: bool = False,
     non_alias_store_locations: set[tuple[str, int]] | None = None,
+    non_effect_call_locations: set[tuple[str, int]] | None = None,
 ) -> bool:
     """Keep possible effects in the tracked P-code space or with unknown space."""
     opcode = operation["opcode"]
@@ -651,7 +742,10 @@ def _may_write_tracked_space(
             return not write_space or not tracked_physical_space or write_space == tracked_physical_space
         write_space = operation.get("memory_space")
         return not write_space or write_space == tracked_space
-    return opcode not in _CFG_NON_MEMORY_OPCODES
+    if opcode == "CALL" and non_effect_call_locations is not None:
+        if (operation["address"], operation["time"]) in non_effect_call_locations:
+            return False
+    return opcode not in NO_EXPLICIT_MEMORY_WRITE_OPCODES
 
 
 def _find_routes(
@@ -666,6 +760,7 @@ def _find_routes(
     physical_space_aware: bool = False,
     access_facts_enabled: bool = False,
     non_alias_store_locations: set[tuple[str, int]] | None = None,
+    non_effect_call_locations: set[tuple[str, int]] | None = None,
     max_expansions: int,
 ) -> tuple[list[int] | None, list[int] | None, int]:
     """Find one clean and, optionally, one effect-bearing CFG witness."""
@@ -707,6 +802,7 @@ def _find_routes(
                         physical_space_aware=physical_space_aware,
                         access_facts_enabled=access_facts_enabled,
                         non_alias_store_locations=non_alias_store_locations,
+                        non_effect_call_locations=non_effect_call_locations,
                     )
                 )
             next_states = [(block_index, position + 1, bool(next_effect))]
@@ -727,6 +823,8 @@ def audit_field_store_load_dominance(
     cfg_sha256: str,
     memory_store_access_rows: list[dict[str, Any]] | None = None,
     memory_store_access_sha256: str | None = None,
+    direct_call_memory_effect_rows: list[dict[str, Any]] | None = None,
+    direct_call_memory_effect_sha256: str | None = None,
     max_pairs: int = 100_000,
     max_path_expansions: int = 1_000_000,
     max_memory_access_comparisons: int = 1_000_000,
@@ -747,11 +845,19 @@ def audit_field_store_load_dominance(
     if max_memory_access_comparisons < 1:
         raise ValueError("max_memory_access_comparisons must be positive")
     access_facts_enabled = memory_store_access_rows is not None
+    call_effects_enabled = direct_call_memory_effect_rows is not None
     if access_facts_enabled:
         if not isinstance(memory_store_access_sha256, str) or _SHA256.fullmatch(memory_store_access_sha256) is None:
             raise ValueError("memory store access SHA-256 must be lowercase hexadecimal")
     elif memory_store_access_sha256 is not None:
         raise ValueError("memory store access SHA-256 requires memory store access rows")
+    if call_effects_enabled:
+        if not access_facts_enabled:
+            raise ValueError("direct call memory effects require memory store access rows")
+        if not isinstance(direct_call_memory_effect_sha256, str) or _SHA256.fullmatch(direct_call_memory_effect_sha256) is None:
+            raise ValueError("direct call memory effect SHA-256 must be lowercase hexadecimal")
+    elif direct_call_memory_effect_sha256 is not None:
+        raise ValueError("direct call memory effect SHA-256 requires direct call memory effect rows")
     cfg_by_function = _index_cfg(cfg_records)
     if access_facts_enabled:
         memory_access_by_operation, memory_access_indices_by_function, _memory_access_record_indices = (
@@ -760,6 +866,13 @@ def audit_field_store_load_dominance(
     else:
         memory_access_by_operation = {}
         memory_access_indices_by_function = {}
+    if call_effects_enabled:
+        call_effect_by_operation, call_effect_indices_by_function = _index_direct_call_memory_effects(
+            direct_call_memory_effect_rows, cfg_by_function,
+        )
+    else:
+        call_effect_by_operation = {}
+        call_effect_indices_by_function = {}
     output = []
     seen_pairs: set[str] = set()
     path_expansions = 0
@@ -800,6 +913,15 @@ def audit_field_store_load_dominance(
         memory_access_indices = memory_access_indices_by_function.get(
             (identity["program_id"], identity["function_entry"]), []
         )
+        call_effect_indices = call_effect_indices_by_function.get(
+            (identity["program_id"], identity["function_entry"]), []
+        )
+        no_effect_call_locations = {
+            (address, operation_time)
+            for (program_id, function_entry, address, operation_time), fact in call_effect_by_operation.items()
+            if (program_id, function_entry) == (identity["program_id"], identity["function_entry"])
+            and fact["status"] == "no_explicit_memory_write"
+        }
         non_alias_store_locations: set[tuple[str, int]] = set()
         candidate_access_fact = None
         candidate_access_complete = not access_facts_enabled
@@ -884,6 +1006,7 @@ def audit_field_store_load_dominance(
                     physical_space_aware=cfg["format"] == CFG_FORMAT_V3,
                     access_facts_enabled=access_facts_enabled,
                     non_alias_store_locations=non_alias_store_locations,
+                    non_effect_call_locations=no_effect_call_locations,
                     max_expansions=budget,
                 )
                 path_expansions += used
@@ -913,7 +1036,10 @@ def audit_field_store_load_dominance(
             }
 
         result = {
-            "format": REACHING_FORMAT_V2 if access_facts_enabled else REACHING_FORMAT,
+            "format": (
+                REACHING_FORMAT_V3 if call_effects_enabled
+                else REACHING_FORMAT_V2 if access_facts_enabled else REACHING_FORMAT
+            ),
             "program_id": identity["program_id"],
             "function_entry": identity["function_entry"],
             "parameter_index": identity["parameter_index"],
@@ -935,7 +1061,11 @@ def audit_field_store_load_dominance(
                 "clean_store_to_load": clean_after_store or [],
                 "memory_effect_store_to_load": effect_after_store or [],
             },
-            "claim_scope": REACHING_CLAIM_SCOPE_V2 if access_facts_enabled else "Conservative single-function High-P-code structural candidate; no branch-feasibility, alias-disambiguation, or runtime value-flow claim.",
+            "claim_scope": (
+                REACHING_CLAIM_SCOPE_V3 if call_effects_enabled
+                else REACHING_CLAIM_SCOPE_V2 if access_facts_enabled
+                else "Conservative single-function High-P-code structural candidate; no branch-feasibility, alias-disambiguation, or runtime value-flow claim."
+            ),
             "provenance": {
                 "pair_graph_sha256": pair_graph_sha256,
                 "pair_graph_record_index": pair_index,
@@ -953,6 +1083,11 @@ def audit_field_store_load_dominance(
                 "memory_access_comparison_cap": max_memory_access_comparisons,
                 "memory_access_comparisons_before": memory_comparisons_before,
                 "memory_access_comparisons_used": memory_access_comparisons - memory_comparisons_before,
+            })
+        if call_effects_enabled:
+            result["provenance"].update({
+                "direct_call_memory_effect_sha256": direct_call_memory_effect_sha256,
+                "direct_call_memory_effect_record_indices": call_effect_indices,
             })
         output.append(result)
     return output
@@ -988,6 +1123,7 @@ def dominance_main(argv: list[str] | None = None) -> int:
     parser.add_argument("field_access_pairs", type=Path)
     parser.add_argument("function_pcode_cfg", type=Path)
     parser.add_argument("--memory-store-access-jsonl", type=Path)
+    parser.add_argument("--direct-call-memory-effect-jsonl", type=Path)
     parser.add_argument("--max-pairs", type=int, default=100_000)
     parser.add_argument("--max-path-expansions", type=int, default=1_000_000)
     parser.add_argument("--max-memory-access-comparisons", type=int, default=1_000_000)
@@ -999,9 +1135,15 @@ def dominance_main(argv: list[str] | None = None) -> int:
         access_sha, access_rows = None, None
     else:
         access_sha, access_rows = _read_jsonl(args.memory_store_access_jsonl)
+    if args.direct_call_memory_effect_jsonl is None:
+        call_effect_sha, call_effect_rows = None, None
+    else:
+        call_effect_sha, call_effect_rows = _read_jsonl(args.direct_call_memory_effect_jsonl)
     rows = audit_field_store_load_dominance(
         pair_graphs, cfg_records, pair_graph_sha256=pair_sha,
         memory_store_access_rows=access_rows, memory_store_access_sha256=access_sha,
+        direct_call_memory_effect_rows=call_effect_rows,
+        direct_call_memory_effect_sha256=call_effect_sha,
         cfg_sha256=cfg_sha, max_pairs=args.max_pairs,
         max_path_expansions=args.max_path_expansions,
         max_memory_access_comparisons=args.max_memory_access_comparisons,

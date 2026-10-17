@@ -19,6 +19,11 @@ RUNNERS = (
         ["project-dir", "project", "program", "cfg.jsonl", "consumer:run", "00401000"],
         "GHIDRA_FUNCTION_PCODE_CFG_FORMAT=REVENGINSTR.GhidraFunctionPcodeCFG/3",
     ),
+    (
+        "run_ghidra_function_pcode_flow.sh",
+        ["project-dir", "project", "program", "00401000", "flow.tsv"],
+        "GHIDRA_FUNCTION_PCODE_FLOW_FORMAT=REVENGINSTR.GhidraFunctionPcodeFlow/1",
+    ),
 )
 
 

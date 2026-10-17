@@ -420,11 +420,20 @@ fails closed in a real consumer; it does not establish positive memory-value
 flow. See the [consumer evidence and replay manifest](https://github.com/Hanz0Hatt0r1/nevergone-recomp/tree/main/docs/evidence/field-store-load-cfg-ccjoystick-init)
 and the [field memory alias contract](FIELD_MEMORY_ALIAS_CONTRACT.md).
 
+**Direct-call memory-effect prototype implemented:**
+`GhidraDirectCallMemoryEffect/1` is built from exact caller/callee one-function
+P-code flow artifacts. `FieldStoreLoadDominanceAudit/3` removes only a
+statically resolved direct `CALL` whose non-empty callee body contains only
+known write-free P-code operations. The builder does not recurse; nested calls,
+indirect calls, unknown operations, and missing flows remain effects. The
+prototype is synthetically validated; a frozen replay in a second consumer is
+still required. See the [call and memory effect contract](FIELD_MEMORY_ALIAS_CONTRACT.md).
+
 Remaining propagation work:
 
 1. consumer-validated factory hypotheses linked to call-result-to-return paths;
 2. consumer-validated getter/accessor hypotheses from load-to-return evidence;
-3. extend instruction-order/path compatibility into alias-aware reaching definitions before treating paired field stores and loads as value flow;
+3. extend alias-aware reaching definitions through nested or cyclic direct calls before treating paired field stores and loads as value flow;
 4. constructor/vtable anchors.
 
 ### M2.4 Ambiguity handling
@@ -1009,10 +1018,9 @@ pairs unresolved because intervening calls and memory effects remain possible;
 keep these as negative evidence and make no value-flow claim. Keep labels,
 binary rows, and measured outcomes in their consumer repositories.
 
-Continue M2.3 by prototyping separately versioned direct-callee effect
-evidence for the dominance audit. Only an exact, supported summary for a
-statically resolved direct call may refine a call barrier; indirect or unknown
-calls stay possible effects. Require bounded resource use, target-free
-synthetic fixtures, and a frozen replay in a second consumer before treating
-any new positive as transferable. Preserve the current `/1` and `/2` outputs
-and their fail-closed defaults.
+Continue M2.3 by freezing and replaying the new `/3` audit with direct-callee
+effect rows in a second consumer. Keep `/1` and `/2` behavior unchanged; only
+exactly joined direct calls with complete write-free callee flows may be
+filtered. Indirect, nested, unknown, and missing effects remain barriers. Do
+not treat any new structural candidate as transferable value flow until that
+second consumer replay passes.
