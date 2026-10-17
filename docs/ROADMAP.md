@@ -1137,8 +1137,9 @@ The next generic action is to merge and validate the opt-in
 `GhidraInterproceduralMemoryEffect/1` builder and versioned `/5` audit. The
 builder propagates only exact caller-formal roots through bounded direct-call
 graphs, compares same-root byte ranges under the physical-space contract, and
-uses a finite monotone fixed point for cycles. Missing argument links,
-unresolved stores, indirect calls, unknown operations, and incomplete or
-budget-exhausted closures stay barriers. Preserve `/1`–`/4`; a structural
+uses a finite monotone fixed point for cycles. Missing argument links, callee
+CFG or memory-access facts, unresolved stores, indirect calls, unknown
+operations, and incomplete or budget-exhausted closures stay barriers.
+Preserve `/1`–`/4`; a structural
 candidate is not runtime value flow. Freeze and replay the new sidecar against
 consumer evidence before using it to filter any call barrier.

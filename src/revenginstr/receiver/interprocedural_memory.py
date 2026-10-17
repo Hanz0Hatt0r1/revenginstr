@@ -161,9 +161,7 @@ def build_interprocedural_memory_effects(
         for record_index, row in enumerate(rows, 1):
             site = (row["op_address"], int(row["op_time"]))
             cfg_item = cfg_by_function.get((program_id, entry))
-            if row["opcode"] in {"CALL", "CALLIND", "STORE"} and cfg_item is None:
-                raise ValueError(f"P-code flow has no matching CFG function: {entry}")
-            if row["opcode"] in {"CALL", "CALLIND", "STORE"}:
+            if row["opcode"] in {"CALL", "CALLIND", "STORE"} and cfg_item is not None:
                 operation = cfg_item[1]["operations"].get(site)
                 if operation is None or operation[2] != row["opcode"]:
                     raise ValueError(f"P-code flow disagrees with CFG at {entry}:{site}")
@@ -229,6 +227,9 @@ def build_interprocedural_memory_effects(
                     reachable.add(function_entry)
                     used_flows.add(function_entry)
                     _, function_rows = flows[function_entry]
+                    if (program_id, function_entry) not in cfg_by_function:
+                        effect_opcodes.add("MISSING_CFG")
+                        unknown_ids.add(f"{function_entry}:missing_cfg")
                     for function_row_index, operation in enumerate(function_rows, 1):
                         site = (operation["op_address"], int(operation["op_time"]))
                         if operation["opcode"] == "STORE":
