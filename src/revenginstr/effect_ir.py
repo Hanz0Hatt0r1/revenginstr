@@ -11,7 +11,9 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-FORMAT = "REVENGINSTR.FunctionEffectIR/1"
+FORMAT_V1 = "REVENGINSTR.FunctionEffectIR/1"
+FORMAT_V2 = "REVENGINSTR.FunctionEffectIR/2"
+FORMAT = FORMAT_V1
 STORE_FORMAT = "REVENGINSTR.GhidraParameterStoreField/1"
 LOAD_FORMAT = "REVENGINSTR.GhidraParameterLoadField/1"
 PCODE_FORMAT = "REVENGINSTR.GhidraFunctionPcodeFlow/1"
@@ -32,6 +34,13 @@ _PCODE_HEADER = (
     "callee_entry", "callee_name",
 )
 _OFFSET = re.compile(r"-?0x[0-9a-f]+\Z")
+_PCODE_EFFECT_KINDS = {
+    "CALL": "direct_call",
+    "CALLIND": "indirect_call",
+    "RETURN": "return_op",
+    "LOAD": "memory_read",
+    "STORE": "memory_write",
+}
 
 
 def _read_tsv(path: Path, expected_header: tuple[str, ...]) -> tuple[str, list[dict[str, str]]]:
@@ -115,6 +124,7 @@ def build_function_effect_ir(
     parameter_store_tsv: Path | None = None,
     parameter_load_tsv: Path | None = None,
     pcode_flow_tsv: Path | None = None,
+    include_generic_memory_ops: bool = False,
     max_effects: int = DEFAULT_MAX_EFFECTS,
 ) -> list[dict[str, Any]]:
     """Build function summaries from selected, schema-defined generic TSV inputs.
@@ -128,6 +138,8 @@ def build_function_effect_ir(
         raise ValueError("max_effects must be positive")
     if not any((parameter_store_tsv, parameter_load_tsv, pcode_flow_tsv)):
         raise ValueError("at least one input TSV is required")
+    if include_generic_memory_ops and pcode_flow_tsv is None:
+        raise ValueError("generic memory effects require P-code flow input")
 
     by_function: dict[str, list[dict[str, Any]]] = defaultdict(list)
     effect_count = 0
@@ -197,9 +209,9 @@ def build_function_effect_ir(
             opcode = _required(row, "opcode", where)
             address = _required(row, "op_address", where)
             operation_time = _decimal(row["op_time"], "op_time", where)
-            if opcode not in {"CALL", "CALLIND", "RETURN"}:
+            kind = _PCODE_EFFECT_KINDS.get(opcode)
+            if kind is None or (opcode in {"LOAD", "STORE"} and not include_generic_memory_ops):
                 continue
-            kind = {"CALL": "direct_call", "CALLIND": "indirect_call", "RETURN": "return_op"}[opcode]
             effect = _base_effect(
                 source_format=PCODE_FORMAT, artifact_sha256=artifact_sha256,
                 record_index=record_index, kind=kind, address=address,
@@ -211,6 +223,9 @@ def build_function_effect_ir(
             effect["inputs"] = [] if inputs == "-" else inputs.split(";")
             if any(not token for token in effect["inputs"]):
                 raise ValueError(f"{where}: malformed inputs cell")
+            if opcode == "LOAD":
+                output = row["output"]
+                effect["value_token"] = None if output == "-" else _required(row, "output", where)
             if opcode in {"CALL", "CALLIND"}:
                 for source_field, target_field in (
                     ("callee_entry", "target_entry"),
@@ -222,7 +237,7 @@ def build_function_effect_ir(
 
     return [
         {
-            "format": FORMAT,
+            "format": FORMAT_V2 if include_generic_memory_ops else FORMAT_V1,
             "program_id": program_id,
             "function_entry": function_entry,
             "effects": sorted(
@@ -245,6 +260,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--parameter-stores", type=Path)
     parser.add_argument("--parameter-loads", type=Path)
     parser.add_argument("--pcode-flow", type=Path)
+    parser.add_argument(
+        "--include-generic-memory-ops", action="store_true",
+        help="emit FunctionEffectIR/2 and include every P-code LOAD/STORE operation",
+    )
     parser.add_argument("--max-effects", type=int, default=DEFAULT_MAX_EFFECTS)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
@@ -254,6 +273,7 @@ def main(argv: list[str] | None = None) -> int:
         parameter_store_tsv=args.parameter_stores,
         parameter_load_tsv=args.parameter_loads,
         pcode_flow_tsv=args.pcode_flow,
+        include_generic_memory_ops=args.include_generic_memory_ops,
         max_effects=args.max_effects,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)

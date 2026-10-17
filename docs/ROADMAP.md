@@ -650,13 +650,15 @@ Move from structural/domain classification to auditable behavioral understanding
 
 ## M5.1 Effect IR schema
 
-**Initial `FunctionEffectIR/1` projection implemented:** the generic CLI groups
-parameter-rooted field reads/writes and P-code direct/indirect call and return
-operations by function and is available as a pinned benchmark stage. Each fact
-retains exact source-artifact hashes and record ordinals; read/write facts
-remain `derived_structural`, and call/return operations remain `exact_static`.
-This version assigns no roles or API categories and makes no store-to-load
-reachability claim. Other effect classes remain open for separately evidenced
+**`FunctionEffectIR/1` and opt-in `/2` projections implemented:** the generic
+CLI groups parameter-rooted field reads/writes and P-code direct/indirect call
+and return operations by function; `/2` additionally records every P-code
+`LOAD` and `STORE` as an exact static memory operation. Each fact retains exact
+source-artifact hashes and record ordinals; parameter-rooted field facts remain
+`derived_structural`. The memory operation does not resolve pointer targets or
+assert write-to-read flow. Both versions are available as pinned benchmark
+stages; `/1` remains the default. These versions assign no roles or API
+categories. Other effect classes remain open for separately evidenced
 additions.
 
 Define a normalized function-level representation containing evidence-backed facts about:

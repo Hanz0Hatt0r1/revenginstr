@@ -368,6 +368,7 @@ def test_benchmark_runs_function_effect_ir_stage(tmp_path: Path) -> None:
         "parameter_load": "ghidra-parameter-load-field-v1.schema.json",
         "pcode_flow": "ghidra-function-pcode-flow-v1.schema.json",
         "function_effect_ir": "function-effect-ir-v1.schema.json",
+        "function_effect_ir_v2": "function-effect-ir-v2.schema.json",
         "function_summary": "function-summary-v1.schema.json",
     }
     for schema_id, filename in schema_files.items():
@@ -407,6 +408,23 @@ def test_benchmark_runs_function_effect_ir_stage(tmp_path: Path) -> None:
         "content": "jsonl", "format": "REVENGINSTR.FunctionSummary/1",
         "schema": "function_summary",
     }
+    manifest["artifacts"]["function_effects_v2"] = {
+        "path": "function-effects-v2.jsonl", "role": "output", "kind": "file",
+        "content": "jsonl", "format": "REVENGINSTR.FunctionEffectIR/2",
+        "schema": "function_effect_ir_v2",
+    }
+    manifest["stages"].append({
+        "id": "function_effect_ir_v2", "tool": "function-effect-ir",
+        "args": [
+            "--program-id", "analysis:sample",
+            "--parameter-stores", "${artifact:parameter_stores}",
+            "--parameter-loads", "${artifact:parameter_loads}",
+            "--pcode-flow", "${artifact:pcode_flow}",
+            "--include-generic-memory-ops",
+            "--output", "${artifact:function_effects_v2}",
+        ],
+        "inputs": list(fixture_paths), "outputs": ["function_effects_v2"],
+    })
     manifest["stages"].append({
         "id": "function_effect_ir", "tool": "function-effect-ir",
         "args": [
@@ -444,6 +462,15 @@ def test_benchmark_runs_function_effect_ir_stage(tmp_path: Path) -> None:
     for record in records:
         validator.validate(record)
     assert len(records) == 2
+    v2_records = [
+        json.loads(line)
+        for line in (tmp_path / "function-effects-v2.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    v2_schema = json.loads((ROOT / "schemas/function-effect-ir-v2.schema.json").read_text(encoding="utf-8"))
+    for record in v2_records:
+        Draft202012Validator(v2_schema).validate(record)
+    assert len(v2_records) == 2
+    assert any(effect["kind"] == "memory_read" for record in v2_records for effect in record["effects"])
     function_summaries = [
         json.loads(line)
         for line in (tmp_path / "function-summaries.jsonl").read_text(encoding="utf-8").splitlines()
