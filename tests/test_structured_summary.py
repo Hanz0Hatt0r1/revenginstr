@@ -13,6 +13,7 @@ from revenginstr.structured_summary import build_function_summaries, main
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = json.loads((ROOT / "schemas/function-summary-v1.schema.json").read_text(encoding="utf-8"))
+SCHEMA_V2 = json.loads((ROOT / "schemas/function-summary-v2.schema.json").read_text(encoding="utf-8"))
 
 
 def _effect_records():
@@ -62,6 +63,36 @@ def test_structured_summary_coalesces_equal_effects_and_keeps_all_support() -> N
         and claim["attributes"]["field_offset"] == read["field_offset"]
     )
     assert len(read_claim["support"]) == 2
+
+
+def test_structured_summary_v2_groups_generic_memory_ops_by_kind(tmp_path: Path) -> None:
+    pcode = tmp_path / "memory-pcode.tsv"
+    pcode.write_text(
+        "function_entry\top_address\top_time\topcode\toutput\tinputs\tcallee_entry\tcallee_name\n"
+        "00401000\t00401020\t7\tLOAD\tdef:00401020:7:4\tconst:0x1:4;register:0010:4\t-\t-\n"
+        "00401000\t00401024\t8\tLOAD\tdef:00401024:8:4\tconst:0x1:4;register:0020:4\t-\t-\n"
+        "00401000\t00401028\t9\tSTORE\t-\tconst:0x1:4;register:0030:4;register:0040:4\t-\t-\n",
+        encoding="utf-8",
+    )
+    [record] = build_function_effect_ir(
+        "synthetic:analysis", pcode_flow_tsv=pcode, include_generic_memory_ops=True,
+    )
+    serialized = (json.dumps(record, sort_keys=True) + "\n").encode()
+    [summary] = build_function_summaries([record], source_sha256=hashlib.sha256(serialized).hexdigest())
+
+    Draft202012Validator.check_schema(SCHEMA_V2)
+    Draft202012Validator(SCHEMA_V2).validate(summary)
+    assert summary["format"] == "REVENGINSTR.FunctionSummary/2"
+    claims = {claim["kind"]: claim for claim in summary["claims"]}
+    assert set(claims) == {"memory_read", "memory_write"}
+    assert claims["memory_read"]["attributes"] == {}
+    assert len(claims["memory_read"]["support"]) == 2
+    assert len(claims["memory_write"]["support"]) == 1
+    expected_hash = hashlib.sha256(pcode.read_bytes()).hexdigest()
+    assert all(
+        item["provenance"]["artifact_sha256"] == expected_hash
+        for claim in claims.values() for item in claim["support"]
+    )
 
 
 def test_structured_summary_rejects_bad_effects_and_duplicate_functions() -> None:

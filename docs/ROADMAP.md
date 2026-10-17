@@ -736,12 +736,13 @@ Initial roles should remain bounded and multi-label-capable:
 
 ## M5.3 Structured summaries
 
-**Initial structural summary implemented:** `revenginstr-structured-summary`
+**Versioned structural summaries implemented:** `revenginstr-structured-summary`
 coalesces equivalent `FunctionEffectIR/1` facts into deterministic
-`FunctionSummary/1` claims. Each claim retains its evidence class and all
-supporting effect IDs/source provenance; the output pins the source Effect IR
-hash. It adds no semantic role or store-to-load claim. Future natural-language
-rendering may only restate claims present in this object.
+`FunctionSummary/1` claims. With `/2` input it emits `FunctionSummary/2` and
+groups generic exact memory operations by kind while retaining every support
+id and source provenance. Both outputs pin the source Effect IR hash and add
+no semantic role or store-to-load claim. Future natural-language rendering may
+only restate claims present in these objects.
 
 ## M5.4 State-machine recovery
 

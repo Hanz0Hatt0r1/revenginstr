@@ -370,6 +370,7 @@ def test_benchmark_runs_function_effect_ir_stage(tmp_path: Path) -> None:
         "function_effect_ir": "function-effect-ir-v1.schema.json",
         "function_effect_ir_v2": "function-effect-ir-v2.schema.json",
         "function_summary": "function-summary-v1.schema.json",
+        "function_summary_v2": "function-summary-v2.schema.json",
     }
     for schema_id, filename in schema_files.items():
         schema_path = ROOT / "schemas" / filename
@@ -408,6 +409,11 @@ def test_benchmark_runs_function_effect_ir_stage(tmp_path: Path) -> None:
         "content": "jsonl", "format": "REVENGINSTR.FunctionSummary/1",
         "schema": "function_summary",
     }
+    manifest["artifacts"]["function_summaries_v2"] = {
+        "path": "function-summaries-v2.jsonl", "role": "output", "kind": "file",
+        "content": "jsonl", "format": "REVENGINSTR.FunctionSummary/2",
+        "schema": "function_summary_v2",
+    }
     manifest["artifacts"]["function_effects_v2"] = {
         "path": "function-effects-v2.jsonl", "role": "output", "kind": "file",
         "content": "jsonl", "format": "REVENGINSTR.FunctionEffectIR/2",
@@ -441,6 +447,12 @@ def test_benchmark_runs_function_effect_ir_stage(tmp_path: Path) -> None:
         "args": ["${artifact:function_effects}", "--output", "${artifact:function_summaries}"],
         "inputs": ["function_effects"], "outputs": ["function_summaries"],
         "depends_on": ["function_effect_ir"],
+    })
+    manifest["stages"].append({
+        "id": "structured_summary_v2", "tool": "structured-summary",
+        "args": ["${artifact:function_effects_v2}", "--output", "${artifact:function_summaries_v2}"],
+        "inputs": ["function_effects_v2"], "outputs": ["function_summaries_v2"],
+        "depends_on": ["function_effect_ir_v2"],
     })
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
@@ -479,6 +491,15 @@ def test_benchmark_runs_function_effect_ir_stage(tmp_path: Path) -> None:
     for record in function_summaries:
         Draft202012Validator(summary_schema).validate(record)
     assert len(function_summaries) == len(records)
+    function_summaries_v2 = [
+        json.loads(line)
+        for line in (tmp_path / "function-summaries-v2.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    summary_schema_v2 = json.loads((ROOT / "schemas/function-summary-v2.schema.json").read_text(encoding="utf-8"))
+    for record in function_summaries_v2:
+        Draft202012Validator(summary_schema_v2).validate(record)
+    assert len(function_summaries_v2) == len(v2_records)
+    assert any(claim["kind"] == "memory_read" for record in function_summaries_v2 for claim in record["claims"])
 
 
 def test_benchmark_runs_semantic_role_evaluation_stage(tmp_path: Path) -> None:
