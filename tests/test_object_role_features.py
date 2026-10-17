@@ -114,6 +114,40 @@ def test_object_role_feature_extractor_uses_all_generic_evidence_groups() -> Non
     assert by_entry["00401000"]["program_id"] == "sample:analysis"
 
 
+def test_object_role_features_use_v2_memory_kinds_without_operand_tokens(tmp_path: Path) -> None:
+    pcode_path = tmp_path / "pcode-v2.tsv"
+    pcode_path.write_bytes(
+        PCODE_FIXTURE.read_bytes()
+        + b"00401000\t00401028\t10\tSTORE\t-\tconst:ram:4;register:0010:4;const:0x1:4\t-\t-\n"
+    )
+    effects = build_function_effect_ir(
+        "sample:analysis", pcode_flow_tsv=pcode_path, include_generic_memory_ops=True
+    )
+    effect_bytes = "".join(json.dumps(row, sort_keys=True) + "\n" for row in effects).encode()
+
+    feature_rows, manifest = build_object_role_feature_set(
+        effects, effect_ir_sha256=hashlib.sha256(effect_bytes).hexdigest()
+    )
+
+    function_features = next(
+        row["features"] for row in feature_rows if row["function_entry"] == "00401000"
+    )
+    effect_hashes = {
+        feature["feature_sha256"] for feature in function_features if feature["group"] == "effect_ir"
+    }
+    expected = {
+        hashlib.sha256(f"effect_ir\0kind:{kind}".encode()).hexdigest()
+        for kind in ("memory_read", "memory_write")
+    }
+    assert expected <= effect_hashes
+    assert manifest["input_artifacts"]["function_effect_ir"]["sha256"] == hashlib.sha256(
+        effect_bytes
+    ).hexdigest()
+    serialized = json.dumps(feature_rows)
+    assert "register:0010:4" not in serialized
+    assert "const:ram:4" not in serialized
+
+
 def test_object_role_feature_extractor_rejects_unknown_receiver_status() -> None:
     receiver = receiver_rows()
     receiver[0]["status"] = "provisional"
