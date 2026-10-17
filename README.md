@@ -78,6 +78,7 @@ REVENGINSTR.DeterminismAudit/1
 REVENGINSTR.BenchmarkDelta/1
 REVENGINSTR.FunctionEffectIR/1
 REVENGINSTR.FunctionSummary/1
+REVENGINSTR.AnalysisFeedback/1
 ```
 
 JSON Schemas in `schemas/` define portable evidence, benchmark, determinism and
@@ -102,6 +103,8 @@ Compact whole-program instruction streams and their gzip-aware runner are
 documented in `docs/GHIDRA_COMPACT_INSTRUCTION_STREAM.md`.
 The parameter-to-field store TSV contract is documented in
 `docs/GHIDRA_PARAMETER_STORE_FIELD.md`.
+The consumer-owned reviewer feedback contract is documented in
+[`docs/ANALYSIS_FEEDBACK.md`](docs/ANALYSIS_FEEDBACK.md).
 The function-level evidence projection and compact structured summary are
 documented in [`docs/FUNCTION_EFFECT_IR.md`](docs/FUNCTION_EFFECT_IR.md) and
 [`docs/FUNCTION_SUMMARY.md`](docs/FUNCTION_SUMMARY.md).
