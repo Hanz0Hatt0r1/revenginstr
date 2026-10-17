@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/classifier-error-buckets-v1.schema.json",
+  "title": "REVENGINSTR.ClassifierErrorBuckets/1 report",
+  "description": "Aggregated confusion-pair errors from a family-disjoint classifier evaluation population.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "source", "error_rows", "error_rate", "accepted_error_rows", "error_buckets"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.ClassifierErrorBuckets/1"},
+    "source": {"$ref": "#/$defs/source"},
+    "error_rows": {"type": "integer", "minimum": 0},
+    "error_rate": {"type": "number", "minimum": 0, "maximum": 1},
+    "accepted_error_rows": {"type": "integer", "minimum": 0},
+    "error_buckets": {"type": "array", "items": {"$ref": "#/$defs/bucket"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evaluation_report_sha256", "evaluation_predictions_sha256", "evaluation_rows", "evaluation_families", "family_disjoint"],
+      "properties": {
+        "evaluation_report_sha256": {"$ref": "#/$defs/sha256"},
+        "evaluation_predictions_sha256": {"$ref": "#/$defs/sha256"},
+        "evaluation_rows": {"type": "integer", "minimum": 1},
+        "evaluation_families": {"type": "integer", "minimum": 1},
+        "family_disjoint": {"const": true}
+      }
+    },
+    "bucket": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["truth", "prediction", "error_count", "family_count", "accepted_error_count", "action_counts", "confidence"],
+      "properties": {
+        "truth": {"type": "string", "minLength": 1},
+        "prediction": {"type": "string", "minLength": 1},
+        "error_count": {"type": "integer", "minimum": 1},
+        "family_count": {"type": "integer", "minimum": 1},
+        "accepted_error_count": {"type": "integer", "minimum": 0},
+        "action_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["accept", "review", "escalate"],
+          "properties": {
+            "accept": {"type": "integer", "minimum": 0},
+            "review": {"type": "integer", "minimum": 0},
+            "escalate": {"type": "integer", "minimum": 0}
+          }
+        },
+        "confidence": {"$ref": "#/$defs/confidence"}
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "mean", "minimum", "maximum"],
+      "properties": {
+        "count": {"type": "integer", "minimum": 1},
+        "mean": {"type": "number", "minimum": 0, "maximum": 1},
+        "minimum": {"type": "number", "minimum": 0, "maximum": 1},
+        "maximum": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    }
+  }
+}

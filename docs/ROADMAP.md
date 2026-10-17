@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `11e0fa8eaf76ef201cb642346e4d9d637f8de0e2`
+**Repository baseline:** `main` through `244c03110571efe3661cd26fc092f6ae89a4a77e`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -417,10 +417,12 @@ and manifest, with both input hashes retained; it does not modify routing.
 `revenginstr-selective-threshold-evaluate` applies those OOF-selected thresholds
 to a separate family-disjoint evaluation population and records per-class
 reliability bins, Brier score, ECE, and held-out precision/coverage.
+`revenginstr-classifier-error-buckets` groups errors from that exact evaluation
+population by confusion pair and route action, retaining aggregate confidence
+and family counts without exporting row identities.
 
 ## Work
 
-- error buckets for major confusion pairs;
 - evidence ablations for P-code, callgraph, receiver, field, external-call and family features;
 - coarse Effect-IR features once M5 begins;
 - retained hard-negative sets;
