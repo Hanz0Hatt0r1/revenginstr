@@ -135,6 +135,22 @@ data dependence only; it does not classify the function as a getter or assert
 a runtime path or returned semantic role. Call outputs are treated as barriers,
 and an `INDIRECT` reference operand is not treated as the copied value.
 
+Exact caller-formal roots can be propagated backward across a supplied set of
+callee plans:
+
+```sh
+revenginstr-receiver-argument-propagate caller-argument-subtree.tsv \
+  caller-parameter-roots.tsv --target-entry 00401000 \
+  --target-parameter-index 0 --program-id 'consumer:analysis-id' \
+  --output argument-propagation.jsonl --max-depth 8 --max-edges 10000
+```
+
+The sidecar row must match an exact root in the subtree artifact. The builder
+walks only direct caller-formal to callee-formal flows and preserves both
+source rows on each edge. Depth/edge overflow fails; the output describes only
+the caller plans supplied to it and does not promote derived expressions,
+names, or guessed aliases into parameter roots.
+
 ## Minimal example
 
 ```json

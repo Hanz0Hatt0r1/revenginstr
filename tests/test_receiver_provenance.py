@@ -9,6 +9,7 @@ from jsonschema import Draft202012Validator, ValidationError
 from revenginstr.receiver.provenance import (
     FORMAT,
     CALLER_ARGUMENT_FORMAT,
+    CALLER_PARAMETER_ROOT_FORMAT,
     PARAMETER_LOAD_FORMAT,
     PARAMETER_STORE_FORMAT,
     RECEIVER_TYPE_FORMAT,
@@ -18,6 +19,7 @@ from revenginstr.receiver.provenance import (
     build_argument_store_graphs,
     build_field_access_pair_graphs,
     build_parameter_load_return_graphs,
+    build_recursive_argument_graph,
     build_caller_argument_graphs,
     build_parameter_store_graphs,
     build_receiver_graphs,
@@ -26,6 +28,7 @@ from revenginstr.receiver.provenance import (
     main,
     parameter_store_main,
     parameter_load_return_main,
+    recursive_argument_main,
     validate_graph_references,
 )
 
@@ -205,6 +208,136 @@ def caller_argument_row(**overrides: str) -> dict[str, str]:
     }
     row.update(overrides)
     return row
+
+
+def caller_parameter_root_row(**overrides: str) -> dict[str, str]:
+    row = {
+        "format": CALLER_PARAMETER_ROOT_FORMAT,
+        "plan_id": "plan:sample",
+        "callee_entry": "00401000",
+        "parameter_index": "0",
+        "caller_entry": "00402000",
+        "caller_call_site": "00402010",
+        "caller_parameter_index": "0",
+        "argument_node_id": "0",
+        "status": "direct_parameter_root",
+    }
+    row.update(overrides)
+    return row
+
+
+def test_recursive_argument_graph_follows_only_exact_formal_roots() -> None:
+    arguments = [
+        caller_argument_row(
+            plan_id="plan-inner", callee_entry="00401000", parameter_index="0",
+            caller_entry="00402000", caller_call_site="00402010",
+        ),
+        caller_argument_row(
+            plan_id="plan-outer", callee_entry="00402000", parameter_index="0",
+            caller_entry="00403000", caller_call_site="00403010",
+        ),
+        caller_argument_row(
+            plan_id="plan-unused", callee_entry="00409900", parameter_index="1",
+            caller_entry="00408800", caller_call_site="00408810",
+        ),
+    ]
+    roots = [
+        caller_parameter_root_row(
+            plan_id="plan-inner", caller_parameter_index="0",
+        ),
+        caller_parameter_root_row(
+            plan_id="plan-outer", callee_entry="00402000", caller_entry="00403000",
+            caller_call_site="00403010", caller_parameter_index="1",
+        ),
+        caller_parameter_root_row(
+            plan_id="plan-unused", callee_entry="00409900", parameter_index="1",
+            caller_entry="00408800", caller_call_site="00408810", caller_parameter_index="2",
+        ),
+    ]
+
+    graph = build_recursive_argument_graph(
+        arguments, roots, target_entry="00401000", target_parameter_index=0,
+        program_id="analysis:sample",
+    )
+
+    assert graph is not None
+    Draft202012Validator(json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))).validate(graph)
+    assert len(graph["nodes"]) == 3
+    assert len(graph["edges"]) == 2
+    assert {edge["relation"] for edge in graph["edges"]} == {"argument_flow"}
+    assert all(len(edge["provenance"]) == 2 for edge in graph["edges"])
+    assert {
+        item["source_format"]
+        for edge in graph["edges"]
+        for item in edge["provenance"]
+    } == {CALLER_ARGUMENT_FORMAT, CALLER_PARAMETER_ROOT_FORMAT}
+    with pytest.raises(ValueError, match="recursive argument depth exceeded"):
+        build_recursive_argument_graph(
+            arguments, roots, target_entry="00401000", target_parameter_index=0,
+            program_id="analysis:sample", max_depth=1,
+        )
+
+
+def test_recursive_argument_graph_handles_cycles_and_fails_on_known_truncation() -> None:
+    arguments = [
+        caller_argument_row(
+            plan_id="a-to-b", callee_entry="00401000", parameter_index="0",
+            caller_entry="00402000", caller_call_site="00402010",
+        ),
+        caller_argument_row(
+            plan_id="b-to-a", callee_entry="00402000", parameter_index="0",
+            caller_entry="00401000", caller_call_site="00401010",
+        ),
+    ]
+    roots = [
+        caller_parameter_root_row(
+            plan_id="a-to-b", caller_parameter_index="0",
+        ),
+        caller_parameter_root_row(
+            plan_id="b-to-a", callee_entry="00402000", caller_entry="00401000",
+            caller_call_site="00401010", caller_parameter_index="0",
+        ),
+    ]
+    graph = build_recursive_argument_graph(
+        arguments, roots, target_entry="00401000", target_parameter_index=0, program_id="p"
+    )
+    assert graph is not None and len(graph["edges"]) == 2
+
+
+def test_recursive_argument_graph_requires_sidecars_to_match_root_rows() -> None:
+    with pytest.raises(ValueError, match="no matching argument root"):
+        build_recursive_argument_graph(
+            [caller_argument_row()],
+            [caller_parameter_root_row(caller_call_site="0040ffff")],
+            target_entry="00401000", target_parameter_index=0, program_id="p",
+        )
+
+
+def test_recursive_argument_graph_caps_selected_edges() -> None:
+    arguments = [
+        caller_argument_row(
+            plan_id="caller-b", parameter_index="0", caller_entry="00402000",
+            caller_call_site="00402010",
+        ),
+        caller_argument_row(
+            plan_id="caller-c", parameter_index="0", caller_entry="00403000",
+            caller_call_site="00403010",
+        ),
+    ]
+    roots = [
+        caller_parameter_root_row(
+            plan_id="caller-b", caller_entry="00402000", caller_call_site="00402010"
+        ),
+        caller_parameter_root_row(
+            plan_id="caller-c", caller_entry="00403000", caller_call_site="00403010"
+        ),
+    ]
+
+    with pytest.raises(ValueError, match="recursive argument edge budget exceeded"):
+        build_recursive_argument_graph(
+            arguments, roots, target_entry="00401000", target_parameter_index=0,
+            program_id="p", max_edges=1,
+        )
 
 
 def test_builder_projects_bounded_root_to_formal_parameter() -> None:

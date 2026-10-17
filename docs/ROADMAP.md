@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `88f780190544def2c745ded272e45e7eae757b12`
+**Repository baseline:** `main` through `0236b1816e72c9c2e8db47e3c20c216ada151baa`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -361,15 +361,14 @@ receiver types are fallback joins.
 
 ### M2.3 Bounded interprocedural propagation
 
-**Bounded caller-argument, field-store, and field-load anchors implemented:** `revenginstr-receiver-argument-flow` projects bounded subtree roots into actual-argument-to-formal-parameter edges and captures generic call-result producers when explicit in P-code; `revenginstr-receiver-store-flow` projects parameter-to-field-store evidence into destination and stored-value edges. `revenginstr-receiver-argument-store-flow` and `revenginstr-receiver-argument-load-flow` join those artifacts by exact function/parameter keys with provenance from both inputs. `revenginstr-receiver-field-access-pairs` groups same-function stores and loads only when formal parameter and numeric field offset match. `revenginstr-receiver-load-return-flow` traces parameter-rooted loads through P-code def-use chains to `RETURN` operations without assigning getter semantics. The caller-argument exporter can optionally emit direct caller-formal roots to seed recursive propagation. Builders have configurable graph caps; transitive propagation and store-to-load value-flow checks remain open.
+**Bounded caller-argument, field-store, and field-load anchors implemented:** `revenginstr-receiver-argument-flow` projects bounded subtree roots into actual-argument-to-formal-parameter edges and captures generic call-result producers when explicit in P-code; `revenginstr-receiver-store-flow` projects parameter-to-field-store evidence into destination and stored-value edges. `revenginstr-receiver-argument-store-flow` and `revenginstr-receiver-argument-load-flow` join those artifacts by exact function/parameter keys with provenance from both inputs. `revenginstr-receiver-field-access-pairs` groups same-function stores and loads only when formal parameter and numeric field offset match. `revenginstr-receiver-load-return-flow` traces parameter-rooted loads through P-code def-use chains to `RETURN` operations without assigning getter semantics. The caller-argument exporter can optionally emit direct caller-formal roots; `revenginstr-receiver-argument-propagate` walks those exact links backward under depth and edge caps. Store-to-load value-flow checks remain open.
 
 Remaining propagation work:
 
-1. recursive caller-argument propagation over exact caller-formal roots;
-2. factory returns;
-3. consumer-validated getter/accessor hypotheses from load-to-return evidence;
-4. establish instruction order and reaching-definition/path compatibility before treating paired field stores and loads as value flow;
-5. constructor/vtable anchors.
+1. factory returns;
+2. consumer-validated getter/accessor hypotheses from load-to-return evidence;
+3. establish instruction order and reaching-definition/path compatibility before treating paired field stores and loads as value flow;
+4. constructor/vtable anchors.
 
 ### M2.4 Ambiguity handling
 
