@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/analysis-task-cache-entry-v1.schema.json",
+  "title": "REVENGINSTR.AnalysisTaskCacheEntry/1 manifest",
+  "description": "Caller-managed cache manifest binding one task cache key to its output object hashes and byte sizes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "task_id", "cache_key_sha256", "artifacts"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.AnalysisTaskCacheEntry/1"},
+    "task_id": {"$ref": "#/$defs/identifier"},
+    "cache_key_sha256": {"$ref": "#/$defs/sha256"},
+    "artifacts": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/artifact"}
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "sha256", "size_bytes"],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/identifier"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

@@ -1,8 +1,8 @@
 # Analysis task cache keys
 
 `revenginstr-analysis-task-cache-keys` computes deterministic, content-addressed
-keys for every task in an `AnalysisTaskGraph/1`. It does not execute tasks,
-inspect a cache, or claim that any artifact can be reused.
+keys for every task in an `AnalysisTaskGraph/1`. It does not execute tasks or
+claim that any artifact can be reused.
 
 The companion `AnalysisTaskCacheInputs/1` file must provide the SHA-256 for
 every source artifact and an implementation SHA-256 for every task. Produced
@@ -32,11 +32,35 @@ Each key binds the task ID and kind, output artifact IDs, configuration hash,
 implementation hash, exact source input hashes, and parent task keys. A
 changed source/configuration/implementation hash changes its task key and the
 keys of downstream tasks; unrelated branches retain their keys. The report
-maps each task ID to its key and output artifacts so a consumer can compare it
-with its own cache manifest.
+maps each task ID to its key and output artifacts. A caller-managed cache can
+use those keys to name one manifest per task and content-addressed objects by
+SHA-256:
+
+    cache-root/
+      entries/<cache_key_sha256>.json
+      objects/<sha256>
+
+Each `AnalysisTaskCacheEntry/1` manifest binds a task ID and cache key to the
+exact declared output IDs, each object's SHA-256 and byte size. Artifacts in a
+manifest are sorted by ID. The consumer writes and maintains this layout.
+
+Run a read-only lookup for a task:
+
+    revenginstr-analysis-task-cache-lookup task-cache-key-set.json cache-root \
+      --task-id pcode --output cache-lookup.json
+
+`AnalysisTaskCacheLookup/1` reports a hit only when the manifest matches the
+selected task and all declared objects have the expected byte size and SHA-256.
+An absent cache root, entries directory, or task manifest is a miss. Malformed
+manifests, mismatched output IDs, symlinked cache paths, and absent or corrupt
+objects fail closed. A hit only verifies bytes: the caller must still validate
+output schemas and decide whether to use the artifacts. Lookup never restores
+files or executes analysis tasks. The cache is caller-managed and this interface
+does not authenticate a cache against a malicious writer.
 
 Keys are only stable when callers pin every input that affects execution,
 including tool/runtime versions and environment-dependent configuration.
-Consumers remain responsible for validating cached output bytes and schemas on
-restore. Persistent cache lookup, artifact restoration, and task execution are
+Consumers remain responsible for validating cached output schemas and deciding
+whether to restore verified artifacts. Artifact restoration, task execution,
+cache eviction, cost-aware scheduling, and end-to-end consumer convergence are
 outside this interface.

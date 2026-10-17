@@ -815,11 +815,12 @@ and explicit dependencies. `revenginstr-analysis-invalidation-plan` validates
 producer joins and acyclicity, returns deterministic topological order, and
 reports downstream invalidations with direct or dependency causes. It only
 plans; it does not execute analyzers or select evidence requests.
-`revenginstr-analysis-task-cache-keys` now computes a content-addressed key per
+`revenginstr-analysis-task-cache-keys` computes a content-addressed key per
 task from source artifact hashes, task configuration, implementation hash,
-and dependency keys. It does not execute tasks or restore outputs; persistent
-cache lookup/restoration, cost-aware scheduling, and end-to-end consumer
-convergence remain open.
+and dependency keys. `revenginstr-analysis-task-cache-lookup` verifies a
+caller-managed manifest and content-addressed output bytes without restoring or
+executing them. Artifact restoration, cost-aware scheduling, and end-to-end
+consumer convergence remain open.
 
 ### M6.2 Evidence request planner
 

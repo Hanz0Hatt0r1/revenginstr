@@ -86,6 +86,15 @@ def test_cache_key_set_is_deterministic_and_schema_valid() -> None:
     assert build() == report
 
 
+def test_refactored_key_hash_preserves_existing_cache_identity() -> None:
+    assert key_by_task(build()) == {
+        "pcode": "b5198f7cd13f316b6ba19e16005280a9b6880505cbf727f130c07e2253d584c6",
+        "callgraph": "5d86d252fe73671a2e09b5609033cbe10797a115d1fd2fd83744f8efe0b724be",
+        "symbols": "eaed43af5103a72cf05bb7c8bd98c96d0c4e9db1e4c67dfdb8e9ec85773a892b",
+        "summary": "02c02bc9671c0d1e380cabaffe16b3ec6901aafe15916667a2f8938933ffb1cb",
+    }
+
+
 def test_source_config_implementation_and_dependency_changes_change_keys() -> None:
     baseline = key_by_task(build())
 
