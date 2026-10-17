@@ -280,11 +280,14 @@ Every migrated exporter gets a legal synthetic or minimal fixture so parity can 
 Function/Bounded P-code TSV row, and decoded payloads for all five Program
 Index tables and ARM32 Itanium vtable slots. Tests run P-code records through
 audit/schema validation and check exact TSV headers, column ordering, and rows
-against their v1 schemas. `revenginstr-export-parity` now compares two UTF-8
-TSV outputs in row order and emits hashes/counts plus the first mismatch
-without retaining record values. Consumer-owned same-program parity runs
-remain necessary before retiring existing fallbacks. The work remains open
-for fixtures accompanying later exporter migrations.
+against their v1 schemas. `revenginstr-export-parity` compares two UTF-8 TSV
+outputs in row order and emits hashes/counts plus the first mismatch without
+retaining record values. Nevergone now records byte-identical bounded forward
+and reverse outputs from the same analyzed program under equivalent priority
+rules; the [report and invocation details](https://github.com/Hanz0Hatt0r1/nevergone-recomp/blob/main/docs/evidence/ghidra-export-parity.md)
+stay in that consumer. Expand parity coverage across more roots and bounds
+before retiring the local fallbacks. The work remains open for fixtures
+accompanying later exporter migrations.
 
 ### M1.4 Consumer boundary
 
