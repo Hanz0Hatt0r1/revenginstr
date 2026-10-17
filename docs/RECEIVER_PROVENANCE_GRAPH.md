@@ -21,9 +21,9 @@ checks graph-local id uniqueness and rejects dangling endpoints.
 
 The graph is descriptive evidence only. It does not resolve receiver classes,
 infer dispatch slots, transfer call targets, or affect routing. Builders
-project typed receiver-call anchors and bounded argument/store relationships.
-P-code load joins and recursive interprocedural propagation remain follow-up
-work.
+project typed receiver-call anchors and bounded argument/load/store
+relationships. Recursive interprocedural propagation and field store/load
+joins remain follow-up work.
 
 The initial `revenginstr-receiver-graph` command projects
 `GhidraIndirectReceiverType/1` rows into call-anchor graphs. It emits a graph
@@ -88,6 +88,21 @@ revenginstr-receiver-argument-store-flow caller-argument-subtree.tsv \
 Each output graph preserves the actual-argument-to-formal edge and attaches
 the matched formal to a field-store node as destination, stored value, or both.
 The field offset remains in the source artifact referenced by provenance.
+
+Caller roots can also be joined to parameter-rooted loads:
+
+```sh
+revenginstr-receiver-argument-load-flow caller-argument-subtree.tsv \
+  parameter-loads.tsv --program-id 'consumer:analysis-id' \
+  --output argument-load-flow.jsonl --max-graphs 10000
+```
+
+This exact join uses only callee/function entry and formal parameter index.
+Each graph records the caller argument, matched formal, and a field-load event
+with provenance from both input artifacts. The load offset and result token
+remain in the referenced load row. This describes a read through the passed
+parameter; it does not establish that a separately observed store reaches the
+same object or field.
 
 ## Minimal example
 
