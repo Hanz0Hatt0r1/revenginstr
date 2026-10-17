@@ -94,9 +94,24 @@ extends the frozen consumer replay to thirteen functions and 33 pairs. It has
 two complete write-free calls on each of two witnesses, with indirect calls
 still present on both paths; neither pair is promoted. NFS PR
 [#2029](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2029)
-records a further screen of 22 functions with no parameter-rooted stores and
-no field pairs. Labels, addresses, raw rows, and measured outcomes stay in
-their consumer repository.
+records a screen of 22 functions with zero `ParameterStoreField/1` rows and
+zero field pairs; its general STORE sidecar contains 156 facts, 53 with a
+parameter root. PR [#2030](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2030)
+adds scan15: 62 functions, zero parameter field-store rows, 238 parameter loads,
+and 302 general STORE facts. PR [#2031](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2031)
+adds scan16: 70 functions, 18 parameter field-store rows, and five exact pairs
+across three functions. Its `/3` audit reports three possible intervening
+effects and two stores that do not dominate the load. PR [#2032](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2032)
+freezes the matching `/2` audit; all five statuses match `/3`, with zero
+status changes or unique candidates. NFS PR
+[#2033](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2033)
+freezes scan17 over 49 functions with exactly two indirect calls: 17
+parameter-field stores form 72 exact pairs across 15 roots. All 72 `/2` and
+`/3` statuses match (70 stores do not dominate the load; two possible
+intervening effects), with no unique candidate. Its call sidecar has 73
+explicit-write sites, 30 indirect-call barriers, and no complete write-free
+direct callee. Labels, addresses, raw rows, and measured outcomes stay in the
+consumer repository.
 
 `FieldStoreLoadDominanceAudit/1` is not extended in place. With no sidecars the
 command preserves `/1`; supplying only access facts selects `/2`; supplying
