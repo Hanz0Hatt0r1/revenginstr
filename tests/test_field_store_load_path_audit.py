@@ -21,6 +21,7 @@ CFG_FIXTURE = ROOT / "tests/fixtures/function-pcode-cfg/synthetic.jsonl"
 CFG_SCHEMA = json.loads((ROOT / "schemas/ghidra-function-pcode-cfg-v1.schema.json").read_text(encoding="utf-8"))
 AUDIT_SCHEMA = json.loads((ROOT / "schemas/field-store-load-path-audit-v1.schema.json").read_text(encoding="utf-8"))
 CFG_V2_SCHEMA = json.loads((ROOT / "schemas/ghidra-function-pcode-cfg-v2.schema.json").read_text(encoding="utf-8"))
+CFG_V3_SCHEMA = json.loads((ROOT / "schemas/ghidra-function-pcode-cfg-v3.schema.json").read_text(encoding="utf-8"))
 DOMINANCE_SCHEMA = json.loads((ROOT / "schemas/field-store-load-dominance-audit-v1.schema.json").read_text(encoding="utf-8"))
 
 
@@ -97,6 +98,37 @@ def _cfg_v2_row(
         "entry_block_index": 0,
         "blocks": blocks,
     }
+
+
+def _cfg_v3_row(
+    *,
+    intervening_store: bool = False,
+    intervening_store_space: str | None = "register",
+    intervening_physical_space: str | None = "register-physical",
+    tracked_physical_space: str | None = "ram-physical",
+):
+    cfg = _cfg_v2_row(
+        intervening_store=intervening_store,
+        intervening_store_space=intervening_store_space,
+    )
+    cfg["format"] = "REVENGINSTR.GhidraFunctionPcodeCFG/3"
+    for block in cfg["blocks"]:
+        for operation in block["operations"]:
+            if operation["opcode"] in {"LOAD", "STORE"}:
+                operation["memory_physical_space"] = (
+                    tracked_physical_space
+                    if operation["address"] in {"00401020", "00401030"}
+                    else intervening_physical_space
+                    if intervening_store and operation["address"] == "00401024"
+                    else "ram-physical" if operation["memory_space"] == "ram"
+                    else "register-physical" if operation["memory_space"] == "register"
+                    else None
+                )
+                operation["memory_pointer_width_bytes"] = 4
+            else:
+                operation["memory_physical_space"] = None
+                operation["memory_pointer_width_bytes"] = None
+    return cfg
 
 
 def test_cfg_fixture_and_candidate_path_preserve_both_input_provenances() -> None:
@@ -260,6 +292,54 @@ def test_dominance_audit_filters_only_known_disjoint_address_spaces(
     )
     assert row["status"] == expected_status
     assert row["memory_effect_path_exists"] is (expected_status != "unique_cfg_store_candidate")
+
+
+@pytest.mark.parametrize(
+    ("physical_space", "expected_status"),
+    [
+        ("register-physical", "unique_cfg_store_candidate"),
+        ("ram-physical", "possible_intervening_memory_effect"),
+        (None, "possible_intervening_memory_effect"),
+    ],
+)
+def test_cfg_v3_filters_only_known_different_physical_spaces(
+    physical_space: str | None, expected_status: str,
+) -> None:
+    cfg = _cfg_v3_row(
+        intervening_store=True,
+        intervening_store_space="register",
+        intervening_physical_space=physical_space,
+    )
+    Draft202012Validator.check_schema(CFG_V3_SCHEMA)
+    Draft202012Validator(CFG_V3_SCHEMA).validate(cfg)
+    [row] = audit_field_store_load_dominance(
+        _pair_graphs(), [cfg], pair_graph_sha256="a" * 64, cfg_sha256="b" * 64,
+    )
+    assert row["status"] == expected_status
+    assert row["memory_effect_path_exists"] is (expected_status != "unique_cfg_store_candidate")
+
+
+def test_cfg_v3_unknown_tracked_physical_space_keeps_store_as_effect() -> None:
+    cfg = _cfg_v3_row(
+        intervening_store=True,
+        intervening_store_space="register",
+        intervening_physical_space="register-physical",
+        tracked_physical_space=None,
+    )
+    [row] = audit_field_store_load_dominance(
+        _pair_graphs(), [cfg], pair_graph_sha256="a" * 64, cfg_sha256="b" * 64,
+    )
+    assert row["status"] == "possible_intervening_memory_effect"
+    assert row["memory_effect_path_exists"] is True
+
+
+def test_cfg_v3_rejects_inconsistent_metadata_for_one_logical_space() -> None:
+    cfg = _cfg_v3_row()
+    cfg["blocks"][3]["operations"][0]["memory_physical_space"] = "other-physical"
+    with pytest.raises(ValueError, match="inconsistent metadata for logical space"):
+        audit_field_store_load_dominance(
+            _pair_graphs(), [cfg], pair_graph_sha256="a" * 64, cfg_sha256="b" * 64,
+        )
 
 
 def test_cfg_audit_cli_and_benchmark_stage(tmp_path: Path) -> None:

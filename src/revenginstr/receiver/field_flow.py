@@ -15,6 +15,7 @@ from .provenance import PARAMETER_LOAD_FORMAT, PARAMETER_STORE_FORMAT, validate_
 FORMAT = "REVENGINSTR.FieldStoreLoadPathAudit/1"
 CFG_FORMAT = "REVENGINSTR.GhidraFunctionPcodeCFG/1"
 CFG_FORMAT_V2 = "REVENGINSTR.GhidraFunctionPcodeCFG/2"
+CFG_FORMAT_V3 = "REVENGINSTR.GhidraFunctionPcodeCFG/3"
 REACHING_FORMAT = "REVENGINSTR.FieldStoreLoadDominanceAudit/1"
 HAZARD_OPCODES = {"STORE", "CALL", "CALLIND", "CALLOTHER"}
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -140,15 +141,16 @@ def _index_cfg(
     for record_index, record in enumerate(records, 1):
         where = f"P-code CFG record {record_index}"
         cfg_format = record.get("format") if isinstance(record, dict) else None
-        v2 = cfg_format == CFG_FORMAT_V2
+        has_memory_metadata = cfg_format in {CFG_FORMAT_V2, CFG_FORMAT_V3}
+        v3 = cfg_format == CFG_FORMAT_V3
         expected_record_fields = (
             {"format", "program_id", "function_entry", "entry_block_index", "blocks"}
-            if v2 else {"format", "program_id", "function_entry", "blocks"}
+            if has_memory_metadata else {"format", "program_id", "function_entry", "blocks"}
         )
         if (
             not isinstance(record, dict)
             or set(record) != expected_record_fields
-            or cfg_format not in {CFG_FORMAT, CFG_FORMAT_V2}
+            or cfg_format not in {CFG_FORMAT, CFG_FORMAT_V2, CFG_FORMAT_V3}
             or not isinstance(record.get("program_id"), str)
             or not record["program_id"]
             or not isinstance(record.get("function_entry"), str)
@@ -160,10 +162,11 @@ def _index_cfg(
         identity_key = (record["program_id"], function_entry)
         if identity_key in indexed:
             raise ValueError(f"{where}: duplicate program/function identity")
-        entry_block_index = _int(record["entry_block_index"], f"{where} entry block") if v2 else None
+        entry_block_index = _int(record["entry_block_index"], f"{where} entry block") if has_memory_metadata else None
         blocks: dict[int, dict[str, Any]] = {}
         operations: dict[tuple[str, int], tuple[int, int, str]] = {}
         operation_details: dict[tuple[str, int], dict[str, Any]] = {}
+        address_space_metadata: dict[str, tuple[str | None, int | None]] = {}
         for block in record["blocks"]:
             if (
                 not isinstance(block, dict)
@@ -180,8 +183,10 @@ def _index_cfg(
             block_operations = []
             for position, operation in enumerate(block["operations"]):
                 expected_operation_fields = (
-                    {"address", "time", "opcode", "memory_space", "memory_width_bytes"}
-                    if v2 else {"address", "time", "opcode"}
+                    {"address", "time", "opcode", "memory_space", "memory_width_bytes",
+                     "memory_physical_space", "memory_pointer_width_bytes"}
+                    if v3 else {"address", "time", "opcode", "memory_space", "memory_width_bytes"}
+                    if has_memory_metadata else {"address", "time", "opcode"}
                 )
                 if not isinstance(operation, dict) or set(operation) != expected_operation_fields:
                     raise ValueError(f"{where}: malformed operation")
@@ -190,14 +195,36 @@ def _index_cfg(
                 operation_time = _int(operation["time"], f"{where} operation time")
                 if not isinstance(operation["opcode"], str) or not operation["opcode"]:
                     raise ValueError(f"{where}: invalid opcode")
-                if v2:
+                if has_memory_metadata:
                     memory_space = operation["memory_space"]
                     memory_width = operation["memory_width_bytes"]
                     if memory_space is not None and (not isinstance(memory_space, str) or not memory_space):
                         raise ValueError(f"{where}: invalid memory space")
                     if memory_width is not None and _int(memory_width, f"{where} memory width") == 0:
                         raise ValueError(f"{where}: memory width must be positive")
-                    if operation["opcode"] not in {"LOAD", "STORE"} and (memory_space is not None or memory_width is not None):
+                    memory_metadata = [memory_space, memory_width]
+                    if v3:
+                        physical_space = operation["memory_physical_space"]
+                        pointer_width = operation["memory_pointer_width_bytes"]
+                        if physical_space is not None and (not isinstance(physical_space, str) or not physical_space):
+                            raise ValueError(f"{where}: invalid physical memory space")
+                        if pointer_width is not None and _int(pointer_width, f"{where} memory pointer width") == 0:
+                            raise ValueError(f"{where}: memory pointer width must be positive")
+                        if memory_space is None and (physical_space is not None or pointer_width is not None):
+                            raise ValueError(f"{where}: physical memory metadata lacks a logical space")
+                        if memory_space is not None:
+                            previous = address_space_metadata.get(memory_space)
+                            if previous is not None and any(
+                                old is not None and new is not None and old != new
+                                for old, new in zip(previous, (physical_space, pointer_width))
+                            ):
+                                raise ValueError(f"{where}: inconsistent metadata for logical space {memory_space!r}")
+                            address_space_metadata[memory_space] = (
+                                physical_space if physical_space is not None else (None if previous is None else previous[0]),
+                                pointer_width if pointer_width is not None else (None if previous is None else previous[1]),
+                            )
+                        memory_metadata.extend([physical_space, pointer_width])
+                    if operation["opcode"] not in {"LOAD", "STORE"} and any(value is not None for value in memory_metadata):
                         raise ValueError(f"{where}: non-memory operation has memory metadata")
                 key = (operation["address"], operation_time)
                 if key in operations:
@@ -216,7 +243,7 @@ def _index_cfg(
         for block_index, block in blocks.items():
             if any(successor not in blocks for successor in block["successors"]):
                 raise ValueError(f"{where} block {block_index}: dangling successor")
-        if v2 and (entry_block_index not in blocks or blocks[entry_block_index]["start_address"] != function_entry):
+        if has_memory_metadata and (entry_block_index not in blocks or blocks[entry_block_index]["start_address"] != function_entry):
             raise ValueError(f"{where}: entry block does not start at the function entry")
         indexed[identity_key] = (record_index, {
             "format": cfg_format,
@@ -437,10 +464,16 @@ def _route_blocks(
     return result
 
 
-def _may_write_tracked_space(operation: dict[str, Any], tracked_space: str) -> bool:
+def _may_write_tracked_space(
+    operation: dict[str, Any], tracked_space: str, *,
+    tracked_physical_space: str | None = None, physical_space_aware: bool = False,
+) -> bool:
     """Keep possible effects in the tracked P-code space or with unknown space."""
     opcode = operation["opcode"]
     if opcode == "STORE":
+        if physical_space_aware:
+            write_space = operation.get("memory_physical_space")
+            return not write_space or not tracked_physical_space or write_space == tracked_physical_space
         write_space = operation.get("memory_space")
         return not write_space or write_space == tracked_space
     return opcode not in _CFG_NON_MEMORY_OPCODES
@@ -454,6 +487,8 @@ def _find_routes(
     stop_at: tuple[int, int] | None = None,
     classify_effects: bool = False,
     tracked_memory_space: str | None = None,
+    tracked_physical_space: str | None = None,
+    physical_space_aware: bool = False,
     max_expansions: int,
 ) -> tuple[list[int] | None, list[int] | None, int]:
     """Find one clean and, optionally, one effect-bearing CFG witness."""
@@ -489,7 +524,11 @@ def _find_routes(
             if classify_effects:
                 next_effect = next_effect or (
                     True if tracked_memory_space is None
-                    else _may_write_tracked_space(operation, tracked_memory_space)
+                    else _may_write_tracked_space(
+                        operation, tracked_memory_space,
+                        tracked_physical_space=tracked_physical_space,
+                        physical_space_aware=physical_space_aware,
+                    )
                 )
             next_states = [(block_index, position + 1, bool(next_effect))]
         else:
@@ -566,7 +605,7 @@ def audit_field_store_load_dominance(
         effect_after_store = None
         store_reachable = None
         store_dominates = None
-        if cfg["format"] != CFG_FORMAT_V2 or store_location is None or load_location is None:
+        if cfg["format"] not in {CFG_FORMAT_V2, CFG_FORMAT_V3} or store_location is None or load_location is None:
             status = "incomplete_evidence"
         elif any(value is None for value in (store_memory_space, load_memory_space, store_width, load_width)):
             status = "incomplete_evidence"
@@ -593,6 +632,10 @@ def audit_field_store_load_dominance(
                 clean_after_store, effect_after_store, used = _find_routes(
                     cfg, (store_location[0], store_location[1] + 1), load_location[:2],
                     classify_effects=True, tracked_memory_space=store_memory_space,
+                    tracked_physical_space=(
+                        store_detail.get("memory_physical_space") if cfg["format"] == CFG_FORMAT_V3 else None
+                    ),
+                    physical_space_aware=cfg["format"] == CFG_FORMAT_V3,
                     max_expansions=budget,
                 )
                 path_expansions += used

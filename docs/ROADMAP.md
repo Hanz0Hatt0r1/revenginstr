@@ -388,13 +388,15 @@ receiver types are fallback joins.
 
 **Conservative all-path store-dominance audit implemented:** opt-in
 `GhidraFunctionPcodeCFG/2` records the explicit entry block and nullable
-`LOAD`/`STORE` address-space and width fields. The new
+`LOAD`/`STORE` logical-space and access-width fields; CFG/3 additionally records
+physical-space identity and pointer width. The new
 `revenginstr-receiver-field-store-load-dominance-audit` requires an exact
 program/function pair, a reachable store that dominates the load, matching
 space/width, and no possible-effect path between them. Same-space and
 unknown-space stores, call-like operations, and unclassified opcodes remain
-possible effects; a store in a known different P-code address space does not
-modify the tracked address space in this structural model. The output says
+possible effects. CFG/2 filters stores only by known different logical P-code
+space; CFG/3 requires a known different physical space, so unknown physical
+identity remains an effect. The output says
 `unique_cfg_store_candidate`; it does not compare pointer bases, offsets, or
 access-range overlap, model branch feasibility, or assert runtime value flow. The prior
 Nevergone evidence demonstrates why this distinction matters: both pairs have
