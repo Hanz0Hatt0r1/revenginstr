@@ -21,6 +21,9 @@ continue reading the metadata-only TSV without adding a format column.
 The synthetic row in `tests/fixtures/ghidra-function-pcode-flow.tsv` is shared by
 the single-function and bounded exporters and is validated against the row
 schema.
+`tests/fixtures/receiver-flow-pcode.tsv` adds legal synthetic LOAD/COPY/RETURN
+and CALL/COPY/RETURN sequences used by the receiver load-return and call-return
+dataflow tests; all six operation rows are validated against the same schema.
 
 Run the exporter against an already analyzed project:
 

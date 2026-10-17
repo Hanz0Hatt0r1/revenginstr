@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 from pathlib import Path
 
@@ -37,6 +38,15 @@ from revenginstr.receiver.provenance import (
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "schemas" / "receiver-provenance-graph-v1.schema.json"
+
+
+def pcode_flow_fixture(function_entry: str) -> list[dict[str, str]]:
+    path = ROOT / "tests/fixtures/receiver-flow-pcode.tsv"
+    with path.open(encoding="utf-8", newline="") as handle:
+        return [
+            row for row in csv.DictReader(handle, delimiter="\t")
+            if row["function_entry"] == function_entry
+        ]
 
 
 @pytest.fixture
@@ -638,17 +648,7 @@ def test_parameter_load_return_flow_traces_exact_pcode_def_use_path() -> None:
     loads = [parameter_load_row(
         load_address="00401020", load_time="7", value_token="def:LOAD@00401020:7:4"
     )]
-    pcode = [
-        pcode_flow_row(),
-        pcode_flow_row(
-            op_address="00401024", op_time="8", opcode="COPY",
-            output="def:00401024:8:4", inputs="def:00401020:7:4",
-        ),
-        pcode_flow_row(
-            op_address="00401030", op_time="9", opcode="RETURN",
-            output="-", inputs="const:0x0:8;def:00401024:8:4",
-        ),
-    ]
+    pcode = pcode_flow_fixture("00401000")
 
     graphs = build_parameter_load_return_graphs(loads, pcode, program_id="analysis:sample")
 
@@ -732,20 +732,7 @@ def test_parameter_load_return_flow_caps_multiple_return_graphs() -> None:
 
 
 def test_call_return_flow_traces_explicit_call_result_to_return() -> None:
-    pcode = [
-        pcode_flow_row(
-            opcode="CALL", output="def:00401020:7:4", inputs="const:0x401100:4",
-            callee_entry="00401100", callee_name="FUN_00401100",
-        ),
-        pcode_flow_row(
-            op_address="00401024", op_time="8", opcode="COPY",
-            output="def:00401024:8:4", inputs="def:00401020:7:4",
-        ),
-        pcode_flow_row(
-            op_address="00401030", op_time="9", opcode="RETURN",
-            output="-", inputs="const:0x0:8;def:00401024:8:4",
-        ),
-    ]
+    pcode = pcode_flow_fixture("00402000")
 
     graphs = build_call_return_graphs(pcode, program_id="analysis:sample")
 
