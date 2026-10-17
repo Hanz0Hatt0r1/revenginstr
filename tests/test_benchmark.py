@@ -620,6 +620,62 @@ def test_benchmark_runs_analysis_invalidation_plan_stage(tmp_path: Path) -> None
     assert [row["task_id"] for row in report["invalidated_tasks"]] == ["export_pcode", "classify"]
 
 
+def test_benchmark_runs_evidence_request_plan_stage(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    candidates = {
+        "format": "REVENGINSTR.EvidenceRequestCandidates/1",
+        "candidates": [{
+            "request_id": "request-1", "subject_id": "subject-1", "subject_kind": "function",
+            "action_type": "function_slice", "bounds": {"max_items": 30}, "cost_units": 2,
+            "expected_uncertainty_reduction": 0.6, "downstream_leverage": 2.0,
+            "rationale_codes": ["missing_receiver_provenance"], "approval_status": "approved",
+            "approval_sha256": "a" * 64,
+        }],
+    }
+    candidates_path = tmp_path / "evidence-requests.json"
+    candidates_path.write_text(json.dumps(candidates), encoding="utf-8")
+    candidates_schema_path = ROOT / "schemas" / "evidence-request-candidates-v1.schema.json"
+    plan_schema_path = ROOT / "schemas" / "evidence-request-plan-v1.schema.json"
+    manifest["schemas"].update({
+        "evidence_candidates": {
+            "path": str(candidates_schema_path), "version": "REVENGINSTR.EvidenceRequestCandidates/1",
+            "sha256": _sha256(candidates_schema_path),
+        },
+        "evidence_plan": {
+            "path": str(plan_schema_path), "version": "REVENGINSTR.EvidenceRequestPlan/1",
+            "sha256": _sha256(plan_schema_path),
+        },
+    })
+    manifest["artifacts"].update({
+        "evidence_candidates": {
+            "path": str(candidates_path), "role": "input", "kind": "file", "content": "json",
+            "format": "REVENGINSTR.EvidenceRequestCandidates/1", "sha256": _sha256(candidates_path),
+            "schema": "evidence_candidates",
+        },
+        "evidence_plan": {
+            "path": "evidence-plan.json", "role": "output", "kind": "file", "content": "json",
+            "format": "REVENGINSTR.EvidenceRequestPlan/1", "schema": "evidence_plan",
+        },
+    })
+    manifest["stages"].append({
+        "id": "evidence_request_plan", "tool": "evidence-request-plan",
+        "args": [
+            "${artifact:evidence_candidates}", "--budget-units", "2", "--output", "${artifact:evidence_plan}"
+        ],
+        "inputs": ["evidence_candidates"], "outputs": ["evidence_plan"],
+    })
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    summary, code = run_benchmark(manifest_path, mode="smoke", output_path=tmp_path / "summary.json")
+    assert code == 0
+    assert summary["status"] == "passed"
+    assert summary["stages"][-1]["tool"] == "evidence-request-plan"
+    report = json.loads((tmp_path / "evidence-plan.json").read_text(encoding="utf-8"))
+    Draft202012Validator(json.loads(plan_schema_path.read_text(encoding="utf-8"))).validate(report)
+    assert report["selected_requests"][0]["request_id"] == "request-1"
+
+
 def test_benchmark_runs_call_return_flow_stage(tmp_path: Path) -> None:
     manifest_path = _write_manifest(tmp_path)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
