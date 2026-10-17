@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/analysis-task-cache-restore-v1.schema.json",
+  "title": "REVENGINSTR.AnalysisTaskCacheRestore/1 report",
+  "description": "Result of restoring verified cached output bytes to explicit caller-selected paths without executing analysis.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "task_id", "cache_key_sha256", "status", "reason", "restored_artifacts"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.AnalysisTaskCacheRestore/1"},
+    "task_id": {"$ref": "#/$defs/identifier"},
+    "cache_key_sha256": {"$ref": "#/$defs/sha256"},
+    "status": {"enum": ["hit", "miss"]},
+    "reason": {"enum": [null, "entry_missing"]},
+    "restored_artifacts": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/artifact"}
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "hit"}}, "required": ["status"]},
+      "then": {"properties": {"reason": {"type": "null"}}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "miss"}}, "required": ["status"]},
+      "then": {
+        "properties": {"reason": {"const": "entry_missing"}, "restored_artifacts": {"maxItems": 0}}
+      }
+    }
+  ],
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "relative_path", "sha256", "size_bytes", "status"],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/identifier"},
+        "relative_path": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-][A-Za-z0-9_.-]*(?:/[A-Za-z0-9_-][A-Za-z0-9_.-]*)*$"
+        },
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 0},
+        "status": {"enum": ["restored", "already_present"]}
+      }
+    }
+  }
+}
