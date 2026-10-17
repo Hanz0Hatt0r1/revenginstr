@@ -17,6 +17,7 @@ from revenginstr.receiver.provenance import (
     argument_load_main,
     build_argument_load_graphs,
     build_argument_store_graphs,
+    build_call_return_graphs,
     build_field_access_pair_graphs,
     build_parameter_load_return_graphs,
     build_recursive_argument_graph,
@@ -24,6 +25,7 @@ from revenginstr.receiver.provenance import (
     build_parameter_store_graphs,
     build_receiver_graphs,
     caller_argument_main,
+    call_return_main,
     field_access_pairs_main,
     main,
     parameter_store_main,
@@ -727,6 +729,102 @@ def test_parameter_load_return_flow_caps_multiple_return_graphs() -> None:
 
     with pytest.raises(ValueError, match="load-return graph budget exceeded"):
         build_parameter_load_return_graphs([load], pcode, program_id="p", max_graphs=1)
+
+
+def test_call_return_flow_traces_explicit_call_result_to_return() -> None:
+    pcode = [
+        pcode_flow_row(
+            opcode="CALL", output="def:00401020:7:4", inputs="const:0x401100:4",
+            callee_entry="00401100", callee_name="FUN_00401100",
+        ),
+        pcode_flow_row(
+            op_address="00401024", op_time="8", opcode="COPY",
+            output="def:00401024:8:4", inputs="def:00401020:7:4",
+        ),
+        pcode_flow_row(
+            op_address="00401030", op_time="9", opcode="RETURN",
+            output="-", inputs="const:0x0:8;def:00401024:8:4",
+        ),
+    ]
+
+    graphs = build_call_return_graphs(pcode, program_id="analysis:sample")
+
+    assert len(graphs) == 1
+    graph = graphs[0]
+    Draft202012Validator(json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))).validate(graph)
+    edge = graph["edges"][0]
+    assert edge["relation"] == "return_flow"
+    assert edge["evidence_class"] == "derived_structural"
+    assert [json.loads(row["source_id"])[-1] for row in edge["provenance"]] == [
+        "CALL", "COPY", "RETURN"
+    ]
+
+
+@pytest.mark.parametrize(
+    ("bridge_opcode", "bridge_inputs", "expected_call_result", "origin_address"),
+    [
+        ("CALL", "def:00401020:7:4", True, "00401024"),
+        ("CALLIND", "def:00401020:7:4", True, "00401024"),
+        ("CALLOTHER", "def:00401020:7:4", False, ""),
+        ("INDIRECT", "const:0x1:4;def:00401020:7:4", False, ""),
+        ("INDIRECT", "def:00401020:7:4;const:0x1:4", True, "00401020"),
+    ],
+)
+def test_call_return_flow_does_not_cross_call_or_reference_barriers(
+    bridge_opcode: str, bridge_inputs: str, expected_call_result: bool, origin_address: str
+) -> None:
+    pcode = [
+        pcode_flow_row(opcode="CALL", output="def:00401020:7:4"),
+        pcode_flow_row(
+            op_address="00401024", op_time="8", opcode=bridge_opcode,
+            output="def:00401024:8:4", inputs=bridge_inputs,
+        ),
+        pcode_flow_row(
+            op_address="00401030", op_time="9", opcode="RETURN",
+            output="-", inputs="def:00401024:8:4",
+        ),
+    ]
+
+    graphs = build_call_return_graphs(pcode, program_id="p")
+    if expected_call_result:
+        assert len(graphs) == 1
+        assert json.loads(graphs[0]["edges"][0]["provenance"][0]["source_id"])[2] == origin_address
+    else:
+        assert graphs == []
+
+
+def test_call_return_flow_ignores_void_calls_and_caps_returns() -> None:
+    void_call = pcode_flow_row(opcode="CALL", output="-", inputs="const:0x401100:4")
+    direct_call = pcode_flow_row(opcode="CALL", output="def:00401020:7:4")
+    returns = [
+        pcode_flow_row(
+            op_address=f"004010{offset:02x}", op_time=str(time), opcode="RETURN",
+            output="-", inputs="def:00401020:7:4",
+        )
+        for offset, time in ((0x30, 9), (0x34, 10))
+    ]
+
+    assert build_call_return_graphs([void_call], program_id="p") == []
+    with pytest.raises(ValueError, match="call-return graph budget exceeded"):
+        build_call_return_graphs([direct_call, *returns], program_id="p", max_graphs=1)
+
+
+def test_call_return_cli_writes_flow_graph(tmp_path: Path, capsys) -> None:
+    pcode = tmp_path / "function-pcode-flow.tsv"
+    pcode.write_text(
+        "function_entry\top_address\top_time\topcode\toutput\tinputs\tcallee_entry\tcallee_name\n"
+        "00401000\t00401020\t7\tCALL\tdef:00401020:7:4\tconst:0x401100:4\t00401100\tFUN_00401100\n"
+        "00401000\t00401030\t9\tRETURN\t-\tdef:00401020:7:4\t-\t-\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "nested" / "call-return.jsonl"
+
+    assert call_return_main([
+        str(pcode), "--program-id", "analysis:sample", "--output", str(output)
+    ]) == 0
+    graph = json.loads(output.read_text(encoding="utf-8"))
+    assert graph["edges"][0]["relation"] == "return_flow"
+    assert "call-return graphs: 1" in capsys.readouterr().out
 
 
 def test_parameter_load_return_cli_writes_flow_graph(tmp_path: Path, capsys) -> None:
