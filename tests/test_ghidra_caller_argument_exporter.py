@@ -12,8 +12,11 @@ def test_caller_argument_subtree_contract_is_generic() -> None:
     source = (ROOT / "ghidra/ExportGhidraCallerArgumentSubtree.java").read_text(encoding="utf-8")
     for required in (
         '"REVENGINSTR.GhidraCallerArgumentSubtree/1"',
+        '"REVENGINSTR.GhidraCallerArgumentParameterRoot/1"',
         "Expected plan_id, callee_entry, parameter_index header",
         "plan_id\\tcallee_entry\\tparameter_index",
+        "parameterIndex(HighFunction high, Varnode node)",
+        "--parameter-root-output",
         "MAX_DEPTH = 12",
         "MAX_NODES = 96",
         "MAX_CALLERS = 128",
@@ -64,3 +67,24 @@ def test_caller_argument_subtree_contract_is_generic() -> None:
         "truncation": "-",
         "status": "complete_caller_argument_subtrees",
     })
+
+
+def test_caller_argument_parameter_root_sidecar_schema_and_runner() -> None:
+    schema = json.loads(
+        (ROOT / "schemas/ghidra-caller-argument-parameter-root-v1.schema.json").read_text()
+    )
+    Draft202012Validator.check_schema(schema)
+    Draft202012Validator(schema).validate({
+        "format": "REVENGINSTR.GhidraCallerArgumentParameterRoot/1",
+        "plan_id": "plan-0",
+        "callee_entry": "00401000",
+        "parameter_index": "1",
+        "caller_entry": "00402000",
+        "caller_call_site": "00402020",
+        "caller_parameter_index": "0",
+        "argument_node_id": "0",
+        "status": "direct_parameter_root",
+    })
+    runner = (ROOT / "scripts/run_ghidra_caller_argument_subtree.sh").read_text(encoding="utf-8")
+    assert "--parameter-root-output" in runner
+    assert '"${POST_SCRIPT_ARGS[@]}"' in runner
