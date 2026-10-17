@@ -14,6 +14,11 @@ and byte offset to be reachable from exactly one successor. Inputs are
 read-only; the report records their hashes and source record indices. Broken
 joins fail closed.
 
+Load rows join by exact function/address/time and `LOAD` opcode. The field-load
+exporter's `def:LOAD@address:time:size` output token is accepted as an alias of
+the P-code flow `def:address:time:size` token when the full suffix matches; the
+P-code token remains the one used for subsequent def-use joins.
+
 ```sh
 revenginstr-state-machine-candidates \
   cfg-v3.jsonl pcode-flow.tsv parameter-loads.tsv memory-stores.jsonl \

@@ -100,6 +100,13 @@ def _token_list(value: str, where: str) -> list[str]:
     return tokens
 
 
+def _parameter_load_token_matches(load_token: str, flow_token: str) -> bool:
+    if load_token == flow_token:
+        return True
+    # GhidraParameterLoadField/1 prefixes the same LOAD identity with `LOAD@`.
+    return load_token.startswith("def:LOAD@") and f"def:{load_token[9:]}" == flow_token
+
+
 def _cfg_index(
     rows: list[dict[str, Any]],
 ) -> tuple[str, dict[str, dict[str, Any]], dict[str, dict[tuple[str, int], int]]]:
@@ -280,7 +287,10 @@ def build_state_machine_candidates(
         if key in load_by_key:
             raise ValueError(f"{where}: duplicate load key")
         operation = pcode_by_key[function_entry].get((address, time))
-        if operation is None or operation["opcode"] != "LOAD" or operation["output"] != row.get("value_token"):
+        if (
+            operation is None or operation["opcode"] != "LOAD"
+            or not _parameter_load_token_matches(row.get("value_token", ""), operation["output"] or "")
+        ):
             raise ValueError(f"{where}: does not join to the exact P-code LOAD output")
         try:
             offset_bytes = int(row.get("field_offset", ""), 0)
