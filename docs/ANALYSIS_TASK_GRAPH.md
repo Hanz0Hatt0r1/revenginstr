@@ -53,3 +53,6 @@ propagates through declared task dependencies.
 This command only validates and plans. It does not execute analyzers, choose
 evidence requests, or decide whether a result should be accepted. The
 `analysis-invalidation-plan` stage can run inside a pinned benchmark manifest.
+
+For content-addressed task signatures based on source artifact and
+implementation hashes, see [Analysis task cache keys](ANALYSIS_TASK_CACHE.md).

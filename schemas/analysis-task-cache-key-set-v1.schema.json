@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/analysis-task-cache-key-set-v1.schema.json",
+  "title": "REVENGINSTR.AnalysisTaskCacheKeySet/1 report",
+  "description": "Deterministic content-addressed task keys for caller-managed cache lookup; no tasks execute.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "source", "topological_order", "tasks"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.AnalysisTaskCacheKeySet/1"},
+    "source": {"$ref": "#/$defs/source"},
+    "topological_order": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/identifier"}
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/taskKey"}
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "taskKind": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_graph_sha256", "cache_inputs_sha256", "task_count", "artifact_count", "source_artifact_count"],
+      "properties": {
+        "task_graph_sha256": {"$ref": "#/$defs/sha256"},
+        "cache_inputs_sha256": {"$ref": "#/$defs/sha256"},
+        "task_count": {"type": "integer", "minimum": 1},
+        "artifact_count": {"type": "integer", "minimum": 0},
+        "source_artifact_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "artifactHash": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "sha256"],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/identifier"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "dependencyKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "cache_key_sha256"],
+      "properties": {
+        "task_id": {"$ref": "#/$defs/identifier"},
+        "cache_key_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "taskKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task_id", "task_kind", "configuration_sha256", "implementation_sha256",
+        "input_artifact_hashes", "dependency_cache_keys", "output_artifacts", "cache_key_sha256"
+      ],
+      "properties": {
+        "task_id": {"$ref": "#/$defs/identifier"},
+        "task_kind": {"$ref": "#/$defs/taskKind"},
+        "configuration_sha256": {"$ref": "#/$defs/sha256"},
+        "implementation_sha256": {"$ref": "#/$defs/sha256"},
+        "input_artifact_hashes": {"type": "array", "items": {"$ref": "#/$defs/artifactHash"}},
+        "dependency_cache_keys": {"type": "array", "items": {"$ref": "#/$defs/dependencyKey"}},
+        "output_artifacts": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/identifier"}},
+        "cache_key_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}
