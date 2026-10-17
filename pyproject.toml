@@ -43,6 +43,7 @@ revenginstr-accept-router-train = "revenginstr.ml.accept_error_router:train_main
 revenginstr-accept-router-infer = "revenginstr.ml.accept_error_router:infer_main"
 revenginstr-freeze-validation = "revenginstr.validation.frozen:main"
 revenginstr-drift-audit = "revenginstr.validation.drift:main"
+revenginstr-export-parity = "revenginstr.evidence.export_parity:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

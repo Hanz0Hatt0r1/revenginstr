@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://revenginstr.dev/schemas/ghidra-export-parity-v1.schema.json",
+  "title": "REVENGINSTR Ghidra Export Parity Report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "left_sha256",
+    "right_sha256",
+    "left_rows",
+    "right_rows",
+    "same_bytes",
+    "same_records",
+    "first_mismatch"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraExportParity/1"},
+    "left_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "right_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "left_rows": {"type": "integer", "minimum": 0},
+    "right_rows": {"type": "integer", "minimum": 0},
+    "same_bytes": {"type": "boolean"},
+    "same_records": {"type": "boolean"},
+    "first_mismatch": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "record_index"],
+          "properties": {
+            "kind": {"enum": ["header", "row", "row_count"]},
+            "record_index": {"type": "integer", "minimum": 0}
+          }
+        }
+      ]
+    }
+  }
+}

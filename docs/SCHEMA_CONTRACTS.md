@@ -106,6 +106,7 @@ recalculate provenance fields when retaining an experiment.
 | [`BenchmarkSummary/1`](../schemas/benchmark-summary-v1.schema.json) | Execution result with artifact hashes, stage status, metrics, projections, and gate failures. Stage and projection arrays retain manifest order. See [benchmark workflow](BENCHMARKS.md). |
 | [`BenchmarkDelta/1`](../schemas/benchmark-delta-v1.schema.json) | Baseline/candidate numeric metric comparison keyed by benchmark dataset/split/family identity. Missing/non-numeric metrics remain null; delta is candidate minus baseline. |
 | [`DeterminismAudit/1`](../schemas/determinism-audit-v1.schema.json) | Two replay results and stable difference paths; duration and peak RSS are deliberately ignored by the audit. Failed runs are reported with status/error, not treated as deterministic success. |
+| [`GhidraExportParity/1`](../schemas/ghidra-export-parity-v1.schema.json) · [usage](GHIDRA_EXPORT_PARITY.md) | Hashes and row counts for two TSVs, decoded header/row equality in order, and the first mismatch index. Record values and input paths are omitted. |
 
 ## Known schema coverage gaps
 
