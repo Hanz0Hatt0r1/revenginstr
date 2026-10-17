@@ -83,7 +83,9 @@ REVENGINSTR.BenchmarkSummary/1
 REVENGINSTR.DeterminismAudit/1
 REVENGINSTR.BenchmarkDelta/1
 REVENGINSTR.FunctionEffectIR/1
+REVENGINSTR.FunctionEffectIR/2
 REVENGINSTR.FunctionSummary/1
+REVENGINSTR.FunctionSummary/2
 REVENGINSTR.AnalysisFeedback/1
 REVENGINSTR.AnalysisDecisionLedgerEvent/1
 REVENGINSTR.AnalysisDecisionLedgerAudit/1

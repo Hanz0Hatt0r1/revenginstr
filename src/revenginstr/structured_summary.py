@@ -8,8 +8,12 @@ import re
 from pathlib import Path
 from typing import Any
 
-FORMAT = "REVENGINSTR.FunctionSummary/1"
-EFFECT_FORMAT = "REVENGINSTR.FunctionEffectIR/1"
+FORMAT_V1 = "REVENGINSTR.FunctionSummary/1"
+FORMAT_V2 = "REVENGINSTR.FunctionSummary/2"
+FORMAT = FORMAT_V1
+EFFECT_FORMAT_V1 = "REVENGINSTR.FunctionEffectIR/1"
+EFFECT_FORMAT_V2 = "REVENGINSTR.FunctionEffectIR/2"
+EFFECT_FORMAT = EFFECT_FORMAT_V1
 _EFFECT_ID = re.compile(r"[0-9a-f]{64}\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _OFFSET = re.compile(r"-?0x[0-9a-f]+\Z")
@@ -19,6 +23,8 @@ _KINDS = {
     "direct_call": "exact_static",
     "indirect_call": "exact_static",
     "return_op": "exact_static",
+    "memory_read": "exact_static",
+    "memory_write": "exact_static",
 }
 _OPCODES = {
     "parameter_field_read": "LOAD",
@@ -26,6 +32,8 @@ _OPCODES = {
     "direct_call": "CALL",
     "indirect_call": "CALLIND",
     "return_op": "RETURN",
+    "memory_read": "LOAD",
+    "memory_write": "STORE",
 }
 _SOURCE_FORMATS = {
     "REVENGINSTR.GhidraParameterStoreField/1",
@@ -38,6 +46,8 @@ _SOURCE_FORMAT_BY_KIND = {
     "direct_call": "REVENGINSTR.GhidraFunctionPcodeFlow/1",
     "indirect_call": "REVENGINSTR.GhidraFunctionPcodeFlow/1",
     "return_op": "REVENGINSTR.GhidraFunctionPcodeFlow/1",
+    "memory_read": "REVENGINSTR.GhidraFunctionPcodeFlow/1",
+    "memory_write": "REVENGINSTR.GhidraFunctionPcodeFlow/1",
 }
 _EFFECT_FIELDS = {
     "effect_id", "kind", "operation_address", "operation_time", "opcode",
@@ -47,19 +57,25 @@ _EFFECT_FIELDS = {
 }
 
 
-def _validate_effect_ir(records: list[dict[str, Any]], source_sha256: str) -> None:
+def _validate_effect_ir(records: list[dict[str, Any]], source_sha256: str) -> str:
     if not isinstance(source_sha256, str) or _SHA256.fullmatch(source_sha256) is None:
         raise ValueError("invalid Function Effect IR SHA-256")
     seen_functions: set[tuple[str, str]] = set()
     seen_effects: set[str] = set()
+    effect_format: str | None = None
     for record_index, record in enumerate(records, 1):
         where = f"Function Effect IR record {record_index}"
         if (
             not isinstance(record, dict)
             or set(record) != {"format", "program_id", "function_entry", "effects"}
-            or record.get("format") != EFFECT_FORMAT
         ):
             raise ValueError(f"{where}: unexpected format or fields")
+        record_format = record["format"]
+        if not isinstance(record_format, str) or record_format not in {EFFECT_FORMAT_V1, EFFECT_FORMAT_V2}:
+            raise ValueError(f"{where}: unexpected format or fields")
+        if effect_format is not None and effect_format != record_format:
+            raise ValueError(f"{where}: mixed Function Effect IR versions")
+        effect_format = record_format
         program_id, function_entry = record["program_id"], record["function_entry"]
         if not isinstance(program_id, str) or not program_id or not isinstance(function_entry, str) or not function_entry:
             raise ValueError(f"{where}: invalid function identity")
@@ -87,6 +103,8 @@ def _validate_effect_ir(records: list[dict[str, Any]], source_sha256: str) -> No
                 or effect["opcode"] != _OPCODES[kind]
             ):
                 raise ValueError(f"{effect_where}: unsupported kind, opcode, or evidence class")
+            if record_format == EFFECT_FORMAT_V1 and kind in {"memory_read", "memory_write"}:
+                raise ValueError(f"{effect_where}: generic memory effects require FunctionEffectIR/2")
             if not isinstance(effect["operation_address"], str) or not effect["operation_address"]:
                 raise ValueError(f"{effect_where}: invalid operation address")
             operation_time = effect["operation_time"]
@@ -117,6 +135,7 @@ def _validate_effect_ir(records: list[dict[str, Any]], source_sha256: str) -> No
             if effect_id != expected_id:
                 raise ValueError(f"{effect_where}: effect id does not match provenance")
             _attributes(effect, effect_where)
+    return effect_format or EFFECT_FORMAT_V1
 
 
 def validate_function_effect_ir(records: list[dict[str, Any]], source_sha256: str) -> None:
@@ -171,6 +190,20 @@ def _attributes(effect: dict[str, Any], where: str) -> dict[str, Any]:
             "target_entry": None if effect["target_entry"] == "-" else effect["target_entry"],
             "target_name": None if effect["target_name"] == "-" else effect["target_name"],
         }
+    if kind in {"memory_read", "memory_write"}:
+        if any(effect[key] is not None for key in (
+            "parameter_index", "field_offset", "value_size", "source_parameter_index",
+            "target_entry", "target_name",
+        )):
+            raise ValueError(f"{where}: invalid generic memory attributes")
+        value_token = effect["value_token"]
+        if kind == "memory_read" and value_token is not None and (
+            not isinstance(value_token, str) or not value_token
+        ):
+            raise ValueError(f"{where}: invalid memory-read output token")
+        if kind == "memory_write" and value_token is not None:
+            raise ValueError(f"{where}: invalid memory-write value token")
+        return {}
     if any(effect[key] is not None for key in nullable):
         raise ValueError(f"{where}: invalid return attributes")
     return {}
@@ -180,7 +213,8 @@ def build_function_summaries(
     records: list[dict[str, Any]], *, source_sha256: str
 ) -> list[dict[str, Any]]:
     """Aggregate equivalent Effect IR facts without adding semantic claims."""
-    _validate_effect_ir(records, source_sha256)
+    effect_format = _validate_effect_ir(records, source_sha256)
+    summary_format = FORMAT_V2 if effect_format == EFFECT_FORMAT_V2 else FORMAT_V1
     summaries: list[dict[str, Any]] = []
     for record in sorted(records, key=lambda row: (row["program_id"], row["function_entry"])):
         grouped: dict[str, dict[str, Any]] = {}
@@ -211,7 +245,7 @@ def build_function_summaries(
         for claim in claims:
             claim["support"].sort(key=lambda item: item["effect_id"])
         summaries.append({
-            "format": FORMAT,
+            "format": summary_format,
             "program_id": record["program_id"],
             "function_entry": record["function_entry"],
             "source_effect_ir_sha256": source_sha256,
