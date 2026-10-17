@@ -80,14 +80,17 @@ the caller and callee P-code flow hashes. A call is exempted only if its entire
 one-function flow uses a known write-free opcode set; this is a narrow
 structural result and does not recurse across calls. Synthetic tests cover the
 write-free, explicit-store, nested/unknown, missing-summary, indirect-call,
-budget, schema, and audit-join cases. NFS Shift's second consumer-owned frozen
-`/3` replay is recorded in [PR #2025](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2025):
-16 exact pairs replay across five functions with the same status counts in
-`/1`, `/2`, and `/3`; all remain unresolved, and no complete write-free callee
-was present to exercise a positive filter. This confirms fail-closed behavior
-in a second consumer but does not establish value flow or consumer-level
-positive filtering. Labels, addresses, raw rows, and measured outcomes stay in
-their consumer repository.
+budget, schema, and audit-join cases. NFS Shift PRs [#2025](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2025)
+and [#2026](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2026)
+freeze 28 exact pairs across ten functions; no complete write-free callee was
+present in that subset. The expanded consumer replay in [PR
+#2027](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2027)
+covers 31 pairs across twelve functions. One complete write-free direct call
+joins to the exact CFG witness in `00619b7d`; an `unknown_effect` direct call
+also lies on that witness, so `/3` leaves the pair unresolved. This exercises
+the on-path filter boundary without a status promotion or value-flow claim.
+Labels, addresses, raw rows, and measured outcomes stay in their consumer
+repository.
 
 `FieldStoreLoadDominanceAudit/1` is not extended in place. With no sidecars the
 command preserves `/1`; supplying only access facts selects `/2`; supplying
