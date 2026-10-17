@@ -847,3 +847,77 @@ def test_determinism_comparison_ignores_runtime_but_finds_metric_drift() -> None
     assert _difference_paths(_stable_summary(first), _stable_summary(second)) == []
     second["metrics"][0]["value"] = 5
     assert _difference_paths(_stable_summary(first), _stable_summary(second)) == ["/metrics/0/value"]
+
+
+def test_benchmark_runs_family_heldout_threshold_evaluation(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    classifier_manifest = tmp_path / "classifier.json"
+    classifier_manifest.write_text(json.dumps({
+        "format": "REVENGINSTR.SelectiveClassifier/1",
+        "classes": ["alpha", "beta"],
+        "calibration": {"source": "family_grouped_oof"},
+        "functions": 2,
+        "families": 2,
+        "class_distribution": {"alpha": 1, "beta": 1},
+    }), encoding="utf-8")
+    oof = tmp_path / "oof.jsonl"
+    oof.write_text("".join(json.dumps({
+        "format": "REVENGINSTR.SelectiveClassifier/1",
+        "id": record_id, "family_id": family, "truth": label, "prediction": label,
+        "correct": True, "confidence": 0.9,
+    }) + "\n" for record_id, family, label in [("a", "train-a", "alpha"), ("b", "train-b", "beta")]), encoding="utf-8")
+    evaluation = tmp_path / "evaluation.jsonl"
+    evaluation.write_text("".join(json.dumps({
+        "format": "REVENGINSTR.SelectiveClassifier/1",
+        "id": record_id, "family_id": family, "truth": label, "prediction": label,
+        "correct": True, "confidence": confidence,
+    }) + "\n" for record_id, family, label, confidence in [
+        ("eval-a", "eval-a-family", "alpha", 0.8),
+        ("eval-b", "eval-b-family", "beta", 0.95),
+    ]), encoding="utf-8")
+    evaluation_schema = ROOT / "schemas" / "selective-threshold-evaluation-v1.schema.json"
+    manifest["schemas"]["threshold_evaluation"] = {
+        "path": str(evaluation_schema),
+        "version": "REVENGINSTR.SelectiveThresholdEvaluation/1",
+        "sha256": _sha256(evaluation_schema),
+    }
+    manifest["artifacts"].update({
+        "classifier_manifest": {
+            "path": str(classifier_manifest), "role": "input", "kind": "file",
+            "content": "json", "sha256": _sha256(classifier_manifest),
+        },
+        "oof_predictions": {
+            "path": str(oof), "role": "input", "kind": "file", "content": "jsonl",
+            "sha256": _sha256(oof),
+        },
+        "evaluation_predictions": {
+            "path": str(evaluation), "role": "input", "kind": "file", "content": "jsonl",
+            "sha256": _sha256(evaluation),
+        },
+        "threshold_evaluation": {
+            "path": "threshold-evaluation.json", "role": "output", "kind": "file",
+            "content": "json", "format": "REVENGINSTR.SelectiveThresholdEvaluation/1",
+            "schema": "threshold_evaluation",
+        },
+    })
+    manifest["stages"].append({
+        "id": "threshold_evaluation", "tool": "selective-threshold-evaluate",
+        "args": [
+            "${artifact:classifier_manifest}", "${artifact:oof_predictions}",
+            "${artifact:evaluation_predictions}", "--output", "${artifact:threshold_evaluation}",
+            "--target-precision", "0.8", "--min-train-examples", "1", "--bins", "5",
+        ],
+        "inputs": ["classifier_manifest", "oof_predictions", "evaluation_predictions"],
+        "outputs": ["threshold_evaluation"],
+    })
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    summary, code = run_benchmark(manifest_path, mode="smoke", output_path=tmp_path / "summary.json")
+
+    assert code == 0
+    assert summary["status"] == "passed"
+    assert summary["stages"][-1]["tool"] == "selective-threshold-evaluate"
+    report = json.loads((tmp_path / "threshold-evaluation.json").read_text(encoding="utf-8"))
+    assert report["source"]["family_disjoint"] is True
+    assert report["classes"]["alpha"]["thresholds"][0]["accepted_examples"] == 0

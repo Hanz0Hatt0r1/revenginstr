@@ -113,6 +113,7 @@ recalculate provenance fields when retaining an experiment.
 | [`BenchmarkDelta/1`](../schemas/benchmark-delta-v1.schema.json) | Baseline/candidate numeric metric comparison keyed by benchmark dataset/split/family identity. Missing/non-numeric metrics remain null; delta is candidate minus baseline. |
 | [`DeterminismAudit/1`](../schemas/determinism-audit-v1.schema.json) | Two replay results and stable difference paths; duration and peak RSS are deliberately ignored by the audit. Failed runs are reported with status/error, not treated as deterministic success. |
 | [`SelectiveThresholdSweep/1`](../schemas/selective-threshold-sweep-v1.schema.json) · [usage](SELECTIVE_THRESHOLD_SWEEP.md) | Per-predicted-class precision/coverage thresholds over hashed family-grouped OOF predictions; audit only, with no change to a trained model or inference policy. |
+| [`SelectiveThresholdEvaluation/1`](../schemas/selective-threshold-evaluation-v1.schema.json) · [usage](SELECTIVE_THRESHOLD_EVALUATION.md) | Applies OOF-selected per-class thresholds to a family-disjoint evaluation set and reports classwise reliability bins, Brier score, ECE, and held-out precision/coverage. |
 | [`GhidraExportParity/1`](../schemas/ghidra-export-parity-v1.schema.json) · [usage](GHIDRA_EXPORT_PARITY.md) | Hashes and row counts for two TSVs, decoded header/row equality in order, and the first mismatch index. Record values and input paths are omitted. |
 
 ## Known schema coverage gaps
