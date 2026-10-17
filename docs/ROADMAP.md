@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `244c03110571efe3661cd26fc092f6ae89a4a77e`
+**Repository baseline:** `main` through `d5be7a2a230c70266d603ae09de9d95708fda67e`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -420,13 +420,20 @@ reliability bins, Brier score, ECE, and held-out precision/coverage.
 `revenginstr-classifier-error-buckets` groups errors from that exact evaluation
 population by confusion pair and route action, retaining aggregate confidence
 and family counts without exporting row identities.
+`revenginstr-selective-subgroup-audit` joins a caller-owned subgroup sidecar to
+the exact hash-pinned evaluation population and reports aggregate accuracy,
+calibration, route coverage, and class counts without exporting ids. The tool
+does not assign ID/OOD semantics; callers define subgroup names and membership.
 
 ## Work
 
 - evidence ablations for P-code, callgraph, receiver, field, external-call and family features;
 - coarse Effect-IR features once M5 begins;
 - retained hard-negative sets;
-- explicit ID/OOD subgroup reporting.
+
+Subgroup metrics are available for caller-defined partitions. Establishing ID
+or OOD membership remains a dataset/evaluation responsibility and is not
+inferred by the generic audit.
 
 Audit-only identities may be used to understand errors but must not silently enter generic model input.
 

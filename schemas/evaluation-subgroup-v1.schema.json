@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/evaluation-subgroup-v1.schema.json",
+  "title": "REVENGINSTR.EvaluationSubgroup/1 row",
+  "description": "Caller-assigned subgroup membership for one evaluation prediction id.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "id", "subgroup"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.EvaluationSubgroup/1"},
+    "id": {"type": "string", "minLength": 1},
+    "subgroup": {"type": "string", "minLength": 1}
+  }
+}

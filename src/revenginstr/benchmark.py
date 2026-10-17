@@ -40,6 +40,7 @@ TOOLS = {
     "selective-threshold-sweep": ("revenginstr.ml.threshold_sweep", "main"),
     "selective-threshold-evaluate": ("revenginstr.ml.threshold_evaluate", "main"),
     "classifier-error-buckets": ("revenginstr.ml.error_buckets", "main"),
+    "selective-subgroup-audit": ("revenginstr.ml.subgroup_audit", "main"),
     "evidence-selective-train": ("revenginstr.ml.evidence_selective", "train_main"),
     "evidence-selective-infer": ("revenginstr.ml.evidence_selective", "infer_main"),
     "accept-router-train": ("revenginstr.ml.accept_error_router", "train_main"),

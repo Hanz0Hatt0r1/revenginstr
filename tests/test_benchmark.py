@@ -987,3 +987,87 @@ def test_benchmark_runs_family_heldout_threshold_evaluation(tmp_path: Path) -> N
     report = json.loads((tmp_path / "threshold-evaluation.json").read_text(encoding="utf-8"))
     assert report["source"]["family_disjoint"] is True
     assert report["classes"]["alpha"]["thresholds"][0]["accepted_examples"] == 0
+
+
+def test_benchmark_runs_selective_subgroup_audit_stage(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    predictions_path = tmp_path / "subgroup-evaluation.jsonl"
+    predictions = [
+        {
+            "format": "REVENGINSTR.SelectiveClassifier/1", "id": "a", "family_id": "fa",
+            "truth": "alpha", "prediction": "alpha", "correct": True,
+            "action": "accept", "confidence": 0.9,
+        },
+        {
+            "format": "REVENGINSTR.SelectiveClassifier/1", "id": "b", "family_id": "fb",
+            "truth": "beta", "prediction": "alpha", "correct": False,
+            "action": "review", "confidence": 0.7,
+        },
+    ]
+    predictions_path.write_text("".join(json.dumps(row) + "\n" for row in predictions), encoding="utf-8")
+    subgroups_path = tmp_path / "evaluation-subgroups.jsonl"
+    subgroups_path.write_text("".join(json.dumps({
+        "format": "REVENGINSTR.EvaluationSubgroup/1", "id": record_id, "subgroup": group,
+    }) + "\n" for record_id, group in [("a", "partition-x"), ("b", "partition-y")]), encoding="utf-8")
+    evaluation_report_path = tmp_path / "threshold-evaluation.json"
+    evaluation_report_path.write_text(json.dumps({
+        "format": "REVENGINSTR.SelectiveThresholdEvaluation/1",
+        "source": {
+            "classifier_format": "REVENGINSTR.SelectiveClassifier/1",
+            "evaluation_predictions_sha256": _sha256(predictions_path),
+            "evaluation_rows": 2, "evaluation_families": 2, "family_disjoint": True,
+        },
+        "bin_count": 5,
+        "classes": {"alpha": {}, "beta": {}},
+    }), encoding="utf-8")
+    subgroup_schema = ROOT / "schemas" / "evaluation-subgroup-v1.schema.json"
+    audit_schema = ROOT / "schemas" / "selective-subgroup-audit-v1.schema.json"
+    manifest["schemas"].update({
+        "evaluation_subgroup": {
+            "path": str(subgroup_schema), "version": "REVENGINSTR.EvaluationSubgroup/1",
+            "sha256": _sha256(subgroup_schema),
+        },
+        "subgroup_audit": {
+            "path": str(audit_schema), "version": "REVENGINSTR.SelectiveSubgroupAudit/1",
+            "sha256": _sha256(audit_schema),
+        },
+    })
+    manifest["artifacts"].update({
+        "threshold_evaluation": {
+            "path": str(evaluation_report_path), "role": "input", "kind": "file",
+            "content": "json", "sha256": _sha256(evaluation_report_path),
+        },
+        "subgroup_predictions": {
+            "path": str(predictions_path), "role": "input", "kind": "file",
+            "content": "jsonl", "sha256": _sha256(predictions_path),
+        },
+        "evaluation_subgroups": {
+            "path": str(subgroups_path), "role": "input", "kind": "file",
+            "content": "jsonl", "sha256": _sha256(subgroups_path), "schema": "evaluation_subgroup",
+        },
+        "subgroup_audit": {
+            "path": "subgroup-audit.json", "role": "output", "kind": "file",
+            "content": "json", "format": "REVENGINSTR.SelectiveSubgroupAudit/1",
+            "schema": "subgroup_audit",
+        },
+    })
+    manifest["stages"].append({
+        "id": "selective_subgroup_audit", "tool": "selective-subgroup-audit",
+        "args": [
+            "${artifact:threshold_evaluation}", "${artifact:subgroup_predictions}",
+            "${artifact:evaluation_subgroups}", "--output", "${artifact:subgroup_audit}",
+        ],
+        "inputs": ["threshold_evaluation", "subgroup_predictions", "evaluation_subgroups"],
+        "outputs": ["subgroup_audit"],
+    })
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    summary, code = run_benchmark(manifest_path, mode="smoke", output_path=tmp_path / "summary.json")
+
+    assert code == 0
+    assert summary["status"] == "passed"
+    assert summary["stages"][-1]["tool"] == "selective-subgroup-audit"
+    result = json.loads((tmp_path / "subgroup-audit.json").read_text(encoding="utf-8"))
+    assert result["source"]["evaluation_rows"] == 2
+    assert result["groups"]["partition-x"]["accuracy"] == 1.0

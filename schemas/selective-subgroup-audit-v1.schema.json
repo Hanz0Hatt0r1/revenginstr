@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/selective-subgroup-audit-v1.schema.json",
+  "title": "REVENGINSTR.SelectiveSubgroupAudit/1 report",
+  "description": "Aggregate classifier metrics for caller-defined groups in a family-disjoint evaluation population.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "source", "groups"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.SelectiveSubgroupAudit/1"},
+    "source": {"$ref": "#/$defs/source"},
+    "groups": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/group"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evaluation_report_sha256", "evaluation_predictions_sha256", "subgroups_sha256", "evaluation_rows", "evaluation_families", "subgroup_count", "family_disjoint"],
+      "properties": {
+        "evaluation_report_sha256": {"$ref": "#/$defs/sha256"},
+        "evaluation_predictions_sha256": {"$ref": "#/$defs/sha256"},
+        "subgroups_sha256": {"$ref": "#/$defs/sha256"},
+        "evaluation_rows": {"type": "integer", "minimum": 1},
+        "evaluation_families": {"type": "integer", "minimum": 1},
+        "subgroup_count": {"type": "integer", "minimum": 1},
+        "family_disjoint": {"const": true}
+      }
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rows", "correct_rows", "accuracy", "calibration", "action_counts", "accepted_rows", "accepted_precision", "accepted_coverage", "class_counts"],
+      "properties": {
+        "rows": {"type": "integer", "minimum": 1},
+        "correct_rows": {"type": "integer", "minimum": 0},
+        "accuracy": {"type": "number", "minimum": 0, "maximum": 1},
+        "calibration": {"$ref": "#/$defs/calibration"},
+        "action_counts": {"$ref": "#/$defs/actionCounts"},
+        "accepted_rows": {"type": "integer", "minimum": 0},
+        "accepted_precision": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "accepted_coverage": {"type": "number", "minimum": 0, "maximum": 1},
+        "class_counts": {
+          "type": "object",
+          "minProperties": 2,
+          "additionalProperties": {"$ref": "#/$defs/classCounts"}
+        }
+      }
+    },
+    "calibration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sample_count", "brier_score", "expected_calibration_error", "bins"],
+      "properties": {
+        "sample_count": {"type": "integer", "minimum": 1},
+        "brier_score": {"type": "number", "minimum": 0, "maximum": 1},
+        "expected_calibration_error": {"type": "number", "minimum": 0, "maximum": 1},
+        "bins": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/bin"}}
+      }
+    },
+    "bin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lower_bound", "upper_bound", "count", "mean_confidence", "observed_accuracy"],
+      "properties": {
+        "lower_bound": {"type": "number", "minimum": 0, "maximum": 1},
+        "upper_bound": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "count": {"type": "integer", "minimum": 0},
+        "mean_confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "observed_accuracy": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+      }
+    },
+    "actionCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accept", "review", "escalate"],
+      "properties": {
+        "accept": {"type": "integer", "minimum": 0},
+        "review": {"type": "integer", "minimum": 0},
+        "escalate": {"type": "integer", "minimum": 0}
+      }
+    },
+    "classCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["truth_rows", "predicted_rows", "true_positive_rows"],
+      "properties": {
+        "truth_rows": {"type": "integer", "minimum": 0},
+        "predicted_rows": {"type": "integer", "minimum": 0},
+        "true_positive_rows": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}
