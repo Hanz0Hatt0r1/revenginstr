@@ -11,6 +11,7 @@ FORMAT = "REVENGINSTR.ReceiverProvenanceGraph/1"
 RECEIVER_TYPE_FORMAT = "REVENGINSTR.GhidraIndirectReceiverType/1"
 CALLER_ARGUMENT_FORMAT = "REVENGINSTR.GhidraCallerArgumentSubtree/1"
 PARAMETER_STORE_FORMAT = "REVENGINSTR.GhidraParameterStoreField/1"
+PARAMETER_LOAD_FORMAT = "REVENGINSTR.GhidraParameterLoadField/1"
 DEFAULT_MAX_ARGUMENT_GRAPHS = 10_000
 
 
@@ -458,6 +459,124 @@ def argument_store_main(argv: list[str] | None = None) -> int:
             handle.write(json.dumps(graph, sort_keys=True) + "\n")
     print("input caller argument rows:", len(argument_rows))
     print("input parameter stores:", len(store_rows))
+    print("joined graphs:", len(graphs))
+    print("max graphs:", args.max_graphs)
+    print("output:", args.output)
+    return 0
+
+
+def build_argument_load_graphs(
+    argument_rows: list[dict[str, str]],
+    load_rows: list[dict[str, str]],
+    *,
+    program_id: str,
+    max_graphs: int = DEFAULT_MAX_ARGUMENT_GRAPHS,
+) -> list[dict[str, Any]]:
+    """Join caller roots to parameter-rooted loads by exact function/parameter keys."""
+    if not program_id:
+        raise ValueError("program_id must be non-empty")
+    if max_graphs < 1:
+        raise ValueError("max_graphs must be positive")
+
+    argument_graphs, _skipped = build_caller_argument_graphs(argument_rows, max_graphs=max_graphs)
+    roots_by_formal: dict[tuple[str, int], list[dict[str, Any]]] = {}
+    for graph in argument_graphs:
+        identity = json.loads(graph["graph_id"])
+        roots_by_formal.setdefault((identity[1], identity[2]), []).append(graph)
+
+    seen_loads: set[tuple[Any, ...]] = set()
+    joined_graphs: list[dict[str, Any]] = []
+    for line_no, row in enumerate(load_rows, 2):
+        if row.get("format") != PARAMETER_LOAD_FORMAT:
+            raise ValueError(f"parameter load row {line_no}: unsupported format")
+        if row.get("status") != "parameter_field_load":
+            raise ValueError(f"parameter load row {line_no}: unsupported status")
+
+        function_entry = row.get("function_entry", "")
+        load_address = row.get("load_address", "")
+        load_time_text = row.get("load_time", "")
+        parameter_text = row.get("base_parameter_index", "")
+        offset_text = row.get("field_offset", "")
+        value_token = row.get("value_token", "")
+        if (
+            not function_entry or function_entry == "-"
+            or not load_address or load_address == "-"
+            or (load_time_text != "-" and not _ascii_decimal(load_time_text))
+            or not _ascii_decimal(parameter_text)
+            or re.fullmatch(r"-?0x[0-9a-f]+", offset_text) is None
+            or not value_token
+        ):
+            raise ValueError(f"parameter load row {line_no}: invalid load key")
+
+        load_time = None if load_time_text == "-" else int(load_time_text)
+        parameter_index = int(parameter_text)
+        load_key = (
+            program_id, function_entry, load_address, load_time,
+            parameter_index, int(offset_text, 0), value_token,
+        )
+        if load_key in seen_loads:
+            raise ValueError(f"duplicate parameter load: {load_key!r}")
+        if len(seen_loads) >= max_graphs:
+            raise ValueError(f"parameter load graph budget exceeded: {max_graphs}")
+        seen_loads.add(load_key)
+
+        source_id = json.dumps(load_key, ensure_ascii=False, separators=(",", ":"))
+        for argument_graph in roots_by_formal.get((function_entry, parameter_index), []):
+            if len(joined_graphs) >= max_graphs:
+                raise ValueError(f"argument-load graph budget exceeded: {max_graphs}")
+            edges = [dict(edge) for edge in argument_graph["edges"]]
+            edges.append({
+                "id": "parameter_field_load",
+                "from": "callee_parameter",
+                "to": "field_load",
+                "relation": "field_load",
+                "evidence_class": "exact_static",
+                "provenance": [{
+                    "source_format": PARAMETER_LOAD_FORMAT,
+                    "source_id": source_id,
+                }],
+            })
+            graph = {
+                "format": FORMAT,
+                "graph_id": json.dumps(
+                    [program_id, argument_graph["graph_id"], source_id],
+                    ensure_ascii=False, separators=(",", ":"),
+                ),
+                "nodes": [
+                    *argument_graph["nodes"],
+                    {"id": "field_load", "kind": "field_load"},
+                ],
+                "edges": edges,
+            }
+            validate_graph_references(graph)
+            joined_graphs.append(graph)
+
+    joined_graphs.sort(key=lambda graph: graph["graph_id"])
+    return joined_graphs
+
+
+def argument_load_main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Join exact caller-argument roots to parameter field loads.")
+    parser.add_argument("caller_argument_subtree_tsv", type=Path)
+    parser.add_argument("parameter_load_tsv", type=Path)
+    parser.add_argument("--program-id", required=True, help="Opaque consumer join key for the selected program.")
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--max-graphs", type=int, default=DEFAULT_MAX_ARGUMENT_GRAPHS)
+    args = parser.parse_args(argv)
+
+    from revenginstr.receiver.infer import read_tsv
+
+    argument_rows = read_tsv(args.caller_argument_subtree_tsv)
+    load_rows = read_tsv(args.parameter_load_tsv)
+    graphs = build_argument_load_graphs(
+        argument_rows, load_rows, program_id=args.program_id, max_graphs=args.max_graphs
+    )
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    with args.output.open("w", encoding="utf-8") as handle:
+        for graph in graphs:
+            handle.write(json.dumps(graph, sort_keys=True) + "\n")
+    print("input caller argument rows:", len(argument_rows))
+    print("input parameter loads:", len(load_rows))
     print("joined graphs:", len(graphs))
     print("max graphs:", args.max_graphs)
     print("output:", args.output)

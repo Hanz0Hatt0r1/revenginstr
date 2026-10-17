@@ -29,6 +29,7 @@ TOOLS = {
     "receiver-plan": ("revenginstr.receiver.plan", "main"),
     "receiver-infer": ("revenginstr.receiver.infer", "main"),
     "receiver-argument-store-flow": ("revenginstr.receiver.provenance", "argument_store_main"),
+    "receiver-argument-load-flow": ("revenginstr.receiver.provenance", "argument_load_main"),
     "family-mine": ("revenginstr.family.mine", "main"),
     "selective-train": ("revenginstr.ml.selective", "train_main"),
     "selective-infer": ("revenginstr.ml.selective", "infer_main"),

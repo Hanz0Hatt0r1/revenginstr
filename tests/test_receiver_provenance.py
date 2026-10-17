@@ -9,9 +9,12 @@ from jsonschema import Draft202012Validator, ValidationError
 from revenginstr.receiver.provenance import (
     FORMAT,
     CALLER_ARGUMENT_FORMAT,
+    PARAMETER_LOAD_FORMAT,
     PARAMETER_STORE_FORMAT,
     RECEIVER_TYPE_FORMAT,
     argument_store_main,
+    argument_load_main,
+    build_argument_load_graphs,
     build_argument_store_graphs,
     build_caller_argument_graphs,
     build_parameter_store_graphs,
@@ -287,6 +290,113 @@ def parameter_store_row(**overrides: str) -> dict[str, str]:
     }
     row.update(overrides)
     return row
+
+
+def parameter_load_row(**overrides: str) -> dict[str, str]:
+    row = {
+        "format": PARAMETER_LOAD_FORMAT,
+        "function_entry": "00401000",
+        "function_name": "FUN_00401000",
+        "load_address": "00401020",
+        "load_time": "7",
+        "base_parameter_index": "0",
+        "field_offset": "0x24",
+        "address_pattern": "ptrsub",
+        "value_size": "4",
+        "value_token": "def:LOAD@00401020:7:4",
+        "status": "parameter_field_load",
+    }
+    row.update(overrides)
+    return row
+
+
+def test_argument_load_join_uses_exact_callee_and_formal_parameter_keys() -> None:
+    arguments = [
+        caller_argument_row(parameter_index="0"),
+        caller_argument_row(parameter_index="1", caller_call_site="00402020"),
+        caller_argument_row(callee_entry="00409999", parameter_index="1", caller_call_site="00402030"),
+    ]
+    loads = [
+        parameter_load_row(),
+        parameter_load_row(function_entry="00409999", load_address="004099a0"),
+        parameter_load_row(base_parameter_index="2", load_address="00401024"),
+    ]
+
+    graphs = build_argument_load_graphs(arguments, loads, program_id="analysis:sample")
+
+    assert len(graphs) == 1
+    graph = graphs[0]
+    Draft202012Validator(json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))).validate(graph)
+    validate_graph_references(graph)
+    assert {node["kind"] for node in graph["nodes"]} == {
+        "call_argument", "parameter", "field_load"
+    }
+    edges = {(edge["from"], edge["to"], edge["relation"]) for edge in graph["edges"]}
+    assert edges == {
+        ("caller_argument", "callee_parameter", "argument_flow"),
+        ("callee_parameter", "field_load", "field_load"),
+    }
+    assert graph["edges"][0]["provenance"][0]["source_format"] == CALLER_ARGUMENT_FORMAT
+    load_edge = next(edge for edge in graph["edges"] if edge["relation"] == "field_load")
+    assert load_edge["provenance"][0]["source_format"] == PARAMETER_LOAD_FORMAT
+
+
+@pytest.mark.parametrize(
+    ("rows", "message"),
+    [
+        ([parameter_load_row(format="consumer/1")], "unsupported format"),
+        ([parameter_load_row(status="unknown")], "unsupported status"),
+        ([parameter_load_row(base_parameter_index="x")], "invalid load key"),
+        ([parameter_load_row(field_offset="0xGG")], "invalid load key"),
+        ([parameter_load_row(), parameter_load_row()], "duplicate parameter load"),
+    ],
+)
+def test_argument_load_join_fails_closed_on_invalid_loads(rows, message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        build_argument_load_graphs(
+            [caller_argument_row(parameter_index="0")], rows, program_id="p"
+        )
+
+
+def test_argument_load_join_fails_when_expansion_exceeds_budget() -> None:
+    arguments = [
+        caller_argument_row(parameter_index="0", caller_call_site="00402010"),
+        caller_argument_row(parameter_index="0", caller_call_site="00402020"),
+    ]
+    loads = [
+        parameter_load_row(),
+        parameter_load_row(load_address="00401024", load_time="8", value_token="def:LOAD@00401024:8:4"),
+    ]
+
+    with pytest.raises(ValueError, match="argument-load graph budget exceeded"):
+        build_argument_load_graphs(arguments, loads, program_id="p", max_graphs=2)
+
+
+def test_argument_load_cli_writes_joined_graph(tmp_path: Path, capsys) -> None:
+    arguments = tmp_path / "arguments.tsv"
+    arguments.write_text(
+        "format\trow_type\tplan_id\tcallee_entry\tparameter_index\tcaller_entry\t"
+        "caller_call_site\tnode_id\tparent_node_id\tdepth\tedge_kind\n"
+        f"{CALLER_ARGUMENT_FORMAT}\tnode\tplan:sample\t00401000\t0\t00402000\t"
+        "00402010\t0\t-1\t0\troot\n",
+        encoding="utf-8",
+    )
+    loads = tmp_path / "loads.tsv"
+    loads.write_text(
+        "format\tfunction_entry\tload_address\tload_time\tbase_parameter_index\t"
+        "field_offset\tvalue_token\tstatus\n"
+        f"{PARAMETER_LOAD_FORMAT}\t00401000\t00401020\t7\t0\t0x24\t"
+        "def:LOAD@00401020:7:4\tparameter_field_load\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "nested" / "joined.jsonl"
+
+    assert argument_load_main([
+        str(arguments), str(loads), "--program-id", "analysis:sample", "--output", str(output)
+    ]) == 0
+    graph = json.loads(output.read_text(encoding="utf-8"))
+    assert "field_load" in {edge["relation"] for edge in graph["edges"]}
+    assert "input parameter loads: 1" in capsys.readouterr().out
 
 
 def test_builder_projects_destination_and_stored_value_edges() -> None:
