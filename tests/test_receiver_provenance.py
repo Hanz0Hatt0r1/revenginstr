@@ -16,10 +16,12 @@ from revenginstr.receiver.provenance import (
     argument_load_main,
     build_argument_load_graphs,
     build_argument_store_graphs,
+    build_field_access_pair_graphs,
     build_caller_argument_graphs,
     build_parameter_store_graphs,
     build_receiver_graphs,
     caller_argument_main,
+    field_access_pairs_main,
     main,
     parameter_store_main,
     validate_graph_references,
@@ -397,6 +399,87 @@ def test_argument_load_cli_writes_joined_graph(tmp_path: Path, capsys) -> None:
     graph = json.loads(output.read_text(encoding="utf-8"))
     assert "field_load" in {edge["relation"] for edge in graph["edges"]}
     assert "input parameter loads: 1" in capsys.readouterr().out
+
+
+def test_field_access_pairs_require_exact_function_parameter_and_numeric_offset() -> None:
+    stores = [
+        parameter_store_row(),
+        parameter_store_row(function_entry="00409999", store_address="004099a0"),
+        parameter_store_row(destination_parameter_index="1", store_address="00401024"),
+        parameter_store_row(destination_offset="0x20", store_address="00401028"),
+    ]
+    loads = [
+        parameter_load_row(field_offset="0x024"),
+        parameter_load_row(function_entry="00409998", load_address="004099b0"),
+        parameter_load_row(base_parameter_index="2", load_address="00401024"),
+        parameter_load_row(field_offset="0x22", load_address="00401028"),
+    ]
+
+    graphs = build_field_access_pair_graphs(stores, loads, program_id="analysis:sample")
+
+    assert len(graphs) == 1
+    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+    for graph in graphs:
+        Draft202012Validator(schema).validate(graph)
+        validate_graph_references(graph)
+        assert {edge["relation"] for edge in graph["edges"]} == {
+            "field_store", "data_flow", "field_load"
+        }
+        assert not any(
+            edge["from"] == "store" and edge["to"] == "field_load"
+            for edge in graph["edges"]
+        )
+        assert any(
+            edge["provenance"][0]["source_format"] == PARAMETER_STORE_FORMAT
+            for edge in graph["edges"] if edge["relation"] == "field_store"
+        )
+        assert any(
+            edge["provenance"][0]["source_format"] == PARAMETER_LOAD_FORMAT
+            for edge in graph["edges"] if edge["relation"] == "field_load"
+        )
+
+
+def test_field_access_pair_cli_writes_graphs(tmp_path: Path, capsys) -> None:
+    stores = tmp_path / "stores.tsv"
+    stores.write_text(
+        "format\tfunction_entry\tstore_address\tstore_time\tdestination_parameter_index\t"
+        "destination_offset\tsource_parameter_index\tstatus\n"
+        f"{PARAMETER_STORE_FORMAT}\t00401000\t00401020\t7\t0\t0x24\t1\t"
+        "parameter_to_parameter_field\n",
+        encoding="utf-8",
+    )
+    loads = tmp_path / "loads.tsv"
+    loads.write_text(
+        "format\tfunction_entry\tload_address\tload_time\tbase_parameter_index\t"
+        "field_offset\tvalue_token\tstatus\n"
+        f"{PARAMETER_LOAD_FORMAT}\t00401000\t00401030\t8\t0\t0x24\t"
+        "def:LOAD@00401030:8:4\tparameter_field_load\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "nested" / "pairs.jsonl"
+
+    assert field_access_pairs_main([
+        str(stores), str(loads), "--program-id", "analysis:sample", "--output", str(output)
+    ]) == 0
+    graph = json.loads(output.read_text(encoding="utf-8"))
+    assert {edge["relation"] for edge in graph["edges"]} == {
+        "field_store", "data_flow", "field_load"
+    }
+    assert "compatible field access pairs: 1" in capsys.readouterr().out
+
+
+def test_field_access_pair_budget_caps_cartesian_expansion() -> None:
+    stores = [
+        parameter_store_row(store_address="00401020"),
+        parameter_store_row(store_address="00401024"),
+    ]
+    loads = [
+        parameter_load_row(load_address="00401030"),
+        parameter_load_row(load_address="00401034", load_time="8", value_token="def:LOAD@00401034:8:4"),
+    ]
+
+    with pytest.raises(ValueError, match="field access pair graph budget exceeded"):
+        build_field_access_pair_graphs(stores, loads, program_id="p", max_graphs=2)
 
 
 def test_builder_projects_destination_and_stored_value_edges() -> None:
