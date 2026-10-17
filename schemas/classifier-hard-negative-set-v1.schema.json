@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/classifier-hard-negative-set-v1.schema.json",
+  "title": "REVENGINSTR.ClassifierHardNegativeSet/1 review artifact",
+  "description": "Caller-owned examples selected from family-disjoint evaluation errors for human review.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "source", "selection", "examples"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.ClassifierHardNegativeSet/1"},
+    "source": {"$ref": "#/$defs/source"},
+    "selection": {"$ref": "#/$defs/selection"},
+    "examples": {"type": "array", "items": {"$ref": "#/$defs/example"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evaluation_report_sha256", "evaluation_predictions_sha256", "evaluation_rows", "evaluation_families", "family_disjoint"],
+      "properties": {
+        "evaluation_report_sha256": {"$ref": "#/$defs/sha256"},
+        "evaluation_predictions_sha256": {"$ref": "#/$defs/sha256"},
+        "evaluation_rows": {"type": "integer", "minimum": 1},
+        "evaluation_families": {"type": "integer", "minimum": 1},
+        "family_disjoint": {"const": true}
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum_confidence", "actions", "selected_rows", "selected_families"],
+      "properties": {
+        "minimum_confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "actions": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["accept", "review", "escalate"]}},
+        "selected_rows": {"type": "integer", "minimum": 0},
+        "selected_families": {"type": "integer", "minimum": 0}
+      }
+    },
+    "example": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "family_id", "truth", "prediction", "confidence", "action"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "family_id": {"type": "string", "minLength": 1},
+        "truth": {"type": "string", "minLength": 1},
+        "prediction": {"type": "string", "minLength": 1},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "action": {"enum": ["accept", "review", "escalate"]}
+      }
+    }
+  }
+}

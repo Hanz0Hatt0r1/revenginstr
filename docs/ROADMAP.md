@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `d5be7a2a230c70266d603ae09de9d95708fda67e`
+**Repository baseline:** `main` through `4eabcf4095666fd34f29b8a712dc4002b11ca2fc`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -429,12 +429,15 @@ and evidence-aware family-grouped OOF runs when they share the same seed,
 folds, dataset fingerprint, ids, families, and labels. It reports paired error
 changes and aggregate per-class/routing deltas without exporting identities;
 the caller remains responsible for actually removing the named feature group.
+`revenginstr-retain-hard-negatives` can write a consumer-owned review artifact
+from confidence/action-filtered errors in the exact family-disjoint evaluation
+set. It retains selected ids and labels only in that caller-directed artifact;
+it does not alter datasets or inject examples into later training.
 
 ## Work
 
 - consumer-run ablations for P-code, callgraph, receiver, field, external-call and family features, compared with the paired OOF audit;
 - coarse Effect-IR features once M5 begins;
-- retained hard-negative sets;
 
 Subgroup metrics are available for caller-defined partitions. Establishing ID
 or OOD membership remains a dataset/evaluation responsibility and is not

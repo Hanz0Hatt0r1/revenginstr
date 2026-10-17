@@ -1163,3 +1163,70 @@ def test_benchmark_runs_classifier_ablation_audit_stage(tmp_path: Path) -> None:
     assert summary["stages"][-1]["tool"] == "classifier-ablation-audit"
     report = json.loads((tmp_path / "ablation-audit.json").read_text(encoding="utf-8"))
     assert report["variants"]["candidate"]["comparison_to_baseline"]["introduced_errors"] == 1
+
+
+def test_benchmark_runs_hard_negative_retention_stage(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    benchmark = json.loads(manifest_path.read_text(encoding="utf-8"))
+    predictions_path = tmp_path / "heldout-predictions.jsonl"
+    predictions = [
+        {
+            "format": "REVENGINSTR.SelectiveClassifier/1", "id": "wrong", "family_id": "family-1",
+            "truth": "alpha", "prediction": "beta", "correct": False,
+            "confidence": 0.96, "action": "accept",
+        },
+        {
+            "format": "REVENGINSTR.SelectiveClassifier/1", "id": "right", "family_id": "family-2",
+            "truth": "beta", "prediction": "beta", "correct": True,
+            "confidence": 0.98, "action": "accept",
+        },
+    ]
+    predictions_path.write_text("".join(json.dumps(row) + "\n" for row in predictions), encoding="utf-8")
+    evaluation_report_path = tmp_path / "threshold-evaluation.json"
+    evaluation_report_path.write_text(json.dumps({
+        "format": "REVENGINSTR.SelectiveThresholdEvaluation/1",
+        "source": {
+            "classifier_format": "REVENGINSTR.SelectiveClassifier/1",
+            "evaluation_predictions_sha256": _sha256(predictions_path),
+            "evaluation_rows": 2, "evaluation_families": 2, "family_disjoint": True,
+        },
+        "classes": {"alpha": {}, "beta": {}},
+    }), encoding="utf-8")
+    negative_schema = ROOT / "schemas" / "classifier-hard-negative-set-v1.schema.json"
+    benchmark["schemas"]["hard_negatives"] = {
+        "path": str(negative_schema), "version": "REVENGINSTR.ClassifierHardNegativeSet/1",
+        "sha256": _sha256(negative_schema),
+    }
+    benchmark["artifacts"].update({
+        "evaluation_report": {
+            "path": str(evaluation_report_path), "role": "input", "kind": "file",
+            "content": "json", "sha256": _sha256(evaluation_report_path),
+        },
+        "heldout_predictions": {
+            "path": str(predictions_path), "role": "input", "kind": "file",
+            "content": "jsonl", "sha256": _sha256(predictions_path),
+        },
+        "hard_negatives": {
+            "path": "hard-negatives.json", "role": "output", "kind": "file",
+            "content": "json", "format": "REVENGINSTR.ClassifierHardNegativeSet/1",
+            "schema": "hard_negatives",
+        },
+    })
+    benchmark["stages"].append({
+        "id": "retain_hard_negatives", "tool": "retain-hard-negatives",
+        "args": [
+            "${artifact:evaluation_report}", "${artifact:heldout_predictions}",
+            "--output", "${artifact:hard_negatives}",
+        ],
+        "inputs": ["evaluation_report", "heldout_predictions"], "outputs": ["hard_negatives"],
+    })
+    manifest_path.write_text(json.dumps(benchmark, indent=2) + "\n", encoding="utf-8")
+
+    summary, code = run_benchmark(manifest_path, mode="smoke", output_path=tmp_path / "summary.json")
+
+    assert code == 0
+    assert summary["status"] == "passed"
+    assert summary["stages"][-1]["tool"] == "retain-hard-negatives"
+    result = json.loads((tmp_path / "hard-negatives.json").read_text(encoding="utf-8"))
+    assert result["selection"]["selected_rows"] == 1
+    assert result["examples"][0]["id"] == "wrong"

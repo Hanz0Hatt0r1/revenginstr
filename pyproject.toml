@@ -51,6 +51,7 @@ revenginstr-selective-threshold-evaluate = "revenginstr.ml.threshold_evaluate:ma
 revenginstr-classifier-error-buckets = "revenginstr.ml.error_buckets:main"
 revenginstr-selective-subgroup-audit = "revenginstr.ml.subgroup_audit:main"
 revenginstr-classifier-ablation-audit = "revenginstr.ml.ablation_audit:main"
+revenginstr-retain-hard-negatives = "revenginstr.ml.hard_negatives:main"
 revenginstr-evidence-selective-train = "revenginstr.ml.evidence_selective:train_main"
 revenginstr-evidence-selective-infer = "revenginstr.ml.evidence_selective:infer_main"
 revenginstr-accept-router-train = "revenginstr.ml.accept_error_router:train_main"
