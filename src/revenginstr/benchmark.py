@@ -31,6 +31,7 @@ TOOLS = {
     "receiver-argument-store-flow": ("revenginstr.receiver.provenance", "argument_store_main"),
     "receiver-argument-load-flow": ("revenginstr.receiver.provenance", "argument_load_main"),
     "receiver-field-access-pairs": ("revenginstr.receiver.provenance", "field_access_pairs_main"),
+    "receiver-load-return-flow": ("revenginstr.receiver.provenance", "parameter_load_return_main"),
     "family-mine": ("revenginstr.family.mine", "main"),
     "selective-train": ("revenginstr.ml.selective", "train_main"),
     "selective-infer": ("revenginstr.ml.selective", "infer_main"),

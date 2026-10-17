@@ -17,6 +17,7 @@ from revenginstr.receiver.provenance import (
     build_argument_load_graphs,
     build_argument_store_graphs,
     build_field_access_pair_graphs,
+    build_parameter_load_return_graphs,
     build_caller_argument_graphs,
     build_parameter_store_graphs,
     build_receiver_graphs,
@@ -24,6 +25,7 @@ from revenginstr.receiver.provenance import (
     field_access_pairs_main,
     main,
     parameter_store_main,
+    parameter_load_return_main,
     validate_graph_references,
 )
 
@@ -480,6 +482,144 @@ def test_field_access_pair_budget_caps_cartesian_expansion() -> None:
 
     with pytest.raises(ValueError, match="field access pair graph budget exceeded"):
         build_field_access_pair_graphs(stores, loads, program_id="p", max_graphs=2)
+
+
+def pcode_flow_row(**overrides: str) -> dict[str, str]:
+    row = {
+        "function_entry": "00401000",
+        "op_address": "00401020",
+        "op_time": "7",
+        "opcode": "LOAD",
+        "output": "def:00401020:7:4",
+        "inputs": "const:0x1:4;def:00401020:1:8",
+        "callee_entry": "-",
+        "callee_name": "-",
+    }
+    row.update(overrides)
+    return row
+
+
+def test_parameter_load_return_flow_traces_exact_pcode_def_use_path() -> None:
+    loads = [parameter_load_row(
+        load_address="00401020", load_time="7", value_token="def:LOAD@00401020:7:4"
+    )]
+    pcode = [
+        pcode_flow_row(),
+        pcode_flow_row(
+            op_address="00401024", op_time="8", opcode="COPY",
+            output="def:00401024:8:4", inputs="def:00401020:7:4",
+        ),
+        pcode_flow_row(
+            op_address="00401030", op_time="9", opcode="RETURN",
+            output="-", inputs="const:0x0:8;def:00401024:8:4",
+        ),
+    ]
+
+    graphs = build_parameter_load_return_graphs(loads, pcode, program_id="analysis:sample")
+
+    assert len(graphs) == 1
+    graph = graphs[0]
+    Draft202012Validator(json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))).validate(graph)
+    assert graph["edges"][0]["evidence_class"] == "derived_structural"
+    assert graph["edges"][0]["relation"] == "return_flow"
+    provenance = graph["edges"][0]["provenance"]
+    assert provenance[0]["source_format"] == PARAMETER_LOAD_FORMAT
+    assert [row["source_format"] for row in provenance[1:]] == [
+        "REVENGINSTR.GhidraFunctionPcodeFlow/1",
+        "REVENGINSTR.GhidraFunctionPcodeFlow/1",
+        "REVENGINSTR.GhidraFunctionPcodeFlow/1",
+    ]
+
+
+def test_parameter_load_return_flow_omits_unreturned_values_and_rejects_mismatches() -> None:
+    load = parameter_load_row(
+        load_address="00401020", load_time="7", value_token="def:LOAD@00401020:7:4"
+    )
+    pcode = [
+        pcode_flow_row(),
+        pcode_flow_row(
+            op_address="00401024", op_time="8", opcode="COPY",
+            output="def:00401024:8:4", inputs="def:00401020:7:4",
+        ),
+    ]
+    assert build_parameter_load_return_graphs([load], pcode, program_id="p") == []
+
+    with pytest.raises(ValueError, match="no matching P-code LOAD definition"):
+        build_parameter_load_return_graphs([load], pcode[1:], program_id="p")
+
+
+@pytest.mark.parametrize(
+    ("bridge_opcode", "bridge_inputs"),
+    [
+        ("CALL", "def:00401020:7:4"),
+        ("INDIRECT", "const:0x1:4;def:00401020:7:4"),
+    ],
+)
+def test_parameter_load_return_flow_does_not_overclaim_call_or_reference_dependencies(
+    bridge_opcode: str, bridge_inputs: str
+) -> None:
+    load = parameter_load_row(
+        load_address="00401020", load_time="7", value_token="def:LOAD@00401020:7:4"
+    )
+    pcode = [
+        pcode_flow_row(),
+        pcode_flow_row(
+            op_address="00401024", op_time="8", opcode=bridge_opcode,
+            output="def:00401024:8:4", inputs=bridge_inputs,
+        ),
+        pcode_flow_row(
+            op_address="00401030", op_time="9", opcode="RETURN",
+            output="-", inputs="def:00401024:8:4",
+        ),
+    ]
+
+    assert build_parameter_load_return_graphs([load], pcode, program_id="p") == []
+
+
+def test_parameter_load_return_flow_caps_multiple_return_graphs() -> None:
+    load = parameter_load_row(
+        load_address="00401020", load_time="7", value_token="def:LOAD@00401020:7:4"
+    )
+    pcode = [
+        pcode_flow_row(),
+        pcode_flow_row(
+            op_address="00401030", op_time="9", opcode="RETURN",
+            output="-", inputs="def:00401020:7:4",
+        ),
+        pcode_flow_row(
+            op_address="00401034", op_time="10", opcode="RETURN",
+            output="-", inputs="def:00401020:7:4",
+        ),
+    ]
+
+    with pytest.raises(ValueError, match="load-return graph budget exceeded"):
+        build_parameter_load_return_graphs([load], pcode, program_id="p", max_graphs=1)
+
+
+def test_parameter_load_return_cli_writes_flow_graph(tmp_path: Path, capsys) -> None:
+    loads = tmp_path / "loads.tsv"
+    loads.write_text(
+        "format\tfunction_entry\tload_address\tload_time\tbase_parameter_index\t"
+        "field_offset\tvalue_size\tvalue_token\tstatus\n"
+        f"{PARAMETER_LOAD_FORMAT}\t00401000\t00401020\t7\t0\t0x24\t4\t"
+        "def:LOAD@00401020:7:4\tparameter_field_load\n",
+        encoding="utf-8",
+    )
+    pcode = tmp_path / "pcode.tsv"
+    pcode.write_text(
+        "function_entry\top_address\top_time\topcode\toutput\tinputs\tcallee_entry\tcallee_name\n"
+        "00401000\t00401020\t7\tLOAD\tdef:00401020:7:4\tconst:0x1:4\t-\t-\n"
+        "00401000\t00401030\t9\tRETURN\t-\tdef:00401020:7:4\t-\t-\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "nested" / "flows.jsonl"
+
+    assert parameter_load_return_main([
+        str(loads), str(pcode), "--program-id", "analysis:sample", "--output", str(output)
+    ]) == 0
+    graph = json.loads(output.read_text(encoding="utf-8"))
+    assert graph["edges"][0]["relation"] == "return_flow"
+    assert "load-return graphs: 1" in capsys.readouterr().out
 
 
 def test_builder_projects_destination_and_stored_value_edges() -> None:

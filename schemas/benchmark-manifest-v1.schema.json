@@ -92,7 +92,7 @@
       "required": ["id", "tool", "args", "inputs", "outputs"],
       "properties": {
         "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"},
-        "tool": {"enum": ["pcode-audit", "foreign-guard", "callgraph", "evidence-aggregate", "receiver-plan", "receiver-infer", "receiver-argument-store-flow", "receiver-argument-load-flow", "receiver-field-access-pairs", "family-mine", "selective-train", "selective-infer", "evidence-selective-train", "evidence-selective-infer", "accept-router-train", "accept-router-infer", "freeze-validation", "drift-audit"]},
+        "tool": {"enum": ["pcode-audit", "foreign-guard", "callgraph", "evidence-aggregate", "receiver-plan", "receiver-infer", "receiver-argument-store-flow", "receiver-argument-load-flow", "receiver-field-access-pairs", "receiver-load-return-flow", "family-mine", "selective-train", "selective-infer", "evidence-selective-train", "evidence-selective-infer", "accept-router-train", "accept-router-infer", "freeze-validation", "drift-audit"]},
         "mode": {"enum": ["both", "smoke", "full"]},
         "args": {"type": "array", "items": {"type": "string"}},
         "inputs": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
