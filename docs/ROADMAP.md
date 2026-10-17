@@ -401,6 +401,14 @@ Nevergone evidence demonstrates why this distinction matters: both pairs have
 intervening explicit stores, so the current evidence cannot support a positive
 reaching-definition result.
 
+The next alias-aware extension is bounded by the
+[field memory alias contract](FIELD_MEMORY_ALIAS_CONTRACT.md). It requires
+exact operation-key joins, a proven base root plus signed byte offset and
+width, fail-closed behavior for unresolved writes, a versioned output that
+pins its access-facts input, and a consumer-owned frozen validation. Logical
+P-code space separation remains distinct from physical-overlay or runtime
+alias claims.
+
 Remaining propagation work:
 
 1. consumer-validated factory hypotheses linked to call-result-to-return paths;
@@ -987,7 +995,9 @@ Mitigation: preserve heuristic/sparse baselines, feature ablations and evidence-
 Continue with **M2.3**: the Nevergone consumer now freezes and replays the
 CFG/1 dominance audit as `incomplete_evidence`, preserving the rows as negative
 evidence. Capture and freeze a consumer CFG/2 run when a Ghidra database can be
-opened within the available disk budget. Then specify the minimum memory-
-location/alias and effect metadata needed before same-space writes can be
-proven non-aliasing. Keep labels, binary rows, and measured outcomes in their
-consumer repositories.
+opened within the available disk budget. The shared minimum metadata and
+fail-closed comparison rules are now specified in
+`FIELD_MEMORY_ALIAS_CONTRACT.md`; next implement them as a versioned access-fact
+input/output path, then freeze consumer evidence before any same-space
+non-aliasing result is enabled. Keep labels, binary rows, and measured outcomes
+in their consumer repositories.
