@@ -1,0 +1,462 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/function-effect-ir-v2.schema.json",
+  "title": "REVENGINSTR.FunctionEffectIR/2",
+  "description": "Project-neutral function summary of selected structural operations. Version 2 additionally records exact P-code LOAD/STORE operations without asserting pointer resolution or value flow.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "program_id",
+    "function_entry",
+    "effects"
+  ],
+  "properties": {
+    "format": {
+      "const": "REVENGINSTR.FunctionEffectIR/2"
+    },
+    "program_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "function_entry": {
+      "type": "string",
+      "minLength": 1
+    },
+    "effects": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/effect"
+      }
+    }
+  },
+  "$defs": {
+    "effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "effect_id",
+        "kind",
+        "operation_address",
+        "operation_time",
+        "opcode",
+        "parameter_index",
+        "field_offset",
+        "value_size",
+        "value_token",
+        "source_parameter_index",
+        "target_entry",
+        "target_name",
+        "inputs",
+        "evidence_class",
+        "provenance"
+      ],
+      "properties": {
+        "effect_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "kind": {
+          "enum": [
+            "parameter_field_read",
+            "parameter_field_write",
+            "direct_call",
+            "indirect_call",
+            "return_op",
+            "memory_read",
+            "memory_write"
+          ]
+        },
+        "operation_address": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operation_time": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "opcode": {
+          "type": "string",
+          "enum": [
+            "LOAD",
+            "STORE",
+            "CALL",
+            "CALLIND",
+            "RETURN"
+          ]
+        },
+        "parameter_index": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "field_offset": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^-?0x[0-9a-f]+$"
+        },
+        "value_size": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "value_token": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "source_parameter_index": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "target_entry": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "target_name": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "evidence_class": {
+          "enum": [
+            "exact_static",
+            "derived_structural"
+          ]
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "parameter_field_read"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "opcode": {
+                "const": "LOAD"
+              },
+              "parameter_index": {
+                "type": "integer"
+              },
+              "field_offset": {
+                "type": "string"
+              },
+              "value_size": {
+                "type": "integer"
+              },
+              "value_token": {
+                "type": "string"
+              },
+              "source_parameter_index": {
+                "type": "null"
+              },
+              "target_entry": {
+                "type": "null"
+              },
+              "target_name": {
+                "type": "null"
+              },
+              "evidence_class": {
+                "const": "derived_structural"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "parameter_field_write"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "opcode": {
+                "const": "STORE"
+              },
+              "parameter_index": {
+                "type": "integer"
+              },
+              "field_offset": {
+                "type": "string"
+              },
+              "source_parameter_index": {
+                "type": "integer"
+              },
+              "value_token": {
+                "type": "null"
+              },
+              "target_entry": {
+                "type": "null"
+              },
+              "target_name": {
+                "type": "null"
+              },
+              "evidence_class": {
+                "const": "derived_structural"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "direct_call"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "opcode": {
+                "const": "CALL"
+              },
+              "parameter_index": {
+                "type": "null"
+              },
+              "field_offset": {
+                "type": "null"
+              },
+              "value_size": {
+                "type": "null"
+              },
+              "value_token": {
+                "type": "null"
+              },
+              "source_parameter_index": {
+                "type": "null"
+              },
+              "target_entry": {
+                "type": "string"
+              },
+              "target_name": {
+                "type": "string"
+              },
+              "evidence_class": {
+                "const": "exact_static"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "indirect_call"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "opcode": {
+                "const": "CALLIND"
+              },
+              "parameter_index": {
+                "type": "null"
+              },
+              "field_offset": {
+                "type": "null"
+              },
+              "value_size": {
+                "type": "null"
+              },
+              "value_token": {
+                "type": "null"
+              },
+              "source_parameter_index": {
+                "type": "null"
+              },
+              "target_entry": {
+                "type": "string"
+              },
+              "target_name": {
+                "type": "string"
+              },
+              "evidence_class": {
+                "const": "exact_static"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "return_op"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "opcode": {
+                "const": "RETURN"
+              },
+              "parameter_index": {
+                "type": "null"
+              },
+              "field_offset": {
+                "type": "null"
+              },
+              "value_size": {
+                "type": "null"
+              },
+              "value_token": {
+                "type": "null"
+              },
+              "source_parameter_index": {
+                "type": "null"
+              },
+              "target_entry": {
+                "type": "null"
+              },
+              "target_name": {
+                "type": "null"
+              },
+              "evidence_class": {
+                "const": "exact_static"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "memory_read"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "opcode": {
+                "const": "LOAD"
+              },
+              "parameter_index": {
+                "type": "null"
+              },
+              "field_offset": {
+                "type": "null"
+              },
+              "value_size": {
+                "type": "null"
+              },
+              "source_parameter_index": {
+                "type": "null"
+              },
+              "target_entry": {
+                "type": "null"
+              },
+              "target_name": {
+                "type": "null"
+              },
+              "evidence_class": {
+                "const": "exact_static"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "memory_write"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "opcode": {
+                "const": "STORE"
+              },
+              "parameter_index": {
+                "type": "null"
+              },
+              "field_offset": {
+                "type": "null"
+              },
+              "value_size": {
+                "type": "null"
+              },
+              "value_token": {
+                "type": "null"
+              },
+              "source_parameter_index": {
+                "type": "null"
+              },
+              "target_entry": {
+                "type": "null"
+              },
+              "target_name": {
+                "type": "null"
+              },
+              "evidence_class": {
+                "const": "exact_static"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_format",
+        "artifact_sha256",
+        "record_index"
+      ],
+      "properties": {
+        "source_format": {
+          "enum": [
+            "REVENGINSTR.GhidraParameterStoreField/1",
+            "REVENGINSTR.GhidraParameterLoadField/1",
+            "REVENGINSTR.GhidraFunctionPcodeFlow/1"
+          ]
+        },
+        "artifact_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "record_index": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

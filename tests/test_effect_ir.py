@@ -15,6 +15,7 @@ STORE_FIXTURE = ROOT / "tests/fixtures/parameter-field/parameter-stores.tsv"
 LOAD_FIXTURE = ROOT / "tests/fixtures/parameter-field/parameter-loads.tsv"
 PCODE_FIXTURE = ROOT / "tests/fixtures/receiver-flow-pcode.tsv"
 SCHEMA = json.loads((ROOT / "schemas/function-effect-ir-v1.schema.json").read_text(encoding="utf-8"))
+SCHEMA_V2 = json.loads((ROOT / "schemas/function-effect-ir-v2.schema.json").read_text(encoding="utf-8"))
 
 
 def test_function_effect_ir_projects_only_evidence_backed_operations() -> None:
@@ -64,6 +65,41 @@ def test_function_effect_ir_keeps_unresolved_indirect_call_target(tmp_path: Path
     [effect] = record["effects"]
     assert effect["kind"] == "indirect_call"
     assert effect["target_entry"] == effect["target_name"] == "-"
+
+
+def test_function_effect_ir_v2_includes_exact_generic_memory_operations(tmp_path: Path) -> None:
+    source = tmp_path / "pcode.tsv"
+    source.write_text(
+        "function_entry\top_address\top_time\topcode\toutput\tinputs\tcallee_entry\tcallee_name\n"
+        "00401000\t00401020\t7\tLOAD\tdef:00401020:7:4\tconst:0x1:4;register:0010:4\t-\t-\n"
+        "00401000\t00401024\t8\tSTORE\t-\tconst:0x1:4;register:0010:4;register:0020:4\t-\t-\n"
+        "00401000\t00401030\t9\tCALL\t-\tconst:0x402100:4\t00402100\tFUN_00402100\n",
+        encoding="utf-8",
+    )
+
+    [legacy] = build_function_effect_ir("p", pcode_flow_tsv=source)
+    assert legacy["format"] == "REVENGINSTR.FunctionEffectIR/1"
+    assert {effect["kind"] for effect in legacy["effects"]} == {"direct_call"}
+
+    [record] = build_function_effect_ir(
+        "p", pcode_flow_tsv=source, include_generic_memory_ops=True,
+    )
+    Draft202012Validator.check_schema(SCHEMA_V2)
+    Draft202012Validator(SCHEMA_V2).validate(record)
+    effects = {effect["kind"]: effect for effect in record["effects"]}
+    assert record["format"] == "REVENGINSTR.FunctionEffectIR/2"
+    assert set(effects) == {"memory_read", "memory_write", "direct_call"}
+    assert effects["memory_read"]["opcode"] == "LOAD"
+    assert effects["memory_read"]["value_token"] == "def:00401020:7:4"
+    assert effects["memory_read"]["inputs"] == ["const:0x1:4", "register:0010:4"]
+    assert effects["memory_read"]["evidence_class"] == "exact_static"
+    assert effects["memory_write"]["opcode"] == "STORE"
+    assert effects["memory_write"]["inputs"][-1] == "register:0020:4"
+    assert effects["memory_write"]["parameter_index"] is None
+    assert all(effect["provenance"]["artifact_sha256"] == sha256(source.read_bytes()).hexdigest() for effect in effects.values())
+
+    with pytest.raises(ValueError, match="require P-code flow"):
+        build_function_effect_ir("p", parameter_store_tsv=STORE_FIXTURE, include_generic_memory_ops=True)
 
 
 def test_function_effect_ir_fails_closed_on_bad_inputs_and_budget(tmp_path: Path) -> None:
