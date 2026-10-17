@@ -28,45 +28,10 @@ def test_generic_function_instruction_contract() -> None:
     )
     Draft202012Validator.check_schema(schema)
     validator = Draft202012Validator(schema)
-    validator.validate({
-        "format": "REVENGINSTR.GhidraFunctionInstructions/1",
-        "program": "sample",
-        "requested": "FUN_00401000",
-        "resolved_address": "0x00401000",
-        "found": True,
-        "function": {
-            "address": "0x00401000",
-            "name": "sub_00401000",
-            "size": 4,
-            "calling_convention": "unknown",
-        },
-        "instruction_count": 1,
-        "instructions": [{
-            "address": "0x00401000",
-            "bytes": "90",
-            "mnemonic": "NOP",
-            "text": "NOP",
-            "operands": [],
-            "flow_type": "FALL_THROUGH",
-            "fallthrough": "0x00401001",
-            "flows": [],
-            "references": [],
-            "pcode": [{
-                "opcode": "COPY",
-                "text": "unique[0x1:1] = COPY RAX",
-                "output": {
-                    "text": "unique[0x1:1]",
-                    "space": "unique",
-                    "offset": "0x1",
-                    "size": 1,
-                    "constant": False,
-                    "register": False,
-                    "unique": True,
-                },
-                "inputs": [],
-            }],
-        }],
-    })
+    fixture = json.loads(
+        (ROOT / "tests/fixtures/ghidra-instructions/function-instructions.json").read_text(encoding="utf-8")
+    )
+    validator.validate(fixture)
     validator.validate({
         "format": "REVENGINSTR.GhidraFunctionInstructions/1",
         "program": "sample",

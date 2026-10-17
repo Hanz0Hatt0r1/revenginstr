@@ -27,35 +27,10 @@ def test_instruction_slice_export_contract() -> None:
     schema = json.loads((ROOT / "schemas/ghidra-instruction-slice-v1.schema.json").read_text())
     Draft202012Validator.check_schema(schema)
     validator = Draft202012Validator(schema)
-    validator.validate({
-        "format": "REVENGINSTR.GhidraInstructionSlice/1",
-        "program": "sample.bin",
-        "requested": "0x401000:0x10",
-        "start": "0x00401000",
-        "length": 16,
-        "exact_instruction_at_start": True,
-        "instruction_count": 1,
-        "instructions": [{
-            "address": "0x00401000",
-            "bytes": "90",
-            "mnemonic": "NOP",
-            "text": "NOP",
-            "operands": [],
-            "flow_type": "FALL_THROUGH",
-            "fallthrough": "0x00401001",
-            "flows": [],
-            "references": [],
-            "pcode": [{
-                "opcode": "COPY",
-                "text": "unique[0x1:1] = COPY RAX",
-                "output": {
-                    "text": "unique[0x1:1]", "space": "unique", "offset": "0x1",
-                    "size": 1, "constant": False, "register": False, "unique": True,
-                },
-                "inputs": [],
-            }],
-        }],
-    })
+    fixture = json.loads(
+        (ROOT / "tests/fixtures/ghidra-instructions/instruction-slice.json").read_text(encoding="utf-8")
+    )
+    validator.validate(fixture)
     validator.validate({
         "format": "REVENGINSTR.GhidraInstructionSlice/1",
         "program": "sample.bin",

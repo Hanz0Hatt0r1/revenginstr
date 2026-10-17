@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `72e8dbec753d7ffa6fcbdb69ba4eec29e6609a12`
+**Repository baseline:** `main` through `0a3dd71544da1a97767bc086fc094b3079221151`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -306,6 +306,9 @@ accounting, including a non-BMP character.
 Synthetic function-identity plan/output TSVs now cover exact and containing
 resolution requests, preserve their plan keys, and validate both wire headers
 and row schemas.
+Function-instruction and address-slice contract tests now consume persisted
+synthetic JSON fixtures with nested instruction/P-code rows, while retaining
+the existing empty/not-found cases as boundary checks.
 
 ### M1.4 Consumer boundary
 
