@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `7535a196f37751487982f882e645d18113897a95`
+**Repository baseline:** `main` through `af59da68df3b34e2d3c56ff759c7858d2d49b082`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -442,11 +442,30 @@ extends the consumer bundle to thirteen functions and 33 pairs. Two complete
 write-free calls occur on two exact witnesses, but each witness also contains
 indirect calls, so `/3` keeps both pairs unresolved. [PR
 #2029](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2029)
-freezes an additional read-only screen of 22 functions; none has a
-parameter-rooted store and therefore none yields a field pair. The scan10–13
+freezes 22 more functions with zero `ParameterStoreField/1` rows and zero
+field pairs; its general memory-store sidecar retains 156 STORE facts, 53 with
+a parameter root. NFS [PR #2030](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2030)
+freezes scan15 over 62 functions with zero indirect calls: it has zero
+`ParameterStoreField/1` rows, 238 parameter-load rows and 302 general STORE
+facts. NFS [PR #2031](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2031)
+freezes scan16 over 70 functions with one indirect call each; 18 parameter
+field-store rows produce five exact field pairs across three functions. Its
+direct-call sidecar has eight explicit-write sites, three indirect-call
+barriers, and one unknown-effect site, with no complete write-free direct
+callee. [PR #2032](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2032)
+freezes the `/2` comparison: all five pairs have the same status in `/2` and
+`/3` (three possible intervening effects and two stores that do not dominate
+the load), with zero status changes and zero unique candidates. NFS PR
+[#2033](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2033)
+freezes scan17 over 49 functions with exactly two indirect calls. It records
+17 parameter-field stores, 72 exact pairs across 15 functions, and identical
+`/2` and `/3` results (70 non-dominating stores, two possible intervening
+effects, no unique candidate). The direct-call sidecar contains 73 explicit
+write sites and 30 indirect-call barriers, with no write-free direct callee.
+The scan10–13
 screen records 630 additional exports and 23 ordered pairs without any `/2` to
-`/3` status change. The NFS evidence remains fail-closed and supplies no
-positive reaching-definition or runtime value-flow result.
+`/3` status change. These screens remain fail-closed and provide no positive
+reaching-definition or runtime value-flow result.
 See the [call and memory effect contract](FIELD_MEMORY_ALIAS_CONTRACT.md).
 
 Remaining propagation work:
@@ -1074,11 +1093,13 @@ Mitigation: preserve heuristic/sparse baselines, feature ablations and evidence-
 # 20. Immediate next action
 
 **M2.3 consumer capture/replay now covers two consumers.** Nevergone's frozen
-CFG/3 and memory-store sidecar replay is pinned in [PR #729](https://github.com/Hanz0Hatt0r1/nevergone-recomp/pull/729); its two store/load pairs remain unresolved because intervening effects are possible. NFS Shift PRs [#2025](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2025) and [#2026](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2026) freeze ten functions and 28 pairs with no complete write-free callee. PR [#2027](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2027) adds a write-free call on a witness alongside an unknown-effect call; PR [#2028](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2028) adds two write-free calls with indirect-call barriers on both witnessed paths; `/3` leaves all these rows unresolved. PR [#2029](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2029) freezes 22 more functions that produce no parameter-rooted stores or field pairs. Scans 10–14 have not found the positive `/3` upgrade case. Labels, raw rows, and measured outcomes stay in their consumer repositories.
+CFG/3 and memory-store sidecar replay is pinned in [PR #729](https://github.com/Hanz0Hatt0r1/nevergone-recomp/pull/729); its two store/load pairs remain unresolved because intervening effects are possible. NFS Shift PRs [#2025](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2025) and [#2026](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2026) freeze ten functions and 28 pairs with no complete write-free callee. PR [#2027](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2027) adds a write-free call on a witness alongside an unknown-effect call; PR [#2028](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2028) adds two write-free calls with indirect-call barriers on both witnessed paths; `/3` leaves all these rows unresolved. Scans 14–17 are frozen in PRs [#2029](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2029), [#2030](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2030), [#2031](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2031), and [#2032](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2032), [#2033](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2033). Scan14’s zero result applies only to the `ParameterStoreField/1` exporter; general STORE facts remain in the consumer sidecar. Scan16’s five pairs and scan17’s 72 pairs have identical `/2` and `/3` statuses, with no unique candidate. Labels, raw rows, and measured outcomes stay in their consumer repositories.
 
-Next, continue screening the remaining consumer corpus for a pair where a
-complete write-free direct call is the only remaining effect on the candidate
-path and `/3` can report a unique structural candidate while unknown, indirect,
-nested, and missing effects remain barriers. Keep `/1` and `/2` unchanged. If
-the evidence does not provide that case, preserve the unresolved result and
-make no value-flow claim.
+Next, screen the 24 previously unscanned functions with exactly three
+indirect calls in the SHIFT sample. If they yield exact parameter-field pairs,
+export CFG/3 and complete direct-callee flows for those roots, then compare `/2`
+and `/3` on the same pairs. A unique result is allowed only when every
+intervening effect is excluded by exact evidence; indirect, unknown, nested,
+and missing effects remain barriers. Keep `/1` and `/2` unchanged. If this
+screen provides no positive case, preserve the unresolved result and make no
+value-flow claim.
