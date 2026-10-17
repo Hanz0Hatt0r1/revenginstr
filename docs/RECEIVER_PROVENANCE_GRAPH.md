@@ -205,6 +205,28 @@ operations are unaffected. The output pins the third input hash and sidecar
 record ordinals. Without the option, the command continues to emit the
 backward-compatible `/1` audit.
 
+For a stricter call-aware audit, build
+[`GhidraDirectCallMemoryEffect/1`](../schemas/ghidra-direct-call-memory-effect-v1.schema.json)
+rows from complete one-function P-code flow exports for the caller and any
+direct callee, then provide both sidecars:
+
+```sh
+revenginstr-receiver-field-store-load-dominance-audit field-access-pairs.jsonl \
+  function-pcode-cfg-v3.jsonl \
+  --memory-store-access-jsonl memory-stores.jsonl \
+  --direct-call-memory-effect-jsonl direct-call-memory-effects.jsonl \
+  --output field-store-load-dominance-audit-v3.jsonl
+```
+
+`FieldStoreLoadDominanceAudit/3` filters a call barrier only when an exact
+`CALL` site has a resolved direct callee whose complete P-code flow consists
+only of known write-free operations. The summary builder does not recurse:
+nested calls, `CALLIND`, `CALLOTHER`, `STORE`, and unrecognized operations
+remain possible effects. Missing summaries never remove barriers. The `/3`
+audit pins both sidecars and their row ordinals; `/1` and `/2` remain unchanged
+when the new option is absent. Even a `/3` unique candidate is structural
+evidence only, not branch-feasible execution or runtime value flow.
+
 Parameter-rooted loads can also be traced through P-code data dependencies to
 function returns:
 

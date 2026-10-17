@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-direct-call-memory-effect-v1.schema.json",
+  "title": "REVENGINSTR.GhidraDirectCallMemoryEffect/1 JSONL row",
+  "description": "Exact call-site evidence from metadata-only High-P-code flow exports. Only a complete single-function callee flow containing whitelisted non-writing operations is marked write-free.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "program_id", "function_entry", "address", "time", "opcode",
+    "callee_entry", "status", "effect_opcodes", "provenance"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraDirectCallMemoryEffect/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "function_entry": {"type": "string", "minLength": 1},
+    "address": {"type": "string", "minLength": 1},
+    "time": {"type": "integer", "minimum": 0},
+    "opcode": {"enum": ["CALL", "CALLIND"]},
+    "callee_entry": {"type": ["string", "null"], "minLength": 1},
+    "status": {"enum": [
+      "no_explicit_memory_write", "explicit_memory_write", "unknown_effect",
+      "unresolved_target", "indirect_call", "missing_callee_flow"
+    ]},
+    "effect_opcodes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "provenance": {"$ref": "#/$defs/provenance"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "no_explicit_memory_write"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "opcode": {"const": "CALL"},
+          "callee_entry": {"type": "string", "minLength": 1},
+          "effect_opcodes": {"maxItems": 0},
+          "provenance": {"properties": {
+            "callee_pcode_flow_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "callee_pcode_flow_record_count": {"type": "integer", "minimum": 1}
+          }}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "explicit_memory_write"}}, "required": ["status"]},
+      "then": {"properties": {"effect_opcodes": {"contains": {"const": "STORE"}}}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "unknown_effect"}}, "required": ["status"]},
+      "then": {"properties": {"effect_opcodes": {"minItems": 1, "not": {"contains": {"const": "STORE"}}}}}
+    },
+    {
+      "if": {"properties": {"status": {"enum": ["unresolved_target", "indirect_call", "missing_callee_flow"]}}, "required": ["status"]},
+      "then": {"properties": {"effect_opcodes": {"maxItems": 0}}}
+    }
+  ],
+  "$defs": {
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "caller_pcode_flow_sha256", "caller_pcode_flow_record_index",
+        "callee_pcode_flow_sha256", "callee_pcode_flow_record_count"
+      ],
+      "properties": {
+        "caller_pcode_flow_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "caller_pcode_flow_record_index": {"type": "integer", "minimum": 1},
+        "callee_pcode_flow_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "callee_pcode_flow_record_count": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

@@ -29,14 +29,23 @@ ANALYZE="$GHIDRA_HOME/support/analyzeHeadless"
 [[ -x "$ANALYZE" ]] || { echo "error: analyzeHeadless not executable: $ANALYZE" >&2; exit 1; }
 mkdir -p "$(dirname -- "$OUTPUT")"
 TMP_SCRIPT_DIR=$(mktemp -d)
-trap 'rm -rf -- "$TMP_SCRIPT_DIR"' EXIT
+TMP_LOG_DIR=$(mktemp -d)
+trap 'rm -rf -- "$TMP_SCRIPT_DIR" "$TMP_LOG_DIR"' EXIT
 cp "$ROOT/ghidra/ExportFunctionPcodeFlow.java" "$TMP_SCRIPT_DIR/ExportFunctionPcodeFlow.java"
 
-"$ANALYZE" \
+RUN_LOG="$TMP_LOG_DIR/analyze.log"
+if ! "$ANALYZE" \
   "$PROJECT_DIR" "$PROJECT_NAME" \
   -recursive \
   -process "$PROGRAM_NAME" \
   -readOnly \
   -noanalysis \
   -scriptPath "$TMP_SCRIPT_DIR" \
-  -postScript ExportFunctionPcodeFlow.java "$FUNCTION" "$OUTPUT"
+  -postScript ExportFunctionPcodeFlow.java "$FUNCTION" "$OUTPUT" \
+  2>&1 | tee "$RUN_LOG"; then
+  exit 1
+fi
+if ! grep -Fq 'GHIDRA_FUNCTION_PCODE_FLOW_FORMAT=REVENGINSTR.GhidraFunctionPcodeFlow/1' "$RUN_LOG"; then
+  echo "error: Ghidra did not report successful function P-code flow export completion" >&2
+  exit 1
+fi

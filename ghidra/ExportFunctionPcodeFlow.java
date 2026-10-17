@@ -180,5 +180,8 @@ public class ExportFunctionPcodeFlow extends GhidraScript {
 
         println("Exported " + rows + " P-code flow rows for " + function.getName(true) +
             " at " + function.getEntryPoint() + " -> " + output);
+        println("GHIDRA_FUNCTION_PCODE_FLOW_FORMAT=REVENGINSTR.GhidraFunctionPcodeFlow/1");
+        println("GHIDRA_FUNCTION_PCODE_FLOW_FUNCTION=" + function.getEntryPoint());
+        println("GHIDRA_FUNCTION_PCODE_FLOW_ROWS=" + rows);
     }
 }

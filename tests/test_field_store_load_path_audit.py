@@ -24,6 +24,7 @@ CFG_V2_SCHEMA = json.loads((ROOT / "schemas/ghidra-function-pcode-cfg-v2.schema.
 CFG_V3_SCHEMA = json.loads((ROOT / "schemas/ghidra-function-pcode-cfg-v3.schema.json").read_text(encoding="utf-8"))
 DOMINANCE_SCHEMA = json.loads((ROOT / "schemas/field-store-load-dominance-audit-v1.schema.json").read_text(encoding="utf-8"))
 DOMINANCE_V2_SCHEMA = json.loads((ROOT / "schemas/field-store-load-dominance-audit-v2.schema.json").read_text(encoding="utf-8"))
+DOMINANCE_V3_SCHEMA = json.loads((ROOT / "schemas/field-store-load-dominance-audit-v3.schema.json").read_text(encoding="utf-8"))
 MEMORY_STORE_ACCESS_SCHEMA = json.loads((ROOT / "schemas/ghidra-memory-store-access-v1.schema.json").read_text(encoding="utf-8"))
 
 
@@ -108,10 +109,12 @@ def _cfg_v3_row(
     intervening_store_space: str | None = "register",
     intervening_physical_space: str | None = "register-physical",
     tracked_physical_space: str | None = "ram-physical",
+    effect_on_one_branch: bool = False,
 ):
     cfg = _cfg_v2_row(
         intervening_store=intervening_store,
         intervening_store_space=intervening_store_space,
+        effect_on_one_branch=effect_on_one_branch,
     )
     cfg["format"] = "REVENGINSTR.GhidraFunctionPcodeCFG/3"
     for block in cfg["blocks"]:
@@ -166,6 +169,28 @@ def _memory_store_fact(
         "location_status": "parameter_rooted_constant_offset" if resolved else "unresolved",
         "destination_pattern": "ptrsub" if resolved else "opaque_INT_MULT",
         "address_expression_ops": [],
+    }
+
+
+def _direct_call_effect_fact(*, status: str = "no_explicit_memory_write", opcode: str = "CALL"):
+    has_callee = opcode == "CALL" and status != "unresolved_target"
+    has_flow = has_callee and status not in {"missing_callee_flow"}
+    return {
+        "format": "REVENGINSTR.GhidraDirectCallMemoryEffect/1",
+        "program_id": "synthetic:cfg",
+        "function_entry": "00401000",
+        "address": "00401024",
+        "time": 10,
+        "opcode": opcode,
+        "callee_entry": "00402000" if has_callee else None,
+        "status": status,
+        "effect_opcodes": ["CALLIND"] if status == "unknown_effect" else [],
+        "provenance": {
+            "caller_pcode_flow_sha256": "e" * 64,
+            "caller_pcode_flow_record_index": 1,
+            "callee_pcode_flow_sha256": "f" * 64 if has_flow else None,
+            "callee_pcode_flow_record_count": 1 if has_flow else 0,
+        },
     }
 
 
@@ -403,6 +428,68 @@ def test_memory_access_facts_enable_versioned_same_root_disjoint_range_audit() -
     assert row["provenance"]["memory_access_comparisons_used"] == 1
 
 
+def test_complete_write_free_direct_call_summary_enables_dominance_v3() -> None:
+    cfg = _cfg_v3_row(effect_on_one_branch=True)
+    candidate = _memory_store_fact("00401020", 7, offset=0x10)
+    call_effect = _direct_call_effect_fact()
+    Draft202012Validator.check_schema(DOMINANCE_V3_SCHEMA)
+    [v2_row] = audit_field_store_load_dominance(
+        _pair_graphs(), [cfg], pair_graph_sha256="a" * 64, cfg_sha256="b" * 64,
+        memory_store_access_rows=[candidate], memory_store_access_sha256="c" * 64,
+    )
+    assert v2_row["status"] == "possible_intervening_memory_effect"
+    [row] = audit_field_store_load_dominance(
+        _pair_graphs(), [cfg], pair_graph_sha256="a" * 64, cfg_sha256="b" * 64,
+        memory_store_access_rows=[candidate], memory_store_access_sha256="c" * 64,
+        direct_call_memory_effect_rows=[call_effect], direct_call_memory_effect_sha256="d" * 64,
+    )
+    Draft202012Validator(DOMINANCE_V3_SCHEMA).validate(row)
+    assert row["format"] == "REVENGINSTR.FieldStoreLoadDominanceAudit/3"
+    assert row["status"] == "unique_cfg_store_candidate"
+    assert row["memory_effect_path_exists"] is False
+    assert row["provenance"]["direct_call_memory_effect_sha256"] == "d" * 64
+    assert row["provenance"]["direct_call_memory_effect_record_indices"] == [1]
+
+
+@pytest.mark.parametrize(
+    ("opcode", "status", "effects"),
+    [("CALL", "unknown_effect", ["CALLIND"]), ("CALLIND", "indirect_call", [])],
+)
+def test_unresolved_or_effectful_call_summaries_remain_barriers(
+    opcode: str, status: str, effects: list[str],
+) -> None:
+    cfg = _cfg_v3_row(effect_on_one_branch=True)
+    cfg["blocks"][2]["operations"][0]["opcode"] = opcode
+    candidate = _memory_store_fact("00401020", 7, offset=0x10)
+    call_effect = _direct_call_effect_fact(status=status, opcode=opcode)
+    call_effect["effect_opcodes"] = effects
+    [row] = audit_field_store_load_dominance(
+        _pair_graphs(), [cfg], pair_graph_sha256="a" * 64, cfg_sha256="b" * 64,
+        memory_store_access_rows=[candidate], memory_store_access_sha256="c" * 64,
+        direct_call_memory_effect_rows=[call_effect], direct_call_memory_effect_sha256="d" * 64,
+    )
+    assert row["status"] == "possible_intervening_memory_effect"
+    assert row["memory_effect_path_exists"] is True
+
+
+def test_direct_call_effects_require_memory_access_sidecar_and_exact_cfg_join() -> None:
+    cfg = _cfg_v3_row(effect_on_one_branch=True)
+    call_effect = _direct_call_effect_fact()
+    with pytest.raises(ValueError, match="require memory store access rows"):
+        audit_field_store_load_dominance(
+            _pair_graphs(), [cfg], pair_graph_sha256="a" * 64, cfg_sha256="b" * 64,
+            direct_call_memory_effect_rows=[call_effect], direct_call_memory_effect_sha256="d" * 64,
+        )
+    call_effect["address"] = "00401025"
+    with pytest.raises(ValueError, match="operation does not match CFG call"):
+        audit_field_store_load_dominance(
+            _pair_graphs(), [cfg], pair_graph_sha256="a" * 64, cfg_sha256="b" * 64,
+            memory_store_access_rows=[_memory_store_fact("00401020", 7, offset=0x10)],
+            memory_store_access_sha256="c" * 64,
+            direct_call_memory_effect_rows=[call_effect], direct_call_memory_effect_sha256="d" * 64,
+        )
+
+
 def test_memory_access_facts_cross_check_cfg3_physical_metadata() -> None:
     cfg = _cfg_v3_row(
         intervening_store=True,
@@ -578,6 +665,89 @@ def test_dominance_cli_emits_v2_when_memory_access_facts_are_supplied(tmp_path: 
     Draft202012Validator(DOMINANCE_V2_SCHEMA).validate(row)
     assert row["status"] == "unique_cfg_store_candidate"
     assert row["provenance"]["memory_store_access_sha256"] == sha256(facts_path.read_bytes()).hexdigest()
+
+
+def test_dominance_cli_emits_v3_when_direct_call_facts_are_supplied(tmp_path: Path) -> None:
+    pairs_path = tmp_path / "pairs.jsonl"
+    cfg_path = tmp_path / "cfg-v3.jsonl"
+    facts_path = tmp_path / "memory-store-access.jsonl"
+    calls_path = tmp_path / "direct-call-effects.jsonl"
+    output_path = tmp_path / "dominance-v3.jsonl"
+    pairs_path.write_text("".join(json.dumps(row) + "\n" for row in _pair_graphs()), encoding="utf-8")
+    cfg_path.write_text(json.dumps(_cfg_v3_row(effect_on_one_branch=True)) + "\n", encoding="utf-8")
+    facts_path.write_text(json.dumps(_memory_store_fact("00401020", 7, offset=0x10)) + "\n", encoding="utf-8")
+    calls_path.write_text(json.dumps(_direct_call_effect_fact()) + "\n", encoding="utf-8")
+    assert dominance_main([
+        str(pairs_path), str(cfg_path), "--memory-store-access-jsonl", str(facts_path),
+        "--direct-call-memory-effect-jsonl", str(calls_path), "--output", str(output_path),
+    ]) == 0
+    [row] = [json.loads(line) for line in output_path.read_text(encoding="utf-8").splitlines()]
+    Draft202012Validator(DOMINANCE_V3_SCHEMA).validate(row)
+    assert row["status"] == "unique_cfg_store_candidate"
+    assert row["provenance"]["direct_call_memory_effect_sha256"] == sha256(calls_path.read_bytes()).hexdigest()
+
+
+def test_v3_dominance_replays_from_a_frozen_benchmark_manifest(tmp_path: Path) -> None:
+    files = {
+        "pairs": (tmp_path / "pairs.jsonl", _pair_graphs(), "receiver-provenance-graph-v1.schema.json", "REVENGINSTR.ReceiverProvenanceGraph/1"),
+        "cfg": (tmp_path / "cfg.jsonl", [_cfg_v3_row(effect_on_one_branch=True)], "ghidra-function-pcode-cfg-v3.schema.json", "REVENGINSTR.GhidraFunctionPcodeCFG/3"),
+        "stores": (tmp_path / "stores.jsonl", [_memory_store_fact("00401020", 7, offset=0x10)], "ghidra-memory-store-access-v1.schema.json", "REVENGINSTR.GhidraMemoryStoreAccess/1"),
+        "calls": (tmp_path / "calls.jsonl", [_direct_call_effect_fact()], "ghidra-direct-call-memory-effect-v1.schema.json", "REVENGINSTR.GhidraDirectCallMemoryEffect/1"),
+    }
+    for path, rows, *_ in files.values():
+        path.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in rows), encoding="utf-8")
+    output_path = tmp_path / "dominance-v3.jsonl"
+    schemas = {}
+    artifacts = {}
+    for name, (path, _rows, schema_name, format_name) in files.items():
+        schema_path = ROOT / "schemas" / schema_name
+        schema_id = name
+        schemas[schema_id] = {
+            "path": str(schema_path), "version": json.loads(schema_path.read_text())["title"],
+            "sha256": sha256(schema_path.read_bytes()).hexdigest(),
+        }
+        artifacts[name] = {
+            "path": str(path), "role": "input", "kind": "file", "content": "jsonl",
+            "format": format_name, "sha256": sha256(path.read_bytes()).hexdigest(), "schema": schema_id,
+        }
+    output_schema = ROOT / "schemas/field-store-load-dominance-audit-v3.schema.json"
+    schemas["dominance"] = {
+        "path": str(output_schema), "version": json.loads(output_schema.read_text())["title"],
+        "sha256": sha256(output_schema.read_bytes()).hexdigest(),
+    }
+    artifacts["dominance"] = {
+        "path": str(output_path), "role": "output", "kind": "file", "content": "jsonl",
+        "format": "REVENGINSTR.FieldStoreLoadDominanceAudit/3", "schema": "dominance",
+    }
+    manifest = {
+        "format": "REVENGINSTR.BenchmarkManifest/1",
+        "benchmark": {
+            "id": "synthetic-call-aware-dominance", "dataset_id": "synthetic-cfg",
+            "dataset_artifact": "pairs", "split_id": "synthetic", "family_set_id": None,
+        },
+        "toolchain": {"revenginstr_version": "0.5.2"},
+        "schemas": schemas,
+        "artifacts": artifacts,
+        "configs": {},
+        "stages": [{
+            "id": "dominance_v3", "tool": "receiver-field-store-load-dominance-audit",
+            "args": [
+                "${artifact:pairs}", "${artifact:cfg}",
+                "--memory-store-access-jsonl", "${artifact:stores}",
+                "--direct-call-memory-effect-jsonl", "${artifact:calls}",
+                "--output", "${artifact:dominance}",
+            ],
+            "inputs": ["pairs", "cfg", "stores", "calls"], "outputs": ["dominance"],
+        }],
+    }
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    summary, code = run_benchmark(manifest_path, mode="smoke", output_path=tmp_path / "summary.json")
+    assert code == 0
+    assert summary["status"] == "passed"
+    [row] = [json.loads(line) for line in output_path.read_text(encoding="utf-8").splitlines()]
+    assert row["status"] == "unique_cfg_store_candidate"
+    assert row["provenance"]["direct_call_memory_effect_sha256"] == sha256(files["calls"][0].read_bytes()).hexdigest()
 
 
 def test_cfg_audit_cli_and_benchmark_stage(tmp_path: Path) -> None:

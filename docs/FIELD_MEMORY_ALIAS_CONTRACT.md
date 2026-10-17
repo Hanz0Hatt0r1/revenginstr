@@ -1,9 +1,9 @@
 # Field memory alias contract (M2.3)
 
 This defines the evidence boundary for the versioned
-`FieldStoreLoadDominanceAudit/2`. The existing
-`FieldStoreLoadDominanceAudit/1` remains unchanged and retains its structural
-CFG claim; neither version is runtime value-flow evidence.
+`FieldStoreLoadDominanceAudit/2` and `/3`. The existing `/1` and `/2` outputs
+remain unchanged when the corresponding optional sidecars are absent; none of
+the versions is runtime value-flow evidence.
 
 ## What a memory-access fact must identify
 
@@ -56,9 +56,12 @@ derivation operations, or incomplete widths make the location unresolved.
    unknown roots, and unknown widths remain possible effects.
 4. A `STORE` without a complete matching location fact remains a possible
    effect, even if other stores in the function were resolved.
-5. Calls, `CALLIND`, `CALLOTHER`, `INDIRECT`, `UNIMPLEMENTED`, and unclassified
-   operations remain barriers unless a separately versioned and validated
-   effect summary says otherwise.
+5. In `/1` and `/2`, calls, `CALLIND`, `CALLOTHER`, `INDIRECT`, `UNIMPLEMENTED`,
+   and unclassified operations remain barriers. `/3` removes only an exact
+   `CALL` barrier with a `GhidraDirectCallMemoryEffect/1` row backed by a
+   non-empty one-function callee flow containing only known write-free P-code
+   operations. The builder does not recurse: nested calls, `CALLIND`, unknown
+   opcodes, and missing callee flows stay barriers.
 6. Branch feasibility and runtime path/value claims remain out of scope.
 
 ## Implemented generic boundary and remaining validation
@@ -69,11 +72,19 @@ comparison, comparison budgets, and provenance for all three inputs. Generic
 tests cover overlap, different roots, unresolved locations, unknown widths,
 missing candidates, orphan/mismatched rows, physical/logical space
 distinctions, pointer-ring ranges, duplicate facts, and budget exhaustion.
-Next run a consumer-owned frozen validation with access facts and expected
-outputs. Labels, addresses, raw rows, and measured outcomes stay in that
-consumer repository.
+The first consumer-owned `/2` replay is frozen in Nevergone PR #729; its two
+rows remain possible intervening effects.
 
-`FieldStoreLoadDominanceAudit/1` is not extended in place: with no sidecar the
-command preserves its current `/1` output and CFG/1/CFG/2 behavior. Supplying
-the access-facts file selects `/2`, which records the third input hash and
-record ordinals.
+`GhidraDirectCallMemoryEffect/1` and `/3` add exact direct-call site facts from
+the caller and callee P-code flow hashes. A call is exempted only if its entire
+one-function flow uses a known write-free opcode set; this is a narrow
+structural result and does not recurse across calls. Synthetic tests cover the
+write-free, explicit-store, nested/unknown, missing-summary, indirect-call,
+budget, schema, and audit-join cases. A second consumer-owned frozen `/3`
+validation is still required. Labels, addresses, raw rows, and measured
+outcomes stay in their consumer repository.
+
+`FieldStoreLoadDominanceAudit/1` is not extended in place. With no sidecars the
+command preserves `/1`; supplying only access facts selects `/2`; supplying
+access facts and direct-call effects selects `/3`, which records both sidecar
+hashes and their row ordinals.
