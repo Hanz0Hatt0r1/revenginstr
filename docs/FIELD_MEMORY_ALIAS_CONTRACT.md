@@ -61,7 +61,10 @@ derivation operations, or incomplete widths make the location unresolved.
    `CALL` barrier with a `GhidraDirectCallMemoryEffect/1` row backed by a
    non-empty one-function callee flow containing only known write-free P-code
    operations. The builder does not recurse: nested calls, `CALLIND`, unknown
-   opcodes, and missing callee flows stay barriers.
+   opcodes, and missing callee flows stay barriers. `/4` consumes the separate
+   `GhidraDirectCallMemoryEffectClosure/1` sidecar and removes a call only when
+   its hash-pinned transitive closure is complete and write-free; unresolved,
+   indirect, unknown, and STORE effects remain barriers.
 6. Branch feasibility and runtime path/value claims remain out of scope.
 
 ## Implemented generic boundary and remaining validation
@@ -113,7 +116,38 @@ explicit-write sites, 30 indirect-call barriers, and no complete write-free
 direct callee. Labels, addresses, raw rows, and measured outcomes stay in the
 consumer repository.
 
+NFS PR [#2034](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2034)
+freezes scan18 over 24 functions with exactly three indirect calls: nine
+parameter-field stores form five pairs across three roots. `/2` and `/3` agree
+on three non-dominating stores and two possible intervening effects, with no
+unique candidate. PR [#2035](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2035)
+freezes scan19 over two functions with exactly four indirect calls; PR
+[#2036](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2036)
+freezes scan20 over eight functions with exactly five indirect calls. Both
+screens have no parameter-field stores or pairs: scan19 retains 18 parameter
+loads and nine general STORE facts, while scan20 retains 79 loads and 42 STORE
+facts. NFS PR [#2037](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2037)
+freezes scan21 over three functions with exactly six indirect calls, 28 loads,
+and 12 STORE facts, with no field stores or pairs. PR
+[#2038](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2038)
+freezes scan22 over one function with exactly nine indirect calls and two
+parameter-field pairs; both remain `store_not_dominating_load` in `/2` and `/3`.
+It retains 12 loads and three STORE facts. PR
+[#2039](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2039)
+freezes scan23 over the final eligible function with exactly ten indirect
+calls, five loads, and four STORE facts, but no field stores or pairs. No
+dominance audit was run for scans19–21 or 23; the 1,000-row sample has no more
+eligible roots under these filters.
+
+The generic transitive call-effect builder is merged in
+[revenginstr PR #108](https://github.com/Hanz0Hatt0r1/revenginstr/pull/108).
+The versioned `/4` consumer keeps `/1`–`/3` unchanged and records the closure
+sidecar hash plus exact call-site ordinals. Synthetic tests cover write-free,
+explicit-write, unknown, missing-flow, indirect, and unresolved statuses;
+consumer replay remains the next validation step.
+
 `FieldStoreLoadDominanceAudit/1` is not extended in place. With no sidecars the
 command preserves `/1`; supplying only access facts selects `/2`; supplying
-access facts and direct-call effects selects `/3`, which records both sidecar
-hashes and their row ordinals.
+access facts and direct-call effects selects `/3`; supplying access facts and
+transitive closure rows selects `/4`. The `/3` and `/4` versions record their
+respective call-sidecar hashes and exact row ordinals.
