@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/analysis-task-cache-lookup-v1.schema.json",
+  "title": "REVENGINSTR.AnalysisTaskCacheLookup/1 report",
+  "description": "Read-only lookup result for a caller-managed task cache entry.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "task_id", "cache_key_sha256", "status", "reason", "verified_artifacts"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.AnalysisTaskCacheLookup/1"},
+    "task_id": {"$ref": "#/$defs/identifier"},
+    "cache_key_sha256": {"$ref": "#/$defs/sha256"},
+    "status": {"enum": ["hit", "miss"]},
+    "reason": {"enum": [null, "entry_missing"]},
+    "verified_artifacts": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/artifact"}
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "hit"}}, "required": ["status"]},
+      "then": {"properties": {"reason": {"type": "null"}}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "miss"}}, "required": ["status"]},
+      "then": {
+        "properties": {"reason": {"const": "entry_missing"}, "verified_artifacts": {"maxItems": 0}}
+      }
+    }
+  ],
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "sha256", "size_bytes"],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/identifier"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

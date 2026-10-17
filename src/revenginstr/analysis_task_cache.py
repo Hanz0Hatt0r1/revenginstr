@@ -14,6 +14,21 @@ KEY_SET_FORMAT = "REVENGINSTR.AnalysisTaskCacheKeySet/1"
 KEY_FORMAT = "REVENGINSTR.AnalysisTaskCacheKey/1"
 
 
+def _task_cache_key_sha256(task: dict[str, Any]) -> str:
+    key_material = {
+        "format": KEY_FORMAT,
+        "task_id": task["task_id"],
+        "task_kind": task["task_kind"],
+        "configuration_sha256": task["configuration_sha256"],
+        "implementation_sha256": task["implementation_sha256"],
+        "input_artifact_hashes": task["input_artifact_hashes"],
+        "dependency_cache_keys": task["dependency_cache_keys"],
+        "output_artifacts": task["output_artifacts"],
+    }
+    key_bytes = json.dumps(key_material, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(key_bytes).hexdigest()
+
+
 def _hash_records(
     records: Any,
     *,
@@ -97,8 +112,7 @@ def build_task_cache_key_set(
             {"task_id": dependency, "cache_key_sha256": cache_keys[dependency]}
             for dependency in sorted(task["depends_on"])
         ]
-        key_material = {
-            "format": KEY_FORMAT,
+        row = {
             "task_id": task_id,
             "task_kind": task["task_kind"],
             "configuration_sha256": task["configuration_sha256"],
@@ -107,19 +121,9 @@ def build_task_cache_key_set(
             "dependency_cache_keys": dependencies,
             "output_artifacts": sorted(task["output_artifacts"]),
         }
-        key_bytes = json.dumps(key_material, sort_keys=True, separators=(",", ":")).encode("utf-8")
-        cache_key = hashlib.sha256(key_bytes).hexdigest()
+        cache_key = _task_cache_key_sha256(row)
         cache_keys[task_id] = cache_key
-        rows.append({
-            "task_id": task_id,
-            "task_kind": task["task_kind"],
-            "configuration_sha256": task["configuration_sha256"],
-            "implementation_sha256": implementation_hashes[task_id],
-            "input_artifact_hashes": inputs,
-            "dependency_cache_keys": dependencies,
-            "output_artifacts": sorted(task["output_artifacts"]),
-            "cache_key_sha256": cache_key,
-        })
+        rows.append({**row, "cache_key_sha256": cache_key})
 
     return {
         "format": KEY_SET_FORMAT,
