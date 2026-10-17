@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/semantic-role-evaluation-v1.schema.json",
+  "title": "REVENGINSTR.SemanticRoleEvaluation/1",
+  "description": "Aggregate multi-label role metrics for an exact paired label/prediction population.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "dataset_id", "split_id", "model_id", "label_artifact_sha256",
+    "prediction_artifact_sha256", "training_family_artifact_sha256",
+    "family_disjointness", "rows", "family_count", "per_role",
+    "macro_f1_observed_roles", "macro_f1_observed", "micro_f1", "exact_match_accuracy"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.SemanticRoleEvaluation/1"},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "split_id": {"type": "string", "minLength": 1},
+    "model_id": {"type": "string", "minLength": 1},
+    "label_artifact_sha256": {"$ref": "#/$defs/sha256"},
+    "prediction_artifact_sha256": {"$ref": "#/$defs/sha256"},
+    "training_family_artifact_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "family_disjointness": {"enum": ["verified", "not_checked"]},
+    "rows": {"type": "integer", "minimum": 1},
+    "family_count": {"type": "integer", "minimum": 1},
+    "per_role": {
+      "type": "object",
+      "propertyNames": {"enum": [
+        "lifecycle_init_shutdown",
+        "accessor_getter_setter",
+        "constructor_destructor_factory",
+        "parser_decoder_loader",
+        "serializer_save_writer",
+        "state_update_tick",
+        "input_handler",
+        "render_submission",
+        "animation_action_update",
+        "physics_collision_query",
+        "combat_state_transition",
+        "resource_lookup_cache",
+        "callback_scheduler_adapter",
+        "network_media_runtime_adapter",
+        "utility_container_math",
+        "unknown",
+        "compound"
+      ]},
+      "additionalProperties": {"$ref": "#/$defs/roleMetric"}
+    },
+    "macro_f1_observed_roles": {"type": "integer", "minimum": 1},
+    "macro_f1_observed": {"type": "number", "minimum": 0, "maximum": 1},
+    "micro_f1": {"type": "number", "minimum": 0, "maximum": 1},
+    "exact_match_accuracy": {"type": "number", "minimum": 0, "maximum": 1}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"family_disjointness": {"const": "verified"}}},
+      "then": {"properties": {"training_family_artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}}
+    },
+    {
+      "if": {"properties": {"family_disjointness": {"const": "not_checked"}}},
+      "then": {"properties": {"training_family_artifact_sha256": {"type": "null"}}}
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "roleMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["true_positive", "false_positive", "false_negative", "support", "predicted_count", "precision", "recall", "f1"],
+      "properties": {
+        "true_positive": {"type": "integer", "minimum": 0},
+        "false_positive": {"type": "integer", "minimum": 0},
+        "false_negative": {"type": "integer", "minimum": 0},
+        "support": {"type": "integer", "minimum": 0},
+        "predicted_count": {"type": "integer", "minimum": 0},
+        "precision": {"type": "number", "minimum": 0, "maximum": 1},
+        "recall": {"type": "number", "minimum": 0, "maximum": 1},
+        "f1": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    }
+  }
+}

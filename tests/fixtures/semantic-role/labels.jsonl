@@ -1,0 +1,4 @@
+{"format":"REVENGINSTR.SemanticRoleLabel/1","dataset_id":"synthetic-semantic-v1","split_id":"heldout-synthetic","id":"function-a","family_id":"family-00000000000000000001","roles":["parser_decoder_loader","utility_container_math"],"adjudication_status":"adjudicated"}
+{"format":"REVENGINSTR.SemanticRoleLabel/1","dataset_id":"synthetic-semantic-v1","split_id":"heldout-synthetic","id":"function-b","family_id":"family-00000000000000000002","roles":["accessor_getter_setter"],"adjudication_status":"adjudicated"}
+{"format":"REVENGINSTR.SemanticRoleLabel/1","dataset_id":"synthetic-semantic-v1","split_id":"heldout-synthetic","id":"function-c","family_id":"family-00000000000000000003","roles":["state_update_tick"],"adjudication_status":"adjudicated"}
+{"format":"REVENGINSTR.SemanticRoleLabel/1","dataset_id":"synthetic-semantic-v1","split_id":"heldout-synthetic","id":"function-d","family_id":"family-00000000000000000004","roles":["unknown"],"adjudication_status":"adjudicated"}

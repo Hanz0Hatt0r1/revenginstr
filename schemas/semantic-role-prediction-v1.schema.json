@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/semantic-role-prediction-v1.schema.json",
+  "title": "REVENGINSTR.SemanticRolePrediction/1 JSONL row",
+  "description": "One model prediction for a consumer-owned function id, paired by family and split.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "dataset_id", "split_id", "id", "family_id", "model_id", "roles"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.SemanticRolePrediction/1"},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "split_id": {"type": "string", "minLength": 1},
+    "id": {"type": "string", "minLength": 1},
+    "family_id": {"type": "string", "minLength": 1},
+    "model_id": {"type": "string", "minLength": 1},
+    "roles": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"enum": [
+        "lifecycle_init_shutdown",
+        "accessor_getter_setter",
+        "constructor_destructor_factory",
+        "parser_decoder_loader",
+        "serializer_save_writer",
+        "state_update_tick",
+        "input_handler",
+        "render_submission",
+        "animation_action_update",
+        "physics_collision_query",
+        "combat_state_transition",
+        "resource_lookup_cache",
+        "callback_scheduler_adapter",
+        "network_media_runtime_adapter",
+        "utility_container_math",
+        "unknown",
+        "compound"
+      ]}
+    }
+  }
+}

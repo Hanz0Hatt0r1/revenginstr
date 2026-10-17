@@ -1,0 +1,4 @@
+{"format":"REVENGINSTR.SemanticRolePrediction/1","dataset_id":"synthetic-semantic-v1","split_id":"heldout-synthetic","id":"function-a","family_id":"family-00000000000000000001","model_id":"synthetic-model-v1","roles":["parser_decoder_loader"]}
+{"format":"REVENGINSTR.SemanticRolePrediction/1","dataset_id":"synthetic-semantic-v1","split_id":"heldout-synthetic","id":"function-b","family_id":"family-00000000000000000002","model_id":"synthetic-model-v1","roles":["accessor_getter_setter"]}
+{"format":"REVENGINSTR.SemanticRolePrediction/1","dataset_id":"synthetic-semantic-v1","split_id":"heldout-synthetic","id":"function-c","family_id":"family-00000000000000000003","model_id":"synthetic-model-v1","roles":["input_handler"]}
+{"format":"REVENGINSTR.SemanticRolePrediction/1","dataset_id":"synthetic-semantic-v1","split_id":"heldout-synthetic","id":"function-d","family_id":"family-00000000000000000004","model_id":"synthetic-model-v1","roles":["unknown"]}
