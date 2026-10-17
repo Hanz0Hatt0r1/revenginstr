@@ -8,7 +8,7 @@ import pytest
 from jsonschema import Draft202012Validator
 
 from revenginstr.benchmark import run_benchmark
-from revenginstr.receiver.field_flow import audit_field_store_load_paths, main
+from revenginstr.receiver.field_flow import audit_field_store_load_dominance, audit_field_store_load_paths, dominance_main, main
 from revenginstr.receiver.provenance import (
     PARAMETER_LOAD_FORMAT,
     PARAMETER_STORE_FORMAT,
@@ -20,6 +20,8 @@ ROOT = Path(__file__).resolve().parents[1]
 CFG_FIXTURE = ROOT / "tests/fixtures/function-pcode-cfg/synthetic.jsonl"
 CFG_SCHEMA = json.loads((ROOT / "schemas/ghidra-function-pcode-cfg-v1.schema.json").read_text(encoding="utf-8"))
 AUDIT_SCHEMA = json.loads((ROOT / "schemas/field-store-load-path-audit-v1.schema.json").read_text(encoding="utf-8"))
+CFG_V2_SCHEMA = json.loads((ROOT / "schemas/ghidra-function-pcode-cfg-v2.schema.json").read_text(encoding="utf-8"))
+DOMINANCE_SCHEMA = json.loads((ROOT / "schemas/field-store-load-dominance-audit-v1.schema.json").read_text(encoding="utf-8"))
 
 
 def _pair_graphs(
@@ -56,6 +58,34 @@ def _pair_graphs(
 
 def _cfg_rows():
     return [json.loads(CFG_FIXTURE.read_text(encoding="utf-8"))]
+
+
+def _cfg_v2_row(*, store_in_entry: bool = True, effect_on_one_branch: bool = False):
+    store = {"address": "00401020", "time": 7, "opcode": "STORE", "memory_space": "ram", "memory_width_bytes": 4}
+    load = {"address": "00401030", "time": 11, "opcode": "LOAD", "memory_space": "ram", "memory_width_bytes": 4}
+    pure = lambda address, time, opcode: {
+        "address": address, "time": time, "opcode": opcode, "memory_space": None, "memory_width_bytes": None,
+    }
+    blocks = [
+        {"block_index": 0, "start_address": "00401000", "stop_address": "00401021",
+         "operations": [pure("00401001", 6, "COPY"), pure("00401021", 8, "CBRANCH")], "successors": [1, 2]},
+        {"block_index": 1, "start_address": "00401020" if not store_in_entry else "00401022", "stop_address": "00401022",
+         "operations": ([store, pure("00401022", 9, "COPY")] if not store_in_entry else [pure("00401022", 9, "COPY")]),
+         "successors": [3]},
+        {"block_index": 2, "start_address": "00401024", "stop_address": "00401024",
+         "operations": [pure("00401024", 10, "CALL" if effect_on_one_branch else "INT_ADD")], "successors": [3]},
+        {"block_index": 3, "start_address": "00401030", "stop_address": "00401030",
+         "operations": [load], "successors": []},
+    ]
+    if store_in_entry:
+        blocks[0]["operations"].insert(1, store)
+    return {
+        "format": "REVENGINSTR.GhidraFunctionPcodeCFG/2",
+        "program_id": "synthetic:cfg",
+        "function_entry": "00401000",
+        "entry_block_index": 0,
+        "blocks": blocks,
+    }
 
 
 def test_cfg_fixture_and_candidate_path_preserve_both_input_provenances() -> None:
@@ -137,6 +167,70 @@ def test_cfg_audit_keeps_offset_signs_and_rejects_bad_joins_or_budgets() -> None
         )
 
 
+def test_dominance_audit_requires_store_dominance_and_no_effect_path() -> None:
+    cfg = _cfg_v2_row()
+    Draft202012Validator.check_schema(CFG_V2_SCHEMA)
+    Draft202012Validator(CFG_V2_SCHEMA).validate(cfg)
+    [path_row] = audit_field_store_load_paths(
+        _pair_graphs(), [cfg], pair_graph_sha256="a" * 64, cfg_sha256="b" * 64,
+    )
+    assert path_row["status"] == "candidate_path_compatible"
+    [row] = audit_field_store_load_dominance(
+        _pair_graphs(), [cfg], pair_graph_sha256="a" * 64, cfg_sha256="b" * 64,
+    )
+    Draft202012Validator.check_schema(DOMINANCE_SCHEMA)
+    Draft202012Validator(DOMINANCE_SCHEMA).validate(row)
+    assert row["status"] == "unique_cfg_store_candidate"
+    assert row["store_dominates_load"] is True
+    assert row["clean_store_to_load_path_exists"] is True
+    assert row["memory_effect_path_exists"] is False
+    assert row["witnesses"]["clean_store_to_load"] == [0, 1, 3]
+    assert "runtime value-flow claim" in row["claim_scope"]
+
+    [row] = audit_field_store_load_dominance(
+        _pair_graphs(), [_cfg_v2_row(effect_on_one_branch=True)],
+        pair_graph_sha256="a" * 64, cfg_sha256="b" * 64,
+    )
+    assert row["status"] == "possible_intervening_memory_effect"
+    assert row["memory_effect_path_exists"] is True
+    assert row["witnesses"]["memory_effect_store_to_load"] == [0, 2, 3]
+
+    [row] = audit_field_store_load_dominance(
+        _pair_graphs(), [_cfg_v2_row(store_in_entry=False)],
+        pair_graph_sha256="a" * 64, cfg_sha256="b" * 64,
+    )
+    assert row["status"] == "store_not_dominating_load"
+    assert row["store_dominates_load"] is False
+    assert row["witnesses"]["store_bypass"] == [0, 2, 3]
+
+
+def test_dominance_audit_fails_closed_on_access_shape_or_missing_metadata() -> None:
+    cfg = _cfg_v2_row()
+    cfg["blocks"][3]["operations"][0]["memory_space"] = "other"
+    [row] = audit_field_store_load_dominance(
+        _pair_graphs(), [cfg], pair_graph_sha256="a" * 64, cfg_sha256="b" * 64,
+    )
+    assert row["status"] == "access_shape_mismatch"
+
+    cfg = _cfg_v2_row()
+    cfg["blocks"][3]["operations"][0]["memory_width_bytes"] = None
+    [row] = audit_field_store_load_dominance(
+        _pair_graphs(), [cfg], pair_graph_sha256="a" * 64, cfg_sha256="b" * 64,
+    )
+    assert row["status"] == "incomplete_evidence"
+
+    [row] = audit_field_store_load_dominance(
+        _pair_graphs(), _cfg_rows(), pair_graph_sha256="a" * 64, cfg_sha256="b" * 64,
+    )
+    assert row["status"] == "incomplete_evidence"
+
+    with pytest.raises(ValueError, match="CFG path search budget exceeded"):
+        audit_field_store_load_dominance(
+            _pair_graphs(), [_cfg_v2_row()], pair_graph_sha256="a" * 64,
+            cfg_sha256="b" * 64, max_path_expansions=1,
+        )
+
+
 def test_cfg_audit_cli_and_benchmark_stage(tmp_path: Path) -> None:
     pair_path = tmp_path / "pairs.jsonl"
     pair_path.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in _pair_graphs()), encoding="utf-8")
@@ -186,3 +280,55 @@ def test_cfg_audit_cli_and_benchmark_stage(tmp_path: Path) -> None:
     summary, code = run_benchmark(tmp_manifest, mode="smoke", output_path=tmp_path / "summary.json")
     assert code == 0
     assert summary["stages"][0]["tool"] == "receiver-field-store-load-audit"
+
+    cfg_v2_path = tmp_path / "pcode-cfg-v2.jsonl"
+    cfg_v2_path.write_text(json.dumps(_cfg_v2_row(), sort_keys=True) + "\n", encoding="utf-8")
+    dominance_output = tmp_path / "dominance-audit.jsonl"
+    assert dominance_main([
+        str(pair_path), str(cfg_v2_path), "--output", str(dominance_output),
+    ]) == 0
+    [dominance_row] = [json.loads(line) for line in dominance_output.read_text(encoding="utf-8").splitlines()]
+    assert dominance_row["status"] == "unique_cfg_store_candidate"
+
+    graph_schema = ROOT / "schemas/receiver-provenance-graph-v1.schema.json"
+    cfg_v2_schema = ROOT / "schemas/ghidra-function-pcode-cfg-v2.schema.json"
+    dominance_schema = ROOT / "schemas/field-store-load-dominance-audit-v1.schema.json"
+    v2_schemas = {
+        name: {"path": str(path), "version": json.loads(path.read_text())["title"],
+               "sha256": sha256(path.read_bytes()).hexdigest()}
+        for name, path in (
+            ("pair_graph", graph_schema), ("pcode_cfg", cfg_v2_schema), ("dominance", dominance_schema),
+        )
+    }
+    v2_manifest = {
+        "format": "REVENGINSTR.BenchmarkManifest/1",
+        "benchmark": {
+            "id": "synthetic-field-dominance", "dataset_id": "synthetic-field-dominance",
+            "dataset_artifact": "pair_graphs", "split_id": "synthetic", "family_set_id": None,
+        },
+        "toolchain": {"revenginstr_version": "0.5.2", "source_revision": "test"},
+        "schemas": v2_schemas,
+        "artifacts": {
+            "pair_graphs": {"path": str(pair_path), "role": "input", "kind": "file", "content": "jsonl",
+                             "format": "REVENGINSTR.ReceiverProvenanceGraph/1", "sha256": sha256(pair_path.read_bytes()).hexdigest(), "schema": "pair_graph"},
+            "pcode_cfg": {"path": str(cfg_v2_path), "role": "input", "kind": "file", "content": "jsonl",
+                           "format": "REVENGINSTR.GhidraFunctionPcodeCFG/2", "sha256": sha256(cfg_v2_path.read_bytes()).hexdigest(), "schema": "pcode_cfg"},
+            "dominance": {"path": "dominance.jsonl", "role": "output", "kind": "file", "content": "jsonl",
+                          "format": "REVENGINSTR.FieldStoreLoadDominanceAudit/1", "schema": "dominance"},
+        },
+        "configs": {},
+        "stages": [{
+            "id": "field_dominance", "tool": "receiver-field-store-load-dominance-audit",
+            "args": ["${artifact:pair_graphs}", "${artifact:pcode_cfg}", "--output", "${artifact:dominance}"],
+            "inputs": ["pair_graphs", "pcode_cfg"], "outputs": ["dominance"],
+        }],
+    }
+    v2_manifest_path = tmp_path / "dominance-manifest.json"
+    v2_manifest_path.write_text(json.dumps(v2_manifest, indent=2) + "\n", encoding="utf-8")
+    v2_summary, v2_code = run_benchmark(
+        v2_manifest_path, mode="smoke", output_path=tmp_path / "dominance-summary.json",
+    )
+    assert v2_code == 0
+    assert v2_summary["stages"][0]["tool"] == "receiver-field-store-load-dominance-audit"
+    [bench_row] = [json.loads(line) for line in (tmp_path / "dominance.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert bench_row["status"] == "unique_cfg_store_candidate"

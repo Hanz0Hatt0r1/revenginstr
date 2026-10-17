@@ -386,6 +386,19 @@ receiver types are fallback joins.
 
 **Bounded caller-argument, field-store, field-load, and return anchors implemented:** `revenginstr-receiver-argument-flow` projects bounded subtree roots into actual-argument-to-formal-parameter edges and captures generic call-result producers when explicit in P-code; `revenginstr-receiver-store-flow` projects parameter-to-field-store evidence into destination and stored-value edges. `revenginstr-receiver-argument-store-flow` and `revenginstr-receiver-argument-load-flow` join those artifacts by exact function/parameter keys with provenance from both inputs. `revenginstr-receiver-field-access-pairs` groups same-function stores and loads only when formal parameter and numeric field offset match. `revenginstr-receiver-load-return-flow` traces parameter-rooted loads through P-code def-use chains to `RETURN` operations without assigning getter semantics; `revenginstr-receiver-call-return-flow` traces call-result values through P-code to function returns as a generic factory-return anchor, without assigning factory semantics. The caller-argument exporter can optionally emit direct caller-formal roots; `revenginstr-receiver-argument-propagate` walks those exact links backward under depth and edge caps. `revenginstr-receiver-field-store-load-audit` now joins parameter/offset-compatible pairs to a program-pinned High-P-code CFG and reports bounded paths with no explicit intervening store/call; that status is a candidate path only, not proof of feasible execution or memory reaching-definition. Alias-aware memory reaching definitions remain open.
 
+**Conservative all-path store-dominance audit implemented:** opt-in
+`GhidraFunctionPcodeCFG/2` records the explicit entry block and nullable
+`LOAD`/`STORE` address-space and width fields. The new
+`revenginstr-receiver-field-store-load-dominance-audit` requires an exact
+program/function pair, a reachable store that dominates the load, matching
+space/width, and no possible-effect path between them. Every other store,
+call-like operation, and unclassified opcode is treated as a possible memory
+effect. The output says `unique_cfg_store_candidate`; it does not resolve
+aliases, model branch feasibility, or assert runtime value flow. The prior
+Nevergone evidence demonstrates why this distinction matters: both pairs have
+intervening explicit stores, so the current evidence cannot support a positive
+reaching-definition result.
+
 Remaining propagation work:
 
 1. consumer-validated factory hypotheses linked to call-result-to-return paths;
@@ -969,8 +982,8 @@ Mitigation: preserve heuristic/sparse baselines, feature ablations and evidence-
 
 # 20. Immediate next action
 
-Continue with **M2.3**: use the new CFG path artifact as a bounded audit input
-in consumer-owned frozen validation workflows, then evaluate whether an
-alias-aware reaching-definition layer can be supported without weakening
-provenance or treating CFG reachability as value flow. Keep labels, binary
-rows, and measured outcomes in their consumer repositories.
+Continue with **M2.3**: add the CFG/2 dominance audit to a consumer-owned frozen
+workflow and preserve the current Nevergone rows as negative evidence. Then
+specify the minimum memory-location/alias and effect metadata needed before
+unrelated writes can be proven non-aliasing. Keep labels, binary rows, and
+measured outcomes in their consumer repositories.

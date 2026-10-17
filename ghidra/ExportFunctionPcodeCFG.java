@@ -2,11 +2,13 @@ import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.decompiler.DecompileResults;
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.Address;
+import ghidra.program.model.address.AddressSpace;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.pcode.HighFunction;
 import ghidra.program.model.pcode.PcodeBlockBasic;
 import ghidra.program.model.pcode.PcodeOp;
 import ghidra.program.model.pcode.SequenceNumber;
+import ghidra.program.model.pcode.Varnode;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -22,7 +24,8 @@ import java.util.TreeSet;
 
 /** Export High-P-code basic blocks, operation locations, and CFG edges. */
 public class ExportFunctionPcodeCFG extends GhidraScript {
-    private static final String FORMAT = "REVENGINSTR.GhidraFunctionPcodeCFG/1";
+    private static final String FORMAT_V1 = "REVENGINSTR.GhidraFunctionPcodeCFG/1";
+    private static final String FORMAT_V2 = "REVENGINSTR.GhidraFunctionPcodeCFG/2";
 
     @Override
     protected void run() throws Exception {
@@ -39,11 +42,17 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
 
         String programId = args[1];
         if (programId.isEmpty()) throw new IllegalArgumentException("program-id must not be empty");
+        boolean includeMemoryMetadata = false;
         List<Function> functions = new ArrayList<>();
         Set<String> seenEntries = new HashSet<>();
         for (int i = 2; i < args.length; i++) {
             monitor.checkCancelled();
             String token = args[i].trim();
+            if ("--memory-metadata".equals(token)) {
+                if (includeMemoryMetadata) throw new IllegalArgumentException("Duplicate --memory-metadata flag");
+                includeMemoryMetadata = true;
+                continue;
+            }
             if (token.startsWith("FUN_") || token.startsWith("fun_")) token = token.substring(4);
             if (token.startsWith("0x") || token.startsWith("0X")) token = token.substring(2);
             Address address = toAddr(Long.parseUnsignedLong(token, 16));
@@ -54,6 +63,7 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
             }
             functions.add(function);
         }
+        if (functions.isEmpty()) throw new IllegalArgumentException("at least one function entry is required");
 
         DecompInterface decompiler = new DecompInterface();
         if (!decompiler.openProgram(currentProgram)) throw new IllegalStateException("Could not open program");
@@ -66,7 +76,7 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
                     String detail = results == null ? "no result" : results.getErrorMessage();
                     throw new IllegalStateException("Decompile failed for " + function.getEntryPoint() + ": " + detail);
                 }
-                out.write(functionJson(programId, function, results.getHighFunction()));
+                out.write(functionJson(programId, function, results.getHighFunction(), includeMemoryMetadata));
                 out.newLine();
             }
         } finally {
@@ -75,13 +85,25 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
         println("Ghidra function P-code CFG export -> " + output);
     }
 
-    private String functionJson(String programId, Function function, HighFunction high) {
+    private String functionJson(String programId, Function function, HighFunction high, boolean includeMemoryMetadata) {
         List<PcodeBlockBasic> blocks = high.getBasicBlocks();
         IdentityHashMap<PcodeBlockBasic, Integer> indices = new IdentityHashMap<>();
         for (int i = 0; i < blocks.size(); i++) indices.put(blocks.get(i), i);
-        StringBuilder out = new StringBuilder(256).append("{\"format\":").append(q(FORMAT))
+        int entryBlockIndex = -1;
+        for (int i = 0; i < blocks.size(); i++) {
+            if (blocks.get(i).getStart().equals(function.getEntryPoint())) {
+                if (entryBlockIndex >= 0) throw new IllegalStateException("Multiple entry blocks for " + function.getEntryPoint());
+                entryBlockIndex = i;
+            }
+        }
+        if (includeMemoryMetadata && entryBlockIndex < 0) {
+            throw new IllegalStateException("Entry block not found for " + function.getEntryPoint());
+        }
+        StringBuilder out = new StringBuilder(256).append("{\"format\":")
+            .append(q(includeMemoryMetadata ? FORMAT_V2 : FORMAT_V1))
             .append(",\"program_id\":").append(q(programId))
             .append(",\"function_entry\":").append(q(function.getEntryPoint().toString()))
+            .append(includeMemoryMetadata ? ",\"entry_block_index\":" + entryBlockIndex : "")
             .append(",\"blocks\":[");
         for (int i = 0; i < blocks.size(); i++) {
             if (i > 0) out.append(',');
@@ -99,7 +121,12 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
                 firstOperation = false;
                 out.append("{\"address\":").append(q(sequence.getTarget().toString()))
                     .append(",\"time\":").append(sequence.getTime())
-                    .append(",\"opcode\":").append(q(operation.getMnemonic())).append('}');
+                    .append(",\"opcode\":").append(q(operation.getMnemonic()));
+                if (includeMemoryMetadata) {
+                    out.append(",\"memory_space\":").append(memorySpace(operation))
+                        .append(",\"memory_width_bytes\":").append(memoryWidth(operation));
+                }
+                out.append('}');
             }
             out.append("],\"successors\":[");
             TreeSet<Integer> successors = new TreeSet<>();
@@ -117,6 +144,28 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
             out.append("]}");
         }
         return out.append("]}").toString();
+    }
+
+    private String memorySpace(PcodeOp operation) {
+        if (operation.getOpcode() != PcodeOp.LOAD && operation.getOpcode() != PcodeOp.STORE) return "null";
+        if (operation.getNumInputs() < 1) return "null";
+        Varnode spaceId = operation.getInput(0);
+        if (spaceId == null || !spaceId.isConstant()) return "null";
+        long offset = spaceId.getOffset();
+        if (offset < 0 || offset > Integer.MAX_VALUE) return "null";
+        try {
+            AddressSpace space = currentProgram.getAddressFactory().getAddressSpace((int) offset);
+            return space == null ? "null" : q(space.getName());
+        } catch (IllegalArgumentException ignored) {
+            return "null";
+        }
+    }
+
+    private String memoryWidth(PcodeOp operation) {
+        Varnode value = null;
+        if (operation.getOpcode() == PcodeOp.LOAD) value = operation.getOutput();
+        else if (operation.getOpcode() == PcodeOp.STORE && operation.getNumInputs() >= 3) value = operation.getInput(2);
+        return value == null || value.getSize() < 1 ? "null" : Integer.toString(value.getSize());
     }
 
     private static String q(String value) {

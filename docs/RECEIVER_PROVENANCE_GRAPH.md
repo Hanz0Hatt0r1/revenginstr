@@ -150,6 +150,30 @@ global expansion cap, adjustable with
 `--max-path-expansions`; exceeding it fails the command instead of returning a
 partial audit.
 
+For a stricter all-path check, export CFG/2 and run:
+
+```sh
+GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_function_pcode_cfg.sh \
+  /path/to/projects project-name program-name function-pcode-cfg.jsonl \
+  'consumer:analysis-id' 00401000 --memory-metadata
+
+revenginstr-receiver-field-store-load-dominance-audit field-access-pairs.jsonl \
+  function-pcode-cfg.jsonl --output field-store-load-dominance-audit.jsonl
+```
+
+`FieldStoreLoadDominanceAudit/1` requires the paired store to be reachable from
+the explicit function entry and to dominate the paired load. It explores every
+CFG path from that store to the load and treats all `STORE`, call-like,
+`CALLOTHER`, `INDIRECT`, `UNIMPLEMENTED`, and unclassified operations as
+possible memory effects. The candidate must have the same address space and
+width as the load, and there must be no effect-bearing path. This deliberately
+conservative policy does not attempt to prove that unrelated writes are
+non-aliasing; branch conditions remain unmodeled. A
+`unique_cfg_store_candidate` row is structural evidence only, not a runtime
+value-flow claim. CFG/1 rows and CFG/2 rows with incomplete access metadata
+produce `incomplete_evidence` instead of a positive result. The benchmark tool
+id is `receiver-field-store-load-dominance-audit`.
+
 Parameter-rooted loads can also be traced through P-code data dependencies to
 function returns:
 
