@@ -8,6 +8,7 @@ from jsonschema import Draft202012Validator
 from revenginstr.receiver.infer import (
     PRIMARY_FAILURE_REASON_CODES,
     infer,
+    infer_with_candidate_assessments,
     infer_with_failure_reasons,
     main,
 )
@@ -214,3 +215,117 @@ def test_receiver_inference_cli_writes_optional_reason_sidecar(tmp_path: Path) -
     assert "primary_failure_reason" not in inference_row
     assert failure_row["primary_failure_reason"] == "missing_vtable_catalog_entry"
     Draft202012Validator(json.loads(SCHEMA.read_text(encoding="utf-8"))).validate(failure_row)
+
+
+def test_candidate_assessment_distinguishes_convergence_compatibility_and_unknowns() -> None:
+    def row(
+        source_id: str, direct_type: str | None, flow_types: list[str] | None = None
+    ) -> dict[str, str]:
+        flow_types = flow_types or []
+        return {
+            "source_id": source_id,
+            "call_index": "0",
+            "call_address": "1010",
+            "receiver_pointer_depth": "1",
+            "pointee_type_name": direct_type or "",
+            "pointee_type_display": direct_type or "",
+            "flow_type_node_count": str(len(flow_types)),
+            "flow_single_pointer_pointee_names_json": json.dumps(flow_types),
+            "flow_single_pointer_pointee_displays_json": json.dumps(flow_types),
+        }
+
+    receiver_rows = [
+        row("sample:same", "Game::Base"),
+        row("sample:compatible", "Game::Base", ["Game::Derived"]),
+        row("sample:mixed", "Game::A", ["Game::B"]),
+        row("sample:partial", "Game::Base", ["UnknownType"]),
+        row("sample:partial-compatible", "Game::Base", ["Game::Derived", "UnknownType"]),
+        row("sample:terminal", "Vehicle"),
+        row("sample:unknown", "UnknownOnly"),
+    ]
+    catalog = [
+        {"class_name": "Game::Base", "receiver_vtable_id": "base", "receiver_compatibility_group_id": "family:vehicle"},
+        {"class_name": "Game::Derived", "receiver_vtable_id": "derived", "receiver_compatibility_group_id": "family:vehicle"},
+        {"class_name": "Game::A", "receiver_vtable_id": "a", "receiver_compatibility_group_id": "family:a"},
+        {"class_name": "Game::B", "receiver_vtable_id": "b", "receiver_compatibility_group_id": "family:b"},
+        {"class_name": "A::Vehicle", "receiver_vtable_id": "vehicle-a"},
+        {"class_name": "B::Vehicle", "receiver_vtable_id": "vehicle-b"},
+    ]
+
+    inference_rows, assessments = infer_with_candidate_assessments(receiver_rows, catalog)
+
+    assert len(inference_rows) == len(assessments) == 7
+    assert [row["status"] for row in inference_rows] == [
+        "resolved_unique_vtable",
+        "ambiguous_receiver_class",
+        "ambiguous_receiver_class",
+        "resolved_unique_vtable",
+        "ambiguous_receiver_class",
+        "unresolved_receiver_class",
+        "unresolved_receiver_class",
+    ]
+    assert [row["status"] for row in assessments] == [
+        "same_type_convergence",
+        "compatible_subtype_candidates",
+        "mixed_candidates",
+        "partially_unknown_candidates",
+        "partially_unknown_candidates",
+        "mixed_candidates",
+        "no_known_candidates",
+    ]
+    assert assessments[1]["compatibility_group_id"] == "family:vehicle"
+    assert assessments[3]["unknown_type_candidate_count"] == 1
+    assert assessments[4]["candidate_receiver_class_names"] == ["Game::Base", "Game::Derived"]
+    assert assessments[4]["unknown_type_candidate_count"] == 1
+    assert assessments[4]["compatibility_group_id"] == "family:vehicle"
+    assert assessments[5]["candidate_receiver_class_names"] == ["A::Vehicle", "B::Vehicle"]
+    assert assessments[6]["unknown_type_candidate_count"] == 1
+    assert all("candidate_assessment" not in row for row in inference_rows)
+
+    assessment_schema = json.loads(
+        (SCHEMA.parent / "receiver-candidate-assessment-v1.schema.json").read_text(encoding="utf-8")
+    )
+    validator = Draft202012Validator(assessment_schema)
+    for assessment in assessments:
+        validator.validate(assessment)
+
+    conflicting_catalog = catalog + [{
+        "class_name": "Game::Base",
+        "receiver_vtable_id": "base-alternate",
+        "receiver_compatibility_group_id": "family:other",
+    }]
+    _rows, conflicting_assessments = infer_with_candidate_assessments(
+        [receiver_rows[1]], conflicting_catalog
+    )
+    assert conflicting_assessments[0]["status"] == "mixed_candidates"
+    assert conflicting_assessments[0]["compatibility_group_id"] is None
+
+
+def test_receiver_inference_cli_writes_optional_candidate_assessment(tmp_path: Path) -> None:
+    receiver_types = tmp_path / "receiver-types.tsv"
+    receiver_types.write_text(
+        "format\tsource_id\tcall_index\tcall_address\treceiver_pointer_depth\t"
+        "pointee_type_name\tpointee_type_display\tflow_type_node_count\t"
+        "flow_single_pointer_pointee_names_json\tflow_single_pointer_pointee_displays_json\n"
+        "REVENGINSTR.GhidraIndirectReceiverType/1\tsample:1000\t0\t1010\t1\t"
+        "Game::Widget\tGame::Widget\t0\t[]\t[]\n",
+        encoding="utf-8",
+    )
+    catalog = tmp_path / "catalog.jsonl"
+    catalog.write_text(
+        '{"class_name":"Game::Widget","receiver_vtable_id":"v1"}\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "inference.jsonl"
+    assessment_output = tmp_path / "assessment.jsonl"
+
+    assert main([
+        str(receiver_types), str(catalog), "--output", str(output),
+        "--candidate-assessments-output", str(assessment_output),
+    ]) == 0
+
+    inference_row = json.loads(output.read_text(encoding="utf-8"))
+    assessment_row = json.loads(assessment_output.read_text(encoding="utf-8"))
+    assert inference_row["status"] == "resolved_unique_vtable"
+    assert "candidate_assessment" not in inference_row
+    assert assessment_row["status"] == "same_type_convergence"

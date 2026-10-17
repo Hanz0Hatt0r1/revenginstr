@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/receiver-candidate-assessment-v1.schema.json",
+  "title": "REVENGINSTR.ReceiverCandidateAssessment/1 record",
+  "description": "Optional receiver candidate convergence sidecar. It preserves the legacy receiver inference output and reports consumer-declared compatibility explicitly.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "source_id",
+    "source_entry",
+    "call_index",
+    "call_address",
+    "status",
+    "candidate_receiver_class_names",
+    "unknown_type_candidate_count",
+    "compatibility_group_id"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.ReceiverCandidateAssessment/1"},
+    "source_id": {"type": "string", "minLength": 1},
+    "source_entry": {"type": "string", "minLength": 1},
+    "call_index": {"type": "integer", "minimum": 0},
+    "call_address": {"type": ["string", "null"]},
+    "status": {
+      "enum": [
+        "no_known_candidates",
+        "same_type_convergence",
+        "compatible_subtype_candidates",
+        "mixed_candidates",
+        "partially_unknown_candidates"
+      ]
+    },
+    "candidate_receiver_class_names": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "unknown_type_candidate_count": {"type": "integer", "minimum": 0},
+    "compatibility_group_id": {"type": ["string", "null"]}
+  }
+}
