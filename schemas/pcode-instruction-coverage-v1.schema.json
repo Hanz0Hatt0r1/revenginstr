@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/pcode-instruction-coverage-v1.schema.json",
+  "title": "REVENGINSTR.PcodeInstructionCoverage/1 report",
+  "type": "object",
+  "required": ["format", "source", "functions", "instructions", "pcode"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.PcodeInstructionCoverage/1"},
+    "source": {
+      "type": "object",
+      "required": ["format", "program", "sha256"],
+      "properties": {
+        "format": {"const": "REVENGINSTR.GhidraFunctionInstructions/1"},
+        "program": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      },
+      "additionalProperties": false
+    },
+    "functions": {
+      "type": "object",
+      "required": ["records", "found", "missing"],
+      "properties": {
+        "records": {"type": "integer", "minimum": 1},
+        "found": {"type": "integer", "minimum": 0},
+        "missing": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "instructions": {
+      "type": "object",
+      "required": ["total", "with_pcode", "without_pcode", "without_pcode_mnemonics"],
+      "properties": {
+        "total": {"type": "integer", "minimum": 0},
+        "with_pcode": {"type": "integer", "minimum": 0},
+        "without_pcode": {"type": "integer", "minimum": 0},
+        "without_pcode_mnemonics": {"$ref": "#/$defs/countMap"}
+      },
+      "additionalProperties": false
+    },
+    "pcode": {
+      "type": "object",
+      "required": ["operations", "unique_opcodes", "opcode_counts"],
+      "properties": {
+        "operations": {"type": "integer", "minimum": 0},
+        "unique_opcodes": {"type": "integer", "minimum": 0},
+        "opcode_counts": {"$ref": "#/$defs/countMap"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "countMap": {
+      "type": "object",
+      "propertyNames": {"pattern": "^[A-Z][A-Z0-9_]*$"},
+      "additionalProperties": {"type": "integer", "minimum": 1}
+    }
+  }
+}
