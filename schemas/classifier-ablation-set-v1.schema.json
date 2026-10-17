@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/classifier-ablation-set-v1.schema.json",
+  "title": "REVENGINSTR.ClassifierAblationSet/1 input",
+  "description": "Caller-defined classifier variants with pinned manifests and family-grouped OOF predictions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "baseline", "variants"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.ClassifierAblationSet/1"},
+    "baseline": {"type": "string", "minLength": 1},
+    "variants": {
+      "type": "object",
+      "minProperties": 2,
+      "propertyNames": {"pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"},
+      "additionalProperties": {"$ref": "#/$defs/variant"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest_path", "manifest_sha256", "oof_predictions_path", "oof_predictions_sha256"],
+      "properties": {
+        "manifest_path": {"type": "string", "minLength": 1},
+        "manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "oof_predictions_path": {"type": "string", "minLength": 1},
+        "oof_predictions_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}
