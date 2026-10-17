@@ -151,9 +151,10 @@ nine indirect-call barriers; both pairs remain `store_not_dominating_load` in
 implementation is an opt-in alias-aware interprocedural memory-effect audit
 using exact caller-formal roots and same-root range checks. It uses a finite
 monotone fixed point for recursive direct-call closures; missing argument
-roots, unresolved stores, indirect calls, unknown operations, and closures
-that exceed a configured budget remain barriers. This evidence is not enabled
-in a consumer until its replay is frozen.
+roots, callee CFG or memory-access facts, unresolved stores, indirect calls,
+unknown operations, and closures that exceed a configured budget remain
+barriers. This evidence is not enabled in a consumer until its replay is
+frozen.
 
 `FieldStoreLoadDominanceAudit/1` is not extended in place. With no sidecars the
 command preserves `/1`; supplying only access facts selects `/2`; supplying

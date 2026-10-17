@@ -120,6 +120,7 @@ def _write_tsv(path: Path, header: tuple[str, ...], rows: list[dict[str, str]]) 
 def _dataset(
     tmp_path: Path, *, offset: int = 0x20, cycle: bool = False,
     root_link: bool = True, callind: bool = False, missing_store_fact: bool = False,
+    missing_callee_cfg: bool = False,
 ):
     root_ops = [
         ("00401020", 7, "STORE", "const:0x0:4;input:root:0:4", "-"),
@@ -148,10 +149,13 @@ def _dataset(
     roots_path = tmp_path / "roots.tsv"
     pair_graphs = _pair_graphs()
     pair_path.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in pair_graphs))
-    cfg_rows = [_cfg(entry, rows) for entry, rows in flows.items()]
+    cfg_rows = [
+        _cfg(entry, rows) for entry, rows in flows.items()
+        if not (missing_callee_cfg and entry == "00402000")
+    ]
     cfg_path.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in cfg_rows))
     stores = [_store_fact("00401000", "00401020", 7, 0x10)]
-    if not missing_store_fact:
+    if not missing_store_fact and not missing_callee_cfg:
         stores.append(_store_fact("00402000", "00402010", 1, offset))
     if cycle:
         stores.append(_store_fact("00403000", "00403010", 1, offset))
@@ -219,6 +223,7 @@ def test_overlap_missing_root_and_unknown_call_remain_barriers(tmp_path: Path) -
         ({"offset": 0x20, "root_link": False}, "possible_aliasing_write"),
         ({"offset": 0x20, "callind": True}, "unknown_effect"),
         ({"offset": 0x20, "missing_store_fact": True}, "unknown_effect"),
+        ({"offset": 0x20, "missing_callee_cfg": True}, "unknown_effect"),
     ):
         case = tmp_path / expected / str(len(list(tmp_path.rglob("pairs.jsonl"))))
         case.mkdir(parents=True)
