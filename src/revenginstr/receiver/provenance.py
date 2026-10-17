@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 FORMAT = "REVENGINSTR.ReceiverProvenanceGraph/1"
 RECEIVER_TYPE_FORMAT = "REVENGINSTR.GhidraIndirectReceiverType/1"
 CALLER_ARGUMENT_FORMAT = "REVENGINSTR.GhidraCallerArgumentSubtree/1"
+PARAMETER_STORE_FORMAT = "REVENGINSTR.GhidraParameterStoreField/1"
 DEFAULT_MAX_ARGUMENT_GRAPHS = 10_000
 
 
@@ -219,6 +221,131 @@ def caller_argument_main(argv: list[str] | None = None) -> int:
     print("input caller argument rows:", len(rows))
     print("root argument graphs:", len(graphs))
     print("subtree/summary rows skipped:", skipped_rows)
+    print("max graphs:", args.max_graphs)
+    print("output:", args.output)
+    return 0
+
+
+def _ascii_decimal(value: str) -> bool:
+    return value.isascii() and value.isdecimal()
+
+
+def build_parameter_store_graphs(
+    rows: list[dict[str, str]],
+    *,
+    program_id: str,
+    max_graphs: int = DEFAULT_MAX_ARGUMENT_GRAPHS,
+) -> list[dict[str, Any]]:
+    """Project parameter-to-parameter P-code stores into destination/value edges."""
+    if not program_id:
+        raise ValueError("program_id must be non-empty")
+    if max_graphs < 1:
+        raise ValueError("max_graphs must be positive")
+
+    graphs: list[dict[str, Any]] = []
+    seen_stores: set[tuple[Any, ...]] = set()
+
+    for line_no, row in enumerate(rows, 2):
+        if row.get("format") != PARAMETER_STORE_FORMAT:
+            raise ValueError(f"parameter store row {line_no}: unsupported format")
+        if row.get("status") != "parameter_to_parameter_field":
+            raise ValueError(f"parameter store row {line_no}: unsupported status")
+
+        function_entry = row.get("function_entry", "")
+        store_address = row.get("store_address", "")
+        store_time_text = row.get("store_time", "")
+        destination_index_text = row.get("destination_parameter_index", "")
+        source_index_text = row.get("source_parameter_index", "")
+        offset_text = row.get("destination_offset", "")
+        if (
+            not function_entry
+            or function_entry == "-"
+            or not store_address
+            or store_address == "-"
+            or (store_time_text != "-" and not _ascii_decimal(store_time_text))
+            or not _ascii_decimal(destination_index_text)
+            or not _ascii_decimal(source_index_text)
+            or re.fullmatch(r"-?0x[0-9a-f]+", offset_text) is None
+        ):
+            raise ValueError(f"parameter store row {line_no}: invalid store key")
+
+        store_time = None if store_time_text == "-" else int(store_time_text)
+        destination_index = int(destination_index_text)
+        source_index = int(source_index_text)
+        offset = int(offset_text, 0)
+        key = (
+            program_id, function_entry, store_address, store_time,
+            destination_index, offset, source_index,
+        )
+        if key in seen_stores:
+            raise ValueError(f"duplicate parameter store: {key!r}")
+        if len(graphs) >= max_graphs:
+            raise ValueError(f"parameter store graph budget exceeded: {max_graphs}")
+        seen_stores.add(key)
+
+        graph_id = json.dumps(key, ensure_ascii=False, separators=(",", ":"))
+        destination_node = f"parameter:{destination_index}"
+        source_node = f"parameter:{source_index}"
+        nodes = [
+            {"id": destination_node, "kind": "parameter"},
+            {"id": "store", "kind": "field_store"},
+        ]
+        if source_node != destination_node:
+            nodes.insert(1, {"id": source_node, "kind": "parameter"})
+        provenance = [{
+            "source_format": PARAMETER_STORE_FORMAT,
+            "source_id": graph_id,
+        }]
+        graph: dict[str, Any] = {
+            "format": FORMAT,
+            "graph_id": graph_id,
+            "nodes": nodes,
+            "edges": [
+                {
+                    "id": "destination_field",
+                    "from": destination_node,
+                    "to": "store",
+                    "relation": "field_store",
+                    "evidence_class": "exact_static",
+                    "provenance": provenance,
+                },
+                {
+                    "id": "stored_value",
+                    "from": source_node,
+                    "to": "store",
+                    "relation": "data_flow",
+                    "evidence_class": "exact_static",
+                    "provenance": provenance,
+                },
+            ],
+        }
+        validate_graph_references(graph)
+        graphs.append(graph)
+
+    graphs.sort(key=lambda graph: graph["graph_id"])
+    return graphs
+
+
+def parameter_store_main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Build bounded parameter-to-field-store provenance graphs.")
+    parser.add_argument("parameter_store_tsv", type=Path)
+    parser.add_argument("--program-id", required=True, help="Opaque consumer join key for the selected program.")
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--max-graphs", type=int, default=DEFAULT_MAX_ARGUMENT_GRAPHS)
+    args = parser.parse_args(argv)
+
+    from revenginstr.receiver.infer import read_tsv
+
+    rows = read_tsv(args.parameter_store_tsv)
+    graphs = build_parameter_store_graphs(
+        rows, program_id=args.program_id, max_graphs=args.max_graphs
+    )
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    with args.output.open("w", encoding="utf-8") as handle:
+        for graph in graphs:
+            handle.write(json.dumps(graph, sort_keys=True) + "\n")
+    print("input parameter stores:", len(rows))
+    print("store graphs:", len(graphs))
     print("max graphs:", args.max_graphs)
     print("output:", args.output)
     return 0

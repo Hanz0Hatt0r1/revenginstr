@@ -9,11 +9,14 @@ from jsonschema import Draft202012Validator, ValidationError
 from revenginstr.receiver.provenance import (
     FORMAT,
     CALLER_ARGUMENT_FORMAT,
+    PARAMETER_STORE_FORMAT,
     RECEIVER_TYPE_FORMAT,
     build_caller_argument_graphs,
+    build_parameter_store_graphs,
     build_receiver_graphs,
     caller_argument_main,
     main,
+    parameter_store_main,
     validate_graph_references,
 )
 
@@ -250,3 +253,85 @@ def test_caller_argument_cli_writes_graph_jsonl_and_reports_skips(tmp_path: Path
     ]) == 0
     assert len(output.read_text(encoding="utf-8").splitlines()) == 1
     assert "subtree/summary rows skipped: 1" in capsys.readouterr().out
+
+
+def parameter_store_row(**overrides: str) -> dict[str, str]:
+    row = {
+        "format": PARAMETER_STORE_FORMAT,
+        "function_entry": "00401000",
+        "function_name": "FUN_00401000",
+        "store_address": "00401020",
+        "store_time": "7",
+        "destination_parameter_index": "0",
+        "destination_offset": "0x24",
+        "destination_pattern": "ptrsub",
+        "source_parameter_index": "1",
+        "value_size": "4",
+        "status": "parameter_to_parameter_field",
+    }
+    row.update(overrides)
+    return row
+
+
+def test_builder_projects_destination_and_stored_value_edges() -> None:
+    graphs = build_parameter_store_graphs(
+        [parameter_store_row()], program_id="analysis:sample"
+    )
+
+    assert len(graphs) == 1
+    graph = graphs[0]
+    assert [node["id"] for node in graph["nodes"]] == [
+        "parameter:0", "parameter:1", "store"
+    ]
+    assert [(edge["from"], edge["relation"]) for edge in graph["edges"]] == [
+        ("parameter:0", "field_store"),
+        ("parameter:1", "data_flow"),
+    ]
+    assert graph["edges"][0]["provenance"] == graph["edges"][1]["provenance"]
+    assert graph["edges"][0]["provenance"][0]["source_format"] == PARAMETER_STORE_FORMAT
+    Draft202012Validator(json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))).validate(graph)
+
+
+def test_parameter_store_builder_coalesces_same_parameter_node() -> None:
+    graphs = build_parameter_store_graphs(
+        [parameter_store_row(source_parameter_index="0")], program_id="analysis:sample"
+    )
+    assert [node["id"] for node in graphs[0]["nodes"]] == ["parameter:0", "store"]
+    assert len(graphs[0]["edges"]) == 2
+
+
+@pytest.mark.parametrize(
+    ("rows", "kwargs", "message"),
+    [
+        ([parameter_store_row(format="consumer/1")], {"program_id": "p"}, "unsupported format"),
+        ([parameter_store_row(status="unknown")], {"program_id": "p"}, "unsupported status"),
+        ([parameter_store_row(destination_parameter_index="x")], {"program_id": "p"}, "invalid store key"),
+        ([parameter_store_row(destination_offset="0xGG")], {"program_id": "p"}, "invalid store key"),
+        ([parameter_store_row(), parameter_store_row(destination_parameter_index="00", source_parameter_index="01")], {"program_id": "p"}, "duplicate parameter store"),
+        ([parameter_store_row()], {"program_id": "p", "max_graphs": 0}, "max_graphs must be positive"),
+        ([parameter_store_row(), parameter_store_row(store_address="00401024")], {"program_id": "p", "max_graphs": 1}, "budget exceeded"),
+    ],
+)
+def test_parameter_store_builder_fails_closed(rows, kwargs, message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        build_parameter_store_graphs(rows, **kwargs)
+
+
+def test_parameter_store_cli_writes_graph_jsonl(tmp_path: Path, capsys) -> None:
+    source = tmp_path / "parameter-stores.tsv"
+    source.write_text(
+        "format\tfunction_entry\tstore_address\tstore_time\tdestination_parameter_index\t"
+        "destination_offset\tsource_parameter_index\tstatus\n"
+        f"{PARAMETER_STORE_FORMAT}\t00401000\t00401020\t7\t0\t0x24\t1\t"
+        "parameter_to_parameter_field\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "store-graphs.jsonl"
+
+    assert parameter_store_main([
+        str(source), "--program-id", "analysis:sample", "--output", str(output)
+    ]) == 0
+    graph = json.loads(output.read_text(encoding="utf-8"))
+    assert graph["format"] == FORMAT
+    assert "analysis:sample" in graph["graph_id"]
+    assert "store graphs: 1" in capsys.readouterr().out
