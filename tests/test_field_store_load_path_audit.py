@@ -86,7 +86,8 @@ def test_cfg_audit_distinguishes_blocked_missing_path_and_unlocated_events() -> 
         _pair_graphs(), blocked, pair_graph_sha256="a" * 64, cfg_sha256="b" * 64,
     )[0]
     assert row["status"] == "intervening_store_or_call"
-    assert row["path_block_indices"] == []
+    assert row["path_block_indices"][0] == 0
+    assert row["path_block_indices"][-1] == 3
 
     disconnected = json.loads(json.dumps(cfg))
     disconnected[0]["blocks"][0]["successors"] = []
