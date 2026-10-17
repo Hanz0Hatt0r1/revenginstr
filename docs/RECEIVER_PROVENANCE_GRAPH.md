@@ -21,9 +21,21 @@ checks graph-local id uniqueness and rejects dangling endpoints.
 
 The graph is descriptive evidence only. It does not resolve receiver classes,
 infer dispatch slots, transfer call targets, or affect routing. The first
-consumer is expected to build graphs from existing typed receiver, field-store,
-call-argument, and P-code artifacts; bounded interprocedural propagation is a
-separate M2.3 step.
+builder projects typed receiver-call anchors. Joining field-store,
+call-argument, and P-code artifacts remains follow-up work; bounded
+interprocedural propagation is a separate M2.3 step.
+
+The initial `revenginstr-receiver-graph` command projects
+`GhidraIndirectReceiverType/1` rows into call-anchor graphs. It emits a graph
+only when `receiver_present` is `1`; rows with `0` are counted and omitted.
+The emitted `receiver_at_call` edge records the observed receiver-to-call
+relationship, not a receiver type or class conclusion. The original TSV remains
+the source for those facts. Output graphs sort by opaque graph id. Duplicate
+call keys, invalid presence flags, and unknown input formats fail closed.
+
+```sh
+revenginstr-receiver-graph receiver-types.tsv --output receiver-graphs.jsonl
+```
 
 ## Minimal example
 

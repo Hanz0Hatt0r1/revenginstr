@@ -6,7 +6,13 @@ from pathlib import Path
 import pytest
 from jsonschema import Draft202012Validator, ValidationError
 
-from revenginstr.receiver.provenance import FORMAT, validate_graph_references
+from revenginstr.receiver.provenance import (
+    FORMAT,
+    RECEIVER_TYPE_FORMAT,
+    build_receiver_graphs,
+    main,
+    validate_graph_references,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -109,3 +115,60 @@ def test_graph_schema_rejects_empty_node_list(graph: dict) -> None:
     graph["nodes"] = []
     with pytest.raises(ValidationError):
         Draft202012Validator(schema).validate(graph)
+
+
+def receiver_row(call_index: str, receiver_present: str = "1") -> dict[str, str]:
+    return {
+        "format": RECEIVER_TYPE_FORMAT,
+        "source_id": "sample:1000",
+        "call_index": call_index,
+        "receiver_present": receiver_present,
+    }
+
+
+def test_builder_emits_only_observed_receiver_call_edges() -> None:
+    graphs, missing = build_receiver_graphs([
+        receiver_row("2", "0"),
+        receiver_row("1"),
+    ])
+
+    assert missing == 1
+    assert [graph["graph_id"] for graph in graphs] == ["sample:1000#1"]
+    edge = graphs[0]["edges"][0]
+    assert edge["evidence_class"] == "exact_static"
+    assert edge["provenance"] == [{
+        "source_format": RECEIVER_TYPE_FORMAT,
+        "source_id": "sample:1000#1",
+    }]
+    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+    Draft202012Validator(schema).validate(graphs[0])
+
+
+@pytest.mark.parametrize(
+    ("rows", "message"),
+    [
+        ([{**receiver_row("0"), "format": "consumer/1"}], "unsupported format"),
+        ([receiver_row("0", "2")], "invalid receiver_present"),
+        ([receiver_row("0"), receiver_row("0")], "duplicate receiver row"),
+        ([receiver_row("x")], "invalid receiver key"),
+        ([receiver_row("٠")], "invalid receiver key"),
+    ],
+)
+def test_builder_fails_closed_on_invalid_rows(rows: list[dict[str, str]], message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        build_receiver_graphs(rows)
+
+
+def test_builder_cli_writes_graph_jsonl_and_reports_omissions(tmp_path: Path, capsys) -> None:
+    source = tmp_path / "receiver-types.tsv"
+    source.write_text(
+        "format\tsource_id\tcall_index\treceiver_present\n"
+        f"{RECEIVER_TYPE_FORMAT}\tsample:1000\t0\t1\n"
+        f"{RECEIVER_TYPE_FORMAT}\tsample:1000\t1\t0\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "nested" / "graphs.jsonl"
+
+    assert main([str(source), "--output", str(output)]) == 0
+    assert json.loads(output.read_text(encoding="utf-8"))["graph_id"] == "sample:1000#0"
+    assert "calls without receiver: 1" in capsys.readouterr().out
