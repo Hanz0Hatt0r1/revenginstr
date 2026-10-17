@@ -8,6 +8,9 @@ import ghidra.program.model.data.TypeDef;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.listing.FunctionManager;
 import ghidra.program.model.pcode.HighVariable;
+import ghidra.program.model.pcode.HighFunction;
+import ghidra.program.model.pcode.HighSymbol;
+import ghidra.program.model.pcode.LocalSymbolMap;
 import ghidra.program.model.pcode.PcodeOp;
 import ghidra.program.model.pcode.PcodeOpAST;
 import ghidra.program.model.pcode.SequenceNumber;
@@ -23,6 +26,7 @@ import java.util.*;
 // Edge labels distinguish value flow from LOAD-address/base/offset flow.
 public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
     private static final String FORMAT = "REVENGINSTR.GhidraCallerArgumentSubtree/1";
+    private static final String PARAMETER_ROOT_FORMAT = "REVENGINSTR.GhidraCallerArgumentParameterRoot/1";
     private static final int MAX_DEPTH = 12;
     private static final int MAX_NODES = 96;
     private static final int MAX_CALLERS = 128;
@@ -84,6 +88,22 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
         }
         String kind = n.isRegister() ? "register" : n.isUnique() ? "unique" : n.isAddress() ? "address" : "input";
         return kind + ":" + cell(n.getAddress()) + ":" + n.getSize();
+    }
+
+    private int parameterIndex(HighFunction high, Varnode node) {
+        if (high == null || node == null || node.getHigh() == null) return -1;
+        LocalSymbolMap map = high.getLocalSymbolMap();
+        if (map == null) return -1;
+        HighVariable target = node.getHigh();
+        for (int index = 0; index < map.getNumParams(); ++index) {
+            HighSymbol symbol = map.getParamSymbol(index);
+            if (symbol == null || symbol.getHighVariable() == null) continue;
+            HighVariable parameter = symbol.getHighVariable();
+            if (parameter == target) return index;
+            if (parameter.getRepresentative() != null && target.getRepresentative() != null &&
+                    parameter.getRepresentative().equals(target.getRepresentative())) return index;
+        }
+        return -1;
     }
 
     private Address callTargetAddress(PcodeOp op) {
@@ -163,6 +183,12 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
         out.newLine();
     }
 
+    private void writeParameterRootHeader(BufferedWriter out) throws Exception {
+        out.write("format\tplan_id\tcallee_entry\tparameter_index\tcaller_entry\tcaller_call_site\t" +
+            "caller_parameter_index\targument_node_id\tstatus");
+        out.newLine();
+    }
+
     private void writeNode(BufferedWriter out, PlanRow p, Function caller, Address callSite, Varnode node,
             int nodeId, int parentId, int inputIndex, int depth, String edge, String truncation) throws Exception {
         DataType type = highType(node);
@@ -233,13 +259,25 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
 
     public void run() throws Exception {
         String[] args = getScriptArgs();
-        if (args.length != 2) throw new IllegalArgumentException("Usage: ExportGhidraCallerArgumentSubtree.java <plan.tsv> <output.tsv>");
+        if (args.length != 2 && args.length != 4) throw new IllegalArgumentException(
+            "Usage: ExportGhidraCallerArgumentSubtree.java <plan.tsv> <output.tsv> [--parameter-root-output <roots.tsv>]");
+        if (args.length == 4 && !"--parameter-root-output".equals(args[2]))
+            throw new IllegalArgumentException("Expected --parameter-root-output before the roots TSV path");
         List<PlanRow> plan = readPlan(new File(args[0]));
         File output = new File(args[1]); File parent = output.getParentFile(); if (parent != null) parent.mkdirs();
+        File parameterRootOutput = args.length == 4 ? new File(args[3]) : null;
+        if (parameterRootOutput != null && output.getCanonicalFile().equals(parameterRootOutput.getCanonicalFile()))
+            throw new IllegalArgumentException("subtree and parameter-root outputs must be different files");
+        if (parameterRootOutput != null && parameterRootOutput.getParentFile() != null)
+            parameterRootOutput.getParentFile().mkdirs();
         DecompInterface decompiler = new DecompInterface();
         if (!decompiler.openProgram(currentProgram)) throw new IllegalStateException("Could not open current program");
-        try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(output), StandardCharsets.UTF_8))) {
+        int parameterRootRows = 0;
+        try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(output), StandardCharsets.UTF_8));
+             BufferedWriter parameterRootOut = parameterRootOutput == null ? null : new BufferedWriter(
+                 new OutputStreamWriter(new FileOutputStream(parameterRootOutput), StandardCharsets.UTF_8))) {
             writeHeader(out);
+            if (parameterRootOut != null) writeParameterRootHeader(parameterRootOut);
             for (PlanRow p : plan) {
                 if (monitor.isCancelled()) break;
                 Function callee = resolveFunction(p.calleeEntry);
@@ -249,8 +287,9 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
                     DecompileResults results = decompiler.decompileFunction(caller, 60, monitor);
                     if (results == null || !results.decompileCompleted() || results.getHighFunction() == null) { failed++; continue; }
                     decompiled++;
+                    HighFunction high = results.getHighFunction();
                     boolean callerMatched = false;
-                    Iterator<PcodeOpAST> ops = results.getHighFunction().getPcodeOps();
+                    Iterator<PcodeOpAST> ops = high.getPcodeOps();
                     while (ops.hasNext() && !monitor.isCancelled()) {
                         PcodeOpAST op = ops.next();
                         if (op.getOpcode() != PcodeOp.CALL) continue;
@@ -260,7 +299,19 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
                         if (op.getNumInputs() <= arg) continue;
                         callerMatched = true; matched++;
                         int[] nextId = {0}; int[] budget = {0};
-                        walk(out, p, caller, op.getSeqnum().getTarget(), op.getInput(arg), -1, -1, 0, "root", nextId, budget, new HashSet<Varnode>());
+                        Varnode argumentRoot = op.getInput(arg);
+                        int argumentNodeId = walk(out, p, caller, op.getSeqnum().getTarget(), argumentRoot,
+                            -1, -1, 0, "root", nextId, budget, new HashSet<Varnode>());
+                        int callerParameterIndex = parameterIndex(high, argumentRoot);
+                        if (parameterRootOut != null && argumentNodeId >= 0 && callerParameterIndex >= 0) {
+                            parameterRootOut.write(String.join("\t", PARAMETER_ROOT_FORMAT,
+                                cell(p.planId), cell(p.calleeEntry), Integer.toString(p.parameterIndex),
+                                cell(caller.getEntryPoint()), cell(op.getSeqnum().getTarget()),
+                                Integer.toString(callerParameterIndex), Integer.toString(argumentNodeId),
+                                "direct_parameter_root"));
+                            parameterRootOut.newLine();
+                            parameterRootRows++;
+                        }
                     }
                     if (callerMatched) callersWithMatched++;
                 }
@@ -275,5 +326,10 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
         println("CALLER_ARGUMENT_SUBTREE_FORMAT=" + FORMAT);
         println("CALLER_ARGUMENT_SUBTREE_PLANS=" + plan.size());
         println("CALLER_ARGUMENT_SUBTREE_OUTPUT=" + output.getAbsolutePath());
+        if (parameterRootOutput != null) {
+            println("CALLER_ARGUMENT_PARAMETER_ROOT_FORMAT=" + PARAMETER_ROOT_FORMAT);
+            println("CALLER_ARGUMENT_PARAMETER_ROOT_ROWS=" + parameterRootRows);
+            println("CALLER_ARGUMENT_PARAMETER_ROOT_OUTPUT=" + parameterRootOutput.getAbsolutePath());
+        }
     }
 }

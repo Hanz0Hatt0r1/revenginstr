@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-caller-argument-parameter-root-v1.schema.json",
+  "title": "REVENGINSTR.GhidraCallerArgumentParameterRoot/1 TSV row",
+  "description": "An actual call argument whose value is exactly one formal parameter of the caller function.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "plan_id", "callee_entry", "parameter_index", "caller_entry",
+    "caller_call_site", "caller_parameter_index", "argument_node_id", "status"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraCallerArgumentParameterRoot/1"},
+    "plan_id": {"type": "string", "minLength": 1},
+    "callee_entry": {"type": "string", "minLength": 1},
+    "parameter_index": {"type": "string", "pattern": "^[0-9]+$"},
+    "caller_entry": {"type": "string", "minLength": 1},
+    "caller_call_site": {"type": "string", "minLength": 1},
+    "caller_parameter_index": {"type": "string", "pattern": "^[0-9]+$"},
+    "argument_node_id": {"type": "string", "pattern": "^[0-9]+$"},
+    "status": {"const": "direct_parameter_root"}
+  }
+}
