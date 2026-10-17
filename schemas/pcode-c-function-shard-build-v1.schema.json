@@ -30,6 +30,8 @@
     },
     "shard_size_limit": {"type": "integer", "minimum": 1},
     "jobs": {"type": "integer", "minimum": 1},
+    "resumed": {"type": "boolean"},
+    "builder_source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "functions": {
       "type": "object",
       "required": ["records", "found", "missing", "lowerable", "rejected"],

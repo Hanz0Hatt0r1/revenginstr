@@ -27,7 +27,9 @@ revenginstr-pcode-c-lowering-corpus functions.jsonl.gz \
 The `build-report.json` records input hashes, the compiler and flags, rejection
 counts, and each generated source/object hash. These objects contain generic
 host callbacks; the consumer still needs a target-specific runtime, call/userop
-dispatch, startup code, and a link map.
+dispatch, startup code, and a link map. Interrupted runs preserve a
+`.build-state.json`; rerun the same command with `--resume` to verify the input,
+compiler, builder, and lowerer hashes, then compile only missing object files.
 
 The output function receives an `RviPcodeContext`. Its callbacks read and write
 register and memory spaces as byte sequences. `LOAD`/`STORE` use the exact
