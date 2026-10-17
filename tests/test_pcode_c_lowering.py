@@ -1,0 +1,742 @@
+from __future__ import annotations
+
+import gzip
+import hashlib
+import json
+import shutil
+import subprocess
+from pathlib import Path
+
+import pytest
+
+from revenginstr.pcode.c_lowering import PcodeLoweringError, compile_from_corpus, compile_function
+
+
+def _varnode(space: str, offset: str, size: int, *, constant: bool = False) -> dict:
+    return {"space": space, "offset": offset, "size": size, "constant": constant}
+
+
+def _address_spaces() -> dict:
+    return {
+        "format": "REVENGINSTR.GhidraLanguageAddressSpaces/1",
+        "language_id": "x86:LE:32:default",
+        "big_endian": False,
+        "default_space": "ram",
+        "default_data_space": "ram",
+        "address_spaces": [{
+            "space_id": "0x1a1",
+            "name": "ram",
+            "pointer_size": 4,
+            "addressable_unit_size": 1,
+            "memory": True,
+            "loaded_memory": True,
+            "constant": False,
+            "register": False,
+            "stack": False,
+            "unique": False,
+            "external": False,
+            "overlay": False,
+        }],
+    }
+
+
+def _function_row() -> dict:
+    constant = lambda value, size=4: _varnode("const", hex(value), size, constant=True)
+    unique = _varnode("unique", "0x100", 4)
+    eax = _varnode("register", "0x0", 4)
+    output = _varnode("register", "0x4", 4)
+    memory_id = _varnode("const", "0x1a1", 4, constant=True)
+    pointer = constant(0x100)
+    return {
+        "format": "REVENGINSTR.GhidraFunctionInstructions/1",
+        "program": "sample.exe",
+        "requested": "0x00401000",
+        "resolved_address": "0x00401000",
+        "found": True,
+        "function": {"address": "0x00401000", "name": "sample", "size": 16, "calling_convention": None},
+        "instruction_count": 5,
+        "instructions": [
+            {"address": "0x00401000", "mnemonic": "ADD", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [
+                {"opcode": "INT_ADD", "output": unique, "inputs": [constant(7), constant(2)]},
+            ]},
+            {"address": "0x00401004", "mnemonic": "MOV", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [
+                {"opcode": "STORE", "output": None, "inputs": [memory_id, pointer, unique]},
+            ]},
+            {"address": "0x00401008", "mnemonic": "MOV", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [
+                {"opcode": "LOAD", "output": eax, "inputs": [memory_id, pointer]},
+            ]},
+            {"address": "0x0040100c", "mnemonic": "IMUL", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [
+                {"opcode": "INT_MULT", "output": output, "inputs": [eax, constant(2)]},
+            ]},
+            {"address": "0x00401010", "mnemonic": "RET", "flow_type": "TERMINATOR", "flows": [], "pcode": [
+                {"opcode": "RETURN", "output": None, "inputs": [_varnode("register", "0x20", 4)]},
+            ]},
+        ],
+    }
+
+
+def test_codegen_emits_native_c_with_memory_and_register_callbacks(tmp_path: Path) -> None:
+    row = _function_row()
+    spaces = _address_spaces()
+    source, operation_count = compile_function(row, spaces)
+    assert operation_count == 5
+    assert "int rvi_00401000" in source
+    assert "rvi_read_space(ctx, \"ram\"" in source
+    assert "rvi_write_space(ctx, \"ram\"" in source
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    harness = r'''
+#include <stdio.h>
+typedef struct { uint8_t registers[64]; uint8_t ram[512]; } TestState;
+static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {
+    TestState *state = (TestState *)opaque;
+    uint8_t *base = strcmp(space, "register") == 0 ? state->registers :
+                    strcmp(space, "ram") == 0 ? state->ram : NULL;
+    if (!base || offset + size > 512) return -1;
+    memcpy(out, base + offset, size);
+    return 0;
+}
+static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t size, const uint8_t *in) {
+    TestState *state = (TestState *)opaque;
+    uint8_t *base = strcmp(space, "register") == 0 ? state->registers :
+                    strcmp(space, "ram") == 0 ? state->ram : NULL;
+    if (!base || offset + size > 512) return -1;
+    memcpy(base + offset, in, size);
+    return 0;
+}
+int rvi_00401000(RviPcodeContext *ctx);
+int main(void) {
+    TestState state = {{0}, {0}};
+    RviPcodeContext context = {&state, read_bytes, write_bytes};
+    if (rvi_00401000(&context) != 0) return 1;
+    uint32_t stored = 0, result = 0;
+    memcpy(&stored, state.ram + 0x100, sizeof(stored));
+    memcpy(&result, state.registers + 4, sizeof(result));
+    if (stored != 9 || result != 18) return 2;
+    return 0;
+}
+'''
+    c_path = tmp_path / "compiled.c"
+    executable = tmp_path / "compiled"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
+def test_codegen_executes_float_arithmetic_and_signed_conversions(tmp_path: Path) -> None:
+    row = _function_row()
+    row["instruction_count"] = 7
+    row["instructions"] = [
+        {"address": "0x00401000", "mnemonic": "FADD", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "FLOAT_ADD", "output": _varnode("unique", "0x100", 4),
+            "inputs": [_varnode("const", "0x3fc00000", 4, constant=True),
+                       _varnode("const", "0x40100000", 4, constant=True)],
+        }]},
+        {"address": "0x00401001", "mnemonic": "MOV", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "COPY", "output": _varnode("register", "0x4", 4),
+            "inputs": [_varnode("unique", "0x100", 4)],
+        }]},
+        {"address": "0x00401002", "mnemonic": "FCMP", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "FLOAT_NOTEQUAL", "output": _varnode("register", "0x8", 1),
+            "inputs": [_varnode("const", "0x7fc00000", 4, constant=True),
+                       _varnode("const", "0x3f800000", 4, constant=True)],
+        }]},
+        {"address": "0x00401003", "mnemonic": "FIST", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "TRUNC", "output": _varnode("register", "0xc", 4),
+            "inputs": [_varnode("unique", "0x100", 4)],
+        }]},
+        {"address": "0x00401004", "mnemonic": "CVTSI2SD", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "INT2FLOAT", "output": _varnode("unique", "0x200", 8),
+            "inputs": [_varnode("const", "0xfffffff9", 4, constant=True)],
+        }]},
+        {"address": "0x00401005", "mnemonic": "CVTSD2SS", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "FLOAT2FLOAT", "output": _varnode("register", "0x10", 4),
+            "inputs": [_varnode("unique", "0x200", 8)],
+        }]},
+        {"address": "0x00401006", "mnemonic": "RET", "flow_type": "TERMINATOR", "flows": [], "pcode": [{
+            "opcode": "RETURN", "output": None, "inputs": [_varnode("register", "0x20", 4)],
+        }]},
+    ]
+    source, operation_count = compile_function(row, _address_spaces())
+    assert operation_count == 7
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    harness = r'''
+typedef struct { uint8_t registers[64]; } TestState;
+static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(out, state->registers + offset, size);
+    return 0;
+}
+static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t size, const uint8_t *in) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(state->registers + offset, in, size);
+    return 0;
+}
+int rvi_00401000(RviPcodeContext *ctx);
+int main(void) {
+    TestState state = {{0}};
+    RviPcodeContext context = {&state, read_bytes, write_bytes, NULL};
+    if (rvi_00401000(&context) != 0) return 1;
+    uint32_t float_sum = 0, integer_truncation = 0, float_conversion = 0;
+    memcpy(&float_sum, state.registers + 4, sizeof(float_sum));
+    memcpy(&integer_truncation, state.registers + 0xc, sizeof(integer_truncation));
+    memcpy(&float_conversion, state.registers + 0x10, sizeof(float_conversion));
+    if (float_sum != 0x40700000 || state.registers[8] != 0) return 2;
+    if (integer_truncation != 3 || float_conversion != 0xc0e00000) return 3;
+    return 0;
+}
+'''
+    c_path = tmp_path / "float.c"
+    executable = tmp_path / "float"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
+def test_codegen_executes_signed_and_unsigned_division_and_remainder(tmp_path: Path) -> None:
+    row = _function_row()
+    row["instruction_count"] = 5
+    operations = [
+        ("INT_DIV", "0x7", "0x2", "0x4"),
+        ("INT_REM", "0x7", "0x2", "0x8"),
+        ("INT_SDIV", "0xfffffff9", "0x2", "0xc"),
+        ("INT_SREM", "0xfffffff9", "0x2", "0x10"),
+    ]
+    row["instructions"] = [
+        {"address": f"0x004010{index:02x}", "mnemonic": opcode, "flow_type": "FALL_THROUGH",
+         "flows": [], "pcode": [{
+             "opcode": opcode, "output": _varnode("register", out, 4),
+             "inputs": [_varnode("const", left, 4, constant=True),
+                        _varnode("const", right, 4, constant=True)],
+         }]}
+        for index, (opcode, left, right, out) in enumerate(operations)
+    ] + [{
+        "address": "0x00401004", "mnemonic": "RET", "flow_type": "TERMINATOR", "flows": [], "pcode": [{
+            "opcode": "RETURN", "output": None, "inputs": [_varnode("register", "0x20", 4)],
+        }],
+    }]
+    source, operation_count = compile_function(row, _address_spaces())
+    assert operation_count == 5
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    harness = r'''
+typedef struct { uint8_t registers[64]; } TestState;
+static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(out, state->registers + offset, size);
+    return 0;
+}
+static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t size, const uint8_t *in) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(state->registers + offset, in, size);
+    return 0;
+}
+int rvi_00401000(RviPcodeContext *ctx);
+int main(void) {
+    TestState state = {{0}};
+    RviPcodeContext context = {&state, read_bytes, write_bytes, NULL};
+    if (rvi_00401000(&context) != 0) return 1;
+    uint32_t actual[4] = {0};
+    for (unsigned i = 0; i < 4; i++) memcpy(&actual[i], state.registers + 4 + i * 4, 4);
+    return actual[0] == 3 && actual[1] == 1 && actual[2] == UINT32_C(0xfffffffd) &&
+           actual[3] == UINT32_C(0xffffffff) ? 0 : 2;
+}
+'''
+    c_path = tmp_path / "division.c"
+    executable = tmp_path / "division"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
+def test_codegen_routes_callother_by_language_userop_index(tmp_path: Path) -> None:
+    row = _function_row()
+    row["instruction_count"] = 2
+    row["instructions"] = [
+        {"address": "0x00401000", "mnemonic": "SPECIAL", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "CALLOTHER", "output": _varnode("register", "0x4", 4),
+            "inputs": [_varnode("const", "0x2a", 4, constant=True),
+                       _varnode("const", "0x7", 4, constant=True)],
+        }]},
+        {"address": "0x00401001", "mnemonic": "RET", "flow_type": "TERMINATOR", "flows": [], "pcode": [{
+            "opcode": "RETURN", "output": None, "inputs": [_varnode("register", "0x20", 4)],
+        }]},
+    ]
+    source, operation_count = compile_function(row, _address_spaces())
+    assert operation_count == 2
+    assert "UINT32_C(42)" in source
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    harness = r'''
+typedef struct { uint8_t registers[64]; } TestState;
+static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(out, state->registers + offset, size);
+    return 0;
+}
+static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t size, const uint8_t *in) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(state->registers + offset, in, size);
+    return 0;
+}
+static int execute_userop(void *opaque, uint32_t index, const uint64_t *args,
+                          const unsigned *sizes, size_t count, uint64_t *output, unsigned output_size) {
+    (void)opaque;
+    if (index != 42 || count != 1 || sizes[0] != 4 || output_size != 4 || !output) return -1;
+    *output = index + args[0];
+    return 0;
+}
+int rvi_00401000(RviPcodeContext *ctx);
+int main(void) {
+    TestState state = {{0}};
+    RviPcodeContext context = {&state, read_bytes, write_bytes, NULL, execute_userop};
+    if (rvi_00401000(&context) != 0) return 1;
+    uint32_t result = 0;
+    memcpy(&result, state.registers + 4, sizeof(result));
+    return result == 49 ? 0 : 2;
+}
+'''
+    c_path = tmp_path / "userop.c"
+    executable = tmp_path / "userop"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
+def test_codegen_executes_conditional_and_unconditional_intra_function_branches(tmp_path: Path) -> None:
+    row = _function_row()
+    row["instruction_count"] = 5
+    row["instructions"] = [
+        {"address": "0x00401000", "mnemonic": "JNZ", "flow_type": "CONDITIONAL_JUMP",
+         "flows": ["0x00401008"], "pcode": [{
+             "opcode": "CBRANCH", "output": None,
+             "inputs": [_varnode("ram", "0x401008", 4), _varnode("register", "0x0", 1)],
+         }]},
+        {"address": "0x00401003", "mnemonic": "MOV", "flow_type": "FALL_THROUGH",
+         "flows": [], "pcode": [{
+             "opcode": "COPY", "output": _varnode("register", "0x4", 4),
+             "inputs": [_varnode("const", "0x1", 4, constant=True)],
+         }]},
+        {"address": "0x00401006", "mnemonic": "JMP", "flow_type": "UNCONDITIONAL_JUMP",
+         "flows": ["0x0040100b"], "pcode": [{
+             "opcode": "BRANCH", "output": None,
+             "inputs": [_varnode("ram", "0x40100b", 4)],
+         }]},
+        {"address": "0x00401008", "mnemonic": "MOV", "flow_type": "FALL_THROUGH",
+         "flows": [], "pcode": [{
+             "opcode": "COPY", "output": _varnode("register", "0x4", 4),
+             "inputs": [_varnode("const", "0x2", 4, constant=True)],
+         }]},
+        {"address": "0x0040100b", "mnemonic": "RET", "flow_type": "TERMINATOR",
+         "flows": [], "pcode": [{
+             "opcode": "RETURN", "output": None,
+             "inputs": [_varnode("register", "0x20", 4)],
+         }]},
+    ]
+    source, operation_count = compile_function(row, _address_spaces())
+    assert operation_count == 5
+    assert "goto rvi_label_0000000000401008" in source
+    assert "goto rvi_label_000000000040100b" in source
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    harness = r'''
+typedef struct { uint8_t registers[64]; } TestState;
+static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(out, state->registers + offset, size);
+    return 0;
+}
+static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t size, const uint8_t *in) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(state->registers + offset, in, size);
+    return 0;
+}
+int rvi_00401000(RviPcodeContext *ctx);
+static int run_branch(uint8_t condition, uint32_t expected) {
+    TestState state = {{0}};
+    state.registers[0] = condition;
+    RviPcodeContext context = {&state, read_bytes, write_bytes};
+    if (rvi_00401000(&context) != 0) return 1;
+    uint32_t actual = 0;
+    memcpy(&actual, state.registers + 4, sizeof(actual));
+    return actual == expected ? 0 : 2;
+}
+int main(void) {
+    return run_branch(0, 1) || run_branch(1, 2);
+}
+'''
+    c_path = tmp_path / "branch.c"
+    executable = tmp_path / "branch"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
+def test_codegen_lowers_repeat_instruction_pcode_loop(tmp_path: Path) -> None:
+    row = _function_row()
+    row["instruction_count"] = 2
+    row["instructions"] = [
+        {"address": "0x00401000", "mnemonic": "REP", "flow_type": "FALL_THROUGH",
+         "fallthrough": "0x00401010", "flows": [], "pcode": [
+             {"opcode": "INT_EQUAL", "output": _varnode("unique", "0x100", 1),
+              "inputs": [_varnode("register", "0x4", 4), _varnode("const", "0x0", 4, constant=True)]},
+             {"opcode": "CBRANCH", "output": None,
+              "inputs": [_varnode("ram", "0x401010", 4), _varnode("unique", "0x100", 1)]},
+             {"opcode": "INT_SUB", "output": _varnode("register", "0x4", 4),
+              "inputs": [_varnode("register", "0x4", 4), _varnode("const", "0x1", 4, constant=True)]},
+             {"opcode": "BRANCH", "output": None, "inputs": [_varnode("ram", "0x401000", 4)]},
+         ]},
+        {"address": "0x00401010", "mnemonic": "RET", "flow_type": "TERMINATOR", "flows": [], "pcode": [{
+            "opcode": "RETURN", "output": None, "inputs": [_varnode("register", "0x20", 4)],
+        }]},
+    ]
+    source, operation_count = compile_function(row, _address_spaces())
+    assert operation_count == 5
+    assert "goto rvi_label_0000000000401000" in source
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    harness = r'''
+typedef struct { uint8_t registers[64]; } TestState;
+static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(out, state->registers + offset, size);
+    return 0;
+}
+static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t size, const uint8_t *in) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(state->registers + offset, in, size);
+    return 0;
+}
+int rvi_00401000(RviPcodeContext *ctx);
+int main(void) {
+    TestState state = {{0}};
+    uint32_t count = 3;
+    memcpy(state.registers + 4, &count, sizeof(count));
+    RviPcodeContext context = {&state, read_bytes, write_bytes, NULL, NULL};
+    if (rvi_00401000(&context) != 0) return 1;
+    memcpy(&count, state.registers + 4, sizeof(count));
+    return count == 0 ? 0 : 2;
+}
+'''
+    c_path = tmp_path / "repeat.c"
+    executable = tmp_path / "repeat"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
+def test_codegen_lowers_forward_and_backward_pcode_relative_branches(tmp_path: Path) -> None:
+    row = _function_row()
+    row["instruction_count"] = 1
+    row["instructions"] = [{
+        "address": "0x00401000", "mnemonic": "LOOP", "flow_type": "TERMINATOR", "flows": [], "pcode": [
+            {"opcode": "INT_EQUAL", "output": _varnode("unique", "0x100", 1),
+             "inputs": [_varnode("register", "0x4", 4), _varnode("const", "0x0", 4, constant=True)]},
+            {"opcode": "CBRANCH", "output": None,
+             "inputs": [_varnode("const", "0x3", 4, constant=True), _varnode("unique", "0x100", 1)]},
+            {"opcode": "INT_SUB", "output": _varnode("register", "0x4", 4),
+             "inputs": [_varnode("register", "0x4", 4), _varnode("const", "0x1", 4, constant=True)]},
+            {"opcode": "BRANCH", "output": None,
+             "inputs": [_varnode("const", "0xfffffffd", 4, constant=True)]},
+            {"opcode": "COPY", "output": _varnode("register", "0x8", 4),
+             "inputs": [_varnode("const", "0x4d", 4, constant=True)]},
+            {"opcode": "RETURN", "output": None, "inputs": [_varnode("register", "0x20", 4)]},
+        ],
+    }]
+    source, operation_count = compile_function(row, _address_spaces())
+    assert operation_count == 6
+    assert "goto rvi_pcode_0000000000401000_4" in source
+    assert "goto rvi_pcode_0000000000401000_0" in source
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    harness = r'''
+typedef struct { uint8_t registers[64]; } TestState;
+static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(out, state->registers + offset, size);
+    return 0;
+}
+static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t size, const uint8_t *in) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(state->registers + offset, in, size);
+    return 0;
+}
+int rvi_00401000(RviPcodeContext *ctx);
+int main(void) {
+    TestState state = {{0}};
+    uint32_t count = 3;
+    memcpy(state.registers + 4, &count, sizeof(count));
+    RviPcodeContext context = {&state, read_bytes, write_bytes, NULL, NULL};
+    if (rvi_00401000(&context) != 0) return 1;
+    memcpy(&count, state.registers + 4, sizeof(count));
+    uint32_t result = 0;
+    memcpy(&result, state.registers + 8, sizeof(result));
+    return count == 0 && result == 77 ? 0 : 2;
+}
+'''
+    c_path = tmp_path / "relative-branch.c"
+    executable = tmp_path / "relative-branch"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
+def test_codegen_dispatches_direct_tail_jump_outside_the_function(tmp_path: Path) -> None:
+    row = _function_row()
+    row["instruction_count"] = 1
+    row["instructions"] = [{
+        "address": "0x00401000", "mnemonic": "JMP", "flow_type": "UNCONDITIONAL_JUMP",
+        "flows": ["0x00402000"], "pcode": [{
+            "opcode": "BRANCH", "output": None,
+            "inputs": [_varnode("ram", "0x402000", 4)],
+        }],
+    }]
+    source, operation_count = compile_function(row, _address_spaces())
+    assert operation_count == 1
+    assert "rvi_call(ctx, UINT64_C(0x402000))" in source
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    harness = r'''
+static int call_target(void *opaque, uint64_t target) {
+    uint64_t *observed = (uint64_t *)opaque;
+    *observed = target;
+    return 0;
+}
+int rvi_00401000(RviPcodeContext *ctx);
+int main(void) {
+    uint64_t target = 0;
+    RviPcodeContext context = {&target, NULL, NULL, call_target, NULL};
+    if (rvi_00401000(&context) != 0) return 1;
+    return target == UINT64_C(0x402000) ? 0 : 2;
+}
+'''
+    c_path = tmp_path / "tail-jump.c"
+    executable = tmp_path / "tail-jump"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
+def test_codegen_compacts_sparse_unique_space_without_losing_overlaps() -> None:
+    row = _function_row()
+    row["instruction_count"] = 5
+    row["instructions"] = [
+        {"address": "0x00401000", "mnemonic": "ADD", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "INT_ADD", "output": _varnode("unique", "0x100", 4),
+            "inputs": [_varnode("const", "0x5", 4, constant=True), _varnode("const", "0x6", 4, constant=True)],
+        }]},
+        {"address": "0x00401004", "mnemonic": "ADD", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "INT_ADD", "output": _varnode("unique", "0x100000", 4),
+            "inputs": [_varnode("const", "0x3", 4, constant=True), _varnode("const", "0x4", 4, constant=True)],
+        }]},
+        {"address": "0x00401008", "mnemonic": "ADD", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "INT_ADD", "output": _varnode("unique", "0x100002", 4),
+            "inputs": [_varnode("unique", "0x100", 4), _varnode("unique", "0x100000", 4)],
+        }]},
+        {"address": "0x0040100c", "mnemonic": "MOV", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "COPY", "output": _varnode("register", "0x4", 4),
+            "inputs": [_varnode("unique", "0x100002", 4)],
+        }]},
+        {"address": "0x00401010", "mnemonic": "RET", "flow_type": "TERMINATOR", "flows": [], "pcode": [{
+            "opcode": "RETURN", "output": None, "inputs": [_varnode("register", "0x20", 4)],
+        }]},
+    ]
+    source, operation_count = compile_function(row, _address_spaces())
+    assert operation_count == 5
+    assert "uint8_t _unique[10]" in source
+    assert '"unique", UINT64_C(0x6), 4' in source
+
+
+def test_codegen_dispatches_direct_and_indirect_calls(tmp_path: Path) -> None:
+    row = _function_row()
+    row["function"] = {**row["function"], "address": "0x00401200"}
+    row["instruction_count"] = 4
+    row["instructions"] = [
+        {"address": "0x00401200", "mnemonic": "CALL", "flow_type": "UNCONDITIONAL_CALL",
+         "flows": ["0x00405000"], "pcode": [{
+             "opcode": "CALL", "output": None, "inputs": [_varnode("ram", "0x405000", 4)],
+         }]},
+        {"address": "0x00401205", "mnemonic": "CALL", "flow_type": "COMPUTED_CALL",
+         "flows": [], "pcode": [{
+             "opcode": "CALLIND", "output": None, "inputs": [_varnode("register", "0xc", 4)],
+         }]},
+        {"address": "0x00401207", "mnemonic": "MOV", "flow_type": "FALL_THROUGH",
+         "flows": [], "pcode": [{
+             "opcode": "COPY", "output": _varnode("register", "0x4", 4),
+             "inputs": [_varnode("const", "0x3", 4, constant=True)],
+         }]},
+        {"address": "0x0040120a", "mnemonic": "RET", "flow_type": "TERMINATOR",
+         "flows": [], "pcode": [{
+             "opcode": "RETURN", "output": None, "inputs": [_varnode("register", "0x20", 4)],
+         }]},
+    ]
+    source, operation_count = compile_function(row, _address_spaces())
+    assert operation_count == 4
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    harness = r'''
+typedef struct { uint8_t registers[64]; uint64_t targets[2]; int call_count; } TestState;
+static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(out, state->registers + offset, size);
+    return 0;
+}
+static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t size, const uint8_t *in) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(state->registers + offset, in, size);
+    return 0;
+}
+static int call_target(void *opaque, uint64_t target) {
+    TestState *state = (TestState *)opaque;
+    if (state->call_count >= 2) return -1;
+    state->targets[state->call_count++] = target;
+    return 0;
+}
+int rvi_00401200(RviPcodeContext *ctx);
+int main(void) {
+    TestState state = {{0}, {0}, 0};
+    uint32_t indirect_target = 0x00406000;
+    memcpy(state.registers + 0xc, &indirect_target, sizeof(indirect_target));
+    RviPcodeContext context = {&state, read_bytes, write_bytes, call_target};
+    if (rvi_00401200(&context) != 0 || state.call_count != 2) return 1;
+    if (state.targets[0] != 0x00405000 || state.targets[1] != 0x00406000) return 2;
+    uint32_t result = 0;
+    memcpy(&result, state.registers + 4, sizeof(result));
+    return result == 3 ? 0 : 3;
+}
+'''
+    c_path = tmp_path / "calls.c"
+    executable = tmp_path / "calls"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
+def test_codegen_dispatches_computed_jump_to_enumerated_targets(tmp_path: Path) -> None:
+    row = _function_row()
+    row["function"] = {**row["function"], "address": "0x00401300"}
+    row["instruction_count"] = 6
+    row["instructions"] = [
+        {"address": "0x00401300", "mnemonic": "JMP", "flow_type": "COMPUTED_JUMP",
+         "flows": ["0x00401308", "0x00401310"], "pcode": [{
+             "opcode": "BRANCHIND", "output": None, "inputs": [_varnode("register", "0x0", 4)],
+         }]},
+        {"address": "0x00401308", "mnemonic": "MOV", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "COPY", "output": _varnode("register", "0x4", 4),
+            "inputs": [_varnode("const", "0x1", 4, constant=True)],
+        }]},
+        {"address": "0x0040130b", "mnemonic": "JMP", "flow_type": "UNCONDITIONAL_JUMP",
+         "flows": ["0x00401318"], "pcode": [{
+             "opcode": "BRANCH", "output": None, "inputs": [_varnode("ram", "0x401318", 4)],
+         }]},
+        {"address": "0x00401310", "mnemonic": "MOV", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "COPY", "output": _varnode("register", "0x4", 4),
+            "inputs": [_varnode("const", "0x2", 4, constant=True)],
+        }]},
+        {"address": "0x00401313", "mnemonic": "JMP", "flow_type": "UNCONDITIONAL_JUMP",
+         "flows": ["0x00401318"], "pcode": [{
+             "opcode": "BRANCH", "output": None, "inputs": [_varnode("ram", "0x401318", 4)],
+         }]},
+        {"address": "0x00401318", "mnemonic": "RET", "flow_type": "TERMINATOR", "flows": [], "pcode": [{
+            "opcode": "RETURN", "output": None, "inputs": [_varnode("register", "0x20", 4)],
+        }]},
+    ]
+    source, operation_count = compile_function(row, _address_spaces())
+    assert operation_count == 6
+    assert "default: return -1;" in source
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    harness = r'''
+typedef struct { uint8_t registers[64]; } TestState;
+static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(out, state->registers + offset, size);
+    return 0;
+}
+static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t size, const uint8_t *in) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(state->registers + offset, in, size);
+    return 0;
+}
+int rvi_00401300(RviPcodeContext *ctx);
+static int run_target(uint32_t target, uint32_t expected) {
+    TestState state = {{0}};
+    memcpy(state.registers, &target, sizeof(target));
+    RviPcodeContext context = {&state, read_bytes, write_bytes, NULL};
+    if (rvi_00401300(&context) != 0) return 1;
+    uint32_t actual = 0;
+    memcpy(&actual, state.registers + 4, sizeof(actual));
+    return actual == expected ? 0 : 2;
+}
+int main(void) {
+    return run_target(0x00401308, 1) || run_target(0x00401310, 2);
+}
+'''
+    c_path = tmp_path / "computed-branch.c"
+    executable = tmp_path / "computed-branch"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
+def test_corpus_cli_hash_pins_source_and_compiles_selected_row(tmp_path: Path) -> None:
+    corpus = tmp_path / "functions.jsonl.gz"
+    row = _function_row()
+    with gzip.open(corpus, "wt", encoding="utf-8") as stream:
+        stream.write(json.dumps(row) + "\n")
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps({
+        "format": "REVENGINSTR.GhidraFunctionInstructionCorpus/1",
+        "program": "sample.exe",
+        "language_id": "x86:LE:32:default",
+        "exported_function_count": 1,
+        "instruction_count": 5,
+        "output_sha256": hashlib.sha256(corpus.read_bytes()).hexdigest(),
+    }), encoding="utf-8")
+    spaces_path = tmp_path / "spaces.json"
+    spaces_path.write_text(json.dumps(_address_spaces()), encoding="utf-8")
+
+    source, count = compile_from_corpus(corpus, manifest, spaces_path, "401000")
+
+    assert count == 5
+    assert "rvi_00401000" in source
+    manifest.write_text(manifest.read_text().replace(hashlib.sha256(corpus.read_bytes()).hexdigest(), "0" * 64))
+    with pytest.raises(ValueError, match="SHA-256"):
+        compile_from_corpus(corpus, manifest, spaces_path, "0x00401000")

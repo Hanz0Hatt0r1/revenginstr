@@ -44,6 +44,45 @@ def test_pcode_and_callgraph_contract_schemas() -> None:
         })
 
 
+def test_pcode_c_function_lowering_coverage_schema() -> None:
+    schema = validator("pcode-c-function-lowering-coverage-v1.schema.json")
+    schema.validate({
+        "format": "REVENGINSTR.PcodeCFunctionLoweringCoverage/1",
+        "source": {
+            "program": "sample.exe", "language_id": "x86:LE:32:default",
+            "corpus_sha256": "a" * 64, "manifest_sha256": "b" * 64,
+            "address_spaces_sha256": "c" * 64,
+        },
+        "functions": {"records": 1, "found": 1, "missing": 0, "fully_lowerable": 1, "rejected": 0},
+        "instructions": {"total": 1, "in_fully_lowerable_functions": 1},
+        "pcode_operations": {"in_fully_lowerable_functions": 1},
+        "rejection_reasons": [],
+    })
+
+
+def test_pcode_c_function_shard_build_schema() -> None:
+    schema = validator("pcode-c-function-shard-build-v1.schema.json")
+    schema.validate({
+        "format": "REVENGINSTR.PcodeCFunctionShardBuild/1",
+        "source": {
+            "program": "sample.exe", "language_id": "x86:LE:32:default",
+            "corpus_sha256": "a" * 64, "manifest_sha256": "b" * 64,
+            "address_spaces_sha256": "c" * 64,
+        },
+        "compiler": {"path": "/usr/bin/cc", "version": "cc 1", "arguments": ["-std=c11", "-O0"]},
+        "shard_size_limit": 500, "jobs": 4,
+        "functions": {"records": 1, "found": 1, "missing": 0, "lowerable": 1, "rejected": 0},
+        "instructions": {"total": 1, "in_lowerable_functions": 1},
+        "pcode_operations": {"in_lowerable_functions": 1},
+        "rejection_reasons": [],
+        "shards": [{
+            "index": 0, "functions": 1, "first_function": "0x401000", "last_function": "0x401000",
+            "source_file": "shard-00000.c", "source_sha256": "d" * 64, "source_bytes": 100,
+            "object_file": "shard-00000.o", "object_sha256": "e" * 64, "object_bytes": 200,
+        }],
+    })
+
+
 def test_evidence_schema_accepts_aggregated_rows_and_rejects_text_features(tmp_path: Path) -> None:
     trace = tmp_path / "trace.jsonl"
     metrics = tmp_path / "callgraph.jsonl"

@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/pcode-c-function-shard-build-v1.schema.json",
+  "title": "REVENGINSTR.PcodeCFunctionShardBuild/1 report",
+  "type": "object",
+  "required": ["format", "source", "compiler", "shard_size_limit", "jobs", "functions", "instructions", "pcode_operations", "rejection_reasons", "shards"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.PcodeCFunctionShardBuild/1"},
+    "source": {
+      "type": "object",
+      "required": ["program", "language_id", "corpus_sha256", "manifest_sha256", "address_spaces_sha256"],
+      "properties": {
+        "program": {"type": "string", "minLength": 1},
+        "language_id": {"type": "string", "minLength": 1},
+        "corpus_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "address_spaces_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      },
+      "additionalProperties": false
+    },
+    "compiler": {
+      "type": "object",
+      "required": ["path", "version", "arguments"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "minLength": 1},
+        "arguments": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "shard_size_limit": {"type": "integer", "minimum": 1},
+    "jobs": {"type": "integer", "minimum": 1},
+    "functions": {
+      "type": "object",
+      "required": ["records", "found", "missing", "lowerable", "rejected"],
+      "properties": {
+        "records": {"type": "integer", "minimum": 1},
+        "found": {"type": "integer", "minimum": 0},
+        "missing": {"type": "integer", "minimum": 0},
+        "lowerable": {"type": "integer", "minimum": 0},
+        "rejected": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "instructions": {
+      "type": "object",
+      "required": ["total", "in_lowerable_functions"],
+      "properties": {
+        "total": {"type": "integer", "minimum": 0},
+        "in_lowerable_functions": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "pcode_operations": {
+      "type": "object",
+      "required": ["in_lowerable_functions"],
+      "properties": {"in_lowerable_functions": {"type": "integer", "minimum": 0}},
+      "additionalProperties": false
+    },
+    "rejection_reasons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["reason", "functions"],
+        "properties": {
+          "reason": {"type": "string", "minLength": 1},
+          "functions": {"type": "integer", "minimum": 1}
+        },
+        "additionalProperties": false
+      }
+    },
+    "shards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["index", "functions", "first_function", "last_function", "source_file", "source_sha256", "source_bytes", "object_file", "object_sha256", "object_bytes"],
+        "properties": {
+          "index": {"type": "integer", "minimum": 0},
+          "functions": {"type": "integer", "minimum": 1},
+          "first_function": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"},
+          "last_function": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"},
+          "source_file": {"type": "string", "pattern": "^shard-[0-9]{5,}\\.c$"},
+          "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "source_bytes": {"type": "integer", "minimum": 1},
+          "object_file": {"type": "string", "pattern": "^shard-[0-9]{5,}\\.o$"},
+          "object_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "object_bytes": {"type": "integer", "minimum": 1}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
