@@ -173,9 +173,15 @@ must be no effect-bearing path. This filter does not compare pointer bases,
 offsets, access-range overlap, or physical/runtime mappings, and branch
 conditions remain unmodeled. A
 `unique_cfg_store_candidate` row is structural evidence only, not a runtime
-value-flow claim. CFG/1 rows and CFG/2 rows with incomplete access metadata
-produce `incomplete_evidence` instead of a positive result. The benchmark tool
-id is `receiver-field-store-load-dominance-audit`.
+value-flow claim. CFG/1 rows and CFG/2/CFG/3 rows with incomplete required
+access metadata produce `incomplete_evidence` instead of a positive result.
+The benchmark tool id is `receiver-field-store-load-dominance-audit`.
+
+CFG/3 can distinguish logical from physical address spaces. With CFG/3, the
+dominance audit excludes an intervening `STORE` only when its known physical
+space differs from the tracked access; a missing physical-space value remains
+a barrier. CFG/2 retains its logical-space behavior for compatibility. Neither
+version compares pointer bases or access ranges.
 
 Parameter-rooted loads can also be traced through P-code data dependencies to
 function returns:

@@ -15,6 +15,8 @@ using all of:
 - P-code operation `address` and `time`;
 - opcode (`LOAD` or `STORE`);
 - logical P-code address-space identity;
+- physical address-space identity and pointer width in bytes when the exporter
+  can resolve them;
 - access width in bytes.
 
 Address-space names provide the logical P-code context. Ghidra also exposes a
@@ -26,8 +28,8 @@ and [`AddressSpace.getPhysicalSpace()`](https://ghidra.re/ghidra_docs/api/ghidra
 To classify same-space writes, a fact must additionally provide either:
 
 - a fully resolved location: a stable base-root identity, signed byte offset,
-  positive access width, and the operation IDs that justify the root and
-  offset; or
+  positive access width, pointer width, and the operation IDs that justify the
+  root and offset; or
 - an explicit unresolved state, which remains a possible aliasing effect.
 
 The root identity is scoped to the exact program and function. A formal
@@ -45,9 +47,10 @@ unresolved.
    logical-space effect set used by the current CFG audit. This is not a claim
    about physical overlays or runtime mappings.
 3. For same-space writes, a non-alias result requires the same proven base
-   root, compatible address arithmetic, known widths, and non-overlapping
-   half-open byte intervals. Equal offsets, partial overlap, distinct or
-   unknown roots, and unknown widths remain possible effects.
+   root, compatible address arithmetic with no pointer wrap, known access and
+   pointer widths, and non-overlapping half-open byte intervals. Equal offsets,
+   partial overlap, distinct or unknown roots, and unknown widths remain
+   possible effects.
 4. A `STORE` without a complete matching location fact remains a possible
    effect, even if other stores in the function were resolved.
 5. Calls, `CALLIND`, `CALLOTHER`, `INDIRECT`, `UNIMPLEMENTED`, and unclassified

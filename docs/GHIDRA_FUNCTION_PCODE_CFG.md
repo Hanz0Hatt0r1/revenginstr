@@ -43,3 +43,16 @@ Version 2 is defined by
 [`GhidraFunctionPcodeCFG/2`](../schemas/ghidra-function-pcode-cfg-v2.schema.json).
 It still exports CFG and operation metadata only; it does not resolve pointer
 aliases, prove branch feasibility, or identify runtime values.
+
+Pass `--physical-memory-metadata` to emit version 3. It includes all version 2
+fields and adds the physical address-space name and pointer width for each
+`LOAD`/`STORE` (both nullable when Ghidra cannot resolve them). For non-memory
+operations these fields are null. Version 3 lets structural audits keep a
+possible effect when distinct logical spaces share a physical space, and
+exclude a store only when its known physical space differs from the tracked
+access. It still does not resolve pointer bases, offsets, overlays at runtime,
+or branch feasibility. The shared reader rejects conflicting physical-space
+or pointer-width metadata for repeated operations in the same logical space.
+
+Version 3 is defined by
+[`GhidraFunctionPcodeCFG/3`](../schemas/ghidra-function-pcode-cfg-v3.schema.json).
