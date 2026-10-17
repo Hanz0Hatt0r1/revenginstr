@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `f413895740ee3e5c00673f22eabfb0e2a0237099`
+**Repository baseline:** `main` through `d5d85a4fbcb74fe1ce27f7ef9822839788965044`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -167,7 +167,7 @@ The initial runner is available as `revenginstr-benchmark`. It validates pinned
 input artifacts and schemas, runs allowlisted tools in dependency order without
 a shell, and emits a versioned hash/runtime/metric-gate summary. Bounded
 caller-argument-to-field-store graph construction and the initial
-`FunctionEffectIR/1` projection are allowlisted stages.
+`FunctionEffectIR/1` and `FunctionSummary/1` projections are allowlisted stages.
 
 ### M0.3 Summary schema
 
@@ -609,7 +609,12 @@ Initial roles should remain bounded and multi-label-capable:
 
 ## M5.3 Structured summaries
 
-Generate a machine-readable summary first. Natural-language rendering may only restate claims present in that object.
+**Initial structural summary implemented:** `revenginstr-structured-summary`
+coalesces equivalent `FunctionEffectIR/1` facts into deterministic
+`FunctionSummary/1` claims. Each claim retains its evidence class and all
+supporting effect IDs/source provenance; the output pins the source Effect IR
+hash. It adds no semantic role or store-to-load claim. Future natural-language
+rendering may only restate claims present in this object.
 
 ## M5.4 State-machine recovery
 

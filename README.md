@@ -38,6 +38,7 @@ The repository now owns these generic mechanisms:
 - a hash-pinned benchmark manifest and dependency-ordered smoke/full runner;
 - standardized benchmark projections, deterministic replay, and summary deltas;
 - unlabeled distribution-shift diagnostics for predictions, routing and evidence coverage;
+- provenance-linked function effects and compact structural function summaries;
 - compatibility hash profile for historical Nevergone family groups.
 
 Stable component formats currently include:
@@ -75,6 +76,8 @@ REVENGINSTR.BenchmarkManifest/1
 REVENGINSTR.BenchmarkSummary/1
 REVENGINSTR.DeterminismAudit/1
 REVENGINSTR.BenchmarkDelta/1
+REVENGINSTR.FunctionEffectIR/1
+REVENGINSTR.FunctionSummary/1
 ```
 
 JSON Schemas in `schemas/` define portable evidence, benchmark, determinism and
@@ -99,6 +102,9 @@ Compact whole-program instruction streams and their gzip-aware runner are
 documented in `docs/GHIDRA_COMPACT_INSTRUCTION_STREAM.md`.
 The parameter-to-field store TSV contract is documented in
 `docs/GHIDRA_PARAMETER_STORE_FIELD.md`.
+The function-level evidence projection and compact structured summary are
+documented in [`docs/FUNCTION_EFFECT_IR.md`](docs/FUNCTION_EFFECT_IR.md) and
+[`docs/FUNCTION_SUMMARY.md`](docs/FUNCTION_SUMMARY.md).
 
 The generic Ghidra function-instruction export is documented in
 docs/GHIDRA_FUNCTION_INSTRUCTIONS.md.
@@ -198,6 +204,10 @@ revenginstr-accept-router-train model-v2/oof_predictions.jsonl accept-router \
   --evidence evidence.jsonl --target-accept-precision 0.97
 revenginstr-accept-router-infer accept-router predictions-v2.jsonl \
   --evidence evidence.jsonl --output routed.jsonl
+revenginstr-effect-ir --program-id 'analysis:opaque-id' \
+  --parameter-loads parameter-loads.tsv --output function-effects.jsonl
+revenginstr-structured-summary function-effects.jsonl \
+  --output function-summaries.jsonl
 revenginstr-freeze-validation wide-corpus.jsonl validation/unseen500 \
   --exclude-trace training-trace.jsonl --limit 500 --tag unseen500-v1
 revenginstr-drift-audit model-v2/oof_predictions.jsonl validation/unseen500/routed.jsonl \

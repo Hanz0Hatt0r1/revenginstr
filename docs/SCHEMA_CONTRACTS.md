@@ -70,6 +70,7 @@ pages.
 | Format and schema | Wire / field contract | Normalization, provenance, ordering, failure |
 |---|---|---|
 | [`FunctionEffectIR/1`](../schemas/function-effect-ir-v1.schema.json) · [details](FUNCTION_EFFECT_IR.md) | JSONL; one record per function with at least one selected effect. | Functions and effects use deterministic ordering. Each fact pins the source artifact SHA-256 and 1-based data-record ordinal; opaque effect ids are deterministic. It is structural evidence, not a semantic role or store-to-load claim. |
+| [`FunctionSummary/1`](../schemas/function-summary-v1.schema.json) · [details](FUNCTION_SUMMARY.md) | JSONL; one compact record per Effect IR function. | Equivalent structural effects are grouped deterministically, and every claim lists its supporting effect IDs and original source provenance. The summary pins the Effect IR file hash and adds no semantic or path-reachability claims. |
 | [`SemanticRoleLabel/1`](../schemas/semantic-role-label-v1.schema.json) and [`SemanticRolePrediction/1`](../schemas/semantic-role-prediction-v1.schema.json) · [details](SEMANTIC_ROLE_EVALUATION.md) | JSONL rows with opaque function/family/dataset/split ids and multi-label role arrays. | Labels must be adjudicated. The taxonomy is generic; consumer rows and project identity remain in the consumer repository. |
 
 ## Ghidra export rows
