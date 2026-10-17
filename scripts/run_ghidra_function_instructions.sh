@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -lt 5 ]]; then
-  echo "Usage: GHIDRA_HOME=/opt/ghidra $0 <project-dir> <project-name> <program-name> <output.jsonl> <function-address> [address ...]" >&2
+if [[ $# -lt 4 ]]; then
+  echo "Usage: GHIDRA_HOME=/opt/ghidra $0 <project-dir> <project-name> <program-name> <output.jsonl[.gz]> <function-address> [address ...]" >&2
+  echo "       GHIDRA_HOME=/opt/ghidra $0 <project-dir> <project-name> <program-name> <output.jsonl.gz> --all [offset] [limit]" >&2
   exit 2
 fi
 
@@ -12,6 +13,10 @@ PROJECT_NAME=$2
 PROGRAM_NAME=$3
 OUTPUT=$4
 shift 4
+if [[ $# -eq 0 ]]; then
+  echo "error: provide function addresses or --all" >&2
+  exit 2
+fi
 ROOT=$(cd -- "$(dirname -- "$0")/.." && pwd)
 ANALYZE="$GHIDRA_HOME/support/analyzeHeadless"
 

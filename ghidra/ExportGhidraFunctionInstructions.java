@@ -2,6 +2,7 @@ import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.listing.FunctionManager;
+import ghidra.program.model.listing.FunctionIterator;
 import ghidra.program.model.listing.Instruction;
 import ghidra.program.model.listing.InstructionIterator;
 import ghidra.program.model.listing.Listing;
@@ -11,16 +12,19 @@ import ghidra.program.model.pcode.Varnode;
 import ghidra.program.model.symbol.Reference;
 
 import java.io.BufferedWriter;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.security.MessageDigest;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.zip.GZIPOutputStream;
 
-/** Export targeted instruction and machine-P-code evidence from a Ghidra program. */
+/** Export targeted or address-ordered corpus instruction and machine-P-code evidence. */
 public class ExportGhidraFunctionInstructions extends GhidraScript {
     private static final String FORMAT = "REVENGINSTR.GhidraFunctionInstructions/1";
+    private static final String CORPUS_FORMAT = "REVENGINSTR.GhidraFunctionInstructionCorpus/1";
     private Listing listing;
     private FunctionManager functions;
 
@@ -29,7 +33,8 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
         String[] args = getScriptArgs();
         if (args.length < 2) {
             throw new IllegalArgumentException(
-                "Usage: ExportGhidraFunctionInstructions.java <output.jsonl> <function-address> [address ...]");
+                "Usage: ExportGhidraFunctionInstructions.java <output.jsonl[.gz]> <function-address> [address ...] " +
+                "or <output.jsonl.gz> --all [offset] [limit]");
         }
 
         File output = new File(args[0]).getAbsoluteFile();
@@ -40,9 +45,20 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
 
         listing = currentProgram.getListing();
         functions = currentProgram.getFunctionManager();
-        List<String> missing = new ArrayList<>();
-        try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream(output), StandardCharsets.UTF_8))) {
+        if ("--all".equals(args[1])) {
+            if (args.length > 4) throw new IllegalArgumentException("--all accepts only offset and limit");
+            long offset = args.length > 2 ? parseBound(args[2], "offset") : 0;
+            long limit = args.length > 3 ? parseBound(args[3], "limit") : 0;
+            exportAll(output, offset, limit);
+            return;
+        }
+
+        exportTargets(output, args);
+    }
+
+    private void exportTargets(File output, String[] args) throws Exception {
+        java.util.List<String> missing = new java.util.ArrayList<>();
+        try (BufferedWriter out = openWriter(output)) {
             for (int i = 1; i < args.length; i++) {
                 monitor.checkCancelled();
                 String token = args[i];
@@ -52,16 +68,96 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
                     missing.add(token);
                     out.write(missingRow(token, address));
                 } else {
-                    out.write(functionRow(token, function));
+                    writeFunctionRow(out, token, function);
                 }
                 out.newLine();
             }
         }
-
         if (!missing.isEmpty()) {
             throw new IllegalStateException("requested functions not found: " + String.join(", ", missing));
         }
         println("Ghidra function instruction export -> " + output);
+    }
+
+    private void exportAll(File output, long offset, long limit) throws Exception {
+        long ordinal = 0;
+        long exported = 0;
+        long instructionCount = 0;
+        Address first = null;
+        Address last = null;
+        try (BufferedWriter out = openWriter(output)) {
+            FunctionIterator iterator = functions.getFunctions(true);
+            while (iterator.hasNext()) {
+                monitor.checkCancelled();
+                Function function = iterator.next();
+                if (ordinal >= offset && (limit == 0 || exported < limit)) {
+                    Address entry = function.getEntryPoint();
+                    if (first == null) first = entry;
+                    last = entry;
+                    instructionCount += writeFunctionRow(out, addr(entry), function);
+                    out.newLine();
+                    exported++;
+                    if ((exported % 1000) == 0) {
+                        monitor.setMessage("Ghidra function corpus export: " + exported + " functions");
+                    }
+                }
+                ordinal++;
+            }
+        }
+        if (offset >= ordinal && ordinal > 0) {
+            throw new IllegalArgumentException("function offset is outside the program inventory");
+        }
+        writeCorpusManifest(output, offset, limit, ordinal, exported, instructionCount, first, last);
+        println("Ghidra function corpus export -> " + output + " (" + exported + "/" + ordinal + " functions)");
+    }
+
+    private void writeCorpusManifest(
+            File output, long offset, long limit, long total, long exported,
+            long instructionCount, Address first, Address last) throws Exception {
+        File manifest = new File(output.getAbsolutePath() + ".manifest.json");
+        try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(manifest), StandardCharsets.UTF_8))) {
+            out.write("{\"format\":" + q(CORPUS_FORMAT) +
+                ",\"program\":" + q(currentProgram.getName()) +
+                ",\"executable_md5\":" + q(currentProgram.getExecutableMD5()) +
+                ",\"language_id\":" + q(currentProgram.getLanguageID().toString()) +
+                ",\"function_count\":" + total +
+                ",\"function_offset\":" + offset +
+                ",\"function_limit\":" + limit +
+                ",\"exported_function_count\":" + exported +
+                ",\"instruction_count\":" + instructionCount +
+                ",\"first_function_address\":" + q(addr(first)) +
+                ",\"last_function_address\":" + q(addr(last)) +
+                ",\"complete\":" + (offset == 0 && (limit == 0 || limit >= total)) +
+                ",\"gzip\":" + output.getName().endsWith(".gz") +
+                ",\"output_sha256\":" + q(sha256(output)) + "}\n");
+        }
+    }
+
+    private static long parseBound(String value, String name) {
+        try {
+            long parsed = Long.parseLong(value);
+            if (parsed < 0) throw new NumberFormatException();
+            return parsed;
+        } catch (NumberFormatException exc) {
+            throw new IllegalArgumentException(name + " must be a non-negative integer");
+        }
+    }
+
+    private static BufferedWriter openWriter(File output) throws Exception {
+        OutputStream stream = new BufferedOutputStream(new FileOutputStream(output));
+        if (output.getName().endsWith(".gz")) stream = new GZIPOutputStream(stream);
+        return new BufferedWriter(new OutputStreamWriter(stream, StandardCharsets.UTF_8));
+    }
+
+    private static String sha256(File file) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        try (java.io.InputStream in = new java.io.BufferedInputStream(new java.io.FileInputStream(file))) {
+            byte[] buffer = new byte[65536];
+            int count;
+            while ((count = in.read(buffer)) >= 0) digest.update(buffer, 0, count);
+        }
+        return hex(digest.digest());
     }
 
     private Address parseTargetAddress(String token) {
@@ -76,20 +172,8 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
         }
     }
 
-    private String functionRow(String requested, Function function) throws Exception {
-        StringBuilder instructions = new StringBuilder("[");
-        boolean first = true;
-        int count = 0;
-        InstructionIterator iterator = listing.getInstructions(function.getBody(), true);
-        while (iterator.hasNext()) {
-            monitor.checkCancelled();
-            if (!first) instructions.append(',');
-            first = false;
-            instructions.append(instructionJson(iterator.next()));
-            count++;
-        }
-        instructions.append(']');
-        return "{\"format\":" + q(FORMAT) +
+    private int writeFunctionRow(BufferedWriter out, String requested, Function function) throws Exception {
+        out.write("{\"format\":" + q(FORMAT) +
             ",\"program\":" + q(currentProgram.getName()) +
             ",\"requested\":" + q(requested) +
             ",\"resolved_address\":" + q(addr(function.getEntryPoint())) +
@@ -97,8 +181,26 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
             "\"address\":" + q(addr(function.getEntryPoint())) +
             ",\"name\":" + q(function.getName()) +
             ",\"size\":" + function.getBody().getNumAddresses() +
-            ",\"calling_convention\":" + q(function.getCallingConventionName()) + "}" +
-            ",\"instruction_count\":" + count + ",\"instructions\":" + instructions + "}";
+            ",\"calling_convention\":" + q(function.getCallingConventionName()) +
+            "},\"instruction_count\":");
+        int count = 0;
+        InstructionIterator iterator = listing.getInstructions(function.getBody(), true);
+        while (iterator.hasNext()) { monitor.checkCancelled(); iterator.next(); count++; }
+        out.write(Integer.toString(count));
+        out.write(",\"instructions\":[");
+        iterator = listing.getInstructions(function.getBody(), true);
+        boolean first = true;
+        int written = 0;
+        while (iterator.hasNext()) {
+            monitor.checkCancelled();
+            if (!first) out.write(',');
+            first = false;
+            out.write(instructionJson(iterator.next()));
+            written++;
+        }
+        if (written != count) throw new IllegalStateException("function instruction count changed during export");
+        out.write("]}");
+        return count;
     }
 
     private String missingRow(String requested, Address address) {

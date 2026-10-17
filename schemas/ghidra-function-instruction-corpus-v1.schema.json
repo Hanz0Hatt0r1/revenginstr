@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-function-instruction-corpus-v1.schema.json",
+  "title": "REVENGINSTR.GhidraFunctionInstructionCorpus/1 manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "program",
+    "executable_md5",
+    "language_id",
+    "function_count",
+    "function_offset",
+    "function_limit",
+    "exported_function_count",
+    "instruction_count",
+    "first_function_address",
+    "last_function_address",
+    "complete",
+    "gzip",
+    "output_sha256"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraFunctionInstructionCorpus/1"},
+    "program": {"type": "string"},
+    "executable_md5": {"type": ["string", "null"]},
+    "language_id": {"type": "string"},
+    "function_count": {"type": "integer", "minimum": 0},
+    "function_offset": {"type": "integer", "minimum": 0},
+    "function_limit": {"type": "integer", "minimum": 0},
+    "exported_function_count": {"type": "integer", "minimum": 0},
+    "instruction_count": {"type": "integer", "minimum": 0},
+    "first_function_address": {"type": ["string", "null"]},
+    "last_function_address": {"type": ["string", "null"]},
+    "complete": {"type": "boolean"},
+    "gzip": {"type": "boolean"},
+    "output_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}
