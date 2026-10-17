@@ -34,7 +34,7 @@ def _return_row(address: str) -> dict:
     }
 
 
-def test_corpus_builder_compiles_shared_runtime_object_shards(tmp_path: Path) -> None:
+def test_corpus_builder_compiles_and_resumes_shared_runtime_object_shards(tmp_path: Path, capsys) -> None:
     compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
     if compiler is None:
         pytest.skip("C compiler not available")
@@ -88,3 +88,16 @@ def test_corpus_builder_compiles_shared_runtime_object_shards(tmp_path: Path) ->
     assert "int rvi_00401000" in first_source and "int rvi_00401010" in first_source
     assert all((output / shard["object_file"]).stat().st_size > 0 for shard in report["shards"])
     assert json.loads((output / "build-report.json").read_text(encoding="utf-8")) == report
+    assert (output / ".build-state.json").is_file()
+
+    capsys.readouterr()
+    (output / report["shards"][0]["object_file"]).unlink()
+    resumed = build(corpus, manifest, spaces, output, compiler, shard_size=2, jobs=2, resume=True)
+    log = capsys.readouterr().err
+    assert resumed["resumed"] is True
+    assert "compiled shard 0" in log
+    assert "reused shard 1" in log
+    assert [shard["object_file"] for shard in resumed["shards"]] == [
+        "shard-00000.o", "shard-00001.o",
+    ]
+    assert all((output / shard["object_file"]).stat().st_size > 0 for shard in resumed["shards"])
