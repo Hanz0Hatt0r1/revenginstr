@@ -20,10 +20,10 @@ artifacts. The v1 schema validates record shape; `validate_graph_references`
 checks graph-local id uniqueness and rejects dangling endpoints.
 
 The graph is descriptive evidence only. It does not resolve receiver classes,
-infer dispatch slots, transfer call targets, or affect routing. The first
-builder projects typed receiver-call anchors. Joining field-store,
-call-argument, and P-code artifacts remains follow-up work; bounded
-interprocedural propagation is a separate M2.3 step.
+infer dispatch slots, transfer call targets, or affect routing. Builders
+project typed receiver-call anchors and bounded argument/store relationships.
+P-code load joins and recursive interprocedural propagation remain follow-up
+work.
 
 The initial `revenginstr-receiver-graph` command projects
 `GhidraIndirectReceiverType/1` rows into call-anchor graphs. It emits a graph
@@ -68,6 +68,26 @@ so they are correlated parts of one STORE observation. The field offset and
 numeric parameter indices remain auditable in the source row and are not given
 class semantics; the opaque graph id is only a join key. No field-to-load join
 or class/type claim is made.
+
+## Joining caller arguments to stores
+
+`revenginstr-receiver-argument-store-flow` joins caller roots to parameter
+stores only when the caller row's `callee_entry` exactly matches the store
+row's `function_entry` and `parameter_index` matches the stored formal
+parameter. Both inputs must belong to the selected program named by the
+consumer-supplied program id; the output retains both source records on their
+respective edges. It never joins by function name, field offset alone, or
+guessed receiver type.
+
+```sh
+revenginstr-receiver-argument-store-flow caller-argument-subtree.tsv \
+  parameter-stores.tsv --program-id 'consumer:analysis-id' \
+  --output argument-store-flow.jsonl --max-graphs 10000
+```
+
+Each output graph preserves the actual-argument-to-formal edge and attaches
+the matched formal to a field-store node as destination, stored value, or both.
+The field offset remains in the source artifact referenced by provenance.
 
 ## Minimal example
 
