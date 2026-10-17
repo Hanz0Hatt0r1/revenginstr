@@ -19,6 +19,9 @@ the plan id, callee formal, caller/call-site, and caller formal indices. The
 default invocation and subtree output remain unchanged. Non-parameter roots,
 including expressions derived from a parameter, are omitted so recursive
 propagation can start only from explicit value identity.
+The synthetic caller-argument and formal-root TSVs in
+`tests/fixtures/caller-argument/` exercise a two-edge recursive propagation
+path and are validated against both exporter row schemas.
 
 Run it with:
 
