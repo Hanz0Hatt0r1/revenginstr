@@ -34,6 +34,7 @@ TOOLS = {
     "receiver-load-return-flow": ("revenginstr.receiver.provenance", "parameter_load_return_main"),
     "receiver-argument-propagate": ("revenginstr.receiver.provenance", "recursive_argument_main"),
     "receiver-call-return-flow": ("revenginstr.receiver.provenance", "call_return_main"),
+    "receiver-field-store-load-audit": ("revenginstr.receiver.field_flow", "main"),
     "function-effect-ir": ("revenginstr.effect_ir", "main"),
     "structured-summary": ("revenginstr.structured_summary", "main"),
     "semantic-role-evaluate": ("revenginstr.semantic_roles", "main"),

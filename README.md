@@ -19,6 +19,8 @@ The repository now owns these generic mechanisms:
 - targeted data and direct-reference export for caller-selected Ghidra addresses;
 - bounded High-P-code field-store candidates scoped by caller-selected function-name fragments and offsets;
 - parameter-to-parameter field-store provenance through bounded P-code address and value expressions;
+- targeted High-P-code basic-block CFG export with operation sequence locations;
+- provenance-pinned field store/load CFG path candidates with explicit store/call barriers;
 - targeted listing, memory-block, symbol and function metadata export by address;
 - bounded High-P-code indirect-call target evidence;
 - read-only full-program metadata indexing for functions, symbols, strings, references and direct calls;
@@ -52,6 +54,7 @@ REVENGINSTR.ReceiverPlan/1
 REVENGINSTR.GhidraIndirectReceiverType/1
 REVENGINSTR.GhidraArm32ItaniumVtableSlots/1
 REVENGINSTR.GhidraFunctionPcodeFlow/1
+REVENGINSTR.GhidraFunctionPcodeCFG/1
 REVENGINSTR.GhidraPcodeDefinedString/1
 REVENGINSTR.GhidraAddressReferenceOwner/1
 REVENGINSTR.GhidraAddressReferences/1
@@ -61,6 +64,7 @@ REVENGINSTR.GhidraCompactInstructionStream/1
 REVENGINSTR.GhidraScalarUses/1
 REVENGINSTR.GhidraFieldStoreCandidates/1
 REVENGINSTR.GhidraParameterStoreField/1
+REVENGINSTR.FieldStoreLoadPathAudit/1
 REVENGINSTR.GhidraFunctionOperand/1
 REVENGINSTR.GhidraAddressMetadata/1
 REVENGINSTR.GhidraIndirectCallEvidence/1
@@ -217,6 +221,8 @@ revenginstr-structured-summary function-effects.jsonl \
   --output function-summaries.jsonl
 revenginstr-decision-ledger-audit decision-events.jsonl \
   --output decision-ledger-audit.json
+revenginstr-receiver-field-store-load-audit field-access-pairs.jsonl \
+  function-pcode-cfg.jsonl --output field-path-candidates.jsonl
 revenginstr-freeze-validation wide-corpus.jsonl validation/unseen500 \
   --exclude-trace training-trace.jsonl --limit 500 --tag unseen500-v1
 revenginstr-drift-audit model-v2/oof_predictions.jsonl validation/unseen500/routed.jsonl \
@@ -236,6 +242,11 @@ GHIDRA_HOME=/opt/ghidra \
 GHIDRA_HOME=/opt/ghidra \
   scripts/run_ghidra_function_pcode_flow.sh \
   /path/to/projects project-name program-name 00401000 function-flow.tsv
+
+GHIDRA_HOME=/opt/ghidra \
+  scripts/run_ghidra_function_pcode_cfg.sh \
+  /path/to/projects project-name program-name function-pcode-cfg.jsonl \
+  'analysis:opaque-id' 00401000
 
 GHIDRA_HOME=/opt/ghidra \
   scripts/run_ghidra_pcode_defined_strings.sh \

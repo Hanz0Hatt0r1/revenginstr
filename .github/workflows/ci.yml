@@ -40,6 +40,7 @@ jobs:
           bash -n scripts/run_ghidra_scalar_uses.sh
           bash -n scripts/run_ghidra_instruction_slices.sh
           bash -n scripts/run_ghidra_compact_instruction_stream.sh
+          bash -n scripts/run_ghidra_function_pcode_cfg.sh
       - name: Validate generic exporter contract
         run: |
           python - <<'PY'
@@ -71,6 +72,19 @@ jobs:
           for forbidden in ('Nevergone', 'GameScene', 'HDVehicle', 'SHIFT'):
               assert forbidden not in text
           print('function P-code flow contract: OK')
+          PY
+      - name: Validate function P-code CFG boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('ghidra/ExportFunctionPcodeCFG.java').read_text()
+          assert 'REVENGINSTR.GhidraFunctionPcodeCFG/1' in text
+          assert 'high.getBasicBlocks()' in text
+          assert 'block.getIterator()' in text
+          assert 'block.getOut(edge)' in text
+          for forbidden in ('Nevergone', 'GameScene', 'HDVehicle', 'SHIFT'):
+              assert forbidden not in text
+          print('function P-code CFG contract: OK')
           PY
       - name: Validate selective classifier boundary
         run: |
