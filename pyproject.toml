@@ -70,6 +70,7 @@ revenginstr-analysis-invalidation-plan = "revenginstr.analysis_task_graph:main"
 revenginstr-evidence-request-plan = "revenginstr.evidence_planner:main"
 revenginstr-state-machine-candidates = "revenginstr.state_machine:main"
 revenginstr-object-role-clusters = "revenginstr.object_roles:main"
+revenginstr-object-role-features = "revenginstr.object_role_features:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
