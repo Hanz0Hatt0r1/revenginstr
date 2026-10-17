@@ -135,6 +135,20 @@ data dependence only; it does not classify the function as a getter or assert
 a runtime path or returned semantic role. Call outputs are treated as barriers,
 and an `INDIRECT` reference operand is not treated as the copied value.
 
+Call-result values can be traced to function returns with:
+
+```sh
+revenginstr-receiver-call-return-flow function-pcode-flow.tsv \
+  --program-id 'consumer:analysis-id' --output call-return-flow.jsonl \
+  --max-graphs 10000
+```
+
+The builder starts only at `CALL`/`CALLIND` operations with an explicit output,
+follows P-code output/input dependencies to `RETURN`, and retains every row on
+the selected path as provenance. It reports generic `return_flow` evidence;
+callee names and this structural relation alone do not establish factory or
+constructor semantics.
+
 Exact caller-formal roots can be propagated backward across a supplied set of
 callee plans:
 

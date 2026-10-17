@@ -355,6 +355,59 @@ def test_benchmark_runs_parameter_load_return_flow_stage(tmp_path: Path) -> None
     assert graph["edges"][0]["relation"] == "return_flow"
 
 
+def test_benchmark_runs_call_return_flow_stage(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    pcode_path = tmp_path / "function-pcode-flow.tsv"
+    pcode_path.write_text(
+        "function_entry\top_address\top_time\topcode\toutput\tinputs\tcallee_entry\tcallee_name\n"
+        "00401000\t00401020\t7\tCALL\tdef:00401020:7:4\tconst:0x401100:4\t00401100\tFUN_00401100\n"
+        "00401000\t00401024\t8\tCOPY\tdef:00401024:8:4\tdef:00401020:7:4\t-\t-\n"
+        "00401000\t00401030\t9\tRETURN\t-\tdef:00401024:8:4\t-\t-\n",
+        encoding="utf-8",
+    )
+    pcode_schema_path = ROOT / "schemas" / "ghidra-function-pcode-flow-v1.schema.json"
+    graph_schema_path = ROOT / "schemas" / "receiver-provenance-graph-v1.schema.json"
+    manifest["schemas"].update({
+        "pcode_flow": {
+            "path": str(pcode_schema_path), "version": "REVENGINSTR.GhidraFunctionPcodeFlow/1",
+            "sha256": _sha256(pcode_schema_path),
+        },
+        "receiver_graph": {
+            "path": str(graph_schema_path), "version": "REVENGINSTR.ReceiverProvenanceGraph/1",
+            "sha256": _sha256(graph_schema_path),
+        },
+    })
+    manifest["artifacts"].update({
+        "pcode_flow": {
+            "path": str(pcode_path), "role": "input", "kind": "file", "content": "tsv",
+            "sha256": _sha256(pcode_path), "schema": "pcode_flow",
+        },
+        "call_return_graphs": {
+            "path": "call-return-graphs.jsonl", "role": "output", "kind": "file",
+            "content": "jsonl", "format": "REVENGINSTR.ReceiverProvenanceGraph/1",
+            "schema": "receiver_graph",
+        },
+    })
+    manifest["stages"].append({
+        "id": "call_return_flow", "tool": "receiver-call-return-flow",
+        "args": [
+            "${artifact:pcode_flow}", "--program-id", "analysis:sample",
+            "--output", "${artifact:call_return_graphs}",
+        ],
+        "inputs": ["pcode_flow"], "outputs": ["call_return_graphs"],
+    })
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    summary, code = run_benchmark(manifest_path, mode="smoke", output_path=tmp_path / "summary.json")
+
+    assert code == 0
+    assert summary["status"] == "passed"
+    assert summary["stages"][-1]["tool"] == "receiver-call-return-flow"
+    graph = json.loads((tmp_path / "call-return-graphs.jsonl").read_text(encoding="utf-8"))
+    assert graph["edges"][0]["relation"] == "return_flow"
+
+
 def test_benchmark_runs_recursive_argument_propagation_stage(tmp_path: Path) -> None:
     manifest_path = _write_manifest(tmp_path)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
