@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/pcode-c-function-lowering-coverage-v1.schema.json",
+  "title": "REVENGINSTR.PcodeCFunctionLoweringCoverage/1 report",
+  "type": "object",
+  "required": ["format", "source", "functions", "instructions", "pcode_operations", "rejection_reasons"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.PcodeCFunctionLoweringCoverage/1"},
+    "source": {
+      "type": "object",
+      "required": ["program", "language_id", "corpus_sha256", "manifest_sha256", "address_spaces_sha256"],
+      "properties": {
+        "program": {"type": "string", "minLength": 1},
+        "language_id": {"type": "string", "minLength": 1},
+        "corpus_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "address_spaces_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      },
+      "additionalProperties": false
+    },
+    "functions": {
+      "type": "object",
+      "required": ["records", "found", "missing", "fully_lowerable", "rejected"],
+      "properties": {
+        "records": {"type": "integer", "minimum": 1},
+        "found": {"type": "integer", "minimum": 0},
+        "missing": {"type": "integer", "minimum": 0},
+        "fully_lowerable": {"type": "integer", "minimum": 0},
+        "rejected": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "instructions": {
+      "type": "object",
+      "required": ["total", "in_fully_lowerable_functions"],
+      "properties": {
+        "total": {"type": "integer", "minimum": 0},
+        "in_fully_lowerable_functions": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "pcode_operations": {
+      "type": "object",
+      "required": ["in_fully_lowerable_functions"],
+      "properties": {
+        "in_fully_lowerable_functions": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "rejection_reasons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["reason", "functions"],
+        "properties": {
+          "reason": {"type": "string", "minLength": 1},
+          "functions": {"type": "integer", "minimum": 1}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
