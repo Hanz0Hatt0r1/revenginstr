@@ -35,9 +35,16 @@ The output function receives an `RviPcodeContext`. Its callbacks read and write
 register and memory spaces as byte sequences. `LOAD`/`STORE` use the exact
 language address-space ID, pointer size, addressable unit size, and endianness
 from the table. Function-local P-code unique space is kept in a bounded local
-byte array.
+byte array. `CALLOTHER` keeps the same callback signature: arguments up to 8
+bytes occupy one `uint64_t`; raw 10- and 16-byte arguments occupy consecutive
+least-significant-word-first `uint64_t` slots, while `sizes` retains one byte
+width per logical argument. For a wide result, the callback writes
+`ceil(output_size / 8)` words using the same ordering. The word ordering is
+independent of target endianness. This keeps existing scalar callbacks and the
+context layout unchanged.
 
-The current subset covers scalar varnodes up to 8 bytes, raw 10-byte copies,
+The current subset covers scalar varnodes up to 8 bytes; raw 10-byte and
+16-byte copy, memory, bitwise, extension, shift, and extraction operations;
 binary80 conversions and arithmetic on x86 hosts with a 64-bit-significand
 `long double`, integer and boolean operations listed in
 `src/revenginstr/pcode/c_lowering.py`, integer division and remainder, 4-byte
@@ -46,17 +53,20 @@ and 8-byte floating arithmetic/conversions, `LOAD`,
 same-instruction conditional repeat branches, P-code-relative branches within
 one instruction, computed jumps, direct
 and indirect calls through the host `RviPcodeContext.call` callback, tail calls,
-raw `RETURN`, and `CALLOTHER` through the host `RviPcodeContext.userop`
-callback, keyed by Ghidra's language userop index. Function-local P-code unique
+raw `RETURN`, x86 `WAIT` instructions with no P-code, and `CALLOTHER` through
+the host `RviPcodeContext.userop` callback, keyed by Ghidra's language userop
+index. Function-local P-code unique
 space is compacted while preserving overlapping byte ranges. Computed jumps
 dispatch to Ghidra's in-function flow targets, or to any instruction start in
 the function when Ghidra supplies no target list; an outside target fails at
 runtime. Binary80 helpers use the calling thread's current x87 control state;
 the consumer must keep it aligned with the guest state for matching rounding.
 On non-x86 hosts or hosts without binary80 `long double`, those operations
-return an error. Relative branch targets outside the current instruction's
-P-code, 16-byte vector values, and functions without P-code for non-NOP
-instructions fail closed.
+return an error. The 16-byte path treats values as opaque bytes except for the
+listed bitwise and byte-oriented operations; it does not imply packed SIMD
+arithmetic semantics. Relative branch targets outside the current
+instruction's P-code fail closed. An x86 `WAIT` is emitted as a host `FWAIT`;
+other non-NOP instructions without P-code remain rejected.
 Generated Linux programs that use floating math must link with `-lm`. This
 backend is an executable lowering milestone, not full NFS Shift recompilation
 or a claim of behavioral parity.

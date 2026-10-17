@@ -126,6 +126,105 @@ int main(void) {
     subprocess.run([str(executable)], check=True)
 
 
+@pytest.mark.parametrize("big_endian", [False, True])
+def test_codegen_executes_16_byte_data_operations(tmp_path: Path, big_endian: bool) -> None:
+    spaces = _address_spaces()
+    spaces["big_endian"] = big_endian
+    endianness = "big" if big_endian else "little"
+    memory_value = bytes(range(16))
+    xor_value = int.from_bytes(memory_value, endianness) ^ 0xff
+    xor_bytes = xor_value.to_bytes(16, endianness)
+    shifted_bytes = (xor_value >> 4).to_bytes(16, endianness)
+    extended_bytes = (0x12345678).to_bytes(16, endianness)
+    inverted_bytes = ((~xor_value) & ((1 << 128) - 1)).to_bytes(16, endianness)
+
+    def instruction(index: int, opcode: str, output: dict | None, inputs: list[dict], *, terminal: bool = False) -> dict:
+        return {
+            "address": f"0x004010{index:02x}",
+            "mnemonic": opcode,
+            "flow_type": "TERMINATOR" if terminal else "FALL_THROUGH",
+            "flows": [],
+            "pcode": [{"opcode": opcode, "output": output, "inputs": inputs}],
+        }
+
+    memory_id = _varnode("const", "0x1a1", 4, constant=True)
+    row = _function_row()
+    row["instructions"] = [
+        instruction(0, "LOAD", _varnode("unique", "0x200", 16), [memory_id, _varnode("const", "0x100", 4, constant=True)]),
+        instruction(1, "INT_XOR", _varnode("register", "0x1200", 16), [
+            _varnode("unique", "0x200", 16), _varnode("const", "0xff", 16, constant=True),
+        ]),
+        instruction(2, "STORE", None, [memory_id, _varnode("const", "0x120", 4, constant=True), _varnode("register", "0x1200", 16)]),
+        instruction(3, "INT_RIGHT", _varnode("unique", "0x220", 16), [
+            _varnode("register", "0x1200", 16), _varnode("const", "0x4", 4, constant=True),
+        ]),
+        instruction(4, "STORE", None, [memory_id, _varnode("const", "0x140", 4, constant=True), _varnode("unique", "0x220", 16)]),
+        instruction(5, "SUBPIECE", _varnode("register", "0x1300", 4), [
+            _varnode("register", "0x1200", 16), _varnode("const", "0x0", 4, constant=True),
+        ]),
+        instruction(6, "INT_ZEXT", _varnode("unique", "0x240", 16), [
+            _varnode("const", "0x12345678", 4, constant=True),
+        ]),
+        instruction(7, "STORE", None, [memory_id, _varnode("const", "0x160", 4, constant=True), _varnode("unique", "0x240", 16)]),
+        instruction(8, "INT_NEGATE", _varnode("register", "0x1240", 16), [_varnode("register", "0x1200", 16)]),
+        instruction(9, "RETURN", None, [_varnode("register", "0x20", 4)], terminal=True),
+    ]
+    row["instruction_count"] = len(row["instructions"])
+    source, operation_count = compile_function(row, spaces)
+    assert operation_count == 10
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    def c_bytes(value: bytes) -> str:
+        return ", ".join(f"0x{byte:02x}" for byte in value)
+    harness = f'''
+typedef struct {{ uint8_t registers[0x2000]; uint8_t ram[0x200]; }} TestState;
+static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {{
+    TestState *state = (TestState *)opaque;
+    uint8_t *base = strcmp(space, "register") == 0 ? state->registers :
+                    strcmp(space, "ram") == 0 ? state->ram : NULL;
+    size_t limit = strcmp(space, "register") == 0 ? sizeof(state->registers) : sizeof(state->ram);
+    if (!base || offset + size > limit) return -1;
+    memcpy(out, base + offset, size);
+    return 0;
+}}
+static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t size, const uint8_t *in) {{
+    TestState *state = (TestState *)opaque;
+    uint8_t *base = strcmp(space, "register") == 0 ? state->registers :
+                    strcmp(space, "ram") == 0 ? state->ram : NULL;
+    size_t limit = strcmp(space, "register") == 0 ? sizeof(state->registers) : sizeof(state->ram);
+    if (!base || offset + size > limit) return -1;
+    memcpy(base + offset, in, size);
+    return 0;
+}}
+int rvi_00401000(RviPcodeContext *ctx);
+int main(void) {{
+    TestState state = {{{{0}}, {{0}}}};
+    const uint8_t input[16] = {{{c_bytes(memory_value)}}};
+    const uint8_t expected_xor[16] = {{{c_bytes(xor_bytes)}}};
+    const uint8_t expected_shift[16] = {{{c_bytes(shifted_bytes)}}};
+    const uint8_t expected_extend[16] = {{{c_bytes(extended_bytes)}}};
+    const uint8_t expected_invert[16] = {{{c_bytes(inverted_bytes)}}};
+    memcpy(state.ram + 0x100, input, sizeof(input));
+    RviPcodeContext context = {{&state, read_bytes, write_bytes, NULL, NULL}};
+    if (rvi_00401000(&context) != 0) return 1;
+    if (memcmp(state.registers + 0x1200, expected_xor, 16) != 0 ||
+        memcmp(state.ram + 0x120, expected_xor, 16) != 0 ||
+        memcmp(state.ram + 0x140, expected_shift, 16) != 0 ||
+        memcmp(state.ram + 0x160, expected_extend, 16) != 0 ||
+        memcmp(state.registers + 0x1240, expected_invert, 16) != 0) return 2;
+    if (memcmp(state.registers + 0x1300, expected_xor + {12 if big_endian else 0}, 4) != 0) return 3;
+    return 0;
+}}
+'''
+    c_path = tmp_path / "opaque16.c"
+    executable = tmp_path / "opaque16"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", "-O0", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
 def test_codegen_executes_float_arithmetic_and_signed_conversions(tmp_path: Path) -> None:
     row = _function_row()
     row["instruction_count"] = 7
@@ -308,6 +407,71 @@ int main(void) {
     subprocess.run([str(executable)], check=True)
 
 
+@pytest.mark.parametrize(("input_bits", "expected_bits"), [
+    ("0x40700000", 0x40400000),
+    ("0xc0700000", 0xc0400000),
+])
+def test_codegen_truncates_binary80_to_an_integral_binary80_value(
+    tmp_path: Path, input_bits: str, expected_bits: int,
+) -> None:
+    if platform.machine().lower() not in {"x86_64", "amd64", "i386", "i486", "i586", "i686", "x86"}:
+        pytest.skip("binary80 runtime requires an x86 host with 80-bit long double")
+    row = _function_row()
+    row["instruction_count"] = 4
+    row["instructions"] = [
+        {"address": "0x00401000", "mnemonic": "FLD", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "FLOAT2FLOAT", "output": _varnode("unique", "0x100", 10),
+            "inputs": [_varnode("const", input_bits, 4, constant=True)],
+        }]},
+        {"address": "0x00401001", "mnemonic": "FRNDINT", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "TRUNC", "output": _varnode("unique", "0x120", 10),
+            "inputs": [_varnode("unique", "0x100", 10)],
+        }]},
+        {"address": "0x00401002", "mnemonic": "FST", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "FLOAT2FLOAT", "output": _varnode("register", "0x4", 4),
+            "inputs": [_varnode("unique", "0x120", 10)],
+        }]},
+        {"address": "0x00401003", "mnemonic": "RET", "flow_type": "TERMINATOR", "flows": [], "pcode": [{
+            "opcode": "RETURN", "output": None, "inputs": [_varnode("register", "0x20", 4)],
+        }]},
+    ]
+    source, operation_count = compile_function(row, _address_spaces())
+    assert operation_count == 4
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    harness = f'''
+typedef struct {{ uint8_t registers[64]; }} TestState;
+static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {{
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(out, state->registers + offset, size);
+    return 0;
+}}
+static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t size, const uint8_t *in) {{
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(state->registers + offset, in, size);
+    return 0;
+}}
+int rvi_00401000(RviPcodeContext *ctx);
+int main(void) {{
+    TestState state = {{{{0}}}};
+    RviPcodeContext context = {{&state, read_bytes, write_bytes, NULL, NULL}};
+    if (rvi_00401000(&context) != 0) return 1;
+    uint32_t value = 0;
+    memcpy(&value, state.registers + 4, sizeof(value));
+    return value == UINT32_C(0x{expected_bits:08x}) ? 0 : 2;
+}}
+'''
+    c_path = tmp_path / "binary80-trunc.c"
+    executable = tmp_path / "binary80-trunc"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
 def test_codegen_executes_signed_and_unsigned_division_and_remainder(tmp_path: Path) -> None:
     row = _function_row()
     row["instruction_count"] = 5
@@ -421,6 +585,162 @@ int main(void) {
 '''
     c_path = tmp_path / "userop.c"
     executable = tmp_path / "userop"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
+@pytest.mark.parametrize("big_endian", [False, True])
+def test_codegen_routes_wide_callother_arguments_without_changing_context_abi(
+    tmp_path: Path, big_endian: bool,
+) -> None:
+    spaces = _address_spaces()
+    spaces["big_endian"] = big_endian
+    endian = "big" if big_endian else "little"
+    input_bytes = bytes(range(16))
+    value = int.from_bytes(input_bytes, endian)
+    mask64 = (1 << 64) - 1
+    result_value = ((value & mask64) ^ 0x12345678) | (((value >> 64) ^ 0x12345678) << 64)
+    expected = result_value.to_bytes(16, endian)
+    row = _function_row()
+    row["instruction_count"] = 2
+    row["instructions"] = [
+        {"address": "0x00401000", "mnemonic": "SPECIAL", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "CALLOTHER", "output": _varnode("register", "0x1200", 16),
+            "inputs": [_varnode("const", "0x2a", 4, constant=True),
+                       _varnode("register", "0x100", 16),
+                       _varnode("const", "0x12345678", 4, constant=True)],
+        }]},
+        {"address": "0x00401001", "mnemonic": "RET", "flow_type": "TERMINATOR", "flows": [], "pcode": [{
+            "opcode": "RETURN", "output": None, "inputs": [_varnode("register", "0x20", 4)],
+        }]},
+    ]
+    source, operation_count = compile_function(row, spaces)
+    assert operation_count == 2
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    def c_bytes(data: bytes) -> str:
+        return ", ".join(f"0x{byte:02x}" for byte in data)
+    harness = f'''
+typedef struct {{ uint8_t registers[0x2000]; }} TestState;
+static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {{
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(out, state->registers + offset, size);
+    return 0;
+}}
+static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t size, const uint8_t *in) {{
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(state->registers + offset, in, size);
+    return 0;
+}}
+static int execute_userop(void *opaque, uint32_t index, const uint64_t *args,
+                          const unsigned *sizes, size_t count, uint64_t *output, unsigned output_size) {{
+    (void)opaque;
+    if (index != 42 || count != 2 || sizes[0] != 16 || sizes[1] != 4 || output_size != 16 || !output) return -1;
+    output[0] = args[0] ^ args[2];
+    output[1] = args[1] ^ args[2];
+    return 0;
+}}
+int rvi_00401000(RviPcodeContext *ctx);
+int main(void) {{
+    TestState state = {{{{0}}}};
+    const uint8_t input[16] = {{{c_bytes(input_bytes)}}};
+    const uint8_t expected[16] = {{{c_bytes(expected)}}};
+    memcpy(state.registers + 0x100, input, sizeof(input));
+    RviPcodeContext context = {{&state, read_bytes, write_bytes, NULL, execute_userop}};
+    if (rvi_00401000(&context) != 0) return 1;
+    return memcmp(state.registers + 0x1200, expected, sizeof(expected)) == 0 ? 0 : 2;
+}}
+'''
+    c_path = tmp_path / "wide-userop.c"
+    executable = tmp_path / "wide-userop"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
+def test_codegen_routes_computed_call_terminator_with_trailing_return(tmp_path: Path) -> None:
+    row = _function_row()
+    row["instruction_count"] = 1
+    row["instructions"] = [{
+        "address": "0x00401000", "mnemonic": "BREAK", "flow_type": "COMPUTED_CALL_TERMINATOR",
+        "flows": [], "pcode": [
+            {"opcode": "CALLOTHER", "output": _varnode("unique", "0x100", 4),
+             "inputs": [_varnode("const", "0x10", 4, constant=True),
+                        _varnode("const", "0x1234", 4, constant=True)]},
+            {"opcode": "CALLIND", "output": None, "inputs": [_varnode("unique", "0x100", 4)]},
+            {"opcode": "RETURN", "output": None, "inputs": [_varnode("const", "0x0", 1, constant=True)]},
+        ],
+    }]
+    source, operation_count = compile_function(row, _address_spaces())
+    assert operation_count == 3
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    harness = r'''
+typedef struct { unsigned userop_calls; unsigned function_calls; } TestState;
+static int call_function(void *opaque, uint64_t target) {
+    TestState *state = (TestState *)opaque;
+    if (target != UINT64_C(0x1234)) return -1;
+    state->function_calls++;
+    return 0;
+}
+static int execute_userop(void *opaque, uint32_t index, const uint64_t *args,
+                          const unsigned *sizes, size_t count, uint64_t *output, unsigned output_size) {
+    TestState *state = (TestState *)opaque;
+    if (index != 16 || count != 1 || args[0] != 0x1234 || sizes[0] != 4 || output_size != 4 || !output)
+        return -1;
+    state->userop_calls++;
+    *output = args[0];
+    return 0;
+}
+int rvi_00401000(RviPcodeContext *ctx);
+int main(void) {
+    TestState state = {0};
+    RviPcodeContext context = {&state, NULL, NULL, call_function, execute_userop};
+    if (rvi_00401000(&context) != 0) return 1;
+    return state.userop_calls == 1 && state.function_calls == 1 ? 0 : 2;
+}
+'''
+    c_path = tmp_path / "computed-call-return.c"
+    executable = tmp_path / "computed-call-return"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
+def test_codegen_emits_x87_wait_for_pcode_empty_x86_instruction(tmp_path: Path) -> None:
+    if platform.machine().lower() not in {"x86_64", "amd64", "i386", "i486", "i586", "i686", "x86"}:
+        pytest.skip("x87 WAIT runtime requires an x86 host")
+    row = _function_row()
+    row["instructions"] = [
+        {"address": "0x00401000", "mnemonic": "WAIT", "flow_type": "FALL_THROUGH", "flows": [], "pcode": []},
+        {"address": "0x00401001", "mnemonic": "RET", "flow_type": "TERMINATOR", "flows": [], "pcode": [{
+            "opcode": "RETURN", "output": None, "inputs": [_varnode("register", "0x20", 4)],
+        }]},
+    ]
+    row["instruction_count"] = len(row["instructions"])
+    source, operation_count = compile_function(row, _address_spaces())
+    assert operation_count == 1
+    assert "rvi_x87_wait()" in source
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    harness = r'''
+int rvi_00401000(RviPcodeContext *ctx);
+int main(void) {
+    RviPcodeContext context = {0};
+    return rvi_00401000(&context) == 0 ? 0 : 1;
+}
+'''
+    c_path = tmp_path / "x87-wait.c"
+    executable = tmp_path / "x87-wait"
     c_path.write_text(source + "\n" + harness, encoding="utf-8")
     subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
     subprocess.run([str(executable)], check=True)
