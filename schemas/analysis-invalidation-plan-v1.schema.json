@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/analysis-invalidation-plan-v1.schema.json",
+  "title": "REVENGINSTR.AnalysisInvalidationPlan/1 report",
+  "description": "Deterministic task order and downstream invalidations caused by hash-pinned changed artifact identifiers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "source",
+    "changed_artifact_ids",
+    "topological_order",
+    "invalidated_tasks"
+  ],
+  "properties": {
+    "format": {
+      "const": "REVENGINSTR.AnalysisInvalidationPlan/1"
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "changed_artifact_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/identifier"
+      }
+    },
+    "topological_order": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/identifier"
+      }
+    },
+    "invalidated_tasks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/invalidatedTask"
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]*$"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "graph_sha256",
+        "task_count",
+        "artifact_count",
+        "source_artifact_count"
+      ],
+      "properties": {
+        "graph_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "task_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "artifact_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_artifact_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "invalidatedTask": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task_id",
+        "causes"
+      ],
+      "properties": {
+        "task_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "causes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/cause"
+          }
+        }
+      }
+    },
+    "cause": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/changedInputCause"
+        },
+        {
+          "$ref": "#/$defs/dependencyCause"
+        }
+      ]
+    },
+    "changedInputCause": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "artifact_id"
+      ],
+      "properties": {
+        "kind": {
+          "const": "changed_input"
+        },
+        "artifact_id": {
+          "$ref": "#/$defs/identifier"
+        }
+      }
+    },
+    "dependencyCause": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "task_id"
+      ],
+      "properties": {
+        "kind": {
+          "const": "invalidated_dependency"
+        },
+        "task_id": {
+          "$ref": "#/$defs/identifier"
+        }
+      }
+    }
+  }
+}

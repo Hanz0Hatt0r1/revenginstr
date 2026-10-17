@@ -560,6 +560,66 @@ def test_benchmark_runs_decision_ledger_audit_stage(tmp_path: Path) -> None:
     assert report["subjects"] == 6
 
 
+def test_benchmark_runs_analysis_invalidation_plan_stage(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    graph = {
+        "format": "REVENGINSTR.AnalysisTaskGraph/1",
+        "tasks": [
+            {
+                "task_id": "export_pcode", "task_kind": "pcode_export",
+                "configuration_sha256": "a" * 64, "depends_on": [],
+                "input_artifacts": ["binary"], "output_artifacts": ["pcode"],
+            },
+            {
+                "task_id": "classify", "task_kind": "classification",
+                "configuration_sha256": "b" * 64, "depends_on": ["export_pcode"],
+                "input_artifacts": ["pcode"], "output_artifacts": ["predictions"],
+            },
+        ],
+    }
+    graph_path = tmp_path / "task-graph.json"
+    graph_path.write_text(json.dumps(graph), encoding="utf-8")
+    graph_schema_path = ROOT / "schemas" / "analysis-task-graph-v1.schema.json"
+    plan_schema_path = ROOT / "schemas" / "analysis-invalidation-plan-v1.schema.json"
+    manifest["schemas"].update({
+        "task_graph": {
+            "path": str(graph_schema_path), "version": "REVENGINSTR.AnalysisTaskGraph/1",
+            "sha256": _sha256(graph_schema_path),
+        },
+        "invalidation_plan": {
+            "path": str(plan_schema_path), "version": "REVENGINSTR.AnalysisInvalidationPlan/1",
+            "sha256": _sha256(plan_schema_path),
+        },
+    })
+    manifest["artifacts"].update({
+        "task_graph": {
+            "path": str(graph_path), "role": "input", "kind": "file", "content": "json",
+            "format": "REVENGINSTR.AnalysisTaskGraph/1", "sha256": _sha256(graph_path),
+            "schema": "task_graph",
+        },
+        "invalidation_plan": {
+            "path": "invalidation-plan.json", "role": "output", "kind": "file", "content": "json",
+            "format": "REVENGINSTR.AnalysisInvalidationPlan/1", "schema": "invalidation_plan",
+        },
+    })
+    manifest["stages"].append({
+        "id": "analysis_invalidation_plan", "tool": "analysis-invalidation-plan",
+        "args": ["${artifact:task_graph}", "--changed-artifact", "binary", "--output", "${artifact:invalidation_plan}"],
+        "inputs": ["task_graph"], "outputs": ["invalidation_plan"],
+    })
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    summary, code = run_benchmark(manifest_path, mode="smoke", output_path=tmp_path / "summary.json")
+    assert code == 0
+    assert summary["status"] == "passed"
+    assert summary["stages"][-1]["tool"] == "analysis-invalidation-plan"
+    report = json.loads((tmp_path / "invalidation-plan.json").read_text(encoding="utf-8"))
+    plan_schema = json.loads(plan_schema_path.read_text(encoding="utf-8"))
+    Draft202012Validator(plan_schema).validate(report)
+    assert [row["task_id"] for row in report["invalidated_tasks"]] == ["export_pcode", "classify"]
+
+
 def test_benchmark_runs_call_return_flow_stage(tmp_path: Path) -> None:
     manifest_path = _write_manifest(tmp_path)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
