@@ -1,0 +1,339 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/classifier-ablation-audit-v2.schema.json",
+  "title": "REVENGINSTR.ClassifierAblationAudit/2 report",
+  "description": "Paired aggregate comparison of family-grouped OOF predictions with declared feature-group removals.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "source",
+    "variants"
+  ],
+  "properties": {
+    "format": {
+      "const": "REVENGINSTR.ClassifierAblationAudit/2"
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "variants": {
+      "type": "object",
+      "minProperties": 2,
+      "additionalProperties": {
+        "$ref": "#/$defs/variant"
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ablation_set_sha256",
+        "baseline",
+        "dataset_fingerprint_sha256",
+        "oof_rows",
+        "oof_families",
+        "family_grouped_oof",
+        "feature_groups"
+      ],
+      "properties": {
+        "ablation_set_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "baseline": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dataset_fingerprint_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "oof_rows": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "oof_families": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "family_grouped_oof": {
+          "const": true
+        },
+        "feature_groups": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          }
+        }
+      }
+    },
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classifier_format",
+        "manifest_sha256",
+        "oof_predictions_sha256",
+        "metrics",
+        "comparison_to_baseline",
+        "removed_feature_groups",
+        "retained_feature_groups"
+      ],
+      "properties": {
+        "classifier_format": {
+          "enum": [
+            "REVENGINSTR.SelectiveClassifier/1",
+            "REVENGINSTR.EvidenceSelectiveClassifier/1"
+          ]
+        },
+        "manifest_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "oof_predictions_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "metrics": {
+          "$ref": "#/$defs/metrics"
+        },
+        "comparison_to_baseline": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/comparison"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "removed_feature_groups": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          }
+        },
+        "retained_feature_groups": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rows",
+        "correct_rows",
+        "accuracy",
+        "balanced_accuracy",
+        "macro_f1",
+        "per_class",
+        "action_counts",
+        "accepted_rows",
+        "accepted_precision",
+        "accepted_coverage"
+      ],
+      "properties": {
+        "rows": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "correct_rows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "accuracy": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "balanced_accuracy": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "macro_f1": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "per_class": {
+          "type": "object",
+          "minProperties": 2,
+          "additionalProperties": {
+            "$ref": "#/$defs/classMetrics"
+          }
+        },
+        "action_counts": {
+          "$ref": "#/$defs/actionCounts"
+        },
+        "accepted_rows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "accepted_precision": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "accepted_coverage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "classMetrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support",
+        "predicted",
+        "true_positive",
+        "precision",
+        "recall",
+        "f1"
+      ],
+      "properties": {
+        "support": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "predicted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "true_positive": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "precision": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "recall": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "f1": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "actionCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accept",
+        "review",
+        "escalate"
+      ],
+      "properties": {
+        "accept": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "review": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "escalate": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "changed_predictions",
+        "fixed_errors",
+        "introduced_errors",
+        "net_correct_change",
+        "accuracy_delta",
+        "balanced_accuracy_delta",
+        "macro_f1_delta",
+        "accepted_coverage_delta",
+        "accepted_precision_delta"
+      ],
+      "properties": {
+        "changed_predictions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fixed_errors": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "introduced_errors": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "net_correct_change": {
+          "type": "integer"
+        },
+        "accuracy_delta": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1
+        },
+        "balanced_accuracy_delta": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": -1,
+          "maximum": 1
+        },
+        "macro_f1_delta": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1
+        },
+        "accepted_coverage_delta": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1
+        },
+        "accepted_precision_delta": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": -1,
+          "maximum": 1
+        }
+      }
+    }
+  }
+}

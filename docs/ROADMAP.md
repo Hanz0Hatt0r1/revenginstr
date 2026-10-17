@@ -495,6 +495,10 @@ and evidence-aware family-grouped OOF runs when they share the same seed,
 folds, dataset fingerprint, ids, families, and labels. It reports paired error
 changes and aggregate per-class/routing deltas without exporting identities;
 the caller remains responsible for actually removing the named feature group.
+Its `/2` contract records the declared feature-group inventory and removals
+beside each variant result; that declaration improves report traceability but
+does not inspect the consumer's training pipeline. Frozen consumer ablations
+and an independent family-held-out evaluation remain open.
 `revenginstr-retain-hard-negatives` can write a consumer-owned review artifact
 from confidence/action-filtered errors in the exact family-disjoint evaluation
 set. It retains selected ids and labels only in that caller-directed artifact;

@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import math
+import re
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -14,9 +15,12 @@ from revenginstr.ml.evidence_selective import FORMAT as EVIDENCE_CLASSIFIER_FORM
 from revenginstr.ml.selective import read_jsonl
 
 FORMAT = "REVENGINSTR.ClassifierAblationAudit/1"
+FORMAT_V2 = "REVENGINSTR.ClassifierAblationAudit/2"
 SET_FORMAT = "REVENGINSTR.ClassifierAblationSet/1"
+SET_FORMAT_V2 = "REVENGINSTR.ClassifierAblationSet/2"
 CLASSIFIER_FORMATS = {SELECTIVE_CLASSIFIER_FORMAT, EVIDENCE_CLASSIFIER_FORMAT}
 ROUTE_ACTIONS = {"accept", "review", "escalate"}
+_FEATURE_GROUP_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 
 
 def _sha256(path: Path) -> str:
@@ -33,6 +37,18 @@ def _is_sha256(value: Any) -> bool:
         and len(value) == 64
         and all(character in "0123456789abcdefABCDEF" for character in value)
     )
+
+
+def _validate_feature_groups(value: Any, *, field: str, allow_empty: bool) -> list[str]:
+    if (
+        not isinstance(value, list)
+        or (not allow_empty and not value)
+        or any(not isinstance(item, str) or not _FEATURE_GROUP_PATTERN.fullmatch(item) for item in value)
+        or len(set(value)) != len(value)
+    ):
+        qualifier = "" if allow_empty else "non-empty "
+        raise ValueError(f"{field} must be a {qualifier}list of unique snake_case feature groups")
+    return sorted(value)
 
 
 def _load_manifest(manifest: Any, variant: str) -> tuple[list[str], str, str, int, int, int, int]:
@@ -178,8 +194,11 @@ def build_ablation_audit(
     manifest_sha256: dict[str, str],
     predictions_sha256: dict[str, str],
 ) -> dict[str, Any]:
-    if not isinstance(ablation_set, dict) or ablation_set.get("format") != SET_FORMAT:
+    if not isinstance(ablation_set, dict) or ablation_set.get("format") not in {SET_FORMAT, SET_FORMAT_V2}:
         raise ValueError("unsupported classifier ablation set format")
+    set_format = ablation_set["format"]
+    feature_groups: list[str] | None = None
+    removed_groups: dict[str, list[str]] = {}
     variants = ablation_set.get("variants")
     baseline = ablation_set.get("baseline")
     if (
@@ -190,6 +209,25 @@ def build_ablation_audit(
         raise ValueError("ablation set must name a baseline and at least one comparison variant")
     if not _is_sha256(set_sha256):
         raise ValueError("ablation set SHA-256 is invalid")
+    if set_format == SET_FORMAT_V2:
+        feature_groups = _validate_feature_groups(
+            ablation_set.get("feature_groups"), field="feature_groups", allow_empty=False
+        )
+        for name, variant in variants.items():
+            if not isinstance(variant, dict):
+                raise ValueError(f"variant {name!r}: input references must be an object")
+            removed = _validate_feature_groups(
+                variant.get("removed_feature_groups"),
+                field=f"variant {name!r} removed_feature_groups",
+                allow_empty=True,
+            )
+            if name == baseline and removed:
+                raise ValueError("baseline must not remove feature groups")
+            if name != baseline and not removed:
+                raise ValueError(f"variant {name!r} must remove at least one feature group")
+            if not set(removed).issubset(feature_groups):
+                raise ValueError(f"variant {name!r}: removed feature group is absent from the declared inventory")
+            removed_groups[name] = removed
 
     baseline_ids: set[str] | None = None
     baseline_rows: dict[str, dict[str, Any]] | None = None
@@ -276,17 +314,23 @@ def build_ablation_audit(
             "metrics": metrics,
             "comparison_to_baseline": comparison,
         }
+        if feature_groups is not None:
+            results[name]["removed_feature_groups"] = removed_groups[name]
+            results[name]["retained_feature_groups"] = sorted(set(feature_groups) - set(removed_groups[name]))
 
+    source = {
+        "ablation_set_sha256": set_sha256,
+        "baseline": baseline,
+        "dataset_fingerprint_sha256": baseline_fingerprint,
+        "oof_rows": population_rows,
+        "oof_families": population_families,
+        "family_grouped_oof": True,
+    }
+    if feature_groups is not None:
+        source["feature_groups"] = feature_groups
     return {
-        "format": FORMAT,
-        "source": {
-            "ablation_set_sha256": set_sha256,
-            "baseline": baseline,
-            "dataset_fingerprint_sha256": baseline_fingerprint,
-            "oof_rows": population_rows,
-            "oof_families": population_families,
-            "family_grouped_oof": True,
-        },
+        "format": FORMAT_V2 if feature_groups is not None else FORMAT,
+        "source": source,
         "variants": results,
     }
 
@@ -301,6 +345,8 @@ def main(argv: list[str] | None = None) -> int:
     ablation_set = json.loads(set_bytes)
     if not isinstance(ablation_set, dict) or not isinstance(ablation_set.get("variants"), dict):
         raise ValueError("ablation set must contain a variants object")
+    if ablation_set.get("format") not in {SET_FORMAT, SET_FORMAT_V2}:
+        raise ValueError("unsupported classifier ablation set format")
     base = args.ablation_set_json.resolve().parent
     manifests: dict[str, dict[str, Any]] = {}
     predictions: dict[str, list[dict[str, Any]]] = {}

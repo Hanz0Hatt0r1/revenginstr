@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/classifier-ablation-set-v2.schema.json",
+  "title": "REVENGINSTR.ClassifierAblationSet/2 input",
+  "description": "Caller-declared feature-group removals with pinned manifests and family-grouped OOF predictions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "baseline",
+    "variants",
+    "feature_groups"
+  ],
+  "properties": {
+    "format": {
+      "const": "REVENGINSTR.ClassifierAblationSet/2"
+    },
+    "baseline": {
+      "type": "string",
+      "minLength": 1
+    },
+    "variants": {
+      "type": "object",
+      "minProperties": 2,
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/variant"
+      }
+    },
+    "feature_groups": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest_path",
+        "manifest_sha256",
+        "oof_predictions_path",
+        "oof_predictions_sha256",
+        "removed_feature_groups"
+      ],
+      "properties": {
+        "manifest_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "manifest_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "oof_predictions_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "oof_predictions_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "removed_feature_groups": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          }
+        }
+      }
+    }
+  }
+}

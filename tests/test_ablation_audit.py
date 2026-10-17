@@ -9,7 +9,9 @@ from jsonschema import Draft202012Validator
 
 from revenginstr.ml.ablation_audit import (
     FORMAT,
+    FORMAT_V2,
     SET_FORMAT,
+    SET_FORMAT_V2,
     build_ablation_audit,
     main,
 )
@@ -17,6 +19,8 @@ from revenginstr.ml.ablation_audit import (
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_SCHEMA = ROOT / "schemas/classifier-ablation-audit-v1.schema.json"
 SET_SCHEMA = ROOT / "schemas/classifier-ablation-set-v1.schema.json"
+REPORT_SCHEMA_V2 = ROOT / "schemas/classifier-ablation-audit-v2.schema.json"
+SET_SCHEMA_V2 = ROOT / "schemas/classifier-ablation-set-v2.schema.json"
 SELECTIVE_FORMAT = "REVENGINSTR.SelectiveClassifier/1"
 EVIDENCE_FORMAT = "REVENGINSTR.EvidenceSelectiveClassifier/1"
 
@@ -117,6 +121,51 @@ def test_ablation_audit_compares_paired_oof_metrics_without_ids() -> None:
     assert "family-1" not in encoded
 
 
+def test_ablation_audit_v2_reports_declared_feature_removals() -> None:
+    spec, manifests, predictions, manifest_hashes, prediction_hashes = fixture()
+    spec["format"] = SET_FORMAT_V2
+    spec["feature_groups"] = ["callgraph", "field", "pcode", "receiver"]
+    spec["variants"]["pcode"] = {
+        "manifest_path": "pcode-manifest.json", "manifest_sha256": "b" * 64,
+        "oof_predictions_path": "pcode-oof.jsonl", "oof_predictions_sha256": "d" * 64,
+        "removed_feature_groups": [],
+    }
+    spec["variants"]["without_receiver"] = {
+        "manifest_path": "no-receiver-manifest.json", "manifest_sha256": "c" * 64,
+        "oof_predictions_path": "no-receiver-oof.jsonl", "oof_predictions_sha256": "e" * 64,
+        "removed_feature_groups": ["receiver"],
+    }
+
+    result = build(spec, manifests, predictions, manifest_hashes, prediction_hashes)
+
+    Draft202012Validator(json.loads(SET_SCHEMA_V2.read_text(encoding="utf-8"))).validate(spec)
+    Draft202012Validator(json.loads(REPORT_SCHEMA_V2.read_text(encoding="utf-8"))).validate(result)
+    assert result["format"] == FORMAT_V2
+    assert result["source"]["feature_groups"] == ["callgraph", "field", "pcode", "receiver"]
+    assert result["variants"]["pcode"]["removed_feature_groups"] == []
+    assert result["variants"]["without_receiver"]["removed_feature_groups"] == ["receiver"]
+    assert result["variants"]["without_receiver"]["retained_feature_groups"] == [
+        "callgraph", "field", "pcode"
+    ]
+
+
+@pytest.mark.parametrize("variant_changes, message", [
+    ({"pcode": ["pcode"], "without_receiver": ["receiver"]}, "baseline must not remove"),
+    ({"pcode": [], "without_receiver": []}, "must remove at least one"),
+    ({"pcode": [], "without_receiver": ["unknown"]}, "absent from the declared inventory"),
+])
+def test_ablation_audit_v2_rejects_invalid_feature_removals(variant_changes, message: str) -> None:
+    spec, manifests, predictions, manifest_hashes, prediction_hashes = fixture()
+    spec["format"] = SET_FORMAT_V2
+    spec["feature_groups"] = ["callgraph", "field", "pcode", "receiver"]
+    spec["variants"] = {
+        name: {"removed_feature_groups": groups}
+        for name, groups in variant_changes.items()
+    }
+    with pytest.raises(ValueError, match=message):
+        build(spec, manifests, predictions, manifest_hashes, prediction_hashes)
+
+
 @pytest.mark.parametrize("mutation, message", [
     (lambda manifests, preds: manifests["without_receiver"].update(dataset_fingerprint_sha256="0" * 64), "population differs"),
     (lambda manifests, preds: manifests["without_receiver"]["calibration"].update(seed=8), "population differs"),
@@ -161,7 +210,23 @@ def test_ablation_audit_cli_checks_pinned_inputs_and_writes_report(tmp_path: Pat
     assert result["variants"]["variant"]["comparison_to_baseline"]["fixed_errors"] == 2
     assert "variants: 2" in capsys.readouterr().out
 
+    ablation_set = json.loads(spec_path.read_text(encoding="utf-8"))
+    ablation_set["format"] = SET_FORMAT_V2
+    ablation_set["feature_groups"] = ["pcode", "receiver"]
+    ablation_set["variants"]["baseline"]["removed_feature_groups"] = []
+    ablation_set["variants"]["variant"]["removed_feature_groups"] = ["receiver"]
+    Draft202012Validator(json.loads(SET_SCHEMA_V2.read_text(encoding="utf-8"))).validate(ablation_set)
+    spec_path.write_text(json.dumps(ablation_set), encoding="utf-8")
+    assert main([str(spec_path), "--output", str(output)]) == 0
+    result = json.loads(output.read_text(encoding="utf-8"))
+    Draft202012Validator(json.loads(REPORT_SCHEMA_V2.read_text(encoding="utf-8"))).validate(result)
+    assert result["format"] == FORMAT_V2
+    assert result["variants"]["variant"]["removed_feature_groups"] == ["receiver"]
+
+    variants["baseline"]["removed_feature_groups"] = []
+    variants["variant"]["removed_feature_groups"] = ["receiver"]
     variants["variant"]["oof_predictions_sha256"] = "0" * 64
-    spec_path.write_text(json.dumps({"format": SET_FORMAT, "baseline": "baseline", "variants": variants}), encoding="utf-8")
+    ablation_set["variants"] = variants
+    spec_path.write_text(json.dumps(ablation_set), encoding="utf-8")
     with pytest.raises(ValueError, match="OOF prediction SHA-256 mismatch"):
         main([str(spec_path), "--output", str(output)])

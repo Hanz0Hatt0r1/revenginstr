@@ -1369,6 +1369,40 @@ def test_benchmark_runs_classifier_ablation_audit_stage(tmp_path: Path) -> None:
     report = json.loads((tmp_path / "ablation-audit.json").read_text(encoding="utf-8"))
     assert report["variants"]["candidate"]["comparison_to_baseline"]["introduced_errors"] == 1
 
+    ablation_set["format"] = "REVENGINSTR.ClassifierAblationSet/2"
+    ablation_set["feature_groups"] = ["callgraph", "field", "pcode", "receiver"]
+    ablation_set["variants"]["baseline"]["removed_feature_groups"] = []
+    ablation_set["variants"]["candidate"]["removed_feature_groups"] = ["receiver"]
+    ablation_set_path.write_text(json.dumps(ablation_set), encoding="utf-8")
+    set_schema = ROOT / "schemas" / "classifier-ablation-set-v2.schema.json"
+    report_schema = ROOT / "schemas" / "classifier-ablation-audit-v2.schema.json"
+    benchmark["schemas"]["ablation_set"] = {
+        "path": str(set_schema), "version": "REVENGINSTR.ClassifierAblationSet/2",
+        "sha256": _sha256(set_schema),
+    }
+    benchmark["schemas"]["ablation_audit"] = {
+        "path": str(report_schema), "version": "REVENGINSTR.ClassifierAblationAudit/2",
+        "sha256": _sha256(report_schema),
+    }
+    benchmark["artifacts"]["ablation_set"]["sha256"] = _sha256(ablation_set_path)
+    benchmark["artifacts"]["ablation_audit"]["format"] = "REVENGINSTR.ClassifierAblationAudit/2"
+    for artifact in benchmark["artifacts"].values():
+        if artifact["role"] != "output":
+            continue
+        artifact_path = Path(artifact["path"])
+        if not artifact_path.is_absolute():
+            artifact_path = tmp_path / artifact_path
+        if artifact_path.exists():
+            artifact_path.unlink()
+    manifest_path.write_text(json.dumps(benchmark, indent=2) + "\n", encoding="utf-8")
+
+    summary, code = run_benchmark(manifest_path, mode="smoke", output_path=tmp_path / "summary-v2.json")
+    assert code == 0
+    assert summary["status"] == "passed"
+    report = json.loads((tmp_path / "ablation-audit.json").read_text(encoding="utf-8"))
+    assert report["format"] == "REVENGINSTR.ClassifierAblationAudit/2"
+    assert report["variants"]["candidate"]["removed_feature_groups"] == ["receiver"]
+
 
 def test_benchmark_runs_hard_negative_retention_stage(tmp_path: Path) -> None:
     manifest_path = _write_manifest(tmp_path)
