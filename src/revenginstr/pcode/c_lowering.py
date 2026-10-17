@@ -15,6 +15,8 @@ MANIFEST_FORMAT = "REVENGINSTR.GhidraFunctionInstructionCorpus/1"
 SPACES_FORMAT = "REVENGINSTR.GhidraLanguageAddressSpaces/1"
 MAX_UNIQUE_BYTES = 64 * 1024
 MAX_SCALAR_BYTES = 8
+RAW_BYTE_SIZES = {10, 16}
+MAX_VARNODE_BYTES = 16
 
 
 class PcodeLoweringError(ValueError):
@@ -54,8 +56,10 @@ def _hex(value: object, where: str) -> int:
 def _size(node: dict, where: str) -> int:
     value = node.get("size")
     if type(value) is not int or value < 1:
-        raise PcodeLoweringError(f"{where}: scalar lowering requires a positive varnode size")
-    if value > MAX_SCALAR_BYTES and value != 10:
+        raise PcodeLoweringError(f"{where}: varnode size must be a positive integer")
+    if value > MAX_VARNODE_BYTES:
+        raise PcodeLoweringError(f"{where}: varnode size {value} exceeds {MAX_VARNODE_BYTES}-byte limit")
+    if value > MAX_SCALAR_BYTES and value not in RAW_BYTE_SIZES:
         raise PcodeLoweringError(f"{where}: scalar varnode size {value} exceeds {MAX_SCALAR_BYTES}-byte limit")
     return value
 
@@ -84,6 +88,8 @@ def _read_expr(
     size = _size(node, where)
     if size == 10:
         raise PcodeLoweringError(f"{where}: 10-byte values require a binary80 or raw-byte operation")
+    if size > MAX_SCALAR_BYTES:
+        raise PcodeLoweringError(f"{where}: {size}-byte values require a raw-byte operation")
     space = node.get("space")
     offset = _hex(node.get("offset"), where)
     if node.get("constant") is True and space == "const":
@@ -137,6 +143,8 @@ def _write_output(
     size = _size(node, where)
     if size == 10:
         raise PcodeLoweringError(f"{where}: 10-byte output requires a binary80 or raw-byte operation")
+    if size > MAX_SCALAR_BYTES:
+        raise PcodeLoweringError(f"{where}: {size}-byte output requires a raw-byte operation")
     if node.get("constant") is not False or not isinstance(node.get("space"), str):
         raise PcodeLoweringError(f"{where}: output must be a writable varnode")
     space = _escape_c_string(node["space"])
@@ -151,37 +159,39 @@ def _write_output(
 def _read_bytes_expr(
     node: dict, where: str, unique_layout: list[tuple[int, int, int]], big_endian: bool,
 ) -> tuple[list[str], str]:
-    if _size(node, where) != 10:
-        raise PcodeLoweringError(f"{where}: raw-byte operation requires a 10-byte varnode")
+    size = _size(node, where)
+    if size not in RAW_BYTE_SIZES:
+        raise PcodeLoweringError(f"{where}: raw-byte operation requires a {sorted(RAW_BYTE_SIZES)}-byte varnode")
     name = where.replace("-", "_") + "_bytes"
     if node.get("space") == "const" and node.get("constant") is True:
-        value = _hex(node.get("offset"), where) & ((1 << 80) - 1)
-        byte_values = [(value >> (index * 8)) & 0xff for index in range(10)]
+        value = _hex(node.get("offset"), where) & ((1 << (size * 8)) - 1)
+        byte_values = [(value >> (index * 8)) & 0xff for index in range(size)]
         if big_endian:
             byte_values.reverse()
         initializer = ", ".join(f"0x{byte:02x}" for byte in byte_values)
-        return [f"uint8_t {name}[10] = {{{initializer}}};"], name
+        return [f"uint8_t {name}[{size}] = {{{initializer}}};"], name
     if node.get("constant") is not False or not isinstance(node.get("space"), str):
         raise PcodeLoweringError(f"{where}: expected a constant or writable 10-byte varnode")
     offset = _varnode_offset(node, where, unique_layout)
     space = _escape_c_string(node["space"])
     return [
-        f"uint8_t {name}[10];",
+        f"uint8_t {name}[{size}];",
         f"if (rvi_read_bytes(ctx, _unique, UINT64_C(0), _unique_size, {space}, "
-        f"UINT64_C(0x{offset:x}), 10, {name}) != 0) return -1;",
+        f"UINT64_C(0x{offset:x}), {size}, {name}) != 0) return -1;",
     ], name
 
 
 def _write_bytes_output(
     node: dict, value: str, where: str, unique_layout: list[tuple[int, int, int]],
 ) -> str:
-    if _size(node, where) != 10 or node.get("constant") is not False or not isinstance(node.get("space"), str):
-        raise PcodeLoweringError(f"{where}: expected a writable 10-byte output")
+    size = _size(node, where)
+    if size not in RAW_BYTE_SIZES or node.get("constant") is not False or not isinstance(node.get("space"), str):
+        raise PcodeLoweringError(f"{where}: expected a writable raw-byte output")
     offset = _varnode_offset(node, where, unique_layout)
     space = _escape_c_string(node["space"])
     return (
         f"if (rvi_write_bytes(ctx, _unique, UINT64_C(0), _unique_size, {space}, "
-        f"UINT64_C(0x{offset:x}), 10, {value}) != 0) return -1;"
+        f"UINT64_C(0x{offset:x}), {size}, {value}) != 0) return -1;"
     )
 
 
@@ -227,13 +237,29 @@ def _lower_operation(
     if opcode == "COPY":
         if len(inputs) != 1:
             raise PcodeLoweringError(f"{where}: expected one input")
-        if out_size == 10:
+        if out_size in RAW_BYTE_SIZES:
+            if _size(inputs[0], f"rvi_{sequence}_a0") != out_size:
+                raise PcodeLoweringError(f"{where}: COPY input/output sizes differ")
             prelude, value = _read_bytes_expr(inputs[0], f"rvi_{sequence}_a0", unique_layout, big_endian)
             return prelude + [_write_bytes_output(output, value, where, unique_layout)], None
         prelude, value, in_size = _read_expr(inputs[0], f"rvi_{sequence}_a0", unique_layout, big_endian)
         if in_size != out_size:
             raise PcodeLoweringError(f"{where}: COPY input/output sizes differ")
         return prelude + [_write_output(output, value, where, unique_layout, big_endian)], None
+
+    if opcode in {"INT_AND", "INT_OR", "INT_XOR"} and out_size in RAW_BYTE_SIZES:
+        if len(inputs) != 2 or any(_size(node, where) != out_size for node in inputs):
+            raise PcodeLoweringError(f"{where}: raw bitwise inputs must match the output size")
+        left_prelude, left = _read_bytes_expr(inputs[0], f"rvi_{sequence}_a0", unique_layout, big_endian)
+        right_prelude, right = _read_bytes_expr(inputs[1], f"rvi_{sequence}_a1", unique_layout, big_endian)
+        result = f"rvi_{sequence}_result"
+        operator = {"INT_AND": "&", "INT_OR": "|", "INT_XOR": "^"}[opcode]
+        return left_prelude + right_prelude + [
+            f"uint8_t {result}[{out_size}];",
+            f"for (unsigned rvi_{sequence}_i = 0; rvi_{sequence}_i < {out_size}; ++rvi_{sequence}_i) "
+            f"{result}[rvi_{sequence}_i] = {left}[rvi_{sequence}_i] {operator} {right}[rvi_{sequence}_i];",
+            _write_bytes_output(output, result, where, unique_layout),
+        ], None
 
     if opcode in _BINARY or opcode in {
         "INT_EQUAL", "INT_NOTEQUAL", "INT_LESS", "INT_LESSEQUAL",
@@ -378,9 +404,13 @@ def _lower_operation(
                     f"rvi_float80_sign({source}, {clear_sign}, {result});",
                     _write_bytes_output(output, result, where, unique_layout),
                 ], None
-            if opcode in {"FLOAT_SQRT", "ROUND"} and out_size == 10:
+            if opcode in {"FLOAT_SQRT", "ROUND", "TRUNC"} and out_size == 10:
                 result = f"rvi_{sequence}_result"
-                op = "RVI_FLOAT80_SQRT" if opcode == "FLOAT_SQRT" else "RVI_FLOAT80_ROUND"
+                op = {
+                    "FLOAT_SQRT": "RVI_FLOAT80_SQRT",
+                    "ROUND": "RVI_FLOAT80_ROUND",
+                    "TRUNC": "RVI_FLOAT80_TRUNC",
+                }[opcode]
                 return source_prelude + [
                     f"uint8_t {result}[10];",
                     f"if (rvi_float80_unary({source}, {op}, {result}) != 0) return -1;",
@@ -471,6 +501,63 @@ def _lower_operation(
         expected = 2 if opcode in {"INT_LEFT", "INT_RIGHT", "INT_SRIGHT", "SUBPIECE"} else 1
         if len(inputs) != expected:
             raise PcodeLoweringError(f"{where}: expected {expected} inputs")
+        source_size = _size(inputs[0], f"rvi_{sequence}_a0")
+        if opcode == "INT_ZEXT" and out_size in RAW_BYTE_SIZES:
+            if source_size >= out_size:
+                raise PcodeLoweringError(f"{where}: INT_ZEXT output must be wider than input")
+            result = f"rvi_{sequence}_result"
+            if source_size in RAW_BYTE_SIZES:
+                source_prelude, source = _read_bytes_expr(
+                    inputs[0], f"rvi_{sequence}_a0", unique_layout, big_endian)
+                conversion = f"rvi_zero_extend_bytes({result}, {out_size}, {source}, {source_size}, {_c_bool(big_endian)});"
+            else:
+                source_prelude, source, _ = _read_expr(
+                    inputs[0], f"rvi_{sequence}_a0", unique_layout, big_endian)
+                conversion = f"rvi_value_to_bytes({source}, {source_size}, {out_size}, {_c_bool(big_endian)}, {result});"
+            return source_prelude + [
+                f"uint8_t {result}[{out_size}];",
+                conversion,
+                _write_bytes_output(output, result, where, unique_layout),
+            ], None
+        if opcode == "INT_NEGATE" and source_size in RAW_BYTE_SIZES:
+            if source_size != out_size:
+                raise PcodeLoweringError(f"{where}: unary integer input/output sizes differ")
+            source_prelude, source = _read_bytes_expr(
+                inputs[0], f"rvi_{sequence}_a0", unique_layout, big_endian)
+            result = f"rvi_{sequence}_result"
+            return source_prelude + [
+                f"uint8_t {result}[{out_size}];",
+                f"for (unsigned rvi_{sequence}_i = 0; rvi_{sequence}_i < {out_size}; ++rvi_{sequence}_i) "
+                f"{result}[rvi_{sequence}_i] = (uint8_t)~{source}[rvi_{sequence}_i];",
+                _write_bytes_output(output, result, where, unique_layout),
+            ], None
+        if opcode == "INT_RIGHT" and source_size in RAW_BYTE_SIZES:
+            if source_size != out_size:
+                raise PcodeLoweringError(f"{where}: shift input/output sizes differ")
+            source_prelude, source = _read_bytes_expr(
+                inputs[0], f"rvi_{sequence}_a0", unique_layout, big_endian)
+            shift_prelude, shift, _ = _read_expr(
+                inputs[1], f"rvi_{sequence}_a1", unique_layout, big_endian)
+            result = f"rvi_{sequence}_result"
+            return source_prelude + shift_prelude + [
+                f"uint8_t {result}[{out_size}];",
+                f"rvi_shift_right_bytes({source}, {out_size}, {shift}, {_c_bool(big_endian)}, {result});",
+                _write_bytes_output(output, result, where, unique_layout),
+            ], None
+        if opcode == "SUBPIECE" and source_size in RAW_BYTE_SIZES:
+            if out_size > MAX_SCALAR_BYTES:
+                raise PcodeLoweringError(f"{where}: raw SUBPIECE output exceeds scalar width")
+            offset_node = inputs[1]
+            if not offset_node.get("constant") or offset_node.get("space") != "const":
+                raise PcodeLoweringError(f"{where}: SUBPIECE offset must be constant")
+            byte_offset = _hex(offset_node.get("offset"), where)
+            source_prelude, source = _read_bytes_expr(
+                inputs[0], f"rvi_{sequence}_a0", unique_layout, big_endian)
+            expr = (
+                "UINT64_C(0)" if byte_offset >= source_size else
+                f"rvi_bytes_subpiece({source}, {source_size}, {byte_offset}, {out_size}, {_c_bool(big_endian)})"
+            )
+            return source_prelude + [_write_output(output, expr, where, unique_layout, big_endian)], None
         source_prelude, source, source_size = _read_expr(inputs[0], f"rvi_{sequence}_a0", unique_layout, big_endian)
         args = list(source_prelude)
         if opcode in {"INT_2COMP", "INT_NEGATE"}:
@@ -591,7 +678,7 @@ enum {
     RVI_FLOAT80_ADD = 1, RVI_FLOAT80_SUB = 2, RVI_FLOAT80_MULT = 3, RVI_FLOAT80_DIV = 4,
     RVI_FLOAT80_EQUAL = 5, RVI_FLOAT80_NOTEQUAL = 6,
     RVI_FLOAT80_LESS = 7, RVI_FLOAT80_LESSEQUAL = 8,
-    RVI_FLOAT80_SQRT = 9, RVI_FLOAT80_ROUND = 10
+    RVI_FLOAT80_SQRT = 9, RVI_FLOAT80_ROUND = 10, RVI_FLOAT80_TRUNC = 11
 };
 static float rvi_float32(uint64_t bits) {
     uint32_t word = (uint32_t)bits;
@@ -675,6 +762,17 @@ static int rvi_float80_host_supported(void) {
     return 0;
 #endif
 }
+static int rvi_x87_wait(void) {
+#if (defined(__i386__) || defined(__x86_64__)) && (defined(__GNUC__) || defined(__clang__))
+    __asm__ __volatile__("fwait" ::: "memory");
+    return 0;
+#elif defined(_MSC_VER) && defined(_M_IX86)
+    __asm fwait
+    return 0;
+#else
+    return -1;
+#endif
+}
 static int rvi_float80_load(const uint8_t input[10], long double *value) {
     uint8_t bytes[sizeof(long double)] = {0};
     if (!input || !value || !rvi_float80_host_supported()) return -1;
@@ -751,6 +849,7 @@ static int rvi_float80_unary(const uint8_t input[10], unsigned op, uint8_t outpu
     if (rvi_float80_load(input, &value) != 0) return -1;
     if (op == RVI_FLOAT80_SQRT) value = sqrtl(value);
     else if (op == RVI_FLOAT80_ROUND) value = roundl(value);
+    else if (op == RVI_FLOAT80_TRUNC) value = truncl(value);
     else return -1;
     return rvi_float80_store(value, output);
 }
@@ -808,7 +907,7 @@ static int rvi_float_trunc_to_int(uint64_t bits, unsigned input_size,
 static int rvi_read_bytes(RviPcodeContext *ctx, uint8_t *unique, uint64_t unique_base,
                           size_t unique_size, const char *space, uint64_t offset,
                           unsigned size, uint8_t *bytes) {
-    if (size == 0 || size > 10) return -1;
+    if (size == 0 || size > 16) return -1;
     if (strcmp(space, "unique") == 0) {
         if (offset < unique_base || offset - unique_base > unique_size ||
             size > unique_size - (size_t)(offset - unique_base)) return -1;
@@ -820,7 +919,7 @@ static int rvi_read_bytes(RviPcodeContext *ctx, uint8_t *unique, uint64_t unique
 static int rvi_write_bytes(RviPcodeContext *ctx, uint8_t *unique, uint64_t unique_base,
                            size_t unique_size, const char *space, uint64_t offset,
                            unsigned size, const uint8_t *bytes) {
-    if (size == 0 || size > 10) return -1;
+    if (size == 0 || size > 16) return -1;
     if (strcmp(space, "unique") == 0) {
         if (offset < unique_base || offset - unique_base > unique_size ||
             size > unique_size - (size_t)(offset - unique_base)) return -1;
@@ -828,6 +927,48 @@ static int rvi_write_bytes(RviPcodeContext *ctx, uint8_t *unique, uint64_t uniqu
         return 0;
     }
     return ctx && ctx->write ? ctx->write(ctx->opaque, space, offset, size, bytes) : -1;
+}
+static void rvi_value_to_bytes(uint64_t value, unsigned value_size, unsigned output_size,
+                              int big_endian, uint8_t *output) {
+    memset(output, 0, output_size);
+    for (unsigned i = 0; i < value_size; i++) {
+        unsigned index = big_endian ? output_size - 1 - i : i;
+        output[index] = (uint8_t)(value >> (i * 8));
+    }
+}
+static void rvi_zero_extend_bytes(uint8_t *output, unsigned output_size,
+                                  const uint8_t *input, unsigned input_size, int big_endian) {
+    memset(output, 0, output_size);
+    memcpy(output + (big_endian ? output_size - input_size : 0), input, input_size);
+}
+static uint64_t rvi_bytes_subpiece(const uint8_t *input, unsigned input_size,
+                                  unsigned byte_offset, unsigned output_size, int big_endian) {
+    uint64_t value = 0;
+    for (unsigned i = 0; i < output_size; i++) {
+        unsigned logical_index = byte_offset + i;
+        if (logical_index >= input_size) continue;
+        unsigned index = big_endian ? input_size - 1 - logical_index : logical_index;
+        value |= (uint64_t)input[index] << (i * 8);
+    }
+    return value;
+}
+static void rvi_shift_right_bytes(const uint8_t *input, unsigned size, uint64_t shift,
+                                 int big_endian, uint8_t *output) {
+    memset(output, 0, size);
+    if (shift >= (uint64_t)size * 8) return;
+    unsigned whole = (unsigned)(shift / 8), bits = (unsigned)(shift % 8);
+    for (unsigned i = 0; i < size; i++) {
+        unsigned source = i + whole;
+        if (source >= size) break;
+        unsigned source_index = big_endian ? size - 1 - source : source;
+        unsigned output_index = big_endian ? size - 1 - i : i;
+        unsigned value = input[source_index] >> bits;
+        if (bits && source + 1 < size) {
+            unsigned next_index = big_endian ? size - 2 - source : source + 1;
+            value |= (unsigned)input[next_index] << (8 - bits);
+        }
+        output[output_index] = (uint8_t)value;
+    }
 }
 static int rvi_read_value(RviPcodeContext *ctx, uint8_t *unique, uint64_t unique_base,
                           size_t unique_size, const char *space, uint64_t offset,
@@ -979,7 +1120,13 @@ def compile_function(
         }:
             raise PcodeLoweringError(f"{address}: machine flow type {flow_type!r} is not supported")
         if not operations:
-            if instruction.get("mnemonic", "").upper() == "NOP" and flow_type == "FALL_THROUGH":
+            mnemonic = instruction.get("mnemonic", "").upper()
+            if mnemonic == "NOP" and flow_type == "FALL_THROUGH":
+                continue
+            if mnemonic == "WAIT" and flow_type == "FALL_THROUGH":
+                if not supports_binary80 or big_endian:
+                    raise PcodeLoweringError(f"{address}: WAIT is only supported for little-endian x86")
+                body.append("    if (rvi_x87_wait() != 0) return -1;")
                 continue
             raise PcodeLoweringError(f"{address}: no P-code for non-NOP instruction")
 
@@ -998,6 +1145,14 @@ def compile_function(
         relative_labels = {
             target: f"rvi_pcode_{address_value:016x}_{target}" for target in relative_targets
         }
+        callind_return_suffix = (
+            flow_type == "COMPUTED_CALL_TERMINATOR" and len(operations) >= 2 and
+            operations[-2].get("opcode") == "CALLIND" and
+            operations[-1].get("opcode") == "RETURN" and
+            operations[-1].get("output") is None and
+            isinstance(operations[-1].get("inputs"), list) and len(operations[-1]["inputs"]) == 1 and
+            isinstance(operations[-1]["inputs"][0], dict)
+        )
         for op_index, operation in enumerate(operations):
             if op_index in relative_labels:
                 body.append(f"    {relative_labels[op_index]}: ;")
@@ -1020,29 +1175,81 @@ def compile_function(
                 argument_nodes = inputs[1:]
                 if len(argument_nodes) > 256:
                     raise PcodeLoweringError(f"{address}: CALLOTHER has too many arguments")
-                array_size = max(len(argument_nodes), 1)
+                argument_sizes = [_size(argument, f"{address} CALLOTHER argument") for argument in argument_nodes]
+                argument_word_counts = [max(1, (size + 7) // 8) for size in argument_sizes]
+                argument_word_offsets = []
+                next_argument_word = 0
+                for word_count in argument_word_counts:
+                    argument_word_offsets.append(next_argument_word)
+                    next_argument_word += word_count
+                argument_words = max(next_argument_word, 1)
                 userop_lines = [
-                    f"uint64_t rvi_{operation_count}_args[{array_size}] = {{0}};",
-                    f"unsigned rvi_{operation_count}_sizes[{array_size}] = {{0}};",
+                    f"uint64_t rvi_{operation_count}_args[{argument_words}] = {{0}};",
+                    f"unsigned rvi_{operation_count}_sizes[{max(len(argument_nodes), 1)}] = {{0}};",
                 ]
                 for argument_index, argument in enumerate(argument_nodes):
                     if not isinstance(argument, dict):
                         raise PcodeLoweringError(f"{address}: malformed CALLOTHER argument")
-                    prelude, value, value_size = _read_expr(
-                        argument, f"rvi_{operation_count}_arg{argument_index}", unique_layout, big_endian)
-                    userop_lines.extend(prelude)
-                    userop_lines.append(f"rvi_{operation_count}_args[{argument_index}] = {value};")
-                    userop_lines.append(f"rvi_{operation_count}_sizes[{argument_index}] = {value_size};")
-                userop_lines.append(f"uint64_t rvi_{operation_count}_result = 0;")
+                    value_size = argument_sizes[argument_index]
+                    word_offset = argument_word_offsets[argument_index]
+                    if value_size in RAW_BYTE_SIZES:
+                        prelude, value = _read_bytes_expr(
+                            argument, f"rvi_{operation_count}_arg{argument_index}", unique_layout, big_endian)
+                        userop_lines.extend(prelude)
+                        userop_lines.extend([
+                            f"rvi_{operation_count}_sizes[{argument_index}] = {value_size};",
+                            f"for (unsigned rvi_{operation_count}_arg{argument_index}_byte = 0; "
+                            f"rvi_{operation_count}_arg{argument_index}_byte < {value_size}; "
+                            f"++rvi_{operation_count}_arg{argument_index}_byte) {{",
+                            f"    unsigned rvi_{operation_count}_arg{argument_index}_logical = "
+                            f"{_c_bool(big_endian)} ? {value_size} - 1 - rvi_{operation_count}_arg{argument_index}_byte : "
+                            f"rvi_{operation_count}_arg{argument_index}_byte;",
+                            f"    rvi_{operation_count}_args[{word_offset} + "
+                            f"rvi_{operation_count}_arg{argument_index}_logical / 8] |= "
+                            f"(uint64_t){value}[rvi_{operation_count}_arg{argument_index}_byte] << "
+                            f"((rvi_{operation_count}_arg{argument_index}_logical % 8) * 8);",
+                            "}",
+                        ])
+                    else:
+                        prelude, value, _ = _read_expr(
+                            argument, f"rvi_{operation_count}_arg{argument_index}", unique_layout, big_endian)
+                        userop_lines.extend(prelude)
+                        userop_lines.append(f"rvi_{operation_count}_args[{word_offset}] = {value};")
+                        userop_lines.append(f"rvi_{operation_count}_sizes[{argument_index}] = {value_size};")
+                result_word_count = max((output_size + 7) // 8, 1)
+                result_name = f"rvi_{operation_count}_result"
+                if output_size in RAW_BYTE_SIZES:
+                    userop_lines.append(f"uint64_t {result_name}[{result_word_count}] = {{0}};")
+                    result_pointer = result_name
+                else:
+                    userop_lines.append(f"uint64_t {result_name} = 0;")
+                    result_pointer = f"&{result_name}" if output_size else "NULL"
                 userop_lines.append(
                     f"if (!ctx || !ctx->userop || ctx->userop(ctx->opaque, UINT32_C({userop_index}), "
                     f"rvi_{operation_count}_args, rvi_{operation_count}_sizes, {len(argument_nodes)}, "
-                    f"{'&rvi_' + str(operation_count) + '_result' if output_size else 'NULL'}, {output_size}) != 0) return -1;"
+                    f"{result_pointer}, {output_size}) != 0) return -1;"
                 )
                 if output_size:
-                    userop_lines.append(_write_output(
-                        output, f"rvi_{operation_count}_result", f"{address} CALLOTHER output",
-                        unique_layout, big_endian))
+                    if output_size in RAW_BYTE_SIZES:
+                        result_bytes = f"rvi_{operation_count}_result_bytes"
+                        userop_lines.extend([
+                            f"uint8_t {result_bytes}[{output_size}];",
+                            f"for (unsigned rvi_{operation_count}_result_byte = 0; "
+                            f"rvi_{operation_count}_result_byte < {output_size}; "
+                            f"++rvi_{operation_count}_result_byte) {{",
+                            f"    unsigned rvi_{operation_count}_result_logical = "
+                            f"{_c_bool(big_endian)} ? {output_size} - 1 - rvi_{operation_count}_result_byte : "
+                            f"rvi_{operation_count}_result_byte;",
+                            f"    {result_bytes}[rvi_{operation_count}_result_byte] = "
+                            f"(uint8_t)({result_name}[rvi_{operation_count}_result_logical / 8] >> "
+                            f"((rvi_{operation_count}_result_logical % 8) * 8));",
+                            "}",
+                        ])
+                        userop_lines.append(_write_bytes_output(
+                            output, result_bytes, f"{address} CALLOTHER output", unique_layout))
+                    else:
+                        userop_lines.append(_write_output(
+                            output, result_name, f"{address} CALLOTHER output", unique_layout, big_endian))
                 body.extend("    " + line for line in ["{"] + userop_lines + ["}"])
                 operation_count += 1
                 continue
@@ -1146,12 +1353,13 @@ def compile_function(
                 if operation.get("output") is not None or not isinstance(inputs, list) or len(inputs) != 1:
                     raise PcodeLoweringError(f"{address}: malformed {opcode}")
                 tail_call = flow_type == "CALL_TERMINATOR" and opcode == "CALL"
+                callind_return = callind_return_suffix and opcode == "CALLIND" and op_index == len(operations) - 2
                 expected_flow = "UNCONDITIONAL_CALL" if opcode == "CALL" else "COMPUTED_CALL"
                 if flow_type == "COMPUTED_CALL_TERMINATOR" and opcode == "CALLIND":
                     expected_flow = flow_type
-                if op_index != len(operations) - 1 or flow_type != expected_flow:
-                    if not tail_call or op_index != len(operations) - 1:
-                        raise PcodeLoweringError(f"{address}: {opcode} conflicts with machine flow type {flow_type!r}")
+                if (flow_type != expected_flow or
+                        (op_index != len(operations) - 1 and not callind_return)) and not tail_call:
+                    raise PcodeLoweringError(f"{address}: {opcode} conflicts with machine flow type {flow_type!r}")
                 if opcode == "CALL":
                     target_address = _direct_control_target(inputs[0], default_space, f"{address} CALL target")
                     flow_addresses = {_hex(item, f"{address} machine flow target") for item in flows}
@@ -1162,7 +1370,7 @@ def compile_function(
                     target_prelude, target_expr, _ = _read_expr(
                         inputs[0], f"rvi_{operation_count}_call_target", unique_layout, big_endian)
                     call_lines = target_prelude + [f"if (rvi_call(ctx, {target_expr}) != 0) return -1;"]
-                if tail_call or flow_type == "COMPUTED_CALL_TERMINATOR":
+                if tail_call or (flow_type == "COMPUTED_CALL_TERMINATOR" and not callind_return_suffix):
                     call_lines.append("return 0;")
                 body.extend("    " + line for line in ["{"] + call_lines + ["}"])
                 operation_count += 1
@@ -1196,15 +1404,15 @@ def compile_function(
                         inputs[1], f"rvi_{operation_count}_ptr", unique_layout, big_endian)
                     if pointer_width != pointer_size:
                         raise PcodeLoweringError(f"{address}: LOAD pointer size differs from address space")
-                    if out_size == 10:
+                    if out_size in RAW_BYTE_SIZES:
                         loaded = f"rvi_{operation_count}_loaded"
                         body.extend("    " + line for line in ["{"] + prelude)
                         body.extend([
                             f"      uint64_t rvi_{operation_count}_address = "
                             f"({pointer} * UINT64_C({unit})) & rvi_mask({pointer_size});",
-                            f"      uint8_t {loaded}[10];",
+                            f"      uint8_t {loaded}[{out_size}];",
                             f"      if (rvi_read_bytes(ctx, _unique, UINT64_C(0), _unique_size, "
-                            f"{_escape_c_string(name)}, rvi_{operation_count}_address, 10, {loaded}) != 0) return -1;",
+                            f"{_escape_c_string(name)}, rvi_{operation_count}_address, {out_size}, {loaded}) != 0) return -1;",
                             "    " + _write_bytes_output(output, loaded, f"{address} LOAD", unique_layout),
                             "    }",
                         ])
@@ -1233,7 +1441,8 @@ def compile_function(
                         raise PcodeLoweringError(f"{address}: malformed STORE")
                     pointer_prelude, pointer, pointer_size = _read_expr(
                         inputs[1], f"rvi_{operation_count}_ptr", unique_layout, big_endian)
-                    if _size(inputs[2], f"{address} STORE value") == 10:
+                    if _size(inputs[2], f"{address} STORE value") in RAW_BYTE_SIZES:
+                        value_size = _size(inputs[2], f"{address} STORE value")
                         value_prelude, value = _read_bytes_expr(
                             inputs[2], f"rvi_{operation_count}_value", unique_layout, big_endian)
                         if pointer_size != space.get("pointer_size"):
@@ -1243,7 +1452,7 @@ def compile_function(
                             f"      uint64_t rvi_{operation_count}_address = "
                             f"({pointer} * UINT64_C({unit})) & rvi_mask({pointer_size});",
                             f"      if (rvi_write_bytes(ctx, _unique, UINT64_C(0), _unique_size, "
-                            f"{_escape_c_string(name)}, rvi_{operation_count}_address, 10, {value}) != 0) return -1;",
+                            f"{_escape_c_string(name)}, rvi_{operation_count}_address, {value_size}, {value}) != 0) return -1;",
                             "    }",
                         ])
                         operation_count += 1
@@ -1270,9 +1479,11 @@ def compile_function(
             body.extend("    " + line for line in ["{"] + lines + ["}"])
             operation_count += 1
             if terminator == "RETURN":
-                if op_index != len(operations) - 1 or flow_type != "TERMINATOR":
+                if op_index != len(operations) - 1 or (flow_type != "TERMINATOR" and not callind_return_suffix):
                     raise PcodeLoweringError(f"{address}: RETURN must be the final operation of a TERMINATOR")
         last_opcode = operations[-1].get("opcode") if operations else None
+        if callind_return_suffix:
+            last_opcode = "CALLIND"
         if flow_type == "TERMINATOR" and last_opcode != "RETURN":
             raise PcodeLoweringError(f"{address}: terminator is not a supported P-code RETURN")
         if flow_type == "CONDITIONAL_JUMP" and not any(op.get("opcode") == "CBRANCH" for op in operations):
