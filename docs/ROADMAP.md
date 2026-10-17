@@ -426,8 +426,18 @@ P-code flow artifacts. `FieldStoreLoadDominanceAudit/3` removes only a
 statically resolved direct `CALL` whose non-empty callee body contains only
 known write-free P-code operations. The builder does not recurse; nested calls,
 indirect calls, unknown operations, and missing flows remain effects. The
-prototype is synthetically validated; a frozen replay in a second consumer is
-still required. See the [call and memory effect contract](FIELD_MEMORY_ALIAS_CONTRACT.md).
+prototype is synthetically validated, including a write-free direct-call
+case. NFS Shift PRs [#2025](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2025)
+and [#2026](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2026)
+freeze ten functions and 28 exact parameter-field pairs; no call in those rows
+has a complete write-free callee. The expanded consumer replay in [PR
+#2027](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2027)
+adds two functions and 3 complete write-free direct-call rows. In `00619b7d`,
+one eligible call lies on the exact store-to-load witness, while a neighboring
+`unknown_effect` call remains on that path. `/3` therefore keeps the pair
+`possible_intervening_memory_effect`; the replay exercises the filter boundary
+without promoting a unique candidate or establishing value flow.
+See the [call and memory effect contract](FIELD_MEMORY_ALIAS_CONTRACT.md).
 
 Remaining propagation work:
 
@@ -1053,15 +1063,7 @@ Mitigation: preserve heuristic/sparse baselines, feature ablations and evidence-
 
 # 20. Immediate next action
 
-**M2.3 consumer capture/replay is complete.** Nevergone's frozen CFG/3 and
-memory-store sidecar replay is pinned in PR #729. It leaves both store/load
-pairs unresolved because intervening calls and memory effects remain possible;
-keep these as negative evidence and make no value-flow claim. Keep labels,
-binary rows, and measured outcomes in their consumer repositories.
+**M2.3 consumer capture/replay now covers two consumers.** Nevergone's frozen
+CFG/3 and memory-store sidecar replay is pinned in [PR #729](https://github.com/Hanz0Hatt0r1/nevergone-recomp/pull/729); its two store/load pairs remain unresolved because intervening effects are possible. NFS Shift PRs [#2025](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2025) and [#2026](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2026) freeze ten functions and 28 pairs with no complete write-free callee. The expanded replay in [PR #2027](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2027) covers 12 functions and 31 pairs; one complete write-free direct call is on an exact witness, but an adjacent unknown-effect call remains a barrier and `/3` stays unresolved. This exercises the filter boundary without establishing value flow. Labels, raw rows, and measured outcomes stay in their consumer repositories.
 
-Continue M2.3 by freezing and replaying the new `/3` audit with direct-callee
-effect rows in a second consumer. Keep `/1` and `/2` behavior unchanged; only
-exactly joined direct calls with complete write-free callee flows may be
-filtered. Indirect, nested, unknown, and missing effects remain barriers. Do
-not treat any new structural candidate as transferable value flow until that
-second consumer replay passes.
+Next, look for a consumer pair where a complete write-free direct call is the only remaining effect on the candidate path and `/3` can report a unique structural candidate while every unknown, indirect, nested, and missing effect remains a barrier. Keep `/1` and `/2` unchanged. If the evidence does not provide that case, preserve the unresolved result and make no value-flow claim.
