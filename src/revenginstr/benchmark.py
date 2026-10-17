@@ -43,6 +43,7 @@ TOOLS = {
     "decision-ledger-audit": ("revenginstr.decision_ledger", "main"),
     "analysis-invalidation-plan": ("revenginstr.analysis_task_graph", "main"),
     "evidence-request-plan": ("revenginstr.evidence_planner", "main"),
+    "state-machine-candidates": ("revenginstr.state_machine", "main"),
     "family-mine": ("revenginstr.family.mine", "main"),
     "selective-train": ("revenginstr.ml.selective", "train_main"),
     "selective-infer": ("revenginstr.ml.selective", "infer_main"),

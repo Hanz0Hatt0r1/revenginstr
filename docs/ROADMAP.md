@@ -672,6 +672,15 @@ rendering may only restate claims present in this object.
 
 Recover candidate state fields and transition graphs from repeated comparisons/writes, switch structure and cross-function field sharing, with confidence per edge.
 
+**Initial single-function structural candidate detector implemented:**
+`revenginstr-state-machine-candidates` requires exact CFG/P-code population
+joins, a parameter-rooted field load feeding a comparison and terminal
+conditional branch, and a same-parameter/same-offset store reachable from only
+one of two CFG successors. It emits hash-pinned `StateMachineCandidateAudit/1`
+records and makes no branch-polarity, path-feasibility, runtime-value, or state
+semantics claim. Cross-function field sharing, switch recovery, transition
+graphs, confidence per edge, and consumer evaluation remain open.
+
 ## M5.5 Object-role clustering
 
 Cluster methods using receiver, field, vtable, callgraph and Effect-IR similarity.
