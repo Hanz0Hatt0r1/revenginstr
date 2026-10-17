@@ -412,9 +412,13 @@ ordinals, and only excludes known different physical spaces or proven
 same-parameter-root disjoint byte intervals. Circular ranges are compared
 only when exported pointer/address-space geometry agrees; missing, unknown,
 or unresolved facts remain possible effects. `/1` remains unchanged when no
-sidecar is provided. Generic synthetic validation is in place; a consumer
-frozen evidence run is still required before interpreting positives as a
-consumer result. See the [field memory alias contract](FIELD_MEMORY_ALIAS_CONTRACT.md).
+sidecar is provided. The first consumer frozen validation is merged in
+[Nevergone PR #729](https://github.com/Hanz0Hatt0r1/nevergone-recomp/pull/729):
+its exact replay passes for two rows, both `possible_intervening_memory_effect`,
+with zero `unique_cfg_store_candidate` rows. The run confirms the contract
+fails closed in a real consumer; it does not establish positive memory-value
+flow. See the [consumer evidence and replay manifest](https://github.com/Hanz0Hatt0r1/nevergone-recomp/tree/main/docs/evidence/field-store-load-cfg-ccjoystick-init)
+and the [field memory alias contract](FIELD_MEMORY_ALIAS_CONTRACT.md).
 
 Remaining propagation work:
 
@@ -999,10 +1003,16 @@ Mitigation: preserve heuristic/sparse baselines, feature ablations and evidence-
 
 # 20. Immediate next action
 
-Continue with **M2.3 consumer validation**: the Nevergone consumer previously
-froze and replayed the CFG/1 dominance audit as `incomplete_evidence`, keeping
-those rows as negative evidence. Next capture/freeze CFG/3 plus the new
-memory-store sidecar and expected outputs when the Ghidra database fits the
-available disk budget. Until that consumer run is reviewed, shared `/2`
-positives remain generic structural candidates. Keep labels, binary rows, and
-measured outcomes in their consumer repositories.
+**M2.3 consumer capture/replay is complete.** Nevergone's frozen CFG/3 and
+memory-store sidecar replay is pinned in PR #729. It leaves both store/load
+pairs unresolved because intervening calls and memory effects remain possible;
+keep these as negative evidence and make no value-flow claim. Keep labels,
+binary rows, and measured outcomes in their consumer repositories.
+
+Continue M2.3 by prototyping separately versioned direct-callee effect
+evidence for the dominance audit. Only an exact, supported summary for a
+statically resolved direct call may refine a call barrier; indirect or unknown
+calls stay possible effects. Require bounded resource use, target-free
+synthetic fixtures, and a frozen replay in a second consumer before treating
+any new positive as transferable. Preserve the current `/1` and `/2` outputs
+and their fail-closed defaults.
