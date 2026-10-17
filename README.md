@@ -55,6 +55,8 @@ REVENGINSTR.GhidraIndirectReceiverType/1
 REVENGINSTR.GhidraArm32ItaniumVtableSlots/1
 REVENGINSTR.GhidraFunctionPcodeFlow/1
 REVENGINSTR.GhidraFunctionPcodeCFG/1
+REVENGINSTR.GhidraFunctionPcodeCFG/2
+REVENGINSTR.FieldStoreLoadDominanceAudit/1
 REVENGINSTR.GhidraPcodeDefinedString/1
 REVENGINSTR.GhidraAddressReferenceOwner/1
 REVENGINSTR.GhidraAddressReferences/1
@@ -223,6 +225,8 @@ revenginstr-decision-ledger-audit decision-events.jsonl \
   --output decision-ledger-audit.json
 revenginstr-receiver-field-store-load-audit field-access-pairs.jsonl \
   function-pcode-cfg.jsonl --output field-path-candidates.jsonl
+revenginstr-receiver-field-store-load-dominance-audit field-access-pairs.jsonl \
+  function-pcode-cfg-v2.jsonl --output field-store-load-dominance.jsonl
 revenginstr-freeze-validation wide-corpus.jsonl validation/unseen500 \
   --exclude-trace training-trace.jsonl --limit 500 --tag unseen500-v1
 revenginstr-drift-audit model-v2/oof_predictions.jsonl validation/unseen500/routed.jsonl \

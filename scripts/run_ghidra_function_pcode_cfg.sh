@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ $# -lt 6 ]]; then
-  echo "Usage: GHIDRA_HOME=/opt/ghidra $0 <project-dir> <project-name> <program-name> <output.jsonl> <program-id> <function-entry> [entry ...]" >&2
+  echo "Usage: GHIDRA_HOME=/opt/ghidra $0 <project-dir> <project-name> <program-name> <output.jsonl> <program-id> <function-entry> [entry ...] [--memory-metadata]" >&2
   exit 2
 fi
 

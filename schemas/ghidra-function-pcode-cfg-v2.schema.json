@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-function-pcode-cfg-v2.schema.json",
+  "title": "REVENGINSTR.GhidraFunctionPcodeCFG/2 JSONL row",
+  "description": "High-P-code CFG with an explicit entry block and memory access space/width metadata; it does not assert aliasing or runtime value flow.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program_id", "function_entry", "entry_block_index", "blocks"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraFunctionPcodeCFG/2"},
+    "program_id": {"type": "string", "minLength": 1},
+    "function_entry": {"type": "string", "minLength": 1},
+    "entry_block_index": {"type": "integer", "minimum": 0},
+    "blocks": {"type": "array", "items": {"$ref": "#/$defs/block"}}
+  },
+  "$defs": {
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["address", "time", "opcode", "memory_space", "memory_width_bytes"],
+      "properties": {
+        "address": {"type": "string", "minLength": 1},
+        "time": {"type": "integer", "minimum": 0},
+        "opcode": {"type": "string", "minLength": 1},
+        "memory_space": {"type": ["string", "null"], "minLength": 1},
+        "memory_width_bytes": {"type": ["integer", "null"], "minimum": 1}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"opcode": {"enum": ["LOAD", "STORE"]}}},
+          "then": {"properties": {"memory_space": {"type": ["string", "null"]}, "memory_width_bytes": {"type": ["integer", "null"]}}},
+          "else": {"properties": {"memory_space": {"const": null}, "memory_width_bytes": {"const": null}}}
+        }
+      ]
+    },
+    "block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["block_index", "start_address", "stop_address", "operations", "successors"],
+      "properties": {
+        "block_index": {"type": "integer", "minimum": 0},
+        "start_address": {"type": "string", "minLength": 1},
+        "stop_address": {"type": "string", "minLength": 1},
+        "operations": {"type": "array", "items": {"$ref": "#/$defs/operation"}},
+        "successors": {"type": "array", "uniqueItems": true, "items": {"type": "integer", "minimum": 0}}
+      }
+    }
+  }
+}

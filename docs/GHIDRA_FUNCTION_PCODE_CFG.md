@@ -24,3 +24,22 @@ same High-P-code identity as the parameter store/load exporter.
 The schema is [`GhidraFunctionPcodeCFG/1`](../schemas/ghidra-function-pcode-cfg-v1.schema.json).
 `program_id` is an opaque join key, not a binary fingerprint or a game label;
 use the same value when building the receiver field-access pair graphs.
+
+Pass `--memory-metadata` after the requested entries to emit
+`GhidraFunctionPcodeCFG/2` instead. Version 2 adds the exact entry block index
+and, for every `LOAD`/`STORE`, its P-code address-space name and access width in
+bytes. Unknown metadata is `null`; the conservative dominance audit fails
+closed on missing space or width. The default remains version 1 for existing
+consumers.
+
+```bash
+GHIDRA_HOME=/opt/ghidra \
+  scripts/run_ghidra_function_pcode_cfg.sh \
+  /path/to/projects project-name program-name function-pcode-cfg.jsonl \
+  'analysis:opaque-id' 00401000 --memory-metadata
+```
+
+Version 2 is defined by
+[`GhidraFunctionPcodeCFG/2`](../schemas/ghidra-function-pcode-cfg-v2.schema.json).
+It still exports CFG and operation metadata only; it does not resolve pointer
+aliases, prove branch feasibility, or identify runtime values.

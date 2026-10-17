@@ -28,6 +28,10 @@ def test_generic_pcode_cfg_exporter_and_runner_contract() -> None:
     assert "program_id" in source
     assert "block.getIterator()" in source
     assert "block.getOut(edge)" in source
+    assert "--memory-metadata" in source
+    assert "entry_block_index" in source
+    assert "memory_width_bytes" in source
+    assert "getAddressSpace((int) offset)" in source
     assert "-readOnly" in runner and "-noanalysis" in runner
     for forbidden in ("Nevergone", "GameScene", "HDVehicle", "SHIFT"):
         assert forbidden not in source

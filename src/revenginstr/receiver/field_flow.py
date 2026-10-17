@@ -14,6 +14,8 @@ from .provenance import PARAMETER_LOAD_FORMAT, PARAMETER_STORE_FORMAT, validate_
 
 FORMAT = "REVENGINSTR.FieldStoreLoadPathAudit/1"
 CFG_FORMAT = "REVENGINSTR.GhidraFunctionPcodeCFG/1"
+CFG_FORMAT_V2 = "REVENGINSTR.GhidraFunctionPcodeCFG/2"
+REACHING_FORMAT = "REVENGINSTR.FieldStoreLoadDominanceAudit/1"
 HAZARD_OPCODES = {"STORE", "CALL", "CALLIND", "CALLOTHER"}
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
@@ -137,10 +139,16 @@ def _index_cfg(
     indexed = {}
     for record_index, record in enumerate(records, 1):
         where = f"P-code CFG record {record_index}"
+        cfg_format = record.get("format") if isinstance(record, dict) else None
+        v2 = cfg_format == CFG_FORMAT_V2
+        expected_record_fields = (
+            {"format", "program_id", "function_entry", "entry_block_index", "blocks"}
+            if v2 else {"format", "program_id", "function_entry", "blocks"}
+        )
         if (
             not isinstance(record, dict)
-            or set(record) != {"format", "program_id", "function_entry", "blocks"}
-            or record.get("format") != CFG_FORMAT
+            or set(record) != expected_record_fields
+            or cfg_format not in {CFG_FORMAT, CFG_FORMAT_V2}
             or not isinstance(record.get("program_id"), str)
             or not record["program_id"]
             or not isinstance(record.get("function_entry"), str)
@@ -152,8 +160,10 @@ def _index_cfg(
         identity_key = (record["program_id"], function_entry)
         if identity_key in indexed:
             raise ValueError(f"{where}: duplicate program/function identity")
+        entry_block_index = _int(record["entry_block_index"], f"{where} entry block") if v2 else None
         blocks: dict[int, dict[str, Any]] = {}
         operations: dict[tuple[str, int], tuple[int, int, str]] = {}
+        operation_details: dict[tuple[str, int], dict[str, Any]] = {}
         for block in record["blocks"]:
             if (
                 not isinstance(block, dict)
@@ -169,26 +179,52 @@ def _index_cfg(
                 raise ValueError(f"{where}: invalid block operations or successors")
             block_operations = []
             for position, operation in enumerate(block["operations"]):
-                if not isinstance(operation, dict) or set(operation) != {"address", "time", "opcode"}:
+                expected_operation_fields = (
+                    {"address", "time", "opcode", "memory_space", "memory_width_bytes"}
+                    if v2 else {"address", "time", "opcode"}
+                )
+                if not isinstance(operation, dict) or set(operation) != expected_operation_fields:
                     raise ValueError(f"{where}: malformed operation")
                 if not isinstance(operation["address"], str) or not operation["address"]:
                     raise ValueError(f"{where}: invalid operation address")
                 operation_time = _int(operation["time"], f"{where} operation time")
                 if not isinstance(operation["opcode"], str) or not operation["opcode"]:
                     raise ValueError(f"{where}: invalid opcode")
+                if v2:
+                    memory_space = operation["memory_space"]
+                    memory_width = operation["memory_width_bytes"]
+                    if memory_space is not None and (not isinstance(memory_space, str) or not memory_space):
+                        raise ValueError(f"{where}: invalid memory space")
+                    if memory_width is not None and _int(memory_width, f"{where} memory width") == 0:
+                        raise ValueError(f"{where}: memory width must be positive")
+                    if operation["opcode"] not in {"LOAD", "STORE"} and (memory_space is not None or memory_width is not None):
+                        raise ValueError(f"{where}: non-memory operation has memory metadata")
                 key = (operation["address"], operation_time)
                 if key in operations:
                     raise ValueError(f"{where}: duplicate operation location")
                 operations[key] = (block_index, position, operation["opcode"])
+                operation_details[key] = operation
                 block_operations.append(operation)
             successors = [_int(value, f"{where} successor") for value in block["successors"]]
             if len(successors) != len(set(successors)):
                 raise ValueError(f"{where}: duplicate successor")
-            blocks[block_index] = {"operations": block_operations, "successors": successors}
+            blocks[block_index] = {
+                "start_address": block["start_address"],
+                "operations": block_operations,
+                "successors": successors,
+            }
         for block_index, block in blocks.items():
             if any(successor not in blocks for successor in block["successors"]):
                 raise ValueError(f"{where} block {block_index}: dangling successor")
-        indexed[identity_key] = (record_index, {"blocks": blocks, "operations": operations})
+        if v2 and (entry_block_index not in blocks or blocks[entry_block_index]["start_address"] != function_entry):
+            raise ValueError(f"{where}: entry block does not start at the function entry")
+        indexed[identity_key] = (record_index, {
+            "format": cfg_format,
+            "entry_block_index": entry_block_index,
+            "blocks": blocks,
+            "operations": operations,
+            "operation_details": operation_details,
+        })
     return indexed
 
 
@@ -363,6 +399,248 @@ def audit_field_store_load_paths(
     return output
 
 
+_CFG_NON_MEMORY_OPCODES = {
+    "BRANCH", "CBRANCH", "BRANCHIND", "RETURN", "LOAD", "COPY", "CAST",
+    "INT_EQUAL", "INT_NOTEQUAL", "INT_SLESS", "INT_SLESSEQUAL", "INT_LESS", "INT_LESSEQUAL",
+    "INT_ZEXT", "INT_SEXT", "INT_ADD", "INT_SUB", "INT_CARRY", "INT_SCARRY", "INT_SBORROW",
+    "INT_2COMP", "INT_NEGATE", "INT_XOR", "INT_AND", "INT_OR", "INT_LEFT", "INT_RIGHT",
+    "INT_SRIGHT", "INT_MULT", "INT_DIV", "INT_SDIV", "INT_REM", "INT_SREM",
+    "BOOL_NEGATE", "BOOL_XOR", "BOOL_AND", "BOOL_OR", "FLOAT_EQUAL", "FLOAT_NOTEQUAL",
+    "FLOAT_LESS", "FLOAT_LESSEQUAL", "FLOAT_NAN", "FLOAT_ADD", "FLOAT_DIV", "FLOAT_MULT",
+    "FLOAT_SUB", "FLOAT_NEG", "FLOAT_ABS", "FLOAT_SQRT", "FLOAT_INT2FLOAT",
+    "FLOAT_FLOAT2FLOAT", "FLOAT_TRUNC", "FLOAT_CEIL", "FLOAT_FLOOR", "FLOAT_ROUND",
+    "MULTIEQUAL", "PIECE", "SUBPIECE", "PTRADD", "PTRSUB", "SEGMENTOP", "INSERT",
+    "EXTRACT", "POPCOUNT", "LZCOUNT",
+}
+
+
+def _route_blocks(
+    parents: dict[tuple[int, int, bool], tuple[int, int, bool] | None],
+    state: tuple[int, int, bool],
+    blocks: dict[int, dict[str, Any]],
+) -> list[int]:
+    route = []
+    cursor: tuple[int, int, bool] | None = state
+    while cursor is not None:
+        route.append(cursor)
+        cursor = parents[cursor]
+    route.reverse()
+    result: list[int] = []
+    for index, (block_index, position, _effect_seen) in enumerate(route):
+        if index == 0:
+            result.append(block_index)
+            continue
+        previous_block, previous_position, _ = route[index - 1]
+        previous_size = len(blocks[previous_block]["operations"])
+        if block_index != previous_block or (position == 0 and previous_position == previous_size):
+            result.append(block_index)
+    return result
+
+
+def _find_routes(
+    cfg: dict[str, Any],
+    start: tuple[int, int],
+    target: tuple[int, int],
+    *,
+    stop_at: tuple[int, int] | None = None,
+    classify_effects: bool = False,
+    max_expansions: int,
+) -> tuple[list[int] | None, list[int] | None, int]:
+    """Find one clean and, optionally, one effect-bearing CFG witness."""
+    start_state = (start[0], start[1], False)
+    pending = deque([start_state])
+    parents: dict[tuple[int, int, bool], tuple[int, int, bool] | None] = {start_state: None}
+    clean_path: list[int] | None = None
+    effect_path: list[int] | None = None
+    expansions = 0
+    blocks = cfg["blocks"]
+    while pending:
+        state = pending.popleft()
+        block_index, position, effect_seen = state
+        if (block_index, position) == target:
+            witness = _route_blocks(parents, state, blocks)
+            if effect_seen:
+                if effect_path is None:
+                    effect_path = witness
+            elif clean_path is None:
+                clean_path = witness
+            if not classify_effects or (clean_path is not None and effect_path is not None):
+                return clean_path, effect_path, expansions
+            continue
+        if stop_at == (block_index, position):
+            continue
+        if expansions >= max_expansions:
+            raise ValueError(f"CFG path search budget exceeded: {max_expansions}")
+        expansions += 1
+        operations = blocks[block_index]["operations"]
+        if position < len(operations):
+            opcode = operations[position]["opcode"]
+            next_effect = effect_seen or (classify_effects and opcode not in _CFG_NON_MEMORY_OPCODES)
+            next_states = [(block_index, position + 1, bool(next_effect))]
+        else:
+            next_states = [(successor, 0, effect_seen) for successor in sorted(blocks[block_index]["successors"])]
+        for next_state in next_states:
+            if next_state not in parents:
+                parents[next_state] = state
+                pending.append(next_state)
+    return clean_path, effect_path, expansions
+
+
+def audit_field_store_load_dominance(
+    pair_graphs: list[dict[str, Any]],
+    cfg_records: list[dict[str, Any]],
+    *,
+    pair_graph_sha256: str,
+    cfg_sha256: str,
+    max_pairs: int = 100_000,
+    max_path_expansions: int = 1_000_000,
+) -> list[dict[str, Any]]:
+    """Require a candidate store to dominate a paired load with no memory-effect path.
+
+    This deliberately treats every store, call, indirect effect, and unclassified
+    P-code opcode as a possible aliasing write. A positive row is a structural
+    candidate, not a runtime or semantic value-flow claim.
+    """
+    if any(not isinstance(value, str) or _SHA256.fullmatch(value) is None for value in (pair_graph_sha256, cfg_sha256)):
+        raise ValueError("input SHA-256 must be lowercase hexadecimal")
+    if max_pairs < 1:
+        raise ValueError("max_pairs must be positive")
+    if max_path_expansions < 1:
+        raise ValueError("max_path_expansions must be positive")
+    cfg_by_function = _index_cfg(cfg_records)
+    output = []
+    seen_pairs: set[str] = set()
+    path_expansions = 0
+    for pair_index, graph in enumerate(pair_graphs, 1):
+        identity = _pair_identity(graph, pair_index)
+        if graph["graph_id"] in seen_pairs:
+            raise ValueError(f"duplicate field-access pair: {graph['graph_id']}")
+        seen_pairs.add(graph["graph_id"])
+        if len(output) >= max_pairs:
+            raise ValueError(f"field store/load audit budget exceeded: {max_pairs}")
+        cfg_item = cfg_by_function.get((identity["program_id"], identity["function_entry"]))
+        if cfg_item is None:
+            raise ValueError(
+                f"field-access pair {pair_index}: missing CFG for program {identity['program_id']} "
+                f"function {identity['function_entry']}"
+            )
+        cfg_record_index, cfg = cfg_item
+        before = path_expansions
+        store_location = None if identity["store_time"] is None else cfg["operations"].get(
+            (identity["store_address"], identity["store_time"])
+        )
+        load_location = None if identity["load_time"] is None else cfg["operations"].get(
+            (identity["load_address"], identity["load_time"])
+        )
+        if store_location is not None and store_location[2] != "STORE":
+            raise ValueError(f"field-access pair {pair_index}: store row does not match CFG opcode")
+        if load_location is not None and load_location[2] != "LOAD":
+            raise ValueError(f"field-access pair {pair_index}: load row does not match CFG opcode")
+
+        store_detail = None if store_location is None else cfg["operation_details"][(identity["store_address"], identity["store_time"])]
+        load_detail = None if load_location is None else cfg["operation_details"][(identity["load_address"], identity["load_time"])]
+        store_memory_space = None if store_detail is None else store_detail.get("memory_space")
+        load_memory_space = None if load_detail is None else load_detail.get("memory_space")
+        store_width = None if store_detail is None else store_detail.get("memory_width_bytes")
+        load_width = None if load_detail is None else load_detail.get("memory_width_bytes")
+        entry_index = cfg["entry_block_index"]
+        entry_to_store = None
+        bypass_store = None
+        clean_after_store = None
+        effect_after_store = None
+        store_reachable = None
+        store_dominates = None
+        if cfg["format"] != CFG_FORMAT_V2 or store_location is None or load_location is None:
+            status = "incomplete_evidence"
+        elif any(value is None for value in (store_memory_space, load_memory_space, store_width, load_width)):
+            status = "incomplete_evidence"
+        elif store_memory_space != load_memory_space or store_width != load_width:
+            status = "access_shape_mismatch"
+        else:
+            budget = max_path_expansions - path_expansions
+            entry_to_store, _unused, used = _find_routes(
+                cfg, (entry_index, 0), store_location[:2], max_expansions=budget,
+            )
+            path_expansions += used
+            store_reachable = entry_to_store is not None
+            if not store_reachable:
+                status = "store_not_reachable"
+            else:
+                budget = max_path_expansions - path_expansions
+                bypass_store, _unused, used = _find_routes(
+                    cfg, (entry_index, 0), load_location[:2], stop_at=store_location[:2],
+                    max_expansions=budget,
+                )
+                path_expansions += used
+                store_dominates = bypass_store is None
+                budget = max_path_expansions - path_expansions
+                clean_after_store, effect_after_store, used = _find_routes(
+                    cfg, (store_location[0], store_location[1] + 1), load_location[:2],
+                    classify_effects=True, max_expansions=budget,
+                )
+                path_expansions += used
+                if not store_dominates:
+                    status = "store_not_dominating_load"
+                elif effect_after_store is not None:
+                    status = "possible_intervening_memory_effect"
+                elif clean_after_store is None:
+                    status = "no_post_store_cfg_path"
+                else:
+                    status = "unique_cfg_store_candidate"
+
+        def access(
+            location: tuple[int, int, str] | None,
+            detail: dict[str, Any] | None,
+            source_id: str,
+            address: str,
+            operation_time: int | None,
+        ) -> dict[str, Any]:
+            return {
+                "source_id": source_id,
+                "address": address,
+                "time": operation_time,
+                "block_index": None if location is None else location[0],
+                "memory_space": None if detail is None else detail.get("memory_space"),
+                "width_bytes": None if detail is None else detail.get("memory_width_bytes"),
+            }
+
+        output.append({
+            "format": REACHING_FORMAT,
+            "program_id": identity["program_id"],
+            "function_entry": identity["function_entry"],
+            "parameter_index": identity["parameter_index"],
+            "field_offset": (
+                f"-0x{abs(identity['field_offset']):x}"
+                if identity["field_offset"] < 0 else f"0x{identity['field_offset']:x}"
+            ),
+            "source_parameter_index": identity["source_parameter_index"],
+            "status": status,
+            "store": access(store_location, store_detail, identity["store_source_id"], identity["store_address"], identity["store_time"]),
+            "load": access(load_location, load_detail, identity["load_source_id"], identity["load_address"], identity["load_time"]),
+            "store_reachable_from_entry": store_reachable,
+            "store_dominates_load": store_dominates,
+            "clean_store_to_load_path_exists": clean_after_store is not None,
+            "memory_effect_path_exists": effect_after_store is not None,
+            "witnesses": {
+                "entry_to_store": entry_to_store or [],
+                "store_bypass": bypass_store or [],
+                "clean_store_to_load": clean_after_store or [],
+                "memory_effect_store_to_load": effect_after_store or [],
+            },
+            "claim_scope": "Conservative single-function High-P-code structural candidate; no branch-feasibility, alias-disambiguation, or runtime value-flow claim.",
+            "provenance": {
+                "pair_graph_sha256": pair_graph_sha256,
+                "pair_graph_record_index": pair_index,
+                "cfg_sha256": cfg_sha256,
+                "cfg_record_index": cfg_record_index,
+                "path_expansion_cap": max_path_expansions,
+                "path_expansions_before": before,
+                "path_expansions_used": path_expansions - before,
+            },
+        })
+    return output
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("field_access_pairs", type=Path)
@@ -384,5 +662,30 @@ def main(argv: list[str] | None = None) -> int:
             handle.write(json.dumps(row, sort_keys=True) + "\n")
     print("field-access pairs:", len(rows))
     print("candidate paths:", sum(row["status"] == "candidate_path_compatible" for row in rows))
+    print("output:", args.output)
+    return 0
+
+
+def dominance_main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Audit whether a paired field store is the unique conservative CFG candidate at a load.")
+    parser.add_argument("field_access_pairs", type=Path)
+    parser.add_argument("function_pcode_cfg", type=Path)
+    parser.add_argument("--max-pairs", type=int, default=100_000)
+    parser.add_argument("--max-path-expansions", type=int, default=1_000_000)
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args(argv)
+    pair_sha, pair_graphs = _read_jsonl(args.field_access_pairs)
+    cfg_sha, cfg_records = _read_jsonl(args.function_pcode_cfg)
+    rows = audit_field_store_load_dominance(
+        pair_graphs, cfg_records, pair_graph_sha256=pair_sha,
+        cfg_sha256=cfg_sha, max_pairs=args.max_pairs,
+        max_path_expansions=args.max_path_expansions,
+    )
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    with args.output.open("w", encoding="utf-8") as handle:
+        for row in rows:
+            handle.write(json.dumps(row, sort_keys=True) + "\n")
+    print("field-access pairs:", len(rows))
+    print("unique CFG store candidates:", sum(row["status"] == "unique_cfg_store_candidate" for row in rows))
     print("output:", args.output)
     return 0
