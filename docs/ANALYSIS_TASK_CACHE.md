@@ -58,9 +58,33 @@ output schemas and decide whether to use the artifacts. Lookup never restores
 files or executes analysis tasks. The cache is caller-managed and this interface
 does not authenticate a cache against a malicious writer.
 
+Restore a hit only after supplying a separate `AnalysisTaskCacheRestoreTargets/1`
+manifest with an explicit relative destination for every output artifact:
+
+    {
+      "format": "REVENGINSTR.AnalysisTaskCacheRestoreTargets/1",
+      "task_id": "pcode",
+      "cache_key_sha256": "<the task key from the key-set report>",
+      "targets": [
+        {"artifact_id": "pcode", "relative_path": "exports/pcode.jsonl"}
+      ]
+    }
+
+    revenginstr-analysis-task-cache-restore task-cache-key-set.json cache-root \
+      restore-targets.json --task-id pcode --output-dir run-output \
+      --output cache-restore.json
+
+Restore checks the manifest identity, path set, and cache bytes again; accepts
+only normalized relative POSIX paths; refuses symlinked output paths and
+different existing files; and reports `restored` or `already_present` for each
+artifact in `AnalysisTaskCacheRestore/1`. A cache miss does not create the
+output directory. Restore only copies verified bytes and never executes cached
+analysis or chooses destination paths. Consumers remain responsible for
+validating restored output schemas before using them.
+
 Keys are only stable when callers pin every input that affects execution,
 including tool/runtime versions and environment-dependent configuration.
 Consumers remain responsible for validating cached output schemas and deciding
-whether to restore verified artifacts. Artifact restoration, task execution,
-cache eviction, cost-aware scheduling, and end-to-end consumer convergence are
-outside this interface.
+whether to restore verified artifacts. Task execution, cache eviction,
+cost-aware scheduling, and end-to-end consumer convergence remain outside this
+interface.

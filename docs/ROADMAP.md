@@ -819,8 +819,10 @@ plans; it does not execute analyzers or select evidence requests.
 task from source artifact hashes, task configuration, implementation hash,
 and dependency keys. `revenginstr-analysis-task-cache-lookup` verifies a
 caller-managed manifest and content-addressed output bytes without restoring or
-executing them. Artifact restoration, cost-aware scheduling, and end-to-end
-consumer convergence remain open.
+executing them. `revenginstr-analysis-task-cache-restore` restores verified
+bytes only to caller-pinned relative paths, refuses symlinked paths and
+different existing files, and never executes cached tasks. Cost-aware
+scheduling and end-to-end consumer convergence remain open.
 
 ### M6.2 Evidence request planner
 
