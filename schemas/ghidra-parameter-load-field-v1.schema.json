@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-parameter-load-field-v1.schema.json",
+  "title": "REVENGINSTR.GhidraParameterLoadField/1 TSV row",
+  "description": "One High-P-code LOAD from a constant-offset field rooted at a function parameter. Function identities, addresses, and the output token are metadata from the selected program.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "function_entry", "function_name", "load_address", "load_time",
+    "base_parameter_index", "field_offset", "address_pattern", "value_size",
+    "value_token", "status"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraParameterLoadField/1"},
+    "function_entry": {"type": "string", "minLength": 1},
+    "function_name": {"type": "string", "minLength": 1},
+    "load_address": {"type": "string", "minLength": 1},
+    "load_time": {"type": "string", "pattern": "^(?:-|[0-9]+)$"},
+    "base_parameter_index": {"type": "string", "pattern": "^[0-9]+$"},
+    "field_offset": {"type": "string", "pattern": "^-?0x[0-9a-f]+$"},
+    "address_pattern": {"type": "string", "minLength": 1},
+    "value_size": {"type": "string", "pattern": "^[0-9]+$"},
+    "value_token": {"type": "string", "minLength": 1},
+    "status": {"const": "parameter_field_load"}
+  }
+}
