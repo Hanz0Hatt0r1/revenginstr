@@ -56,3 +56,8 @@ or pointer-width metadata for repeated operations in the same logical space.
 
 Version 3 is defined by
 [`GhidraFunctionPcodeCFG/3`](../schemas/ghidra-function-pcode-cfg-v3.schema.json).
+
+The runner checks that the exporter emitted its format completion marker in
+addition to checking Ghidra's process exit. Some Ghidra versions can log a
+post-script exception while returning a zero exit status; missing completion
+markers therefore fail the runner.

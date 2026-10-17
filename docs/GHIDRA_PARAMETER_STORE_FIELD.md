@@ -40,6 +40,10 @@ addresses remain explicit possible effects. Its row contract is
 The audit checks every sidecar row against the CFG; the file hash and row
 indices are retained in `FieldStoreLoadDominanceAudit/2` output.
 
+The runner requires the exporter completion marker in Ghidra's output as well
+as a successful process exit. This catches Ghidra versions that report a
+post-script exception but return a zero process status.
+
 It can also emit a parameter-rooted field-load sidecar in the same decompilation
 pass. See [parameter-rooted field loads](GHIDRA_PARAMETER_LOAD_FIELD.md). The
 optional sidecar does not imply that a load and store access the same object.

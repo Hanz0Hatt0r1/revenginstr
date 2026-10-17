@@ -92,6 +92,10 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
         } finally {
             decompiler.dispose();
         }
+        String exportedFormat = includePhysicalMemoryMetadata ? FORMAT_V3
+            : includeMemoryMetadata ? FORMAT_V2 : FORMAT_V1;
+        println("GHIDRA_FUNCTION_PCODE_CFG_FORMAT=" + exportedFormat);
+        println("GHIDRA_FUNCTION_PCODE_CFG_FUNCTIONS=" + functions.size());
         println("Ghidra function P-code CFG export -> " + output);
     }
 
