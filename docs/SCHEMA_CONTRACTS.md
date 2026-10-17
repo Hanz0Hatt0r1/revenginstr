@@ -64,6 +64,12 @@ pages.
 | [`FrozenValidation/1`](../schemas/frozen-validation-v1.schema.json) | JSON manifest; nested trace/output records carry row counts and SHA-256 digests. | Selection uses stable identity hashing and a caller-owned salt. Source, eligibility, exclusion, frozen-corpus, and trace hashes make provenance replayable. Selection is deterministic for the same inputs/configuration; existing manifests are not overwritten unless explicitly requested. |
 | [`DriftAudit/1`](../schemas/drift-audit-v1.schema.json) | JSON diagnostic report; selected nested report objects are extensible. | Reports reference and frozen populations, but have `labels_available: false`; severity is diagnostic only, never accuracy. Distributions are normalized by the audit. Evidence-key coverage and counts retain input provenance through the report, not raw rows. |
 
+## Derived analysis artifacts
+
+| Format and schema | Wire / field contract | Normalization, provenance, ordering, failure |
+|---|---|---|
+| [`FunctionEffectIR/1`](../schemas/function-effect-ir-v1.schema.json) · [details](FUNCTION_EFFECT_IR.md) | JSONL; one record per function with at least one selected effect. | Functions and effects use deterministic ordering. Each fact pins the source artifact SHA-256 and 1-based data-record ordinal; opaque effect ids are deterministic. It is structural evidence, not a semantic role or store-to-load claim. |
+
 ## Ghidra export rows
 
 Every linked row schema fixes required/optional fields and types. Addresses,

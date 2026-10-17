@@ -34,6 +34,7 @@ TOOLS = {
     "receiver-load-return-flow": ("revenginstr.receiver.provenance", "parameter_load_return_main"),
     "receiver-argument-propagate": ("revenginstr.receiver.provenance", "recursive_argument_main"),
     "receiver-call-return-flow": ("revenginstr.receiver.provenance", "call_return_main"),
+    "function-effect-ir": ("revenginstr.effect_ir", "main"),
     "family-mine": ("revenginstr.family.mine", "main"),
     "selective-train": ("revenginstr.ml.selective", "train_main"),
     "selective-infer": ("revenginstr.ml.selective", "infer_main"),
