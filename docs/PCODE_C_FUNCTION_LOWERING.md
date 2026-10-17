@@ -41,7 +41,8 @@ The current subset covers scalar varnodes up to 8 bytes, integer and boolean
 operations listed in `src/revenginstr/pcode/c_lowering.py`, integer division
 and remainder, 4-byte and 8-byte floating arithmetic/conversions, `LOAD`,
 `STORE`, direct conditional and unconditional branches within the function,
-P-code-relative branches within one instruction, computed jumps, direct
+same-instruction conditional repeat branches, P-code-relative branches within
+one instruction, computed jumps, direct
 and indirect calls through the host `RviPcodeContext.call` callback, tail calls,
 raw `RETURN`, and `CALLOTHER` through the host `RviPcodeContext.userop`
 callback, keyed by Ghidra's language userop index. Function-local P-code unique

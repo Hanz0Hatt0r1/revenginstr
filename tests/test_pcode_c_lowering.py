@@ -448,6 +448,28 @@ int main(void) {
     subprocess.run([str(executable)], check=True)
 
 
+def test_codegen_accepts_conditional_repeat_branch_to_current_instruction() -> None:
+    row = _function_row()
+    row["instruction_count"] = 2
+    row["instructions"] = [
+        {"address": "0x00401000", "mnemonic": "CMPSB.REPE", "flow_type": "FALL_THROUGH",
+         "fallthrough": "0x00401002", "flows": [], "pcode": [{
+             "opcode": "CBRANCH", "output": None,
+             "inputs": [_varnode("ram", "0x401000", 4), _varnode("register", "0x206", 1)],
+         }]},
+        {"address": "0x00401002", "mnemonic": "RET", "flow_type": "TERMINATOR", "flows": [], "pcode": [{
+            "opcode": "RETURN", "output": None, "inputs": [_varnode("register", "0x20", 4)],
+        }]},
+    ]
+    source, operation_count = compile_function(row, _address_spaces())
+    assert operation_count == 2
+    assert "goto rvi_label_0000000000401000" in source
+
+    row["instructions"][0]["pcode"][0]["inputs"][0]["offset"] = "0x401008"
+    with pytest.raises(PcodeLoweringError, match="CBRANCH conflicts with machine fallthrough"):
+        compile_function(row, _address_spaces())
+
+
 def test_codegen_lowers_forward_and_backward_pcode_relative_branches(tmp_path: Path) -> None:
     row = _function_row()
     row["instruction_count"] = 1

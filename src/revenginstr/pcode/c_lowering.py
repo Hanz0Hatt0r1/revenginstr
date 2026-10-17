@@ -823,8 +823,9 @@ def compile_function(
                     pass
                 elif opcode == "CBRANCH" and flow_type == "FALL_THROUGH":
                     fallthrough = instruction.get("fallthrough")
-                    if not isinstance(fallthrough, str) or target_address != _hex(
-                        fallthrough, f"{address} fallthrough"):
+                    if not isinstance(fallthrough, str) or target_address not in {
+                        address_value, _hex(fallthrough, f"{address} fallthrough"),
+                    }:
                         raise PcodeLoweringError(f"{address}: CBRANCH conflicts with machine fallthrough")
                     fallthrough_branch = True
                 elif opcode == "BRANCH" and flow_type == "FALL_THROUGH":
