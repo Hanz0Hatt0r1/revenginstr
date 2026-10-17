@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/receiver-candidate-evidence-v1.schema.json",
+  "title": "REVENGINSTR.ReceiverCandidateEvidence/1 record",
+  "description": "Evidence vector for one consumer-owned receiver candidate. Dimensions remain separate; this contract defines no aggregate score or decision.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "source_id",
+    "source_entry",
+    "call_index",
+    "call_address",
+    "candidate_id",
+    "dimensions"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.ReceiverCandidateEvidence/1"},
+    "source_id": {"type": "string", "minLength": 1},
+    "source_entry": {"type": "string", "minLength": 1},
+    "call_index": {"type": "integer", "minimum": 0},
+    "call_address": {"type": ["string", "null"]},
+    "candidate_id": {"type": "string", "minLength": 1},
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exact_vtable_witness",
+        "constructor_factory_witness",
+        "field_layout_compatibility",
+        "slot_compatibility",
+        "caller_provenance",
+        "callgraph_consistency",
+        "runtime_witness"
+      ],
+      "properties": {
+        "exact_vtable_witness": {"$ref": "#/$defs/dimension"},
+        "constructor_factory_witness": {"$ref": "#/$defs/dimension"},
+        "field_layout_compatibility": {"$ref": "#/$defs/dimension"},
+        "slot_compatibility": {"$ref": "#/$defs/dimension"},
+        "caller_provenance": {"$ref": "#/$defs/dimension"},
+        "callgraph_consistency": {"$ref": "#/$defs/dimension"},
+        "runtime_witness": {"$ref": "#/$defs/dimension"}
+      }
+    }
+  },
+  "$defs": {
+    "evidence_class": {
+      "enum": [
+        "exact_static",
+        "runtime_native",
+        "derived_structural",
+        "model_prediction",
+        "human_review",
+        "interventional_probe"
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_format", "source_id"],
+      "properties": {
+        "source_format": {"type": "string", "minLength": 1},
+        "source_id": {"type": "string", "minLength": 1}
+      }
+    },
+    "dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidence_class", "provenance"],
+      "properties": {
+        "status": {"enum": ["supported", "contradicted", "unknown", "not_applicable"]},
+        "evidence_class": {
+          "anyOf": [
+            {"$ref": "#/$defs/evidence_class"},
+            {"type": "null"}
+          ]
+        },
+        "provenance": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/provenance"}
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"enum": ["supported", "contradicted"]}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "evidence_class": {"$ref": "#/$defs/evidence_class"},
+              "provenance": {"minItems": 1}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"status": {"enum": ["unknown", "not_applicable"]}}, "required": ["status"]},
+          "then": {
+            "properties": {
+              "evidence_class": {"type": "null"},
+              "provenance": {"maxItems": 0}
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -2,7 +2,7 @@
 
 **Status:** active engineering plan  
 **Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `4bdf2f0c4c32576f0cb5d1b8a2c2b347c4efe3fb`
+**Repository baseline:** `main` through `a1748a98edcfa881ce09617f0524fa977ed1e96c`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -370,15 +370,7 @@ Remaining propagation work:
 
 ### M2.5 Candidate scoring
 
-Expose separate evidence dimensions instead of one opaque score:
-
-- exact vtable witness;
-- constructor/factory witness;
-- field/layout compatibility;
-- slot compatibility;
-- caller provenance;
-- callgraph consistency;
-- runtime witness supplied by a consumer.
+**Evidence vector schema implemented:** `ReceiverCandidateEvidence/1` exposes exact vtable, constructor/factory, field/layout, slot, caller, callgraph, and runtime witness dimensions as separate states with provenance. It defines no aggregate score or decision; consumers retain candidate identities and evidence.
 
 ### M2.6 Frozen receiver benchmark
 
