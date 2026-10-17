@@ -16,7 +16,11 @@
     "status": {"enum": ["candidate_path_compatible", "intervening_store_or_call", "no_cfg_path", "event_not_located"]},
     "store": {"$ref": "#/$defs/access"},
     "load": {"$ref": "#/$defs/access"},
-    "path_block_indices": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+    "path_block_indices": {
+      "type": "array",
+      "description": "Selected store-to-load path witness. For candidate_path_compatible it avoids listed barriers; for intervening_store_or_call it demonstrates a CFG path despite barriers; empty when no path or either event is unlocated.",
+      "items": {"type": "integer", "minimum": 0}
+    },
     "provenance": {
       "type": "object",
       "additionalProperties": false,

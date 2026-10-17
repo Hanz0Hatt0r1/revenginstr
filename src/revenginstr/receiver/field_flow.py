@@ -321,7 +321,11 @@ def audit_field_store_load_paths(
                     cfg, store_location, load_location, avoid_effects=False, max_expansions=remaining,
                 )
                 path_expansions += used
-                status = "intervening_store_or_call" if any_path is not None else "no_cfg_path"
+                if any_path is None:
+                    status = "no_cfg_path"
+                else:
+                    status = "intervening_store_or_call"
+                    path = any_path
         output.append({
             "format": FORMAT,
             "program_id": identity["program_id"],

@@ -143,7 +143,10 @@ addresses in another Ghidra project are rejected.
 those listed barriers. It does not establish branch feasibility, account for
 aliasing or writes hidden behind unmodeled effects, or prove that the store
 reaches the load as a memory value. The result is an audit candidate, not
-value-flow evidence. The search has a global expansion cap, adjustable with
+value-flow evidence. `path_block_indices` is a safe path witness for that
+status and an arbitrary CFG path witness for `intervening_store_or_call`; it
+is empty when no path exists or an event was not located. The search has a
+global expansion cap, adjustable with
 `--max-path-expansions`; exceeding it fails the command instead of returning a
 partial audit.
 
