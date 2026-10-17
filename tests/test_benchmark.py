@@ -849,6 +849,72 @@ def test_determinism_comparison_ignores_runtime_but_finds_metric_drift() -> None
     assert _difference_paths(_stable_summary(first), _stable_summary(second)) == ["/metrics/0/value"]
 
 
+def test_benchmark_runs_heldout_classifier_error_buckets(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    predictions_path = tmp_path / "heldout-predictions.jsonl"
+    predictions_path.write_text("".join(json.dumps(row) + "\n" for row in [
+        {
+            "format": "REVENGINSTR.SelectiveClassifier/1", "id": "e1", "family_id": "family-a",
+            "truth": "alpha", "prediction": "beta", "correct": False,
+            "action": "accept", "confidence": 0.92,
+        },
+        {
+            "format": "REVENGINSTR.SelectiveClassifier/1", "id": "e2", "family_id": "family-b",
+            "truth": "beta", "prediction": "beta", "correct": True,
+            "action": "review", "confidence": 0.70,
+        },
+    ]), encoding="utf-8")
+    evaluation_report_path = tmp_path / "threshold-evaluation.json"
+    evaluation_report_path.write_text(json.dumps({
+        "format": "REVENGINSTR.SelectiveThresholdEvaluation/1",
+        "source": {
+            "classifier_format": "REVENGINSTR.SelectiveClassifier/1",
+            "evaluation_predictions_sha256": _sha256(predictions_path),
+            "evaluation_rows": 2, "evaluation_families": 2, "family_disjoint": True,
+        },
+        "classes": {"alpha": {}, "beta": {}},
+    }), encoding="utf-8")
+    error_schema = ROOT / "schemas" / "classifier-error-buckets-v1.schema.json"
+    manifest["schemas"]["error_buckets"] = {
+        "path": str(error_schema), "version": "REVENGINSTR.ClassifierErrorBuckets/1",
+        "sha256": _sha256(error_schema),
+    }
+    manifest["artifacts"].update({
+        "evaluation_report": {
+            "path": str(evaluation_report_path), "role": "input", "kind": "file",
+            "content": "json", "sha256": _sha256(evaluation_report_path),
+        },
+        "heldout_predictions": {
+            "path": str(predictions_path), "role": "input", "kind": "file",
+            "content": "jsonl", "sha256": _sha256(predictions_path),
+        },
+        "error_buckets": {
+            "path": "error-buckets.json", "role": "output", "kind": "file",
+            "content": "json", "format": "REVENGINSTR.ClassifierErrorBuckets/1",
+            "schema": "error_buckets",
+        },
+    })
+    manifest["stages"].append({
+        "id": "classifier_error_buckets", "tool": "classifier-error-buckets",
+        "args": [
+            "${artifact:evaluation_report}", "${artifact:heldout_predictions}",
+            "--output", "${artifact:error_buckets}",
+        ],
+        "inputs": ["evaluation_report", "heldout_predictions"], "outputs": ["error_buckets"],
+    })
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    summary, code = run_benchmark(manifest_path, mode="smoke", output_path=tmp_path / "summary.json")
+
+    assert code == 0
+    assert summary["status"] == "passed"
+    assert summary["stages"][-1]["tool"] == "classifier-error-buckets"
+    report = json.loads((tmp_path / "error-buckets.json").read_text(encoding="utf-8"))
+    assert report["error_rows"] == 1
+    assert report["accepted_error_rows"] == 1
+
+
 def test_benchmark_runs_family_heldout_threshold_evaluation(tmp_path: Path) -> None:
     manifest_path = _write_manifest(tmp_path)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
