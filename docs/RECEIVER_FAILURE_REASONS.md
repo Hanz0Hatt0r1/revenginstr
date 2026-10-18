@@ -13,6 +13,7 @@ queries. It does not contain class names, vtable ids, or routing decisions.
 | `receiver_not_single_pointer` | The receiver is not a single pointer and no transparent single-pointer flow supplied a type. |
 | `non_virtual_call_indirect` | A `GhidraIndirectReceiverType/1` row explicitly records `receiver_present=0`; no first explicit call argument is available as an object receiver. |
 | `unsupported_pattern` | A Ghidra receiver row has no usable type evidence and its immediate `receiver_token` definition is a P-code operation other than `COPY`, `CAST`, `INDIRECT`, or `MULTIEQUAL`, which are the transparent operations followed by this inference stage. |
+| `ambiguous_phi` | An unresolved Ghidra receiver has an explicit `MULTIEQUAL` definition and at least two distinct transparent-flow type names each resolve unambiguously to different catalog classes. |
 | `insufficient_receiver_type_evidence` | No usable direct or transparent-flow type name is available. |
 | `missing_vtable_catalog_entry` | A usable type name is present but does not map to a catalog class. |
 | `mixed_receiver_candidates` | Type evidence maps to multiple classes, including a terminal name shared by multiple catalog classes. |
@@ -33,7 +34,6 @@ The schema reserves these codes for future stages that can establish the
 corresponding failure from explicit evidence:
 
 - `missing_root_provenance`
-- `ambiguous_phi`
 - `caller_argument_propagation_gap`
 - `field_load_store_propagation_gap`
 - `singleton_default_instance_gap`
@@ -43,5 +43,9 @@ corresponding failure from explicit evidence:
 - `linker_veneer_artifact`
 - `pcode_decompiler_limitation`
 
-The current type/catalog stage does not emit these reserved codes. Missing
-evidence alone is not enough to assign a specific dataflow or toolchain cause.
+The `ambiguous_phi` rule is intentionally narrow: a PHI token or multiple
+candidate classes alone are insufficient. Without independently resolving
+flow type names, the generic `mixed_receiver_candidates` or existing
+insufficient-evidence reason is retained. The remaining reserved codes are
+not emitted by the current type/catalog stage; missing evidence alone is not
+enough to assign a specific dataflow or toolchain cause.

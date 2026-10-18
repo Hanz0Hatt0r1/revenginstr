@@ -164,6 +164,20 @@ def test_receiver_failure_reasons_cover_observable_residuals() -> None:
             "flow_single_pointer_pointee_displays_json": "[]",
         },
         {
+            "format": "REVENGINSTR.GhidraIndirectReceiverType/1",
+            "source_id": "sample:g000", "call_index": "0", "receiver_pointer_depth": "1",
+            "receiver_token": "def:MULTIEQUAL@4000:3:4",
+            "flow_single_pointer_pointee_names_json": "[\"Fixture::Left\",\"Fixture::Right\"]",
+            "flow_single_pointer_pointee_displays_json": "[]",
+        },
+        {
+            "format": "REVENGINSTR.GhidraIndirectReceiverType/1",
+            "source_id": "sample:h000", "call_index": "0", "receiver_pointer_depth": "1",
+            "receiver_token": "def:INT_ADD@5000:3:4",
+            "flow_single_pointer_pointee_names_json": "[\"Fixture::Left\",\"Fixture::Right\"]",
+            "flow_single_pointer_pointee_displays_json": "[]",
+        },
+        {
             "format": "other-format", "source_id": "sample:f000", "call_index": "0",
             "receiver_pointer_depth": "1", "receiver_token": "def:PTRSUB@3000:7:4",
             "flow_single_pointer_pointee_names_json": "[]",
@@ -193,11 +207,13 @@ def test_receiver_failure_reasons_cover_observable_residuals() -> None:
         {"class_name": "Game::Other", "receiver_vtable_id": "other"},
         {"class_name": "Game::Multi", "receiver_vtable_id": "m1"},
         {"class_name": "Game::Multi", "receiver_vtable_id": "m2"},
+        {"class_name": "Fixture::Left", "receiver_vtable_id": "left"},
+        {"class_name": "Fixture::Right", "receiver_vtable_id": "right"},
     ]
 
     rows, failures = infer_with_failure_reasons(receiver_rows, catalog)
 
-    assert len(rows) == 11
+    assert len(rows) == 13
     assert [row["primary_failure_reason"] for row in failures] == [
         "missing_vtable_catalog_entry",
         "insufficient_receiver_type_evidence",
@@ -206,6 +222,8 @@ def test_receiver_failure_reasons_cover_observable_residuals() -> None:
         "receiver_not_single_pointer",
         "unsupported_pattern",
         "insufficient_receiver_type_evidence",
+        "ambiguous_phi",
+        "mixed_receiver_candidates",
         "insufficient_receiver_type_evidence",
         "mixed_receiver_candidates",
         "ambiguous_receiver_vtable",

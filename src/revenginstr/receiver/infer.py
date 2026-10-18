@@ -146,6 +146,25 @@ def candidates(typed_sources: list[tuple[Any, str]], class_vtables: dict[str, se
     return result
 
 
+def has_distinct_typed_phi_inputs(
+    typed_sources: list[tuple[Any, str]],
+    class_vtables: dict[str, set[str]],
+    terminal_to_classes: dict[str, set[str]],
+) -> bool:
+    """Require separate flow type names to resolve unambiguously to different classes."""
+    class_names_by_type: dict[str, set[str]] = defaultdict(set)
+    for raw, source_kind in typed_sources:
+        if source_kind != "transparent_type_flow":
+            continue
+        type_name = clean_type_name(raw)
+        if type_name is None:
+            continue
+        resolved = resolve_type(type_name, class_vtables, terminal_to_classes)
+        if len(resolved) == 1:
+            class_names_by_type[type_name].add(resolved[0][0])
+    return len({name for names in class_names_by_type.values() for name in names}) > 1
+
+
 def build_compatibility_groups(catalog_rows: list[dict[str, Any]]) -> dict[str, str]:
     """Read optional consumer-declared compatibility groups from the catalog."""
     groups_by_class: dict[str, set[str]] = defaultdict(set)
@@ -211,7 +230,8 @@ def primary_failure_reason(status: str, typed_sources: list[tuple[Any, str]],
                            class_vtables: dict[str, set[str]],
                            terminal_to_classes: dict[str, set[str]], *,
                            explicit_no_receiver: bool = False,
-                           unsupported_receiver_pattern: bool = False) -> str | None:
+                           unsupported_receiver_pattern: bool = False,
+                           ambiguous_phi: bool = False) -> str | None:
     if status == "resolved_unique_vtable":
         return None
     if status == "receiver_not_single_pointer":
@@ -219,6 +239,8 @@ def primary_failure_reason(status: str, typed_sources: list[tuple[Any, str]],
             return "non_virtual_call_indirect"
         return "receiver_not_single_pointer"
     if status == "ambiguous_receiver_class":
+        if ambiguous_phi:
+            return "ambiguous_phi"
         return "mixed_receiver_candidates"
     if status == "ambiguous_class_vtable":
         return "ambiguous_receiver_vtable"
@@ -382,6 +404,14 @@ def _infer(
             and token_match is not None
             and token_match.group(1) not in TRANSPARENT_RECEIVER_FLOW_OPS
         )
+        ambiguous_phi = (
+            receiver.get("format") == RECEIVER_TYPE_FORMAT
+            and token_match is not None
+            and token_match.group(1) == "MULTIEQUAL"
+            and has_distinct_typed_phi_inputs(
+                typed_sources, class_vtables, terminal_to_classes
+            )
+        )
         reason = primary_failure_reason(
             status,
             typed_sources,
@@ -389,6 +419,7 @@ def _infer(
             terminal_to_classes,
             explicit_no_receiver=explicit_no_receiver,
             unsupported_receiver_pattern=unsupported_receiver_pattern,
+            ambiguous_phi=ambiguous_phi,
         )
         if reason is not None:
             if reason not in PRIMARY_FAILURE_REASON_CODES:
