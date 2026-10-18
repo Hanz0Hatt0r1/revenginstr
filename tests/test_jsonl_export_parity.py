@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gzip
 import json
 from pathlib import Path
 
@@ -76,3 +77,18 @@ def test_jsonl_parity_accepts_two_empty_files(tmp_path: Path) -> None:
 
     assert report["same_records"] is True
     assert report["left_records"] == report["right_records"] == 0
+
+
+def test_jsonl_parity_reads_compressed_streams_without_unpacking(tmp_path: Path) -> None:
+    plain = tmp_path / "plain.jsonl"
+    compressed = tmp_path / "compressed.jsonl.gz"
+    records = '{"address":"0x10","kind":"instruction"}\n'
+    plain.write_text(records, encoding="utf-8")
+    with gzip.open(compressed, "wt", encoding="utf-8", newline="") as stream:
+        stream.write(records)
+
+    report = compare_exports(plain, compressed)
+
+    assert report["same_bytes"] is False
+    assert report["same_records"] is True
+    assert report["left_records"] == report["right_records"] == 1

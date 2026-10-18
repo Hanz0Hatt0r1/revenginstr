@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import itertools
 import json
@@ -35,7 +36,11 @@ def _constant(value: str) -> None:
 
 
 def _records(path: Path) -> Iterator[str]:
-    with path.open("r", encoding="utf-8", newline="") as handle:
+    if path.suffix == ".gz":
+        source = gzip.open(path, "rt", encoding="utf-8", newline="")
+    else:
+        source = path.open("r", encoding="utf-8", newline="")
+    with source as handle:
         for line_no, line in enumerate(handle, 1):
             try:
                 record = json.loads(
@@ -92,8 +97,8 @@ def compare_exports(left: Path, right: Path) -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("left", type=Path, help="first UTF-8 JSONL export")
-    parser.add_argument("right", type=Path, help="second UTF-8 JSONL export")
+    parser.add_argument("left", type=Path, help="first UTF-8 JSONL or JSONL.GZ export")
+    parser.add_argument("right", type=Path, help="second UTF-8 JSONL or JSONL.GZ export")
     parser.add_argument("--output", type=Path, help="also write the JSON report here")
     args = parser.parse_args(argv)
 
