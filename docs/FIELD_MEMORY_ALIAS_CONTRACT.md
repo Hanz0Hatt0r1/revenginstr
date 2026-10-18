@@ -60,7 +60,8 @@ derivation operations, or incomplete widths make the location unresolved.
    and unclassified operations remain barriers. `/3` removes only an exact
    `CALL` barrier with a `GhidraDirectCallMemoryEffect/1` row backed by a
    non-empty one-function callee flow containing only known write-free P-code
-   operations. The builder does not recurse: nested calls, `CALLIND`, unknown
+   operations, including Ghidra's `INT2FLOAT`, `TRUNC`, and `ROUND` conversion
+   opcodes. The builder does not recurse: nested calls, `CALLIND`, unknown
    opcodes, and missing callee flows stay barriers. `/4` consumes the separate
    `GhidraDirectCallMemoryEffectClosure/1` sidecar and removes a call only when
    its hash-pinned transitive closure is complete and write-free; unresolved,
