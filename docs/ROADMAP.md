@@ -255,13 +255,14 @@ Finish the extraction of generic analysis logic into `revenginstr` and remove du
 
 ### M1.1 Exporter inventory
 
-**Initial inventory complete (2026-10-17):** see
+**Inventory refreshed (2026-10-18):** see
 [`docs/EXPORTER_INVENTORY.md`](EXPORTER_INVENTORY.md). It classifies the
-reusable exporter surface using the `origin/main` snapshots of all three
+reusable exporter surface using current `origin/main` snapshots of all three
 repositories and records compatibility wrappers, remaining duplicate
 implementations, consumer-specific tooling, and the evidence required before
-retiring any fallback. Consumer working trees were left unchanged. Keep the
-inventory current as each exporter is migrated.
+retiring any fallback. A regression test keeps all `ghidra/*.java` exporters
+listed. Consumer working trees were left unchanged. Keep the inventory current
+as each exporter is migrated.
 
 Maintain an inventory of reusable exporters/runners classified as:
 
@@ -1333,7 +1334,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 1. ✅ Canonical benchmark manifest schema.
 2. ✅ One-command benchmark runner.
 3. ✅ Standardized combined metric projections for classifier, receiver, router and validation reports.
-4. Exporter/schema inventory.
+4. ✅ Exporter/schema inventory; refreshed current three-repository snapshots and added source-list coverage.
 5. Receiver residual taxonomy v1.
 6. Frozen receiver coverage report.
 7. Classifier threshold/calibration sweep tooling.
