@@ -10,7 +10,11 @@ The plan row contract is `schemas/ghidra-caller-argument-subtree-plan-v1.schema.
 The exporter caps each tree at 12 levels and 96 nodes, and each callee at 128
 direct caller functions. A summary row uses `caller_limit_reached` when another
 distinct caller exists beyond that cap. Use `--caller-entry <address>` to
-restrict a plan to one caller function and avoid scanning the other callers.
+restrict a plan to one caller function and avoid scanning the other callers. The
+selected caller is decompiled directly, so the filter also handles recursive
+self-calls and callsites missing from Ghidra's reference index; the exporter
+still verifies the direct P-code target before emitting argument rows. Without
+the filter, caller discovery uses call references and includes self-recursion.
 Summary rows report direct callers, decompile failures, and matched calls.
 Consumers compare those counts with their own expected coverage and keep any
 project-specific fields in their local adapter.

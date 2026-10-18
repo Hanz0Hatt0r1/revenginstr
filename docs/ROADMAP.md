@@ -1747,6 +1747,26 @@ projects whose signatures were not saved must be regenerated before reuse;
 the earlier conservative audit statuses do not establish the validity of
 those sidecars.
 
+A fresh post-Parameter-ID replay of the `next100g`/`next100h` roots completed
+five bounded closures covering 89 unique functions and 12,050 flow rows. Three
+callee-before-caller signature passes changed 62 signatures, then 7, then 0.
+The first broad caller-root export omitted 29 of 356 closure call arguments:
+18 were beyond the 128-caller cap, 8 belonged to self-recursive calls, and 3
+were absent from Ghidra's reference index. The caller-argument exporter now
+includes call references to the current function and makes `--caller-entry`
+decompile the selected caller directly before checking its P-code target. A
+targeted replay recovered argument subtrees for all 356 call arguments; only
+71 had exact caller-formal/constant-offset roots, so the rest remain barriers.
+
+The small `next100h` closure for `00a3dda0` is complete across four functions:
+all four exported CFG/3, the flow contains 538 operations, and its 63 STOREs
+have 50 exact memory locations plus 13 unresolved locations. The exact root
+from `00a3dda0` to `009015b0` maps parameter 0 to caller parameter 0 at `+0x98`.
+However, four side-effect-dependent `INDIRECT` operations in the callee closure
+and 13 unresolved store locations keep all three `/5` pairs at
+`possible_intervening_memory_effect`; no alias filtering promotion is supported
+by this replay.
+
 The generic `GhidraInterproceduralMemoryEffect/1` builder and versioned `/5`
 audit are merged in revenginstr PRs [#110](https://github.com/Hanz0Hatt0r1/revenginstr/pull/110)
 and [#111](https://github.com/Hanz0Hatt0r1/revenginstr/pull/111). They propagate
@@ -1756,10 +1776,8 @@ monotone fixed point for cycles. Missing argument links, incomplete callee
 facts, unresolved stores, indirect calls, unknown operations and exhausted
 budgets remain barriers. `/1`–`/4` stay unchanged.
 
-**Next:** regenerate saved call-root and call-effect sidecars on a writable
-Parameter ID project copy, starting with closures used by `next100g`,
-`next100h`, and `next100d`. Then select fresh bounded x86-32 candidates from
-actual exported parameter-field `STORE` and `LOAD` rows, prioritizing
+**Next:** select fresh bounded x86-32 candidates from actual exported
+parameter-field `STORE` and `LOAD` rows, prioritizing
 same-formal, same-offset pairs whose store dominates the load and whose
 intervening direct-call closure has exact caller roots and complete memory
 facts. Freeze those consumer exports and replay `/4` versus `/5` while

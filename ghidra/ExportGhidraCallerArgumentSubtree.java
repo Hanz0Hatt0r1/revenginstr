@@ -229,21 +229,19 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
 
     private Set<Function> directCallers(Function callee, Function selectedCaller) {
         LinkedHashSet<Function> out = new LinkedHashSet<Function>();
+        if (selectedCaller != null) {
+            out.add(selectedCaller);
+            callerLimitReached = false;
+            return out;
+        }
         ReferenceIterator refs = currentProgram.getReferenceManager().getReferencesTo(callee.getEntryPoint());
         FunctionManager fm = currentProgram.getFunctionManager();
         callerLimitReached = false;
         while (refs.hasNext()) {
             Reference ref = refs.next();
-            if (ref == null || ref.getFromAddress() == null) continue;
+            if (ref == null || ref.getFromAddress() == null || !ref.getReferenceType().isCall()) continue;
             Function f = fm.getFunctionContaining(ref.getFromAddress());
-            if (f == null || f.equals(callee)) continue;
-            if (selectedCaller != null) {
-                if (f.equals(selectedCaller)) {
-                    out.add(f);
-                    break;
-                }
-                continue;
-            }
+            if (f == null) continue;
             if (out.contains(f)) continue;
             if (out.size() == MAX_CALLERS) {
                 callerLimitReached = true;
