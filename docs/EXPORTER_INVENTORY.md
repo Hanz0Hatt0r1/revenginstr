@@ -2,14 +2,14 @@
 
 This inventory records where reusable Ghidra export and analysis mechanisms
 live and which consumer compatibility layers remain. It uses the fetched
-`origin/main` snapshots checked on 2026-10-18, after the Nevergone parity,
-NFS Shift source-to-runner, and NFS ARM64 P-code evidence updates:
+`origin/main` snapshots checked on 2026-10-18, after gzip-aware JSONL parity
+and the NFS Shift exporter evidence update:
 
 | Repository | Snapshot |
 |---|---|
-| `Hanz0Hatt0r1/revenginstr` | `432b528f9c3db36dda50c846aafe5afb3c141204` |
-| `Hanz0Hatt0r1/nevergone-recomp` | `8e700041d6c495f06b3c82e977a74af902a76aba` |
-| `Hanz0Hatt0r1/nfs-shift-decompilation` | `729c7e3820ca7c529a94edcaa2db76633a449f17` |
+| `Hanz0Hatt0r1/revenginstr` | `2e03135b324e684b1d78900782d33005f802d381` |
+| `Hanz0Hatt0r1/nevergone-recomp` | `3822a2acb47b56e0cbed512de0782680fb843267` |
+| `Hanz0Hatt0r1/nfs-shift-decompilation` | `7246802b471c963d5d0acf435bcc3c887aea2ff0` |
 
 The consumer working trees have local state, so this inventory describes the
 remote `main` snapshots only. Program-derived rows and invocation details stay
@@ -24,7 +24,7 @@ in their consumer repositories.
 | Generic address/reference and program-index export | `ExportGhidraAddressReferences.java`, `ExportGhidraAddressReferenceOwners.java`, `ExportGhidraAddressMetadata.java`, `ExportGhidraProgramIndex.java` and shared runners | `ExportAddressReferenceOwners.java` adapts shared rows to the retained Nevergone format; `run_nevergone_program_index.sh` delegates to the shared runner first. | `run_shift_global_references.sh` uses the shared address-reference exporter and a small output adapter. | Canonical here, with thin consumer adapters. Preserve consumer joins and historical file contracts at the boundary. |
 | Function identity and language metadata | `ExportGhidraFunctionIdentities.java`, `ExportGhidraLanguageAddressSpaces.java`, `ExportGhidraLanguageUserops.java` and their shared runners | Function selection plans and consumer-specific labels stay in Nevergone; the shared TSV/JSON contracts carry generic identities and language metadata. | Address plans and SHIFT-specific interpretation stay in NFS; the shared formats carry generic identities and language metadata. | Canonical in `revenginstr`; keep selection plans, labels and interpretation in the consumer repositories. |
 | High-P-code function CFG export and field store/load audits | `ExportFunctionPcodeCFG.java`, `ExportGhidraParameterStoreField.java`, `revenginstr.receiver.field_flow` | Generic export/audit contract; consumer supplies opaque `program_id` and source artifacts. | No title-specific evidence or labels required. | CFG/1 remains the default; CFG/2 adds logical memory space/width; CFG/3 adds physical space/pointer width. `GhidraMemoryStoreAccess/1` facts feed dominance `/2`; `GhidraDirectCallMemoryEffect/1` facts built from exact caller/callee P-code flows feed `/3`, which filters only closed write-free direct calls. Nevergone froze and replayed `/2` in [PR #729](https://github.com/Hanz0Hatt0r1/nevergone-recomp/pull/729): 2/2 exact rows remain possible effects, with no unique candidate. NFS Shift PRs [#2025](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2025) and [#2026](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2026) freeze 28 pairs; expanded PR [#2027](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2027) covers 31 pairs and includes one write-free direct call on an exact witness, alongside an unknown-effect barrier. `/3` remains unresolved. Keep both datasets and their measured outcomes consumer-owned. |
-| Instruction, slice, operand, scalar and compact-stream export | `ExportGhidraFunctionInstructions.java`, `ExportGhidraInstructionSlices.java`, `ExportGhidraFunctionOperands.java`, `ExportGhidraScalarUses.java`, `ExportGhidraCompactInstructionStream.java` | Shared-first runners are present for selected probes; consumer-specific joins remain local. | Five NFS Shift exporters are shared-first compatibility fallbacks with consumer adapters; see the [source-to-runner inventory](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/blob/main/evidence/ghidra_exporter_source_inventory.md). | Canonical here with thin adapters; keep the local fallbacks until per-format same-input parity and caller review are complete. |
+| Instruction, slice, operand, scalar and compact-stream export | `ExportGhidraFunctionInstructions.java`, `ExportGhidraInstructionSlices.java`, `ExportGhidraFunctionOperands.java`, `ExportGhidraScalarUses.java`, `ExportGhidraCompactInstructionStream.java` | Shared-first runners are present for selected probes; consumer-specific joins remain local. | Five NFS Shift exporters are shared-first compatibility fallbacks with consumer adapters; see the [source-to-runner inventory](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/blob/main/evidence/ghidra_exporter_source_inventory.md). Same-input evidence covers one scalar query, one targeted function, one global-reference query, one 32-byte slice, and the compact whole-program stream. | Canonical here with thin adapters; retain local fallbacks pending caller review. Targeted function parity does not cover all-functions mode. |
 | Structural stores, parameters and defined strings | `ExportGhidraFieldStoreCandidates.java`, `ExportGhidraParameterStoreField.java`, `ExportGhidraPcodeDefinedStrings.java` | `ExportPcodeDefinedStrings.java` adapts shared rows to its historical TSV. The current-frame probe delegates to the shared field-store runner when available. `ExportParameterStoreField.java` remains a full local analysis implementation. | P1/vehicle and resource exporters that consume these primitives remain title-specific. | Canonical shared extraction with a thin defined-strings wrapper; Nevergone parameter-store logic is a duplicate pending same-input parity review. |
 | Receiver type, vtable and dispatch evidence | `ExportIndirectCallReceiverTypes.java`, `ExportArm32ItaniumVtableSlots.java`, `revenginstr.receiver.plan`, `revenginstr.receiver.infer` | Receiver catalogs, labels, class/vtable identities and game-specific query sets remain in Nevergone. Its pipeline calls shared planning/inference tools where the adapter contract matches. | SHIFT receiver provenance and vtable investigations remain under `tools/ghidra` and `tools/ml`; they use shared P-code tools where declared. | Generic catalog inference and table mechanics are canonical here. Raw evidence acquisition and interpretation stay consumer-specific unless a second consumer establishes the same evidence contract. |
 | Family mining, classifiers, routers and frozen/drift validation | `revenginstr.family`, `revenginstr.ml`, `revenginstr.validation` | Nevergone datasets, labels, thresholds, models and frozen corpora remain local; generic calls use adapters. | The cross-project probe calls shared family/P-code/OOD tooling; SHIFT-specific weak labels and target evidence remain local. | Canonical here for algorithms and schemas; both consumers own experiment configuration and evidence. |
@@ -62,9 +62,15 @@ classification and validation; consumers retain path discovery and local joins.
    additional bounds on the second root. Keep hash-only reports and invocation
    details in the consumer; retain the local bounded fallbacks until those
    cases are covered.
-2. The NFS Shift source-to-runner inventory is recorded in the consumer.
-   Add same-input parity fixtures before retiring its shared-first compatibility
-   fallbacks; keep its mixed evidence bundle and specialized queries consumer-owned.
+2. NFS Shift PRs [#2076](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2076),
+   [#2077](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2077), and
+   [#2078](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2078)
+   add one same-input fixture for each of the five shared-first formats. The
+   compact stream matches as ordered JSON records after decompression and key
+   normalization, while gzip byte hashes differ. Keep the fallbacks pending
+   caller review; keep the all-functions function-instruction mode, mixed
+   evidence bundle and specialized queries outside the proven scope. Hash-only
+   reports are in the [consumer evidence directory](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/tree/main/evidence/ghidra_exporter_parity/).
 3. Keep legacy format adapters until their existing command and row contracts
    are covered. No file is marked obsolete in this first inventory because no
    caller-free proof was made.
