@@ -1227,6 +1227,13 @@ path, or establish CFG-feasible execution. The NFS SHIFT replay in
 [`SemanticProgramPathQuery/1 replay`](evidence/semantic-program-path-query/nfs-shift-call-path/README.md)
 returns the captured route `00a45520 → 00a40550 → 00886930`.
 
+The path query also accepts a hash-pinned Ghidra Function P-code CFG artifact
+and joins call sites by exact function entry, address, P-code time, and opcode.
+It records the call block and a successor-path witness from the function entry.
+The NFS SHIFT CFG/3 replay confirms the call at `00a4556d` is in entry-reachable
+block 3; block-graph reachability does not establish branch-predicate
+feasibility or runtime execution.
+
 ---
 
 # 16. M11 — Active learning and reviewer-feedback loop

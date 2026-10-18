@@ -76,6 +76,24 @@ call operation, its `contains` edge, and the exact `calls` edge. The operation
 and both edges must pass the selected view. A conflict on either function
 endpoint marks the step contested. Contested steps remain visible in
 `exact-only` and `exploratory` views.
+
+Optionally supply `--function-pcode-cfg cfg.jsonl` to pin Ghidra
+`FunctionPcodeCFG/1`–`/4` evidence. The query joins each call site by exact
+function entry, address, P-code time, and opcode, then reports its block and a
+successor path from the entry block when the CFG version provides one. A path
+status distinguishes entry-reachable call sites, unreachable call sites,
+opcode mismatches, incomplete CFG evidence, and paths with no call sites to
+check. This is block-graph reachability only; branch predicates and
+interprocedural execution are not proven.
+
+```sh
+revenginstr-semantic-program-path-query program-graphs.jsonl \
+  --source-function-entry 00a45520 \
+  --target-function-entry 00a40550 \
+  --view exact-only \
+  --function-pcode-cfg function-pcode-cfg.jsonl \
+  --output call-paths-with-cfg.jsonl
+```
 The bounded `uncertain_call_frontier` lists unresolved, indirect, or
 conflicted call sites in functions reachable from the source through the
 selected direct-call edges. Each entry includes its function node, the site's
@@ -83,8 +101,9 @@ selected direct-call edges. Each entry includes its function node, the site's
 empty witness means the site is in the source function. A frontier entry is a
 place where the static call graph lacks a unique uncontested target; it does
 not establish that the call reaches the requested target function or that the
-site blocks a feasible execution path. The path query does not use CFG edges,
-callback hypotheses, or inferred dispatch targets.
+site blocks a feasible execution path. CFG data annotates call-site block
+locations only; path enumeration still uses direct-call edges and does not use
+callback hypotheses or inferred dispatch targets.
 Search fails without writing a partial result when its path or expansion cap
 is exceeded.
 

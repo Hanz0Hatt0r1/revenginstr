@@ -1,4 +1,4 @@
-"""Find bounded direct-call paths while retaining their graph evidence."""
+"""Find bounded direct-call paths and optionally annotate call sites with CFG evidence."""
 from __future__ import annotations
 
 import argparse
@@ -15,6 +15,7 @@ from revenginstr.semantic_program_graph import (
     validate_graph_references,
 )
 from revenginstr.semantic_program_query import VIEWS, _in_view
+from revenginstr.receiver.field_flow import _index_cfg
 
 FORMAT = "REVENGINSTR.SemanticProgramPathQueryResult/1"
 CALL_STATES = {"indirect", "unresolved", "conflicted"}
@@ -28,8 +29,100 @@ def _consume_expansion(budget: list[int], max_expansions: int) -> None:
         )
 
 
+def _reachable_block_paths(
+    cfg: dict[str, Any], *, max_expansions: int, expansion_budget: list[int]
+) -> dict[int, list[int]]:
+    entry = cfg["entry_block_index"]
+    blocks = cfg["blocks"]
+    paths = {entry: [entry]}
+    pending = deque([entry])
+    while pending:
+        block_index = pending.popleft()
+        for successor in sorted(blocks[block_index]["successors"]):
+            _consume_expansion(expansion_budget, max_expansions)
+            if successor not in paths:
+                paths[successor] = [*paths[block_index], successor]
+                pending.append(successor)
+    return paths
+
+
+def _cfg_callsite(
+    program_id: str,
+    function_entry: str,
+    operation: dict[str, Any],
+    *,
+    cfg_index: dict[tuple[str, str], tuple[int, dict[str, Any]]],
+    reachability_cache: dict[tuple[str, str], dict[int, list[int]] | None],
+    max_expansions: int,
+    expansion_budget: list[int],
+) -> dict[str, Any]:
+    cfg_item = cfg_index.get((program_id, function_entry))
+    if cfg_item is None:
+        return {
+            "status": "function_cfg_missing",
+            "cfg_record_index": None,
+            "block_index": None,
+            "block_path": [],
+        }
+    record_index, cfg = cfg_item
+    operation_key = (operation.get("operation_address"), operation.get("operation_time"))
+    location = cfg["operations"].get(operation_key)
+    if location is None:
+        return {
+            "status": "operation_missing",
+            "cfg_record_index": record_index,
+            "block_index": None,
+            "block_path": [],
+        }
+    block_index, _position, opcode = location
+    if opcode != operation.get("opcode"):
+        status = "opcode_mismatch"
+        block_path = []
+    elif cfg["entry_block_index"] is None:
+        status = "entry_block_unavailable"
+        block_path = []
+    else:
+        cache_key = (program_id, function_entry)
+        if cache_key not in reachability_cache:
+            reachability_cache[cache_key] = _reachable_block_paths(
+                cfg, max_expansions=max_expansions, expansion_budget=expansion_budget
+            )
+        block_path = reachability_cache[cache_key].get(block_index) or []
+        status = "reachable" if block_path else "unreachable"
+    return {
+        "status": status,
+        "cfg_record_index": record_index,
+        "block_index": block_index,
+        "block_path": block_path,
+    }
+
+
+def _annotate_cfg_step(
+    step: dict[str, Any],
+    program_id: str,
+    *,
+    cfg_index: dict[tuple[str, str], tuple[int, dict[str, Any]]],
+    reachability_cache: dict[tuple[str, str], dict[int, list[int]]],
+    max_expansions: int,
+    expansion_budget: list[int],
+) -> None:
+    if "cfg_callsite" not in step:
+        step["cfg_callsite"] = _cfg_callsite(
+            program_id,
+            step["caller_entry"],
+            step["call_operation"],
+            cfg_index=cfg_index,
+            reachability_cache=reachability_cache,
+            max_expansions=max_expansions,
+            expansion_budget=expansion_budget,
+        )
+
+
 def _call_transitions(
-    graph: dict[str, Any], *, view: str, minimum_confidence: float
+    graph: dict[str, Any],
+    *,
+    view: str,
+    minimum_confidence: float,
 ) -> tuple[dict[str, list[dict[str, Any]]], dict[str, dict[str, Any]]]:
     nodes = {node["id"]: node for node in graph["nodes"]}
     functions = {
@@ -79,7 +172,7 @@ def _call_transitions(
             ))
             else "uncontested"
         )
-        transitions[caller_entry].append({
+        transition = {
             "caller_entry": caller_entry,
             "caller_function": caller,
             "call_operation": operation,
@@ -88,7 +181,8 @@ def _call_transitions(
             "callee_entry": callee_entry,
             "callee_function": callee_function,
             "conflict_state": conflict_state,
-        })
+        }
+        transitions[caller_entry].append(transition)
     for outgoing in transitions.values():
         outgoing.sort(key=lambda step: (
             step["callee_entry"],
@@ -189,6 +283,19 @@ def _reachable_witnesses(
     }
 
 
+def _path_cfg_status(path: dict[str, Any]) -> str:
+    statuses = [step["cfg_callsite"]["status"] for step in path["steps"]]
+    if not statuses:
+        return "no_call_sites_to_check"
+    if "opcode_mismatch" in statuses:
+        return "cfg_opcode_mismatch"
+    if any(status not in {"reachable", "unreachable"} for status in statuses):
+        return "incomplete_cfg_evidence"
+    if "unreachable" in statuses:
+        return "contains_unreachable_call_site"
+    return "all_call_sites_in_entry_reachable_blocks"
+
+
 def query_graphs(
     graphs: list[dict[str, Any]],
     *,
@@ -200,6 +307,8 @@ def query_graphs(
     max_hops: int = 12,
     max_paths: int = 100,
     max_expansions: int = 10000,
+    cfg_index: dict[tuple[str, str], tuple[int, dict[str, Any]]] | None = None,
+    cfg_sha256: str | None = None,
 ) -> list[dict[str, Any]]:
     """Enumerate bounded simple paths made only from evidence-backed calls edges."""
     if view not in VIEWS:
@@ -208,6 +317,16 @@ def query_graphs(
         raise ValueError("minimum_confidence must be between 0 and 1")
     if len(source_sha256) != 64 or any(char not in "0123456789abcdef" for char in source_sha256):
         raise ValueError("source_sha256 must be a lowercase SHA-256 digest")
+    if cfg_index is not None and (
+        cfg_sha256 is None
+        or len(cfg_sha256) != 64
+        or any(char not in "0123456789abcdef" for char in cfg_sha256)
+    ):
+        raise ValueError("CFG input requires its lowercase SHA-256 digest")
+    if cfg_index is None and cfg_sha256 is not None:
+        raise ValueError("CFG SHA-256 supplied without indexed CFG records")
+    if cfg_index is not None and not cfg_index:
+        raise ValueError("CFG input is empty")
     if not source_function_entry or not target_function_entry:
         raise ValueError("source and target function entries must be non-empty")
     if max_hops < 0 or max_paths < 1 or max_expansions < 1:
@@ -225,10 +344,19 @@ def query_graphs(
             raise ValueError(f"duplicate semantic program graph id: {graph_id!r}")
         seen_graph_ids.add(graph_id)
         validate_graph_references(graph)
-        transitions, functions = _call_transitions(
-            graph, view=view, minimum_confidence=minimum_confidence
-        )
         expansion_budget = [0]
+        cfg_reachability_cache: dict[tuple[str, str], dict[int, list[int]]] = {}
+        if cfg_index is not None and not any(
+            program_id == graph["program_id"] for program_id, _entry in cfg_index
+        ):
+            raise ValueError(
+                f"CFG program id does not match graph program id {graph['program_id']!r}"
+            )
+        transitions, functions = _call_transitions(
+            graph,
+            view=view,
+            minimum_confidence=minimum_confidence,
+        )
         source_found = source_function_entry in functions
         target_found = target_function_entry in functions
         if not source_found and not target_found:
@@ -256,6 +384,18 @@ def query_graphs(
                     max_expansions=max_expansions,
                     expansion_budget=expansion_budget,
                 )
+                if cfg_index is not None:
+                    for path in paths:
+                        for step in path["steps"]:
+                            _annotate_cfg_step(
+                                step,
+                                graph["program_id"],
+                                cfg_index=cfg_index,
+                                reachability_cache=cfg_reachability_cache,
+                                max_expansions=max_expansions,
+                                expansion_budget=expansion_budget,
+                            )
+                        path["cfg_status"] = _path_cfg_status(path)
             if paths:
                 status = "direct_call_paths_found"
         source_function = functions.get(source_function_entry)
@@ -291,14 +431,32 @@ def query_graphs(
                     or not _in_view(membership, view, minimum_confidence)
                 ):
                     continue
-                frontier.append({
+                frontier_row = {
                     "function_entry": entry,
                     "reachable_with_conflict_state": witness["conflict_state"],
                     "reachability_steps": witness["steps"],
                     "function": function,
                     "membership_edge": membership,
                     "operation": node,
-                })
+                }
+                if cfg_index is not None:
+                    for step in frontier_row["reachability_steps"]:
+                        _annotate_cfg_step(
+                            step,
+                            graph["program_id"],
+                            cfg_index=cfg_index,
+                            reachability_cache=cfg_reachability_cache,
+                            max_expansions=max_expansions,
+                            expansion_budget=expansion_budget,
+                        )
+                    frontier_row["cfg_callsite"] = _cfg_callsite(
+                        graph["program_id"], entry, node,
+                        cfg_index=cfg_index,
+                        reachability_cache=cfg_reachability_cache,
+                        max_expansions=max_expansions,
+                        expansion_budget=expansion_budget,
+                    )
+                frontier.append(frontier_row)
             frontier.sort(key=lambda row: (
                 row["function_entry"],
                 row["operation"].get("operation_address", ""),
@@ -317,10 +475,12 @@ def query_graphs(
             "max_paths": max_paths,
             "max_expansions": max_expansions,
         }
+        if cfg_sha256 is not None:
+            identity["cfg_source_sha256"] = cfg_sha256
         query_id = "path-query:" + hashlib.sha256(
             json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
         ).hexdigest()
-        results.append({
+        result = {
             "format": FORMAT,
             "query_id": query_id,
             "source_graph_id": graph_id,
@@ -338,7 +498,11 @@ def query_graphs(
             "status": status,
             "paths": paths,
             "uncertain_call_frontier": frontier,
-        })
+        }
+        if cfg_sha256 is not None:
+            result["cfg_source_sha256"] = cfg_sha256
+            result["cfg_semantics"] = "entry_block_successor_reachability"
+        results.append(result)
     return results
 
 
@@ -352,10 +516,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-hops", type=int, default=12)
     parser.add_argument("--max-paths", type=int, default=100)
     parser.add_argument("--max-expansions", type=int, default=10000)
+    parser.add_argument("--function-pcode-cfg", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
         graphs, source_sha256 = _read_jsonl(args.semantic_program_graph)
+        cfg_index = None
+        cfg_sha256 = None
+        if args.function_pcode_cfg is not None:
+            cfg_records, cfg_sha256 = _read_jsonl(args.function_pcode_cfg)
+            cfg_index = _index_cfg(cfg_records)
         results = query_graphs(
             graphs,
             source_sha256=source_sha256,
@@ -366,6 +536,8 @@ def main(argv: list[str] | None = None) -> int:
             max_hops=args.max_hops,
             max_paths=args.max_paths,
             max_expansions=args.max_expansions,
+            cfg_index=cfg_index,
+            cfg_sha256=cfg_sha256,
         )
     except ValueError as error:
         parser.error(str(error))
@@ -376,6 +548,8 @@ def main(argv: list[str] | None = None) -> int:
     print("program graphs queried:", len(results))
     print("direct-call paths:", sum(len(row["paths"]) for row in results))
     print("uncertain call frontier sites:", sum(len(row["uncertain_call_frontier"]) for row in results))
+    if args.function_pcode_cfg is not None:
+        print("CFG artifact SHA-256:", cfg_sha256)
     print("query:", args.output)
     return 0
 

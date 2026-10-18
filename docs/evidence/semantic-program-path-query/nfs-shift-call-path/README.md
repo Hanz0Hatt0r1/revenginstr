@@ -17,7 +17,10 @@ operation, the function-to-call `contains` edge, and the exact `calls` edge
 with their original support. The query finds one simple path within 12 hops;
 this evidence does not establish CFG-feasible execution. No uncertain call
 sites appear in the source function's direct-call reachable region in this
-captured slice.
+captured slice. A separate one-hop replay joins the exact call site against
+captured Ghidra CFG/3 and finds its block reachable from the function entry;
+see the [CFG call-site replay](cfg-callsite/README.md). This checks block-graph
+reachability, not branch-predicate feasibility.
 
 Rebuild the outputs from the committed inputs from the repository root:
 

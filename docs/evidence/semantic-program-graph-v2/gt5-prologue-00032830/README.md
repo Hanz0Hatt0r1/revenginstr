@@ -23,11 +23,19 @@ null.
 
 A path query from `00032830` to `000322a8` returns the exact direct call at
 `0003289c` and reports the `CALLIND` at `00032880` as an uncertain call
-frontier in the source function. The path step retains both function nodes,
-the call operation, and its membership/call edges. The frontier retains the
-call's membership edge and an empty reachability witness because it is in the
-source function. It does not assign that indirect call a target. The
-direct-call route is graph-level evidence, not a CFG-feasible execution claim.
+frontier in the source function. The replay also joins a read-only Ghidra
+CFG/3 export to the two call sites by function entry, address, P-code time, and
+opcode. This CFG/3 capture was exported from the saved GT5 Ghidra 12.1.2 DEV
+project in read-only, no-analysis mode using the documented
+[`Ghidra function CFG exporter`](../../../GHIDRA_FUNCTION_PCODE_CFG.md).
+The direct call at time `95` is in block `3`, reachable from entry via
+`[0, 2, 3]`; the indirect call at time `66` is in block `1`, reachable via
+`[0, 1]`. The path step retains both function nodes, the call operation, its
+membership/call edges, and the CFG witness. The frontier retains the indirect
+call's membership edge and empty call-graph reachability witness because it
+is in the source function; CFG annotations show its entry-to-block route. It
+does not assign that indirect call a target. Block-graph reachability does not
+prove branch-predicate feasibility or runtime execution.
 
 To regenerate the derived records from the captured exports, run from the
 repository root:
@@ -54,6 +62,7 @@ revenginstr-semantic-program-path-query \
   docs/evidence/semantic-program-graph-v2/gt5-prologue-00032830/semantic-program-graph.jsonl \
   --source-function-entry 00032830 --target-function-entry 000322a8 \
   --view exact-only \
+  --function-pcode-cfg docs/evidence/semantic-program-graph-v2/gt5-prologue-00032830/function-pcode-cfg-v3.jsonl \
   --output docs/evidence/semantic-program-graph-v2/gt5-prologue-00032830/direct-call-path-query.jsonl
 ```
 
@@ -61,7 +70,8 @@ revenginstr-semantic-program-path-query \
 | --- | --- |
 | Ghidra function P-code TSV | `d5605b3b688f269deffc276a76e6132f5562cfa7d4f26c54d4df0fc85600a564` |
 | Ghidra receiver TSV | `0c88934d362437923524e7c4abaf308810d7fdb92a8065a3c267b9ca2997d9be` |
+| Ghidra function P-code CFG/3 | `a1dc25540dca3eb72c797d3d2e195a309a292094a15f1f49fd92749afdc3e6ec` |
 | Function Effect IR/2 | `3b10aaaf142e50db3d05a4cc1a0ec56dc2233f9b227fbc2ad7b660225f2e9e7a` |
 | Semantic Program Graph/2 | `b625d3a6ff58e19c92a78bbd0de8eb38eb25e0a06ab8f9befc281b061a980856` |
 | Semantic Program Query Result/1 | `03f39dc1333941c8f449036d645005530dfcdba61df383f01042dd0208d8a07c` |
-| Semantic Program Path Query Result/1 | `103e7f398d2f20e7f5837cbefd45a7bfe5e049dd24c95920c01471a0456c87c1` |
+| Semantic Program Path Query Result/1 | `335303907af6b4449aa012e4410f3ec91919fe44aa83e784f10e6e74f8e86c4c` |
