@@ -51,6 +51,10 @@ the option also supports demangled symbols that contain commas. Keep
 program-specific fragments in the consumer adapter; the generic exporters do
 not choose title-specific names.
 
+The caller-argument subtree runner checks the exporter's completion marker and
+each requested parameter-root marker. This catches Ghidra post-script failures
+that can otherwise return a zero exit status.
+
 ## Direct-call memory-effect facts
 
 `revenginstr-direct-call-memory-effects` compares a caller's one-function

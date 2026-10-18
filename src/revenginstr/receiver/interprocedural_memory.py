@@ -22,10 +22,18 @@ from .field_flow import (
 
 FORMAT = "REVENGINSTR.GhidraInterproceduralMemoryEffect/1"
 PARAMETER_ROOT_FORMAT = "REVENGINSTR.GhidraCallerArgumentParameterRoot/1"
-PARAMETER_ROOT_HEADER = (
+PARAMETER_OFFSET_ROOT_FORMAT = "REVENGINSTR.GhidraCallerArgumentParameterRoot/2"
+PARAMETER_ROOT_V1_HEADER = (
     "format", "plan_id", "callee_entry", "parameter_index", "caller_entry",
     "caller_call_site", "caller_parameter_index", "argument_node_id", "status",
 )
+PARAMETER_ROOT_V2_HEADER = (
+    "format", "plan_id", "callee_entry", "parameter_index", "caller_entry",
+    "caller_call_site", "caller_parameter_index", "caller_parameter_offset_bytes",
+    "argument_node_id", "status",
+)
+PARAMETER_ROOT_HEADER = PARAMETER_ROOT_V1_HEADER
+MAX_PARAMETER_ROOT_OFFSETS = 64
 MAX_PAIRS = 100_000
 MAX_FUNCTIONS = 10_000
 MAX_CALLS = 100_000
@@ -38,14 +46,35 @@ def _hash_json(value: Any) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def _read_parameter_roots(path: Path, flows: dict[str, tuple[str, list[dict[str, str]]]]) -> tuple[str, dict[tuple[str, str, int, str, int], tuple[int, int]]]:
+def _parse_signed_hex_offset(value: str, where: str) -> int:
+    negative = value.startswith("-0x")
+    digits = value[3:] if negative else value[2:] if value.startswith("0x") else ""
+    if (
+        not digits
+        or any(character not in "0123456789abcdef" for character in digits)
+        or (len(digits) > 1 and digits[0] == "0")
+        or (negative and digits == "0")
+    ):
+        raise ValueError(f"{where}: caller parameter offset must be canonical signed lowercase hex")
+    result = int(digits, 16)
+    return -result if negative else result
+
+
+def _read_parameter_roots(
+    path: Path, flows: dict[str, tuple[str, list[dict[str, str]]]],
+) -> tuple[str, dict[tuple[str, str, int, str, int], tuple[int, int, int]]]:
     raw = path.read_bytes()
     try:
         text = raw.decode("utf-8")
     except UnicodeDecodeError as error:
         raise ValueError(f"{path}: input must be UTF-8") from error
     reader = csv.DictReader(io.StringIO(text, newline=""), delimiter="\t", strict=True)
-    if tuple(reader.fieldnames or ()) != PARAMETER_ROOT_HEADER:
+    header = tuple(reader.fieldnames or ())
+    if header == PARAMETER_ROOT_V1_HEADER:
+        format_version = 1
+    elif header == PARAMETER_ROOT_V2_HEADER:
+        format_version = 2
+    else:
         raise ValueError(f"{path}: unexpected caller parameter-root TSV header")
 
     calls_by_site: dict[tuple[str, str, str], list[tuple[int, dict[str, str]]]] = defaultdict(list)
@@ -54,11 +83,13 @@ def _read_parameter_roots(path: Path, flows: dict[str, tuple[str, list[dict[str,
             if row["opcode"] == "CALL":
                 calls_by_site[(entry, row["op_address"], row["callee_entry"])].append((index, row))
 
-    roots: dict[tuple[str, str, int, str, int], tuple[int, int]] = {}
+    roots: dict[tuple[str, str, int, str, int], tuple[int, int, int]] = {}
     for record_index, row in enumerate(reader, 2):
         if None in row or any(value is None for value in row.values()):
             raise ValueError(f"{path}:{record_index}: malformed TSV record")
-        if row["format"] != PARAMETER_ROOT_FORMAT or row["status"] != "direct_parameter_root":
+        expected_format = PARAMETER_ROOT_FORMAT if format_version == 1 else PARAMETER_OFFSET_ROOT_FORMAT
+        expected_status = "direct_parameter_root" if format_version == 1 else "constant_offset_parameter_root"
+        if row["format"] != expected_format or row["status"] != expected_status:
             raise ValueError(f"{path}:{record_index}: unsupported parameter-root row")
         if not row["plan_id"] or not row["callee_entry"] or row["callee_entry"] == "-":
             raise ValueError(f"{path}:{record_index}: invalid plan or callee identity")
@@ -75,6 +106,9 @@ def _read_parameter_roots(path: Path, flows: dict[str, tuple[str, list[dict[str,
             raise ValueError(f"{path}:{record_index}: parameter indices must be non-negative")
         if node_index != 0:
             raise ValueError(f"{path}:{record_index}: parameter root must identify the argument root node")
+        offset = 0 if format_version == 1 else _parse_signed_hex_offset(
+            row["caller_parameter_offset_bytes"], f"{path}:{record_index}",
+        )
         if row["caller_entry"] not in flows:
             continue
         matches = calls_by_site.get((row["caller_entry"], row["caller_call_site"], row["callee_entry"]), [])
@@ -87,7 +121,7 @@ def _read_parameter_roots(path: Path, flows: dict[str, tuple[str, list[dict[str,
         key = (row["caller_entry"], row["caller_call_site"], call_index, row["callee_entry"], callee_parameter)
         if key in roots:
             raise ValueError(f"{path}:{record_index}: duplicate caller parameter-root mapping")
-        roots[key] = (caller_parameter, record_index)
+        roots[key] = (caller_parameter, offset, record_index)
     return hashlib.sha256(raw).hexdigest(), roots
 
 
@@ -204,6 +238,7 @@ def build_interprocedural_memory_effects(
             non_alias_indices: set[int] = set()
             alias_indices: set[int] = set()
             root_record_indices: set[int] = set()
+            pair_comparisons = 0
             if opcode == "CALLIND":
                 status = "indirect_call"
                 unknown_ids.add(f"{caller_entry}:{address}:{time}:CALLIND")
@@ -259,9 +294,8 @@ def build_interprocedural_memory_effects(
                             effect_opcodes.add(operation["opcode"])
                             unknown_ids.add(f"{function_entry}:{site[0]}:{site[1]}:{operation['opcode']}")
 
-                # Compute whether every call path carries the tracked root into
-                # each formal. Starting optimistic makes missing/ambiguous paths
-                # monotonically downgrade a fact to may-alias.
+                # Propagate exact byte offsets from the tracked formal. Unknown
+                # paths remain explicit so an exact path never hides an alias.
                 parameter_counts = defaultdict(int)
                 for function_entry, _, fact in stores:
                     if fact["root_parameter_index"] is not None:
@@ -269,19 +303,32 @@ def build_interprocedural_memory_effects(
                             parameter_counts[function_entry], fact["root_parameter_index"] + 1,
                         )
                 for source_entry, _, edge_call, callee_entry in edges:
-                    parameter_counts[callee_entry] = max(parameter_counts[callee_entry], len(_call_arguments(edge_call)))
+                    parameter_counts[callee_entry] = max(
+                        parameter_counts[callee_entry], len(_call_arguments(edge_call)),
+                    )
                 parameter_counts[target] = max(parameter_counts[target], len(initial_arguments))
-                states = {entry: [True] * parameter_counts[entry] for entry in reachable}
-                seeds: dict[tuple[str, int], list[bool]] = defaultdict(list)
+                parameter_offsets = {
+                    entry: [set() for _ in range(parameter_counts[entry])]
+                    for entry in reachable
+                }
+                parameter_unknown = {
+                    entry: [False] * parameter_counts[entry] for entry in reachable
+                }
+                parameter_offset_overflow = {
+                    entry: [False] * parameter_counts[entry] for entry in reachable
+                }
                 for parameter in range(parameter_counts[target]):
                     mapping = root_mappings.get((caller_entry, address, caller_row_index, target, parameter))
                     if mapping is not None:
-                        root_record_indices.add(mapping[1])
-                    seeds[(target, parameter)].append(
-                        mapping is not None and mapping[0] == identity["parameter_index"]
-                        if parameter < len(initial_arguments) else False
-                    )
-                    states[target][parameter] = all(seeds[(target, parameter)])
+                        root_record_indices.add(mapping[2])
+                    if (
+                        parameter < len(initial_arguments)
+                        and mapping is not None
+                        and mapping[0] == identity["parameter_index"]
+                    ):
+                        parameter_offsets[target][parameter].add(mapping[1])
+                    else:
+                        parameter_unknown[target][parameter] = True
                 propagation_steps = 0
                 changed = True
                 while changed:
@@ -293,47 +340,99 @@ def build_interprocedural_memory_effects(
                             propagation_steps += 1
                             if propagation_steps > max_flow_operations:
                                 raise ValueError("parameter-root propagation budget exceeded")
-                            mapping = root_mappings.get((source_entry, call_address, call_index, callee_entry, parameter))
-                            incoming = False
-                            if parameter < len(arguments) and mapping is not None:
-                                source_parameter = mapping[0]
-                                source_states = states.get(source_entry, [])
-                                incoming = source_parameter < len(source_states) and source_states[source_parameter]
-                            key = (callee_entry, parameter)
-                            if incoming not in seeds[key]:
-                                seeds[key].append(incoming)
-                            new_value = all(seeds[key])
-                            old_value = states[callee_entry][parameter]
-                            if old_value and not new_value:
-                                states[callee_entry][parameter] = False
+                            mapping = root_mappings.get(
+                                (source_entry, call_address, call_index, callee_entry, parameter),
+                            )
+                            if parameter >= len(arguments) or mapping is None:
+                                continue
+                            root_record_indices.add(mapping[2])
+                            source_parameter = mapping[0]
+                            source_offsets = parameter_offsets[source_entry]
+                            if source_parameter >= len(source_offsets):
+                                continue
+                            destination_offsets = parameter_offsets[callee_entry][parameter]
+                            if parameter_offset_overflow[source_entry][source_parameter]:
+                                if not parameter_offset_overflow[callee_entry][parameter]:
+                                    parameter_offset_overflow[callee_entry][parameter] = True
+                                    changed = True
+                                continue
+                            if parameter_offset_overflow[callee_entry][parameter]:
+                                continue
+                            shifted_offsets = {
+                                offset + mapping[1] for offset in source_offsets[source_parameter]
+                            }
+                            new_offsets = destination_offsets | shifted_offsets
+                            if len(new_offsets) > MAX_PARAMETER_ROOT_OFFSETS:
+                                parameter_offset_overflow[callee_entry][parameter] = True
+                                changed = True
+                            elif new_offsets != destination_offsets:
+                                destination_offsets.update(shifted_offsets)
                                 changed = True
 
-                for source_entry, call_index, edge_call, callee_entry in edges:
-                    arguments = _call_arguments(edge_call)
-                    for parameter in range(min(len(arguments), parameter_counts[callee_entry])):
-                        mapping = root_mappings.get((source_entry, edge_call["op_address"], call_index, callee_entry, parameter))
-                        if mapping is not None:
-                            root_record_indices.add(mapping[1])
+                # Once exact offsets reach a fixed point, mark any missing or
+                # unrooted call path unknown. This second pass avoids mistaking
+                # an as-yet-unvisited recursive path for a missing root.
+                changed = True
+                while changed:
+                    changed = False
+                    for source_entry, call_index, edge_call, callee_entry in edges:
+                        arguments = _call_arguments(edge_call)
+                        for parameter in range(parameter_counts[callee_entry]):
+                            propagation_steps += 1
+                            if propagation_steps > max_flow_operations:
+                                raise ValueError("parameter-root propagation budget exceeded")
+                            if parameter_unknown[callee_entry][parameter]:
+                                continue
+                            mapping = root_mappings.get((
+                                source_entry, edge_call["op_address"], call_index, callee_entry, parameter,
+                            ))
+                            unknown = parameter >= len(arguments) or mapping is None
+                            if not unknown:
+                                root_record_indices.add(mapping[2])
+                                source_parameter = mapping[0]
+                                source_offsets = parameter_offsets[source_entry]
+                                unknown = (
+                                    source_parameter >= len(source_offsets)
+                                    or not source_offsets[source_parameter]
+                                    or parameter_unknown[source_entry][source_parameter]
+                                    or parameter_offset_overflow[source_entry][source_parameter]
+                                )
+                            if unknown:
+                                parameter_unknown[callee_entry][parameter] = True
+                                changed = True
                 for function_entry, store_index, fact in stores:
-                    comparisons += 1
-                    if comparisons > max_memory_comparisons:
-                        raise ValueError(f"memory access comparison budget exceeded: {max_memory_comparisons}")
-                    exact_root = (
-                        fact["root_parameter_index"] is not None
-                        and fact["root_parameter_index"] < len(states[function_entry])
-                        and states[function_entry][fact["root_parameter_index"]]
+                    root_parameter = fact["root_parameter_index"]
+                    offsets = (
+                        parameter_offsets[function_entry][root_parameter]
+                        if root_parameter is not None and root_parameter < len(parameter_offsets[function_entry])
+                        else set()
                     )
-                    comparable_write = dict(fact)
-                    comparable_write["root_parameter_index"] = (
-                        identity["parameter_index"] if exact_root else None
-                    )
-                    reason = _memory_store_non_alias_reason(
-                        tracked_access, comparable_write,
-                        parameter_index=identity["parameter_index"],
-                        field_offset=identity["field_offset"],
-                        field_width=tracked_access["memory_width_bytes"],
-                    )
-                    if reason is None:
+                    exact_root = bool(offsets) and not parameter_unknown[function_entry][root_parameter] \
+                        and not parameter_offset_overflow[function_entry][root_parameter]
+                    may_alias = not exact_root
+                    for base_offset in offsets if exact_root else ():
+                        comparisons += 1
+                        pair_comparisons += 1
+                        if comparisons > max_memory_comparisons:
+                            raise ValueError(f"memory access comparison budget exceeded: {max_memory_comparisons}")
+                        comparable_write = dict(fact)
+                        comparable_write["root_parameter_index"] = identity["parameter_index"]
+                        comparable_write["offset_bytes"] = fact["offset_bytes"] + base_offset
+                        reason = _memory_store_non_alias_reason(
+                            tracked_access, comparable_write,
+                            parameter_index=identity["parameter_index"],
+                            field_offset=identity["field_offset"],
+                            field_width=tracked_access["memory_width_bytes"],
+                        )
+                        if reason is None:
+                            may_alias = True
+                            break
+                    if not exact_root:
+                        comparisons += 1
+                        pair_comparisons += 1
+                        if comparisons > max_memory_comparisons:
+                            raise ValueError(f"memory access comparison budget exceeded: {max_memory_comparisons}")
+                    if may_alias:
                         alias_indices.add(store_index)
                     else:
                         non_alias_indices.add(store_index)
@@ -390,7 +489,7 @@ def build_interprocedural_memory_effects(
                     "closure_sha256": closure_sha,
                     "closure_function_entries": closure_entries,
                     "unknown_operation_ids": sorted(unknown_ids),
-                    "memory_access_comparisons": len(stores),
+                    "memory_access_comparisons": pair_comparisons,
                 },
             })
 
