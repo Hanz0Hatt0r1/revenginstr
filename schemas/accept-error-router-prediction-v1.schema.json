@@ -12,7 +12,11 @@
     "accept_error_router_format": {"const": "REVENGINSTR.AcceptErrorRouter/1"},
     "base_action": {"enum": ["accept", "review", "escalate"]},
     "accept_correctness_probability": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
-    "accept_router_changed": {"type": "boolean"}
+    "accept_router_changed": {"type": "boolean"},
+    "accept_error_router_reason": {
+      "enum": ["base_action_preserved", "accept_score_below_threshold", "accept_score_at_or_above_threshold"]
+    },
+    "accept_error_router_evidence_feature_count": {"type": "integer", "minimum": 0}
   },
   "allOf": [
     {

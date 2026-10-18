@@ -125,6 +125,15 @@ def test_accept_error_router_train_and_monotone_inference(tmp_path: Path) -> Non
     assert routed[-1]["accept_router_changed"] is False
     for row in routed:
         validate_schema("accept-error-router-prediction-v1.schema.json", row)
+        if row["base_action"] != "accept":
+            assert row["accept_error_router_reason"] == "base_action_preserved"
+            assert row["accept_error_router_evidence_feature_count"] == 0
+        elif row["action"] == "escalate":
+            assert row["accept_error_router_reason"] == "accept_score_below_threshold"
+            assert row["accept_error_router_evidence_feature_count"] == 1
+        else:
+            assert row["accept_error_router_reason"] == "accept_score_at_or_above_threshold"
+            assert row["accept_error_router_evidence_feature_count"] == 1
     assert all(
         (row["base_action"], row["action"]) not in {
             ("review", "accept"), ("escalate", "accept"), ("escalate", "review")
@@ -132,3 +141,9 @@ def test_accept_error_router_train_and_monotone_inference(tmp_path: Path) -> Non
         for row in routed
     )
     assert any(row["accept_router_changed"] for row in routed[:-1])
+    legacy_row = dict(routed[-1])
+    legacy_row.pop("accept_error_router_reason")
+    legacy_row.pop("accept_error_router_evidence_feature_count")
+    validate_schema("accept-error-router-prediction-v1.schema.json", legacy_row)
+    without_evidence = route_rows(artifact, inference_rows[:1], evidence={})
+    assert without_evidence[0]["accept_error_router_evidence_feature_count"] == 0

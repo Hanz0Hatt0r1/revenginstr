@@ -106,9 +106,17 @@ accept_error_router_format
 base_action
 accept_correctness_probability
 accept_router_changed
+accept_error_router_reason
+accept_error_router_evidence_feature_count
 ```
 
 `action` is the routed action.
+The reason identifies the policy branch: preserve a non-accept action, keep an
+accept at or above threshold, or downgrade an accept below threshold. The
+evidence count reports how many configured numeric evidence features were
+present for a scored accept. It does not attribute the score to an individual
+feature. The two added fields are optional in the `/1` row schema so older
+router outputs remain valid.
 
 ## Consumer boundary
 
