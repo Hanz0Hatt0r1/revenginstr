@@ -1392,7 +1392,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 
 ## P1 — after measurement is stable
 
-12. ✅ Receiver provenance graph IR schema and reference validator; graph construction is still open.
+12. ✅ Receiver provenance graph schema, reference validation, and initial exact one-hop projections; the unified program-level graph remains open under M10.
 13. 🟡 Interprocedural receiver propagation v1; bounded caller-argument, field-store/load, and return anchors plus exact one-hop joins are implemented, while positive memory-flow and semantic receiver validation remain open.
 14. ✅ Initial Effect IR schema + structural extractor v1; additional effect classes and semantic evaluation remain open.
 15. ✅ Initial generic semantic-label/evaluation format and paired scorer; family-isolated consumer gold sets remain open.
