@@ -62,3 +62,11 @@ The runner checks that the exporter emitted its format completion marker in
 addition to checking Ghidra's process exit. Some Ghidra versions can log a
 post-script exception while returning a zero exit status; missing completion
 markers therefore fail the runner.
+
+For metadata exports, `--skip-missing-entry-blocks` lets a batch continue when
+Ghidra returns a High-P-code graph with no block starting at the function entry.
+The default still fails the export. Skipped functions have no CFG row, and the
+exporter reports each omitted entry with
+`GHIDRA_FUNCTION_PCODE_CFG_SKIPPED_ENTRY=<address> reason=entry_block_not_found`
+plus exported/skipped counts. Preserve that log with the JSONL: a skipped CFG
+is missing evidence and must remain a barrier in downstream audits.

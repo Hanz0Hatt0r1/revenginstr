@@ -45,6 +45,7 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
         if (programId.isEmpty()) throw new IllegalArgumentException("program-id must not be empty");
         boolean sawMemoryMetadataFlag = false;
         boolean includePhysicalMemoryMetadata = false;
+        boolean skipMissingEntryBlocks = false;
         List<Function> functions = new ArrayList<>();
         Set<String> seenEntries = new HashSet<>();
         for (int i = 2; i < args.length; i++) {
@@ -61,6 +62,13 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
                 includePhysicalMemoryMetadata = true;
                 continue;
             }
+            if ("--skip-missing-entry-blocks".equals(token)) {
+                if (skipMissingEntryBlocks) {
+                    throw new IllegalArgumentException("Duplicate skip-missing-entry-blocks flag");
+                }
+                skipMissingEntryBlocks = true;
+                continue;
+            }
             if (token.startsWith("FUN_") || token.startsWith("fun_")) token = token.substring(4);
             if (token.startsWith("0x") || token.startsWith("0X")) token = token.substring(2);
             Address address = toAddr(Long.parseUnsignedLong(token, 16));
@@ -73,12 +81,17 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
         }
         if (functions.isEmpty()) throw new IllegalArgumentException("at least one function entry is required");
         boolean includeMemoryMetadata = sawMemoryMetadataFlag;
+        if (skipMissingEntryBlocks && !includeMemoryMetadata) {
+            throw new IllegalArgumentException("--skip-missing-entry-blocks requires a memory metadata flag");
+        }
 
         DecompInterface decompiler = new DecompInterface();
         if (!decompiler.toggleCCode(false) || !decompiler.toggleSyntaxTree(true)) {
             throw new IllegalStateException("Could not configure P-code-only decompilation");
         }
         if (!decompiler.openProgram(currentProgram)) throw new IllegalStateException("Could not open program");
+        List<String> skippedEntryBlocks = new ArrayList<>();
+        int exportedFunctions = 0;
         try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
                 new FileOutputStream(output), StandardCharsets.UTF_8))) {
             for (Function function : functions) {
@@ -88,9 +101,15 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
                     String detail = results == null ? "no result" : results.getErrorMessage();
                     throw new IllegalStateException("Decompile failed for " + function.getEntryPoint() + ": " + detail);
                 }
-                out.write(functionJson(programId, function, results.getHighFunction(),
-                    includeMemoryMetadata, includePhysicalMemoryMetadata));
+                String json = functionJson(programId, function, results.getHighFunction(),
+                    includeMemoryMetadata, includePhysicalMemoryMetadata, skipMissingEntryBlocks);
+                if (json == null) {
+                    skippedEntryBlocks.add(function.getEntryPoint().toString());
+                    continue;
+                }
+                out.write(json);
                 out.newLine();
+                exportedFunctions++;
             }
         } finally {
             decompiler.dispose();
@@ -99,12 +118,18 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
             : includeMemoryMetadata ? FORMAT_V2 : FORMAT_V1;
         println("GHIDRA_FUNCTION_PCODE_CFG_FORMAT=" + exportedFormat);
         println("GHIDRA_FUNCTION_PCODE_CFG_FUNCTIONS=" + functions.size());
+        println("GHIDRA_FUNCTION_PCODE_CFG_EXPORTED_FUNCTIONS=" + exportedFunctions);
+        println("GHIDRA_FUNCTION_PCODE_CFG_SKIPPED_FUNCTIONS=" + skippedEntryBlocks.size());
+        for (String entry : skippedEntryBlocks) {
+            println("GHIDRA_FUNCTION_PCODE_CFG_SKIPPED_ENTRY=" + entry + " reason=entry_block_not_found");
+        }
         println("Ghidra function P-code CFG export -> " + output);
     }
 
     private String functionJson(
             String programId, Function function, HighFunction high,
-            boolean includeMemoryMetadata, boolean includePhysicalMemoryMetadata) {
+            boolean includeMemoryMetadata, boolean includePhysicalMemoryMetadata,
+            boolean skipMissingEntryBlocks) {
         List<PcodeBlockBasic> blocks = high.getBasicBlocks();
         IdentityHashMap<PcodeBlockBasic, Integer> indices = new IdentityHashMap<>();
         for (int i = 0; i < blocks.size(); i++) indices.put(blocks.get(i), i);
@@ -116,6 +141,7 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
             }
         }
         if (includeMemoryMetadata && entryBlockIndex < 0) {
+            if (skipMissingEntryBlocks) return null;
             throw new IllegalStateException("Entry block not found for " + function.getEntryPoint());
         }
         StringBuilder out = new StringBuilder(256).append("{\"format\":")

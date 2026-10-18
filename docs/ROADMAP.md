@@ -1728,13 +1728,24 @@ the actual argument is a `MULTIEQUAL` of two `0062e1a0` call results, and the
 fresh caller-root sidecar has no row. The intermediate
 `008868c0.param0` → `006382b0.param0` mapping remains exact; the outer
 `00806ef0` argument is an `INT_OR` value derived from `Stack[0x4]`, so it also
-has no exact formal-root row. These roots leave the pair unresolved for `/5`;
-a complete `/5` replay for this candidate is still outstanding, and no effect
-has been promoted. The new `scripts/run_ghidra_parameter_id.sh` persists
-Parameter ID on a writable project copy before read-only evidence export.
-Prior call-root sidecars from projects whose signatures were not saved must be
-regenerated before reuse; the earlier conservative audit statuses do not
-establish the validity of those sidecars.
+has no exact formal-root row. A fresh `/5` replay paired the one parameter
+field store with two loads. Both audit rows remain
+`possible_intervening_memory_effect`; the call at `00806f1a` to `008868c0`
+returns `unknown_effect` for both pairs, so no effect was promoted. The bounded
+replay used 122 P-code flows across depths zero through six after three stable
+callee-before-caller Parameter ID passes. Ghidra emitted CFG/3 for 116
+functions and explicitly skipped six whose High-P-code graphs had no block at
+the function entry. The closure also contains 59 direct-call targets outside
+the exported flow set, and 315 of 320 STORE operations have no exact memory
+fact. These missing CFG, target, store, and argument-root facts remain
+conservative barriers; the replay is not a complete call closure and does not
+validate positive alias filtering. `--skip-missing-entry-blocks` now lets a
+batch retain valid CFG rows while logging each skipped entry. The new
+`scripts/run_ghidra_parameter_id.sh` persists Parameter ID on a writable
+project copy before read-only evidence export. Prior call-root sidecars from
+projects whose signatures were not saved must be regenerated before reuse;
+the earlier conservative audit statuses do not establish the validity of
+those sidecars.
 
 The generic `GhidraInterproceduralMemoryEffect/1` builder and versioned `/5`
 audit are merged in revenginstr PRs [#110](https://github.com/Hanz0Hatt0r1/revenginstr/pull/110)
