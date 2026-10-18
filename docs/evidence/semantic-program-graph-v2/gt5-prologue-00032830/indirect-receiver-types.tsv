@@ -1,0 +1,2 @@
+format	source_id	function_entry	call_index	call_address	call_time	arg_count	receiver_present	receiver_storage_kind	receiver_token	receiver_type_name	receiver_type_display	receiver_pointer_depth	pointee_type_name	pointee_type_display	flow_type_node_count	flow_single_pointer_pointee_names_json	flow_single_pointer_pointee_displays_json
+REVENGINSTR.GhidraIndirectReceiverType/1	EBOOT.elf:00032830	00032830	0	00032880	66	1	1	unique	def:CAST@0003285c:290:8	uint *	uint *	1	uint	uint	2	["uint"]	["uint"]

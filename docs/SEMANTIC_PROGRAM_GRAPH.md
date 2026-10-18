@@ -1,12 +1,29 @@
 # Semantic program graph
 
 `revenginstr-semantic-program-graph` combines a versioned Function Effect IR
-file into one `REVENGINSTR.SemanticProgramGraph/1` JSONL record per program:
+file into one graph JSONL record per program:
 
 ```sh
 revenginstr-semantic-program-graph function-effects.jsonl \
   --output program-graphs.jsonl
 ```
+
+Pass an optional generic Ghidra receiver export to preserve receiver metadata
+and join it to exact indirect-call sites:
+
+```sh
+revenginstr-semantic-program-graph function-effects.jsonl \
+  --receiver-types indirect-receiver-types.tsv \
+  --output program-graphs.jsonl
+```
+
+Without receiver input the builder emits `SemanticProgramGraph/1`. With it the
+builder emits `/2`, pins the receiver TSV hash, and preserves every receiver
+row as a `receiver_observation` node. It joins an observation to a `CALLIND`
+only when function entry, call address, and P-code time all match. The
+`join_state` distinguishes a successful join, a contested site, an ambiguous
+site, a missing function in Effect IR, a missing call site, and a site that is
+not indirect. Unjoined observations remain in the graph without a call edge.
 
 This first projection emits program, function, operation, and
 parameter-rooted field nodes. It emits `contains` edges for observed program,
@@ -25,12 +42,18 @@ different P-code opcodes for the same function, address, and P-code time,
 affected operation and access edges are also marked `contested` with
 `opcode_disagreement`.
 
-Every node and edge carries source effect ids, evidence classes, source
-artifact SHA-256 values, and record ordinals. `confidence` is null because the
-structural inputs are not calibrated probabilities. Graph identity and
-ordering are deterministic; the record also pins the exact Effect IR file
-hash. The `semantic-program-graph` stage can be chained in a pinned benchmark
-manifest after `function-effect-ir`. The schema covers this initial structural
-slice. Receiver dispatch, recovered types/layouts, roles, states, resources,
-callbacks, execution contexts, graph queries, and audited consumer gold
-subgraphs remain open M10 work.
+In `/1`, every node and edge carries source effect ids, evidence classes,
+source artifact SHA-256 values, and record ordinals. In `/2`, receiver
+observations carry the receiver TSV's SHA-256 and record ordinal. `confidence`
+is null because these inputs are not calibrated probabilities. Graph identity
+and ordering are deterministic; the graph pins each input artifact's hash.
+`observes_receiver` edges exist only for exact `CALLIND` joins. The receiver
+strings are decompiler type metadata; they do not establish a class, dispatch
+slot, or target. No `dispatches` edge is inferred.
+
+The `semantic-program-graph` stage can be chained in a pinned benchmark
+manifest after `function-effect-ir`, with the receiver TSV declared as an
+additional input when used. The schemas cover structural facts and observed
+receiver metadata. Receiver dispatch, recovered layouts, roles, states,
+resources, callbacks, execution contexts, graph queries, audited consumer gold
+subgraphs, and M10 exit criteria remain open work.

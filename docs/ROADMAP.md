@@ -1187,16 +1187,26 @@ Stretch: accepted-edge precision >=0.98 with useful cross-function/state/object 
 
 ### Current implementation status (2026-10-19)
 
-The initial `SemanticProgramGraph/1` builder now projects `FunctionEffectIR/1`
-and `/2` into deterministic program, function, operation, and
-parameter-rooted field entities. Resolved direct calls and structural field
-reads/writes retain source effect ids and artifact hashes; unresolved and
-indirect calls stay explicit, and multiple direct targets at one call site
-remain contested. Cross-export opcode disagreements at the same function,
-address, and P-code time also remain contested. This implements only the first
-structural slice of M10.1–M10.3. Receiver dispatch, recovered layouts, roles,
-states, resources, callbacks, execution contexts, program queries, audited
-gold graphs, and the M10 exit criteria remain open.
+`SemanticProgramGraph/1` projects `FunctionEffectIR/1` and `/2` into
+deterministic program, function, operation, and parameter-rooted field
+entities. Resolved direct calls and structural field reads/writes retain
+source effect ids and artifact hashes; unresolved and indirect calls stay
+explicit, and multiple direct targets at one call site remain contested.
+Cross-export opcode disagreements at the same function, address, and P-code
+time also remain contested.
+
+`SemanticProgramGraph/2` optionally joins
+`GhidraIndirectReceiverType/1` observations by exact function entry, call
+address, and P-code time. It retains absent receivers and unmatched rows,
+records raw type metadata as observations, and emits no inferred dispatch
+target. A captured Ghidra replay for GT5 Prologue function `00032830` validates
+one `CALLIND` join from exported data; see
+[`SemanticProgramGraph/2 replay`](evidence/semantic-program-graph-v2/gt5-prologue-00032830/README.md).
+
+These are still structural slices of M10.1–M10.3. Dispatch recovery, recovered
+layouts, roles, states, resources, callbacks, execution contexts, conflict-aware
+query views, program queries, audited gold graphs, and M10 exit criteria remain
+open.
 
 ---
 
