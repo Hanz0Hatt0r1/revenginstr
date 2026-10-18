@@ -1332,9 +1332,10 @@ def compile_function(
                     body.extend("    " + line for line in ["{"] + target_prelude + [
                         f"if (rvi_call(ctx, {target_expr}) != 0) return -1;", "return 0;", "}"])
                 else:
-                    flow_addresses = sorted({_hex(item, f"{address} computed flow target") for item in flows})
-                    if not flow_addresses:
-                        flow_addresses = sorted(labels_by_address)
+                    flow_addresses = sorted(
+                        set(labels_by_address) |
+                        {_hex(item, f"{address} computed flow target") for item in flows}
+                    )
                     switch_lines = [f"switch ({target_expr}) {{"]
                     for target in flow_addresses:
                         target_label = labels_by_address.get(target)
@@ -1344,7 +1345,12 @@ def compile_function(
                             switch_lines.append(
                                 f"case UINT64_C(0x{target:x}): "
                                 f"if (rvi_call(ctx, UINT64_C(0x{target:x})) != 0) return -1; return 0;")
-                    switch_lines.extend(["default: return -1;", "}"])
+                    switch_lines.extend([
+                        "default:",
+                        f"    if (rvi_call(ctx, {target_expr}) != 0) return -1;",
+                        "    return 0;",
+                        "}",
+                    ])
                     body.extend("    " + line for line in ["{"] + target_prelude + switch_lines + ["}"])
                 operation_count += 1
                 continue

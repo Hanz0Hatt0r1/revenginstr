@@ -57,9 +57,10 @@ raw `RETURN`, x86 `WAIT` instructions with no P-code, and `CALLOTHER` through
 the host `RviPcodeContext.userop` callback, keyed by Ghidra's language userop
 index. Function-local P-code unique
 space is compacted while preserving overlapping byte ranges. Computed jumps
-dispatch to Ghidra's in-function flow targets, or to any instruction start in
-the function when Ghidra supplies no target list; an outside target fails at
-runtime. Binary80 helpers use the calling thread's current x87 control state;
+branch to in-function instruction labels. Enumerated external flow targets and
+dynamic targets outside the function dispatch through
+`RviPcodeContext.call`; the consumer decides whether each target is supported.
+Binary80 helpers use the calling thread's current x87 control state;
 the consumer must keep it aligned with the guest state for matching rounding.
 On non-x86 hosts or hosts without binary80 `long double`, those operations
 return an error. The 16-byte path treats values as opaque bytes except for the

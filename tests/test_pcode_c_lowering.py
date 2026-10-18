@@ -1126,13 +1126,17 @@ def test_codegen_dispatches_computed_jump_to_enumerated_targets(tmp_path: Path) 
     ]
     source, operation_count = compile_function(row, _address_spaces())
     assert operation_count == 6
-    assert "default: return -1;" in source
+    assert "default:" in source
 
     compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
     if compiler is None:
         pytest.skip("C compiler not available")
     harness = r'''
-typedef struct { uint8_t registers[64]; } TestState;
+typedef struct {
+    uint8_t registers[64];
+    uint32_t call_count;
+    uint64_t last_target;
+} TestState;
 static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {
     TestState *state = (TestState *)opaque;
     if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
@@ -1145,18 +1149,33 @@ static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t 
     memcpy(state->registers + offset, in, size);
     return 0;
 }
+static int call_target(void *opaque, uint64_t target) {
+    TestState *state = (TestState *)opaque;
+    ++state->call_count;
+    state->last_target = target;
+    return 0;
+}
 int rvi_00401300(RviPcodeContext *ctx);
 static int run_target(uint32_t target, uint32_t expected) {
     TestState state = {{0}};
     memcpy(state.registers, &target, sizeof(target));
-    RviPcodeContext context = {&state, read_bytes, write_bytes, NULL};
+    RviPcodeContext context = {&state, read_bytes, write_bytes, call_target};
     if (rvi_00401300(&context) != 0) return 1;
+    if (state.call_count != 0) return 2;
     uint32_t actual = 0;
     memcpy(&actual, state.registers + 4, sizeof(actual));
-    return actual == expected ? 0 : 2;
+    return actual == expected ? 0 : 3;
+}
+static int run_external_target(uint32_t target) {
+    TestState state = {{0}};
+    memcpy(state.registers, &target, sizeof(target));
+    RviPcodeContext context = {&state, read_bytes, write_bytes, call_target};
+    if (rvi_00401300(&context) != 0) return 1;
+    return state.call_count == 1 && state.last_target == target ? 0 : 2;
 }
 int main(void) {
-    return run_target(0x00401308, 1) || run_target(0x00401310, 2);
+    return run_target(0x00401308, 1) || run_target(0x00401310, 2) ||
+           run_external_target(0x00406000);
 }
 '''
     c_path = tmp_path / "computed-branch.c"
