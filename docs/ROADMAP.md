@@ -369,9 +369,11 @@ one stable primary code for each unresolved row. It leaves the existing
 `ReceiverInference/1` output and schema unchanged. Current type/catalog evidence
 supports `receiver_not_single_pointer`, `insufficient_receiver_type_evidence`,
 `missing_vtable_catalog_entry`, `mixed_receiver_candidates`, and
-`ambiguous_receiver_vtable`. It also emits `non_virtual_call_indirect` only
-when a `GhidraIndirectReceiverType/1` row explicitly records
-`receiver_present=0`; the legacy inference status and output remain unchanged.
+`ambiguous_receiver_vtable`. It emits `non_virtual_call_indirect` only when a
+`GhidraIndirectReceiverType/1` row explicitly records `receiver_present=0`,
+and `unsupported_pattern` only when that format has no usable type and its
+immediate receiver definition is outside the transparent P-code operations
+followed by inference. The legacy inference status and output remain unchanged.
 The sidecar schema reserves the other provenance and dataflow codes below;
 they are emitted only when the corresponding evidence is available, not
 inferred from missing type names.

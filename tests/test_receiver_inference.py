@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
 from revenginstr.receiver.infer import (
     PRIMARY_FAILURE_REASON_CODES,
+    TRANSPARENT_RECEIVER_FLOW_OPS,
     infer,
     infer_with_candidate_assessments,
     infer_with_failure_reasons,
@@ -15,6 +17,16 @@ from revenginstr.receiver.infer import (
 
 
 SCHEMA = Path(__file__).resolve().parents[1] / "schemas" / "receiver-failure-reason-v1.schema.json"
+
+
+def test_failure_reason_transparent_operations_match_receiver_exporter() -> None:
+    root = Path(__file__).resolve().parents[1]
+    source = (root / "ghidra/ExportIndirectCallReceiverTypes.java").read_text(encoding="utf-8")
+    method = source.split("private void collectTransparentTypeEvidence", 1)[1]
+    method = method.split("private String jsonString", 1)[0]
+    exporter_operations = set(re.findall(r"PcodeOp\.([A-Z0-9_]+)", method))
+
+    assert exporter_operations == TRANSPARENT_RECEIVER_FLOW_OPS
 
 
 def test_receiver_inference_resolves_unique_direct_type() -> None:
@@ -138,6 +150,26 @@ def test_receiver_failure_reasons_cover_observable_residuals() -> None:
             "flow_single_pointer_pointee_displays_json": "[]",
         },
         {
+            "format": "REVENGINSTR.GhidraIndirectReceiverType/1",
+            "source_id": "sample:d000", "call_index": "0", "receiver_pointer_depth": "1",
+            "receiver_token": "def:PTRSUB@1000:7:4",
+            "flow_single_pointer_pointee_names_json": "[]",
+            "flow_single_pointer_pointee_displays_json": "[]",
+        },
+        {
+            "format": "REVENGINSTR.GhidraIndirectReceiverType/1",
+            "source_id": "sample:e000", "call_index": "0", "receiver_pointer_depth": "1",
+            "receiver_token": "def:MULTIEQUAL@2000:5:4",
+            "flow_single_pointer_pointee_names_json": "[]",
+            "flow_single_pointer_pointee_displays_json": "[]",
+        },
+        {
+            "format": "other-format", "source_id": "sample:f000", "call_index": "0",
+            "receiver_pointer_depth": "1", "receiver_token": "def:PTRSUB@3000:7:4",
+            "flow_single_pointer_pointee_names_json": "[]",
+            "flow_single_pointer_pointee_displays_json": "[]",
+        },
+        {
             "source_id": "sample:8000", "call_index": "0", "receiver_pointer_depth": "1",
             "pointee_type_name": "Vehicle", "flow_single_pointer_pointee_names_json": "[]",
             "flow_single_pointer_pointee_displays_json": "[]",
@@ -165,13 +197,16 @@ def test_receiver_failure_reasons_cover_observable_residuals() -> None:
 
     rows, failures = infer_with_failure_reasons(receiver_rows, catalog)
 
-    assert len(rows) == 8
+    assert len(rows) == 11
     assert [row["primary_failure_reason"] for row in failures] == [
         "missing_vtable_catalog_entry",
         "insufficient_receiver_type_evidence",
         "receiver_not_single_pointer",
         "non_virtual_call_indirect",
         "receiver_not_single_pointer",
+        "unsupported_pattern",
+        "insufficient_receiver_type_evidence",
+        "insufficient_receiver_type_evidence",
         "mixed_receiver_candidates",
         "ambiguous_receiver_vtable",
         "mixed_receiver_candidates",
@@ -207,13 +242,15 @@ def test_receiver_inference_cli_writes_optional_reason_sidecar(tmp_path: Path) -
     receiver_types = tmp_path / "receiver-types.tsv"
     receiver_types.write_text(
         "format\tsource_id\tcall_index\tcall_address\treceiver_present\t"
-        "receiver_pointer_depth\t"
+        "receiver_pointer_depth\treceiver_token\t"
         "pointee_type_name\tflow_single_pointer_pointee_names_json\t"
         "flow_single_pointer_pointee_displays_json\n"
         "REVENGINSTR.GhidraIndirectReceiverType/1\tsample:1000\t0\t1010\t1\t"
-        "1\tUnknownType\t[]\t[]\n"
+        "1\tdef:INT_ADD@1010:2:4\tUnknownType\t[]\t[]\n"
         "REVENGINSTR.GhidraIndirectReceiverType/1\tsample:2000\t0\t2020\t0\t"
-        "0\t-\t[]\t[]\n",
+        "0\t0\t-\t[]\t[]\n"
+        "REVENGINSTR.GhidraIndirectReceiverType/1\tsample:3000\t0\t3030\t1\t"
+        "1\tdef:PTRSUB@3030:3:4\t-\t[]\t[]\n",
         encoding="utf-8",
     )
     catalog = tmp_path / "catalog.jsonl"
@@ -231,11 +268,11 @@ def test_receiver_inference_cli_writes_optional_reason_sidecar(tmp_path: Path) -
     inference_rows = [json.loads(line) for line in output.read_text(encoding="utf-8").splitlines()]
     failure_rows = [json.loads(line) for line in failures_path.read_text(encoding="utf-8").splitlines()]
     assert [row["status"] for row in inference_rows] == [
-        "unresolved_receiver_class", "receiver_not_single_pointer",
+        "unresolved_receiver_class", "receiver_not_single_pointer", "unresolved_receiver_class",
     ]
     assert all("primary_failure_reason" not in row for row in inference_rows)
     assert [row["primary_failure_reason"] for row in failure_rows] == [
-        "missing_vtable_catalog_entry", "non_virtual_call_indirect",
+        "missing_vtable_catalog_entry", "non_virtual_call_indirect", "unsupported_pattern",
     ]
     validator = Draft202012Validator(json.loads(SCHEMA.read_text(encoding="utf-8")))
     for row in failure_rows:
