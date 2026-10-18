@@ -1376,7 +1376,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 13. Interprocedural receiver propagation v1 (bounded caller-argument and field-store anchors plus exact one-hop joins landed; recursive propagation and store/load joins remain open).
 14. ✅ Initial Effect IR schema + structural extractor v1; additional effect classes and semantic evaluation remain open.
 15. ✅ Initial generic semantic-label/evaluation format and paired scorer; family-isolated consumer gold sets remain open.
-16. Structured function summary v1.
+16. ✅ Structured function summary v1; [`FunctionSummary/1–2`](FUNCTION_SUMMARY.md) preserves claim provenance and pins the source Effect IR hash.
 17. Semantic role baseline.
 18. State-machine candidate detector.
 19. Object-role clustering.
