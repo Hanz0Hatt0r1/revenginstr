@@ -1,0 +1,34 @@
+# Semantic program graph evaluation
+
+Consumers keep adjudicated subgraphs in their own repositories. A
+[`SemanticProgramGraphGold/1`](../schemas/semantic-program-graph-gold-v1.schema.json)
+JSONL row pins one graph and declares a node scope plus the relations that are
+complete in that scope. Each expected edge cites the source records used to
+adjudicate it; the evaluator rejects references to the graph being scored.
+Reviewers must assess those records independently of the graph projection.
+Unknown or incomplete relations are excluded from recall and edge precision.
+
+Run the hash-pinned evaluator with:
+
+```sh
+revenginstr-semantic-program-graph-evaluate semantic-program-graph.jsonl \
+  gold-subgraphs.jsonl \
+  --view exact-only \
+  --output graph-evaluation.json
+```
+
+The result is
+[`SemanticProgramGraphEvaluation/1`](../schemas/semantic-program-graph-evaluation-v1.schema.json).
+Per-relation candidate precision and recall are emitted only for
+declared-complete relations.
+`unsupported_edge_rate` is the share of selected candidate edges absent from
+the adjudicated gold set within that scope. `accepted_edge_precision` scores
+uncontested edges meeting the confidence threshold within complete relations;
+it is `null` when no labeled edge meets that threshold.
+`provenance_completeness` checks that selected edges carry a nonempty support
+chain with source format, artifact hash, and record index. It does not check
+that every referenced source artifact is available on disk.
+
+This evaluates the supplied scopes only. It does not treat unreviewed graph
+edges as negatives, and a report with no accepted edges does not establish an
+accepted-edge precision gate.

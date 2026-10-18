@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/semantic-program-graph-evaluation-v1.schema.json",
+  "title": "REVENGINSTR.SemanticProgramGraphEvaluation/1",
+  "description": "Hash-pinned aggregate graph metrics over consumer-adjudicated, relation-complete subgraphs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "dataset_id", "split_id", "semantic_program_graph_sha256", "gold_artifact_sha256",
+    "view", "minimum_confidence", "subgraphs_evaluated", "candidate_edge_count",
+    "unsupported_edge_count", "unsupported_edge_rate", "accepted_edge_count",
+    "accepted_edge_true_positives", "accepted_edge_precision", "provenance_complete_edge_count",
+    "provenance_completeness", "per_relation"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.SemanticProgramGraphEvaluation/1"},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "split_id": {"type": "string", "minLength": 1},
+    "semantic_program_graph_sha256": {"$ref": "#/$defs/sha256"},
+    "gold_artifact_sha256": {"$ref": "#/$defs/sha256"},
+    "view": {"enum": ["exact-only", "accepted-high-confidence", "exploratory"]},
+    "minimum_confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "subgraphs_evaluated": {"type": "integer", "minimum": 1},
+    "candidate_edge_count": {"type": "integer", "minimum": 0},
+    "unsupported_edge_count": {"type": "integer", "minimum": 0},
+    "unsupported_edge_rate": {"$ref": "#/$defs/nullable_ratio"},
+    "accepted_edge_count": {"type": "integer", "minimum": 0},
+    "accepted_edge_true_positives": {"type": "integer", "minimum": 0},
+    "accepted_edge_precision": {"$ref": "#/$defs/nullable_ratio"},
+    "provenance_complete_edge_count": {"type": "integer", "minimum": 0},
+    "provenance_completeness": {"$ref": "#/$defs/nullable_ratio"},
+    "per_relation": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {"enum": ["contains", "calls", "reads", "writes", "observes_receiver"]},
+      "additionalProperties": {"$ref": "#/$defs/relation_metrics"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nullable_ratio": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "relation_metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gold_edges", "candidate_edges", "true_positives", "unsupported_edges", "candidate_edge_precision", "recall"],
+      "properties": {
+        "gold_edges": {"type": "integer", "minimum": 0},
+        "candidate_edges": {"type": "integer", "minimum": 0},
+        "true_positives": {"type": "integer", "minimum": 0},
+        "unsupported_edges": {"type": "integer", "minimum": 0},
+        "candidate_edge_precision": {"$ref": "#/$defs/nullable_ratio"},
+        "recall": {"$ref": "#/$defs/nullable_ratio"}
+      }
+    }
+  }
+}

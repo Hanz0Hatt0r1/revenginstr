@@ -1234,6 +1234,16 @@ The NFS SHIFT CFG/3 replay confirms the call at `00a4556d` is in entry-reachable
 block 3; block-graph reachability does not establish branch-predicate
 feasibility or runtime execution.
 
+`SemanticProgramGraphGold/1` and
+`SemanticProgramGraphEvaluation/1` now define scoped consumer gold and report
+relation-specific recall only where labels declare completeness. The evaluator
+also reports unsupported candidate-edge rate and provenance-field coverage.
+Reviewer-curated raw P-code projection audits match 2/2 GT5 and 7/7 NFS SHIFT
+direct-call edges; all nine have complete provenance fields. These small
+checks are not independent subsystem gold. The captures have no calibrated
+accepted edges, so the accepted-edge precision gate and independent consumer
+gold sets remain open.
+
 ---
 
 # 16. M11 — Active learning and reviewer-feedback loop
@@ -1470,7 +1480,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 31. Bounded runtime probe-request and correlation contracts.
 32. Static/runtime differential replay and information-gain metrics.
 33. Semantic Program Graph schema and deterministic builder.
-34. Gold-subgraph evaluation harness.
+34. 🟡 Scoped graph-gold schema/evaluator and two raw P-code projection audits implemented; independent consumer gold sets and the accepted-edge precision gate remain open.
 35. Feedback quarantine, adjudication and leakage-gated training promotion.
 
 ## P4 — architecture and integration

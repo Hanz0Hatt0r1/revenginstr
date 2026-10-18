@@ -62,3 +62,8 @@ deterministic graph selector and its three evidence views are documented in
 [Semantic program queries](SEMANTIC_PROGRAM_QUERIES.md), including the bounded
 direct-call path query. These call-graph paths do not establish CFG-feasible
 execution reachability.
+
+Consumer-owned subgraphs can be scored with the scoped
+[`SemanticProgramGraphGold/1` evaluator](SEMANTIC_PROGRAM_GRAPH_EVALUATION.md).
+The retained GT5 and NFS SHIFT replays are raw P-code projection audits, not
+independent subsystem gold sets or accepted-edge precision results.
