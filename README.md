@@ -221,6 +221,9 @@ revenginstr-accept-router-infer accept-router predictions-v2.jsonl \
   --evidence evidence.jsonl --output routed.jsonl
 revenginstr-accept-router-gate frozen-routed.jsonl accept-router/manifest.json \
   model-v2/oof_predictions.jsonl --output frozen-router-gate.json --strict
+revenginstr-kpi-dashboard benchmarks/dashboard.json \
+  --json-output build/kpi-dashboard.json \
+  --markdown-output build/kpi-dashboard.md
 revenginstr-effect-ir --program-id 'analysis:opaque-id' \
   --parameter-loads parameter-loads.tsv --output function-effects.jsonl
 revenginstr-structured-summary function-effects.jsonl \

@@ -28,6 +28,7 @@ test = ["pytest>=8", "jsonschema>=4"]
 revenginstr-benchmark = "revenginstr.benchmark:main"
 revenginstr-determinism-audit = "revenginstr.benchmark_determinism:main"
 revenginstr-benchmark-delta = "revenginstr.benchmark_delta:main"
+revenginstr-kpi-dashboard = "revenginstr.kpi_dashboard:main"
 revenginstr-pcode-audit = "revenginstr.pcode.audit:main"
 revenginstr-pcode-instruction-coverage = "revenginstr.pcode.coverage:main"
 revenginstr-pcode-userop-coverage = "revenginstr.pcode.userop_coverage:main"

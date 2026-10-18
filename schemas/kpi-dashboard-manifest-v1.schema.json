@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/kpi-dashboard-manifest-v1.schema.json",
+  "title": "REVENGINSTR.KPIDashboardManifest/1",
+  "type": "object",
+  "required": ["format", "dashboard", "sources", "kpis"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.KPIDashboardManifest/1"},
+    "dashboard": {
+      "type": "object",
+      "required": ["id", "title"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "title": {"type": "string", "minLength": 1},
+        "description": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "sources": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["path", "sha256", "format"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+          "format": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      }
+    },
+    "kpis": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/kpi"}
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "kpi": {
+      "type": "object",
+      "required": ["id", "label", "source", "json_pointer", "unit"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "label": {"type": "string", "minLength": 1},
+        "source": {"type": "string", "minLength": 1},
+        "json_pointer": {"type": "string", "pattern": "^(|/.*)$"},
+        "unit": {"enum": ["fraction", "percent", "count", "score", "seconds"]},
+        "minimum": {"type": ["number", "null"]},
+        "maximum": {"type": ["number", "null"]},
+        "note": {"type": "string"}
+      },
+      "anyOf": [{"required": ["minimum"]}, {"required": ["maximum"]}],
+      "additionalProperties": false
+    }
+  }
+}
