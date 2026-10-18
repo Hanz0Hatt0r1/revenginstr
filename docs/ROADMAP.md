@@ -1649,6 +1649,17 @@ parameter; treating that as a non-alias proof would be unsound. These screens
 add no positive alias-filtering promotion and do not establish memory value
 flow.
 
+A separate high-priority prefilter selected 169 previously unseen functions
+whose mined instruction-level sequence was `STORE`, direct `CALL`, `LOAD`.
+Fresh High-P-code exports produced zero P-code `STORE` operations, zero
+parameter-field stores, and zero parameter-field loads across those functions;
+all 169 general memory-store sidecars were empty. A fresh flow export for one
+sample contained two `CALL` rows and one `RETURN`, confirming that the corpus
+labels are instruction-level candidate features and must not be read as
+Ghidra P-code memory facts. Keep that corpus as an address-generation aid only;
+future candidate prioritization must confirm actual High-P-code memory
+operations before exporting call closures.
+
 The generic `GhidraInterproceduralMemoryEffect/1` builder and versioned `/5`
 audit are merged in revenginstr PRs [#110](https://github.com/Hanz0Hatt0r1/revenginstr/pull/110)
 and [#111](https://github.com/Hanz0Hatt0r1/revenginstr/pull/111). They propagate
@@ -1658,10 +1669,11 @@ monotone fixed point for cycles. Missing argument links, incomplete callee
 facts, unresolved stores, indirect calls, unknown operations and exhausted
 budgets remain barriers. `/1`–`/4` stay unchanged.
 
-**Next:** continue fresh bounded x86-32 screening for a same-formal,
-same-offset field pair whose store dominates its load and whose intervening
-direct-call closure has exact caller roots and complete memory facts. Freeze
-those consumer exports and replay `/4` versus `/5` while preserving unknown and
-indirect barriers. Keep positive alias filtering opt-in until a consumer replay
-contains a complete exact-root case where the status change follows from the
-pinned facts. Do not infer alias facts from decompiler text.
+**Next:** select fresh bounded x86-32 candidates using actual High-P-code
+`STORE`/`LOAD` rows, then prioritize same-formal, same-offset pairs whose store
+dominates the load and whose intervening direct-call closure has exact caller
+roots and complete memory facts. Freeze those consumer exports and replay `/4`
+versus `/5` while preserving unknown and indirect barriers. Keep positive alias
+filtering opt-in until a consumer replay contains a complete exact-root case
+where the status change follows from the pinned facts. Do not infer alias facts
+from decompiler text or instruction-level corpus labels.
