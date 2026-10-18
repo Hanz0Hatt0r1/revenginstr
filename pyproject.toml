@@ -67,6 +67,7 @@ revenginstr-evidence-selective-train = "revenginstr.ml.evidence_selective:train_
 revenginstr-evidence-selective-infer = "revenginstr.ml.evidence_selective:infer_main"
 revenginstr-accept-router-train = "revenginstr.ml.accept_error_router:train_main"
 revenginstr-accept-router-infer = "revenginstr.ml.accept_error_router:infer_main"
+revenginstr-accept-router-gate = "revenginstr.ml.accept_error_router_gate:main"
 revenginstr-freeze-validation = "revenginstr.validation.frozen:main"
 revenginstr-drift-audit = "revenginstr.validation.drift:main"
 revenginstr-export-parity = "revenginstr.evidence.export_parity:main"

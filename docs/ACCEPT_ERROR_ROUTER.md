@@ -118,6 +118,36 @@ present for a scored accept. It does not attribute the score to an individual
 feature. The two added fields are optional in the `/1` row schema so older
 router outputs remain valid.
 
+## Frozen labeled gate
+
+The crossfit precision and coverage in the router manifest are calibration
+statistics. They are not an independent gate because the threshold is selected
+from those crossfit outcomes. Evaluate a separate labeled population after
+freezing the router:
+
+```bash
+revenginstr-accept-router-gate \
+  frozen-routed.jsonl accept-router/manifest.json model/oof_predictions.jsonl \
+  --output frozen-router-gate.json --strict
+```
+
+The holdout input follows
+[`FrozenAcceptRouterGate/1` rows](../schemas/frozen-accept-router-gate-row-v1.schema.json).
+In addition to routed fields, each row must include `truth`, `family_id`, a
+consumer-defined `critical_case`, an explicit `evidence_conflict_detected`
+boolean, `population` (`in_distribution` or `ood`), and whether external
+evidence was present. The evaluator requires the router manifest's exact OOF
+hash and checks both identity and family disjointness against the training OOF.
+It reports aggregate precision, coverage, critical false-accept rate, conflict
+accepts, monotonicity checks, and coverage by predicted class, population and
+evidence availability. Reports contain hashes and counts, never row identities.
+
+The gate passes only when the precision, coverage and critical-error limits pass;
+the critical subset is present; evidence conflicts are never accepted; all
+routes obey the frozen policy; and the gate population is identity- and
+family-disjoint from router calibration. Missing consumer annotations are an
+error, not an implicit `false` value.
+
 ## Consumer boundary
 
 Nevergone v9/v10 remain the historical evaluation/packaging lineage that established this mechanism. Their artifacts should not be renamed in place.

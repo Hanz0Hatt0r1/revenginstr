@@ -219,6 +219,8 @@ revenginstr-accept-router-train model-v2/oof_predictions.jsonl accept-router \
   --evidence evidence.jsonl --target-accept-precision 0.97
 revenginstr-accept-router-infer accept-router predictions-v2.jsonl \
   --evidence evidence.jsonl --output routed.jsonl
+revenginstr-accept-router-gate frozen-routed.jsonl accept-router/manifest.json \
+  model-v2/oof_predictions.jsonl --output frozen-router-gate.json --strict
 revenginstr-effect-ir --program-id 'analysis:opaque-id' \
   --parameter-loads parameter-loads.tsv --output function-effects.jsonl
 revenginstr-structured-summary function-effects.jsonl \

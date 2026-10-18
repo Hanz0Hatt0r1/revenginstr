@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/frozen-accept-router-gate-v1.schema.json",
+  "title": "REVENGINSTR.FrozenAcceptRouterGate/1 report",
+  "type": "object",
+  "required": ["format", "router_format", "provenance", "minimums", "router_threshold", "metrics", "coverage_by_predicted_class", "coverage_by_population", "coverage_by_external_evidence", "checks", "gate_pass"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.FrozenAcceptRouterGate/1"},
+    "router_format": {"const": "REVENGINSTR.AcceptErrorRouter/1"},
+    "provenance": {"type": "object"},
+    "minimums": {"type": "object"},
+    "router_threshold": {"type": "number", "minimum": 0, "maximum": 1},
+    "metrics": {"type": "object"},
+    "coverage_by_predicted_class": {"type": "object"},
+    "coverage_by_population": {"type": "object"},
+    "coverage_by_external_evidence": {"type": "object"},
+    "checks": {"type": "object"},
+    "gate_pass": {"type": "boolean"}
+  },
+  "additionalProperties": false
+}
