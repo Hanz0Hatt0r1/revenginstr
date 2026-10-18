@@ -1216,7 +1216,16 @@ Ghidra graph returns its `CALLIND` and exact receiver observation; the same
 query runner also returns endpoint context and preserves source support. This
 is the first generic selector layer for M10.4. Queries that require CFG
 feasibility, field meaning, layout equivalence, resource/state/callback paths,
-audited subsystem gold data, and all M10 exit criteria remain open.
+audited subsystem gold data, and all M10 exit criteria remain open. A separate
+bounded path query now enumerates simple routes over exact direct-call edges,
+retaining caller/callee function context and call-operation,
+membership-edge, and call-edge provenance. It also surfaces unresolved,
+indirect, and conflicted call sites in the source's direct-call reachable
+region as candidate frontiers with a witness path and membership provenance;
+it does not assign those sites a target, claim that they block the target
+path, or establish CFG-feasible execution. The NFS SHIFT replay in
+[`SemanticProgramPathQuery/1 replay`](evidence/semantic-program-path-query/nfs-shift-call-path/README.md)
+returns the captured route `00a45520 → 00a40550 → 00886930`.
 
 ---
 

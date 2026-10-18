@@ -21,6 +21,14 @@ as endpoint context, and the one `observes_receiver` edge. The
 `accepted-high-confidence` view returns no records because graph confidence is
 null.
 
+A path query from `00032830` to `000322a8` returns the exact direct call at
+`0003289c` and reports the `CALLIND` at `00032880` as an uncertain call
+frontier in the source function. The path step retains both function nodes,
+the call operation, and its membership/call edges. The frontier retains the
+call's membership edge and an empty reachability witness because it is in the
+source function. It does not assign that indirect call a target. The
+direct-call route is graph-level evidence, not a CFG-feasible execution claim.
+
 To regenerate the derived records from the captured exports, run from the
 repository root:
 
@@ -41,6 +49,12 @@ revenginstr-semantic-program-query \
   --view exploratory --kind operation --call-target-state indirect \
   --relation observes_receiver \
   --output docs/evidence/semantic-program-graph-v2/gt5-prologue-00032830/indirect-call-query.jsonl
+
+revenginstr-semantic-program-path-query \
+  docs/evidence/semantic-program-graph-v2/gt5-prologue-00032830/semantic-program-graph.jsonl \
+  --source-function-entry 00032830 --target-function-entry 000322a8 \
+  --view exact-only \
+  --output docs/evidence/semantic-program-graph-v2/gt5-prologue-00032830/direct-call-path-query.jsonl
 ```
 
 | Artifact | SHA-256 |
@@ -50,3 +64,4 @@ revenginstr-semantic-program-query \
 | Function Effect IR/2 | `3b10aaaf142e50db3d05a4cc1a0ec56dc2233f9b227fbc2ad7b660225f2e9e7a` |
 | Semantic Program Graph/2 | `b625d3a6ff58e19c92a78bbd0de8eb38eb25e0a06ab8f9befc281b061a980856` |
 | Semantic Program Query Result/1 | `03f39dc1333941c8f449036d645005530dfcdba61df383f01042dd0208d8a07c` |
+| Semantic Program Path Query Result/1 | `103e7f398d2f20e7f5837cbefd45a7bfe5e049dd24c95920c01471a0456c87c1` |

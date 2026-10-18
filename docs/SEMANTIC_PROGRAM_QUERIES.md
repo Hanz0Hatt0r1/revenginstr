@@ -57,6 +57,37 @@ revenginstr-semantic-program-query program-graphs.jsonl \
   --output support-uses.jsonl
 ```
 
+## Bounded direct-call paths
+
+`revenginstr-semantic-program-path-query` enumerates simple paths between two
+function entries using only `calls` edges and their exact call-site evidence:
+
+```sh
+revenginstr-semantic-program-path-query program-graphs.jsonl \
+  --source-function-entry 00a45520 \
+  --target-function-entry 00886930 \
+  --view exact-only \
+  --max-hops 12 \
+  --output call-paths.jsonl
+```
+
+Every path step contains the caller and callee function nodes as context, the
+call operation, its `contains` edge, and the exact `calls` edge. The operation
+and both edges must pass the selected view. A conflict on either function
+endpoint marks the step contested. Contested steps remain visible in
+`exact-only` and `exploratory` views.
+The bounded `uncertain_call_frontier` lists unresolved, indirect, or
+conflicted call sites in functions reachable from the source through the
+selected direct-call edges. Each entry includes its function node, the site's
+`contains` edge, and one bounded direct-call witness path to its function; an
+empty witness means the site is in the source function. A frontier entry is a
+place where the static call graph lacks a unique uncontested target; it does
+not establish that the call reaches the requested target function or that the
+site blocks a feasible execution path. The path query does not use CFG edges,
+callback hypotheses, or inferred dispatch targets.
+Search fails without writing a partial result when its path or expansion cap
+is exceeded.
+
 The query returns graph facts and their incident context. It does not infer
 control-flow reachability, field semantics, dispatch targets, callback paths,
 or execution order. Those require graph inputs and analysis contracts that
