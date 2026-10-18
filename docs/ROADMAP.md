@@ -1699,6 +1699,16 @@ effects and `/5` audit from the corrected root sidecar retained seven
 statuses unchanged; no alias-filtering promotion was justified. This corrects
 the earlier root evidence and makes loop-carried argument mapping fail closed.
 
+A fresh top-ranked 20-function screen (`next20i`) used previously unseen
+mining candidates indicating one direct-call feature and high instruction-level
+`STORE` and `LOAD` counts. The Ghidra exports contained zero parameter-field
+stores, 434 parameter-field loads, and 535 general memory-store facts; 320 of
+those stores had parameter-rooted constant offsets, but none stored a value
+rooted at a formal parameter, so the screen produced no compatible
+field-store/load pair.
+This rejects instruction-count ranking for pair discovery and reinforces that
+follow-up batches should start from exported parameter-field stores and loads.
+
 The generic `GhidraInterproceduralMemoryEffect/1` builder and versioned `/5`
 audit are merged in revenginstr PRs [#110](https://github.com/Hanz0Hatt0r1/revenginstr/pull/110)
 and [#111](https://github.com/Hanz0Hatt0r1/revenginstr/pull/111). They propagate
@@ -1708,17 +1718,17 @@ monotone fixed point for cycles. Missing argument links, incomplete callee
 facts, unresolved stores, indirect calls, unknown operations and exhausted
 budgets remain barriers. `/1`–`/4` stay unchanged.
 
-**Next:** select fresh bounded x86-32 candidates using actual High-P-code
-`STORE`/`LOAD` rows, then prioritize same-formal, same-offset pairs whose store
-dominates the load and whose intervening direct-call closure has exact caller
-roots and complete memory facts. Freeze those consumer exports and replay `/4`
-versus `/5` while preserving unknown and indirect barriers. Keep positive alias
-filtering opt-in until a consumer replay contains a complete exact-root case
-where the status change follows from the pinned facts. Do not infer alias facts
-from decompiler text or instruction-level corpus labels. The `next100g` replay
-shows a useful next target class: dominating pairs with one call on the witness,
-where the caller-root and callee effect closure can be frozen independently.
-The `next100h` results narrow that search further to exact same-formal roots
-whose callees export resolvable constant-offset stores and a complete
-write-free or disjoint transitive closure. Re-export prior caller-root evidence
-with the stricter `MULTIEQUAL` rule before using it to support alias decisions.
+**Next:** select fresh bounded x86-32 candidates from actual exported
+parameter-field `STORE` and `LOAD` rows, then prioritize same-formal,
+same-offset pairs whose store dominates the load and whose intervening
+direct-call closure has exact caller roots and complete memory facts. Freeze
+those consumer exports and replay `/4` versus `/5` while preserving unknown and
+indirect barriers. Keep positive alias filtering opt-in until a consumer replay
+contains a complete exact-root case where the status change follows from the
+pinned facts. Do not infer alias facts from decompiler text or instruction-
+level corpus labels. The `next100g` replay shows a useful target class:
+dominating pairs with one call on the witness, where the caller-root and callee
+effect closure can be frozen independently. The `next100h` results narrow that
+search further to exact same-formal roots whose callees export resolvable
+constant-offset stores and a complete write-free or disjoint transitive
+closure.
