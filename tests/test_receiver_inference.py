@@ -126,6 +126,18 @@ def test_receiver_failure_reasons_cover_observable_residuals() -> None:
             "flow_single_pointer_pointee_displays_json": "[]",
         },
         {
+            "format": "REVENGINSTR.GhidraIndirectReceiverType/1",
+            "source_id": "sample:b000", "call_index": "0", "receiver_present": "0",
+            "receiver_pointer_depth": "0", "flow_single_pointer_pointee_names_json": "[]",
+            "flow_single_pointer_pointee_displays_json": "[]",
+        },
+        {
+            "format": "other-format", "source_id": "sample:c000", "call_index": "0",
+            "receiver_present": "0", "receiver_pointer_depth": "0",
+            "flow_single_pointer_pointee_names_json": "[]",
+            "flow_single_pointer_pointee_displays_json": "[]",
+        },
+        {
             "source_id": "sample:8000", "call_index": "0", "receiver_pointer_depth": "1",
             "pointee_type_name": "Vehicle", "flow_single_pointer_pointee_names_json": "[]",
             "flow_single_pointer_pointee_displays_json": "[]",
@@ -153,10 +165,12 @@ def test_receiver_failure_reasons_cover_observable_residuals() -> None:
 
     rows, failures = infer_with_failure_reasons(receiver_rows, catalog)
 
-    assert len(rows) == 6
+    assert len(rows) == 8
     assert [row["primary_failure_reason"] for row in failures] == [
         "missing_vtable_catalog_entry",
         "insufficient_receiver_type_evidence",
+        "receiver_not_single_pointer",
+        "non_virtual_call_indirect",
         "receiver_not_single_pointer",
         "mixed_receiver_candidates",
         "ambiguous_receiver_vtable",
@@ -192,10 +206,14 @@ def test_failure_reason_sidecar_only_contains_unresolved_rows() -> None:
 def test_receiver_inference_cli_writes_optional_reason_sidecar(tmp_path: Path) -> None:
     receiver_types = tmp_path / "receiver-types.tsv"
     receiver_types.write_text(
-        "source_id\tcall_index\tcall_address\treceiver_pointer_depth\t"
+        "format\tsource_id\tcall_index\tcall_address\treceiver_present\t"
+        "receiver_pointer_depth\t"
         "pointee_type_name\tflow_single_pointer_pointee_names_json\t"
         "flow_single_pointer_pointee_displays_json\n"
-        "sample:1000\t0\t1010\t1\tUnknownType\t[]\t[]\n",
+        "REVENGINSTR.GhidraIndirectReceiverType/1\tsample:1000\t0\t1010\t1\t"
+        "1\tUnknownType\t[]\t[]\n"
+        "REVENGINSTR.GhidraIndirectReceiverType/1\tsample:2000\t0\t2020\t0\t"
+        "0\t-\t[]\t[]\n",
         encoding="utf-8",
     )
     catalog = tmp_path / "catalog.jsonl"
@@ -210,11 +228,18 @@ def test_receiver_inference_cli_writes_optional_reason_sidecar(tmp_path: Path) -
         "--failure-reasons-output", str(failures_path),
     ]) == 0
 
-    inference_row = json.loads(output.read_text(encoding="utf-8"))
-    failure_row = json.loads(failures_path.read_text(encoding="utf-8"))
-    assert "primary_failure_reason" not in inference_row
-    assert failure_row["primary_failure_reason"] == "missing_vtable_catalog_entry"
-    Draft202012Validator(json.loads(SCHEMA.read_text(encoding="utf-8"))).validate(failure_row)
+    inference_rows = [json.loads(line) for line in output.read_text(encoding="utf-8").splitlines()]
+    failure_rows = [json.loads(line) for line in failures_path.read_text(encoding="utf-8").splitlines()]
+    assert [row["status"] for row in inference_rows] == [
+        "unresolved_receiver_class", "receiver_not_single_pointer",
+    ]
+    assert all("primary_failure_reason" not in row for row in inference_rows)
+    assert [row["primary_failure_reason"] for row in failure_rows] == [
+        "missing_vtable_catalog_entry", "non_virtual_call_indirect",
+    ]
+    validator = Draft202012Validator(json.loads(SCHEMA.read_text(encoding="utf-8")))
+    for row in failure_rows:
+        validator.validate(row)
 
 
 def test_candidate_assessment_distinguishes_convergence_compatibility_and_unknowns() -> None:
