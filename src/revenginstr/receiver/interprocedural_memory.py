@@ -13,6 +13,7 @@ from typing import Any
 from revenginstr.pcode.opcodes import NO_EXPLICIT_MEMORY_WRITE_OPCODES
 from .call_effects import MAX_FLOW_BYTES, MAX_FLOW_OPERATIONS, _read_callee_flows
 from .field_flow import (
+    CFG_FORMAT_V4,
     _index_cfg,
     _index_memory_store_accesses,
     _memory_store_non_alias_reason,
@@ -21,6 +22,7 @@ from .field_flow import (
 )
 
 FORMAT = "REVENGINSTR.GhidraInterproceduralMemoryEffect/1"
+FORMAT_V2 = "REVENGINSTR.GhidraInterproceduralMemoryEffect/2"
 PARAMETER_ROOT_FORMAT = "REVENGINSTR.GhidraCallerArgumentParameterRoot/1"
 PARAMETER_OFFSET_ROOT_FORMAT = "REVENGINSTR.GhidraCallerArgumentParameterRoot/2"
 PARAMETER_ROOT_V1_HEADER = (
@@ -134,6 +136,35 @@ def _call_arguments(row: dict[str, str]) -> list[str]:
     return arguments
 
 
+def _resolved_indirect_source(
+    program_id: str,
+    function_entry: str,
+    operation: dict[str, str],
+    function_rows_by_site: dict[tuple[str, int], dict[str, str]],
+    cfg_by_function: dict[tuple[str, str], tuple[int, dict[str, Any]]],
+) -> bool:
+    """Return true when a CFG/4 INDIRECT link points at an operation classified in this loop."""
+    cfg_item = cfg_by_function.get((program_id, function_entry))
+    if cfg_item is None or cfg_item[1]["format"] != CFG_FORMAT_V4:
+        return False
+    site = (operation["op_address"], int(operation["op_time"]))
+    detail = cfg_item[1]["operation_details"].get(site)
+    link = None if detail is None else detail.get("indirect_effect_link")
+    if not isinstance(link, dict) or link.get("status") != "resolved":
+        return False
+    source_address = link["source_address"]
+    source_time = link["source_time"]
+    source_opcode = link["source_opcode"]
+    if source_opcode == "INDIRECT":
+        return False
+    flow_source = function_rows_by_site.get((source_address, source_time))
+    if flow_source is None or flow_source["opcode"] != source_opcode:
+        raise ValueError(
+            f"P-code CFG INDIRECT link does not match function flow at {function_entry}:{site}"
+        )
+    return True
+
+
 def build_interprocedural_memory_effects(
     pair_graph_path: Path,
     cfg_path: Path,
@@ -175,6 +206,10 @@ def build_interprocedural_memory_effects(
     if flow_bytes > max_flow_bytes:
         raise ValueError(f"P-code flow byte budget exceeded: {max_flow_bytes}")
     flows = _read_callee_flows(pcode_flows, max_operations=max_flow_operations)
+    flow_operations_by_site = {
+        entry: {(row["op_address"], int(row["op_time"])): row for row in rows}
+        for entry, (_, rows) in flows.items()
+    }
     flow_operation_count = sum(len(rows) for _, rows in flows.values())
     if flow_operation_count > max_flow_operations:
         raise ValueError(f"P-code flow operation budget exceeded: {max_flow_operations}")
@@ -185,6 +220,10 @@ def build_interprocedural_memory_effects(
     flow_manifest_sha = _hash_json(flow_manifest)
     root_sha, root_mappings = _read_parameter_roots(caller_parameter_roots_path, flows)
     cfg_by_function = _index_cfg(cfg_rows)
+    indirect_links_enabled = any(
+        cfg["format"] == CFG_FORMAT_V4 for (candidate_program, _), (_, cfg) in cfg_by_function.items()
+        if candidate_program == program_id
+    )
     memory_by_operation, _, memory_record_indices = _index_memory_store_accesses(
         memory_rows, cfg_by_function,
     )
@@ -290,6 +329,13 @@ def build_interprocedural_memory_effects(
                             else:
                                 edges.append((function_entry, function_row_index, operation, nested_target))
                                 pending.append(nested_target)
+                        elif operation["opcode"] == "INDIRECT" and _resolved_indirect_source(
+                            program_id, function_entry, operation,
+                            flow_operations_by_site[function_entry], cfg_by_function,
+                        ):
+                            # The linked source operation is independently handled as CALL, STORE,
+                            # or a known/unknown P-code effect in this complete function scan.
+                            continue
                         elif operation["opcode"] not in NO_EXPLICIT_MEMORY_WRITE_OPCODES:
                             effect_opcodes.add(operation["opcode"])
                             unknown_ids.add(f"{function_entry}:{site[0]}:{site[1]}:{operation['opcode']}")
@@ -447,9 +493,15 @@ def build_interprocedural_memory_effects(
             closure_entries = sorted(reachable)
             store_indices = sorted(index for _, index, _ in stores)
             root_indices = sorted(root_record_indices if target in flows and opcode == "CALL" else [])
+            indirect_link_cfg_record_indices = sorted({
+                cfg_by_function[(program_id, entry)][0]
+                for entry in [caller_entry, *closure_entries]
+                if (program_id, entry) in cfg_by_function
+                and cfg_by_function[(program_id, entry)][1]["format"] == CFG_FORMAT_V4
+            }) if indirect_links_enabled else []
             closure_sha = None
             if closure_entries:
-                closure_sha = _hash_json({
+                closure_payload = {
                     "pair_graph_id": graph["graph_id"],
                     "root_call": [caller_entry, address, time, target],
                     "flow_manifest": [item for item in flow_manifest if item["function_entry"] in reachable],
@@ -458,11 +510,14 @@ def build_interprocedural_memory_effects(
                     "aliasing_store_record_indices": sorted(alias_indices),
                     "non_aliasing_store_record_indices": sorted(non_alias_indices),
                     "unknown_operation_ids": sorted(unknown_ids),
-                })
+                }
+                if indirect_links_enabled:
+                    closure_payload["indirect_effect_link_cfg_record_indices"] = indirect_link_cfg_record_indices
+                closure_sha = _hash_json(closure_payload)
             if len(output) >= max_effect_rows:
                 raise ValueError(f"interprocedural effect row budget exceeded: {max_effect_rows}")
             output.append({
-                "format": FORMAT,
+                "format": FORMAT_V2 if indirect_links_enabled else FORMAT,
                 "program_id": program_id,
                 "function_entry": caller_entry,
                 "field_pair_id": graph["graph_id"],
@@ -490,6 +545,8 @@ def build_interprocedural_memory_effects(
                     "closure_function_entries": closure_entries,
                     "unknown_operation_ids": sorted(unknown_ids),
                     "memory_access_comparisons": pair_comparisons,
+                    **({"indirect_effect_link_cfg_record_indices": indirect_link_cfg_record_indices}
+                       if indirect_links_enabled else {}),
                 },
             })
 

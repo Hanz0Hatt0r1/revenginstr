@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-interprocedural-memory-effect-v2.schema.json",
+  "title": "REVENGINSTR.GhidraInterproceduralMemoryEffect/2 JSONL row",
+  "description": "Per-field-pair summary of a direct-call closure; exact roots and disjoint byte ranges classify writes, while source-linked INDIRECT markers are counted with their source operation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "program_id", "function_entry", "field_pair_id", "address", "time",
+    "opcode", "callee_entry", "status", "effect_opcodes", "aliasing_store_record_indices",
+    "non_aliasing_store_record_indices", "provenance"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraInterproceduralMemoryEffect/2"},
+    "program_id": {"type": "string", "minLength": 1},
+    "function_entry": {"type": "string", "minLength": 1},
+    "field_pair_id": {"type": "string", "minLength": 1},
+    "address": {"type": "string", "minLength": 1},
+    "time": {"type": "integer", "minimum": 0},
+    "opcode": {"enum": ["CALL", "CALLIND"]},
+    "callee_entry": {"type": ["string", "null"], "minLength": 1},
+    "status": {"enum": ["no_aliasing_memory_effect", "possible_aliasing_write", "unknown_effect", "missing_callee_flow", "unresolved_target", "indirect_call"]},
+    "effect_opcodes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "aliasing_store_record_indices": {"$ref": "#/$defs/recordIndices"},
+    "non_aliasing_store_record_indices": {"$ref": "#/$defs/recordIndices"},
+    "provenance": {"$ref": "#/$defs/provenance"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "recordIndices": {"type": "array", "uniqueItems": true, "items": {"type": "integer", "minimum": 1}},
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field_access_pair_graph_sha256", "field_access_pair_graph_record_index", "cfg_sha256",
+        "memory_store_access_sha256", "memory_store_access_record_indices",
+        "tracked_memory_store_access_record_index", "caller_parameter_roots_sha256",
+        "caller_parameter_root_record_indices", "caller_pcode_flow_sha256",
+        "caller_pcode_flow_record_index", "pcode_flow_manifest_sha256", "closure_sha256",
+        "closure_function_entries", "unknown_operation_ids", "memory_access_comparisons",
+        "indirect_effect_link_cfg_record_indices"
+      ],
+      "properties": {
+        "field_access_pair_graph_sha256": {"$ref": "#/$defs/sha256"},
+        "field_access_pair_graph_record_index": {"type": "integer", "minimum": 1},
+        "cfg_sha256": {"$ref": "#/$defs/sha256"},
+        "memory_store_access_sha256": {"$ref": "#/$defs/sha256"},
+        "memory_store_access_record_indices": {"$ref": "#/$defs/recordIndices"},
+        "tracked_memory_store_access_record_index": {"type": "integer", "minimum": 1},
+        "caller_parameter_roots_sha256": {"$ref": "#/$defs/sha256"},
+        "caller_parameter_root_record_indices": {"$ref": "#/$defs/recordIndices"},
+        "caller_pcode_flow_sha256": {"$ref": "#/$defs/sha256"},
+        "caller_pcode_flow_record_index": {"type": "integer", "minimum": 1},
+        "pcode_flow_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "closure_sha256": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "closure_function_entries": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "unknown_operation_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "memory_access_comparisons": {"type": "integer", "minimum": 0},
+        "indirect_effect_link_cfg_record_indices": {"$ref": "#/$defs/recordIndices"}
+      }
+    }
+  }
+}

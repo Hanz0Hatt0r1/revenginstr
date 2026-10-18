@@ -1770,6 +1770,17 @@ and 13 unresolved store locations keep all three `/5` pairs at
 `possible_intervening_memory_effect`; no alias filtering promotion is supported
 by this replay.
 
+The exporter now has an opt-in CFG/4 contract that resolves each Ghidra
+`INDIRECT` operation reference to its exact source operation. The Python reader
+checks that the source address, sequence time, and opcode identify another
+operation in the same function. Interprocedural effects/2 and dominance/6
+remove a marker only when that source is independently classified; unresolved
+links, aliasing stores, unknown calls, and incomplete evidence remain barriers.
+A fresh Ghidra replay exercised the new path: duplicate markers disappeared
+from the unknown-effect set, while the field-pair statuses stayed conservative
+because possible aliasing stores remained. The consumer retains its raw rows and
+measured outcomes.
+
 The generic `GhidraInterproceduralMemoryEffect/1` builder and versioned `/5`
 audit are merged in revenginstr PRs [#110](https://github.com/Hanz0Hatt0r1/revenginstr/pull/110)
 and [#111](https://github.com/Hanz0Hatt0r1/revenginstr/pull/111). They propagate
@@ -1779,17 +1790,10 @@ monotone fixed point for cycles. Missing argument links, incomplete callee
 facts, unresolved stores, indirect calls, unknown operations and exhausted
 budgets remain barriers. `/1`–`/4` stay unchanged.
 
-**Next:** select fresh bounded x86-32 candidates from actual exported
-parameter-field `STORE` and `LOAD` rows, prioritizing
-same-formal, same-offset pairs whose store dominates the load and whose
-intervening direct-call closure has exact caller roots and complete memory
-facts. Freeze those consumer exports and replay `/4` versus `/5` while
-preserving unknown and indirect barriers. Keep positive alias filtering opt-in
-until a consumer replay contains a complete exact-root case where the status
-change follows from pinned facts. Do not infer alias facts from decompiler text
-or instruction-level corpus labels. The `next100g` replay shows a useful target
-class: dominating pairs with one call on the witness, where the caller-root and
-callee effect closure can be frozen independently. The `next100h` results
-narrow that search further to exact same-formal roots whose callees export
-resolvable constant-offset stores and a complete write-free or disjoint
-transitive closure.
+**Next:** replay CFG/4 on further bounded x86-32 candidates from actual
+parameter-field `STORE` and `LOAD` rows. Compare `/5` and `/6` with the exact
+caller roots and complete memory facts pinned; keep aliasing and unresolved
+effects as barriers. Do not infer alias facts from decompiler text or
+instruction-level corpus labels. The current candidate family remains useful
+for checking that duplicate markers are deduplicated without changing a status
+when a separately classified possible write still lies on the witness.

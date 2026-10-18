@@ -17,15 +17,18 @@ FORMAT = "REVENGINSTR.FieldStoreLoadPathAudit/1"
 CFG_FORMAT = "REVENGINSTR.GhidraFunctionPcodeCFG/1"
 CFG_FORMAT_V2 = "REVENGINSTR.GhidraFunctionPcodeCFG/2"
 CFG_FORMAT_V3 = "REVENGINSTR.GhidraFunctionPcodeCFG/3"
+CFG_FORMAT_V4 = "REVENGINSTR.GhidraFunctionPcodeCFG/4"
 REACHING_FORMAT = "REVENGINSTR.FieldStoreLoadDominanceAudit/1"
 REACHING_FORMAT_V2 = "REVENGINSTR.FieldStoreLoadDominanceAudit/2"
 REACHING_FORMAT_V3 = "REVENGINSTR.FieldStoreLoadDominanceAudit/3"
 REACHING_FORMAT_V4 = "REVENGINSTR.FieldStoreLoadDominanceAudit/4"
 REACHING_FORMAT_V5 = "REVENGINSTR.FieldStoreLoadDominanceAudit/5"
+REACHING_FORMAT_V6 = "REVENGINSTR.FieldStoreLoadDominanceAudit/6"
 MEMORY_STORE_ACCESS_FORMAT = "REVENGINSTR.GhidraMemoryStoreAccess/1"
 DIRECT_CALL_MEMORY_EFFECT_FORMAT = "REVENGINSTR.GhidraDirectCallMemoryEffect/1"
 DIRECT_CALL_MEMORY_EFFECT_CLOSURE_FORMAT = "REVENGINSTR.GhidraDirectCallMemoryEffectClosure/1"
 INTERPROCEDURAL_MEMORY_EFFECT_FORMAT = "REVENGINSTR.GhidraInterproceduralMemoryEffect/1"
+INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V2 = "REVENGINSTR.GhidraInterproceduralMemoryEffect/2"
 REACHING_CLAIM_SCOPE_V2 = (
     "Conservative single-function High-P-code structural candidate; only known different physical spaces "
     "and same-root non-overlapping byte ranges are excluded; no branch-feasibility or runtime value-flow claim."
@@ -45,6 +48,11 @@ REACHING_CLAIM_SCOPE_V5 = (
     "hash-pinned interprocedural audit proves every reachable STORE is outside the tracked byte range; "
     "missing argument roots, unresolved stores, indirect calls, unknown operations, and incomplete closures "
     "remain barriers; no branch-feasibility or runtime value-flow claim."
+)
+REACHING_CLAIM_SCOPE_V6 = (
+    "Conservative single-function High-P-code structural candidate; source-linked INDIRECT markers are counted "
+    "with their exact source operation and ignored only when that operation is classified harmless; direct calls "
+    "remain barriers without complete effect evidence; no branch-feasibility or runtime value-flow claim."
 )
 HAZARD_OPCODES = {"STORE", "CALL", "CALLIND", "CALLOTHER"}
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -170,8 +178,9 @@ def _index_cfg(
     for record_index, record in enumerate(records, 1):
         where = f"P-code CFG record {record_index}"
         cfg_format = record.get("format") if isinstance(record, dict) else None
-        has_memory_metadata = cfg_format in {CFG_FORMAT_V2, CFG_FORMAT_V3}
-        v3 = cfg_format == CFG_FORMAT_V3
+        has_memory_metadata = cfg_format in {CFG_FORMAT_V2, CFG_FORMAT_V3, CFG_FORMAT_V4}
+        v3 = cfg_format in {CFG_FORMAT_V3, CFG_FORMAT_V4}
+        v4 = cfg_format == CFG_FORMAT_V4
         expected_record_fields = (
             {"format", "program_id", "function_entry", "entry_block_index", "blocks"}
             if has_memory_metadata else {"format", "program_id", "function_entry", "blocks"}
@@ -179,7 +188,7 @@ def _index_cfg(
         if (
             not isinstance(record, dict)
             or set(record) != expected_record_fields
-            or cfg_format not in {CFG_FORMAT, CFG_FORMAT_V2, CFG_FORMAT_V3}
+            or cfg_format not in {CFG_FORMAT, CFG_FORMAT_V2, CFG_FORMAT_V3, CFG_FORMAT_V4}
             or not isinstance(record.get("program_id"), str)
             or not record["program_id"]
             or not isinstance(record.get("function_entry"), str)
@@ -196,6 +205,7 @@ def _index_cfg(
         operations: dict[tuple[str, int], tuple[int, int, str]] = {}
         operation_details: dict[tuple[str, int], dict[str, Any]] = {}
         address_space_metadata: dict[str, tuple[str | None, int | None]] = {}
+        indirect_links: list[tuple[tuple[str, int], tuple[str, int, str]]] = []
         for block in record["blocks"]:
             if (
                 not isinstance(block, dict)
@@ -213,7 +223,9 @@ def _index_cfg(
             for position, operation in enumerate(block["operations"]):
                 expected_operation_fields = (
                     {"address", "time", "opcode", "memory_space", "memory_width_bytes",
-                     "memory_physical_space", "memory_pointer_width_bytes"}
+                     "memory_physical_space", "memory_pointer_width_bytes", "indirect_effect_link"}
+                    if v4 else {"address", "time", "opcode", "memory_space", "memory_width_bytes",
+                                "memory_physical_space", "memory_pointer_width_bytes"}
                     if v3 else {"address", "time", "opcode", "memory_space", "memory_width_bytes"}
                     if has_memory_metadata else {"address", "time", "opcode"}
                 )
@@ -224,6 +236,29 @@ def _index_cfg(
                 operation_time = _int(operation["time"], f"{where} operation time")
                 if not isinstance(operation["opcode"], str) or not operation["opcode"]:
                     raise ValueError(f"{where}: invalid opcode")
+                if v4:
+                    link = operation["indirect_effect_link"]
+                    if operation["opcode"] == "INDIRECT":
+                        if not isinstance(link, dict) or set(link) != {
+                            "status", "source_address", "source_time", "source_opcode",
+                        }:
+                            raise ValueError(f"{where}: malformed INDIRECT effect link")
+                        if link["status"] == "resolved":
+                            if (
+                                not isinstance(link["source_address"], str) or not link["source_address"]
+                                or not isinstance(link["source_opcode"], str) or not link["source_opcode"]
+                            ):
+                                raise ValueError(f"{where}: invalid resolved INDIRECT effect source")
+                            source_time = _int(link["source_time"], f"{where} INDIRECT source time")
+                            marker_key = (operation["address"], operation_time)
+                            indirect_links.append((marker_key, (link["source_address"], source_time, link["source_opcode"])))
+                        elif link["status"] == "unresolved":
+                            if any(link[key] is not None for key in ("source_address", "source_time", "source_opcode")):
+                                raise ValueError(f"{where}: unresolved INDIRECT link must not identify a source")
+                        else:
+                            raise ValueError(f"{where}: invalid INDIRECT effect link status")
+                    elif link is not None:
+                        raise ValueError(f"{where}: non-INDIRECT operation has an effect link")
                 if has_memory_metadata:
                     memory_space = operation["memory_space"]
                     memory_width = operation["memory_width_bytes"]
@@ -272,6 +307,14 @@ def _index_cfg(
         for block_index, block in blocks.items():
             if any(successor not in blocks for successor in block["successors"]):
                 raise ValueError(f"{where} block {block_index}: dangling successor")
+        for marker_key, (source_address, source_time, source_opcode) in indirect_links:
+            source_key = (source_address, source_time)
+            source_operation = operations.get(source_key)
+            if (
+                source_key == marker_key or source_operation is None
+                or source_operation[2] != source_opcode
+            ):
+                raise ValueError(f"{where}: INDIRECT effect link does not match a distinct CFG operation")
         if has_memory_metadata and (entry_block_index not in blocks or blocks[entry_block_index]["start_address"] != function_entry):
             raise ValueError(f"{where}: entry block does not start at the function entry")
         indexed[identity_key] = (record_index, {
@@ -375,11 +418,11 @@ def _index_memory_store_accesses(
         operation_location = cfg["operations"].get((fact["address"], time))
         if operation_location is None or operation_location[2] != "STORE":
             raise ValueError(f"{where}: operation does not match CFG STORE")
-        if cfg["format"] in {CFG_FORMAT_V2, CFG_FORMAT_V3}:
+        if cfg["format"] in {CFG_FORMAT_V2, CFG_FORMAT_V3, CFG_FORMAT_V4}:
             cfg_detail = cfg["operation_details"][(fact["address"], time)]
             if fact["memory_space"] != cfg_detail["memory_space"] or fact["memory_width_bytes"] != cfg_detail["memory_width_bytes"]:
                 raise ValueError(f"{where}: memory shape disagrees with CFG")
-            if cfg["format"] == CFG_FORMAT_V3 and (
+            if cfg["format"] in {CFG_FORMAT_V3, CFG_FORMAT_V4} and (
                 fact["memory_physical_space"] != cfg_detail["memory_physical_space"]
                 or fact["memory_pointer_width_bytes"] != cfg_detail["memory_pointer_width_bytes"]
             ):
@@ -849,9 +892,28 @@ def _may_write_tracked_space(
     access_facts_enabled: bool = False,
     non_alias_store_locations: set[tuple[str, int]] | None = None,
     non_effect_call_locations: set[tuple[str, int]] | None = None,
+    indirect_effect_sources: dict[tuple[str, int], dict[str, Any]] | None = None,
 ) -> bool:
     """Keep possible effects in the tracked P-code space or with unknown space."""
     opcode = operation["opcode"]
+    if opcode == "INDIRECT":
+        link = operation.get("indirect_effect_link")
+        if not isinstance(link, dict) or link.get("status") != "resolved" or link.get("source_opcode") == "INDIRECT":
+            return True
+        source = None if indirect_effect_sources is None else indirect_effect_sources.get(
+            (link.get("source_address"), link.get("source_time")),
+        )
+        if source is None or source.get("opcode") != link.get("source_opcode"):
+            return True
+        return _may_write_tracked_space(
+            source, tracked_space,
+            tracked_physical_space=tracked_physical_space,
+            physical_space_aware=physical_space_aware,
+            access_facts_enabled=access_facts_enabled,
+            non_alias_store_locations=non_alias_store_locations,
+            non_effect_call_locations=non_effect_call_locations,
+            indirect_effect_sources=indirect_effect_sources,
+        )
     if opcode == "STORE":
         if access_facts_enabled:
             location = (operation["address"], operation["time"])
@@ -880,6 +942,7 @@ def _find_routes(
     access_facts_enabled: bool = False,
     non_alias_store_locations: set[tuple[str, int]] | None = None,
     non_effect_call_locations: set[tuple[str, int]] | None = None,
+    indirect_effect_sources: dict[tuple[str, int], dict[str, Any]] | None = None,
     max_expansions: int,
 ) -> tuple[list[int] | None, list[int] | None, int]:
     """Find one clean and, optionally, one effect-bearing CFG witness."""
@@ -922,6 +985,7 @@ def _find_routes(
                         access_facts_enabled=access_facts_enabled,
                         non_alias_store_locations=non_alias_store_locations,
                         non_effect_call_locations=non_effect_call_locations,
+                        indirect_effect_sources=indirect_effect_sources,
                     )
                 )
             next_states = [(block_index, position + 1, bool(next_effect))]
@@ -956,6 +1020,7 @@ def _index_interprocedural_memory_effects(
         "caller_pcode_flow_record_index", "pcode_flow_manifest_sha256", "closure_sha256",
         "closure_function_entries", "unknown_operation_ids", "memory_access_comparisons",
     }
+    provenance_v2_fields = provenance_fields | {"indirect_effect_link_cfg_record_indices"}
     hash_fields = {
         "field_access_pair_graph_sha256", "cfg_sha256", "memory_store_access_sha256",
         "caller_parameter_roots_sha256", "caller_pcode_flow_sha256", "pcode_flow_manifest_sha256",
@@ -975,10 +1040,17 @@ def _index_interprocedural_memory_effects(
 
     for record_index, fact in enumerate(records, 1):
         where = f"interprocedural memory effect record {record_index}"
+        fact_format = fact.get("format") if isinstance(fact, dict) else None
+        expected_provenance = (
+            provenance_v2_fields if fact_format == INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V2
+            else provenance_fields
+        )
         if (
             not isinstance(fact, dict)
             or set(fact) != expected_fields
-            or fact.get("format") != INTERPROCEDURAL_MEMORY_EFFECT_FORMAT
+            or fact_format not in {
+                INTERPROCEDURAL_MEMORY_EFFECT_FORMAT, INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V2,
+            }
         ):
             raise ValueError(f"{where}: unexpected format or fields")
         for key in ("program_id", "function_entry", "field_pair_id", "address"):
@@ -1004,7 +1076,7 @@ def _index_interprocedural_memory_effects(
         if set(aliasing) & set(non_aliasing):
             raise ValueError(f"{where}: a store cannot be both aliasing and non-aliasing")
         provenance = fact.get("provenance")
-        if not isinstance(provenance, dict) or set(provenance) != provenance_fields:
+        if not isinstance(provenance, dict) or set(provenance) != expected_provenance:
             raise ValueError(f"{where}: invalid provenance fields")
         for field in hash_fields:
             if not isinstance(provenance[field], str) or _SHA256.fullmatch(provenance[field]) is None:
@@ -1027,6 +1099,19 @@ def _index_interprocedural_memory_effects(
             or closure_entries != sorted(set(closure_entries))
         ):
             raise ValueError(f"{where}: invalid closure function entries")
+        if fact_format == INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V2:
+            link_cfg_indices = indices(
+                provenance["indirect_effect_link_cfg_record_indices"],
+                f"{where} INDIRECT link CFG records",
+            )
+            expected_link_cfg_indices = sorted({
+                cfg_by_function[(fact["program_id"], entry)][0]
+                for entry in [fact["function_entry"], *closure_entries]
+                if (fact["program_id"], entry) in cfg_by_function
+                and cfg_by_function[(fact["program_id"], entry)][1]["format"] == CFG_FORMAT_V4
+            })
+            if link_cfg_indices != expected_link_cfg_indices:
+                raise ValueError(f"{where}: INDIRECT link CFG provenance does not match the closure")
         unknown_ids = provenance["unknown_operation_ids"]
         if (
             not isinstance(unknown_ids, list)
@@ -1145,6 +1230,9 @@ def audit_field_store_load_dominance(
     elif interprocedural_memory_effect_sha256 is not None:
         raise ValueError("interprocedural memory effect SHA-256 requires interprocedural rows")
     cfg_by_function = _index_cfg(cfg_records)
+    indirect_effect_links_enabled = any(
+        cfg["format"] == CFG_FORMAT_V4 for _, cfg in cfg_by_function.values()
+    )
     if access_facts_enabled:
         memory_access_by_operation, memory_access_indices_by_function, memory_access_record_indices = (
             _index_memory_store_accesses(memory_store_access_rows, cfg_by_function)
@@ -1294,7 +1382,7 @@ def audit_field_store_load_dominance(
                     raise ValueError(f"field-access pair {pair_index}: memory fact disagrees with paired store root or offset")
                 if candidate_access_fact["memory_width_bytes"] != store_width:
                     raise ValueError(f"field-access pair {pair_index}: memory fact disagrees with paired store width")
-                if cfg["format"] == CFG_FORMAT_V3 and load_detail is not None and (
+                if cfg["format"] in {CFG_FORMAT_V3, CFG_FORMAT_V4} and load_detail is not None and (
                     candidate_access_fact["memory_physical_space"] != load_detail["memory_physical_space"]
                     or candidate_access_fact["memory_pointer_width_bytes"] != load_detail["memory_pointer_width_bytes"]
                 ):
@@ -1327,7 +1415,7 @@ def audit_field_store_load_dominance(
         effect_after_store = None
         store_reachable = None
         store_dominates = None
-        if cfg["format"] not in {CFG_FORMAT_V2, CFG_FORMAT_V3} or store_location is None or load_location is None:
+        if cfg["format"] not in {CFG_FORMAT_V2, CFG_FORMAT_V3, CFG_FORMAT_V4} or store_location is None or load_location is None:
             status = "incomplete_evidence"
         elif any(value is None for value in (store_memory_space, load_memory_space, store_width, load_width)):
             status = "incomplete_evidence"
@@ -1357,12 +1445,14 @@ def audit_field_store_load_dominance(
                     cfg, (store_location[0], store_location[1] + 1), load_location[:2],
                     classify_effects=True, tracked_memory_space=store_memory_space,
                     tracked_physical_space=(
-                        store_detail.get("memory_physical_space") if cfg["format"] == CFG_FORMAT_V3 else None
+                        store_detail.get("memory_physical_space")
+                        if cfg["format"] in {CFG_FORMAT_V3, CFG_FORMAT_V4} else None
                     ),
-                    physical_space_aware=cfg["format"] == CFG_FORMAT_V3,
+                    physical_space_aware=cfg["format"] in {CFG_FORMAT_V3, CFG_FORMAT_V4},
                     access_facts_enabled=access_facts_enabled,
                     non_alias_store_locations=non_alias_store_locations,
                     non_effect_call_locations=no_effect_call_locations,
+                    indirect_effect_sources=cfg["operation_details"],
                     max_expansions=budget,
                 )
                 path_expansions += used
@@ -1393,7 +1483,8 @@ def audit_field_store_load_dominance(
 
         result = {
             "format": (
-                REACHING_FORMAT_V5 if interprocedural_effects_enabled
+                REACHING_FORMAT_V6 if indirect_effect_links_enabled
+                else REACHING_FORMAT_V5 if interprocedural_effects_enabled
                 else REACHING_FORMAT_V4 if call_effect_closures_enabled
                 else REACHING_FORMAT_V3 if direct_call_effects_enabled
                 else REACHING_FORMAT_V2 if access_facts_enabled else REACHING_FORMAT
@@ -1420,7 +1511,8 @@ def audit_field_store_load_dominance(
                 "memory_effect_store_to_load": effect_after_store or [],
             },
             "claim_scope": (
-                REACHING_CLAIM_SCOPE_V5 if interprocedural_effects_enabled
+                REACHING_CLAIM_SCOPE_V6 if indirect_effect_links_enabled
+                else REACHING_CLAIM_SCOPE_V5 if interprocedural_effects_enabled
                 else REACHING_CLAIM_SCOPE_V4 if call_effect_closures_enabled
                 else REACHING_CLAIM_SCOPE_V3 if direct_call_effects_enabled
                 else REACHING_CLAIM_SCOPE_V2 if access_facts_enabled

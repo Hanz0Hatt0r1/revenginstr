@@ -178,3 +178,30 @@ one `--pcode-flow ENTRY TSV` argument per function in the bounded closure, then
 pass its JSONL output to the dominance audit with
 `--interprocedural-memory-effect-jsonl`. Freeze complete sidecar inputs and
 `/5` output before adopting positive alias filtering in a consumer.
+
+## Source-linked Ghidra INDIRECT markers
+
+Ghidra's `INDIRECT` input 1 is a special operation reference to the P-code
+operation that caused the indirect effect. `GhidraFunctionPcodeFlow/1` keeps
+that operand as a constant token for compatibility, so it does not preserve
+the relationship. `GhidraFunctionPcodeCFG/4`, requested with
+`--indirect-effect-links`, resolves the token through `HighFunction.getOpRef`
+and records the exact source address, sequence time, and opcode. The shared CFG
+reader rejects a link unless that source is another operation in the same
+function with the matching opcode.
+
+`GhidraInterproceduralMemoryEffect/2` may omit a resolved marker while scanning
+a complete flow because its source operation is separately classified in that
+same scan: STORE facts are alias-checked, direct calls are traversed, indirect
+calls remain unknown, and unsupported operations remain unknown. Missing or
+unresolved links and links to another `INDIRECT` remain barriers. The source
+link CFG row ordinals are recorded with the effect result. `FieldStoreLoadDominanceAudit/6`
+applies the same rule on a path: it ignores a marker only when the source
+operation is already classified harmless under that exact field pair's
+memory/call evidence. This removes duplicate barriers without changing the
+existing fail-closed rules for unknown or potentially aliasing source effects.
+
+The `/1` flow, CFG `/1`–`/3`, interprocedural effect `/1`, and dominance audit
+`/1`–`/5` contracts remain unchanged. Use CFG/4 consistently for the caller
+and every function in the direct-call closure; mixed or missing CFG evidence
+does not authorize marker removal.
