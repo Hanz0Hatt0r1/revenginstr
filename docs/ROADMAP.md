@@ -1660,6 +1660,27 @@ Ghidra P-code memory facts. Keep that corpus as an address-generation aid only;
 future candidate prioritization must confirm actual High-P-code memory
 operations before exporting call closures.
 
+A higher-complexity 100-function screen (`next100f`) exported 14
+parameter-field stores and 1,154 parameter loads, forming nine exact pairs.
+Six pairs in two functions had a store-bypass path. Three pairs in a third
+function had dominating stores but remained `possible_intervening_memory_effect`
+in `/2`. A fresh `/5` replay of one of those pairs kept that status: all eight
+calls in the effect bundle were `unknown_effect`, with missing direct-call
+roots and a transitive closure containing stores and indirect calls. This
+rechecked the candidate and did not produce an alias-filtering promotion.
+
+A subsequent screen (`next100g`) constrained the corpus prefilter to one direct
+call and exported 25 parameter-field stores and 507 parameter loads across 100
+functions, producing two exact pairs in one function. Fresh `/2` and `/5`
+replays agreed: the first pair was `unique_cfg_store_candidate` because its
+store dominates the load and no possible memory effect lies on the witness;
+the second stayed `possible_intervening_memory_effect`. The intervening call
+for the second load was `unknown_effect`; its only exact argument root mapped
+callee parameter 2 to caller parameter 3, while the other arguments came from
+loads. Distinct caller formals still may alias. This validates both a positive
+structural candidate path and an unknown-effect barrier, without a `/2` to
+`/5` status change or a runtime value-flow claim.
+
 The generic `GhidraInterproceduralMemoryEffect/1` builder and versioned `/5`
 audit are merged in revenginstr PRs [#110](https://github.com/Hanz0Hatt0r1/revenginstr/pull/110)
 and [#111](https://github.com/Hanz0Hatt0r1/revenginstr/pull/111). They propagate
@@ -1676,4 +1697,6 @@ roots and complete memory facts. Freeze those consumer exports and replay `/4`
 versus `/5` while preserving unknown and indirect barriers. Keep positive alias
 filtering opt-in until a consumer replay contains a complete exact-root case
 where the status change follows from the pinned facts. Do not infer alias facts
-from decompiler text or instruction-level corpus labels.
+from decompiler text or instruction-level corpus labels. The `next100g` replay
+shows a useful next target class: dominating pairs with one call on the witness,
+where the caller-root and callee effect closure can be frozen independently.
