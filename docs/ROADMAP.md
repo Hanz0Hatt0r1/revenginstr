@@ -658,6 +658,12 @@ The router should combine independent signals such as:
 - evidence conflicts;
 - known failure bucket membership.
 
+The generic accept-only router already trains on family-held-out base-classifier
+rows and optional sanitized numeric evidence. New inference rows report one
+stable policy reason and the number of configured evidence features present
+for each scored accept; the reason describes the threshold branch, not a
+per-feature attribution.
+
 ## Required behavior
 
 - per-class acceptance policies;
@@ -1357,7 +1363,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 6. ✅ Frozen receiver coverage report; first consumer report records current coverage below the M2.6 target.
 7. ✅ Classifier threshold/calibration sweep tooling.
 8. ✅ Classifier error-cluster report.
-9. Router evidence-aware reason codes and scoring inputs.
+9. ✅ Router evidence-aware reason codes and scoring inputs; inference records the threshold branch and present evidence-feature count.
 10. Frozen router >=0.970 precision / >=0.55 coverage gate.
 11. Markdown + JSON KPI dashboard artifact.
 

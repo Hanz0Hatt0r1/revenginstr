@@ -361,7 +361,8 @@ def route_rows(artifact: dict[str, Any], base_rows: list[dict[str, Any]], *,
     np = deps["np"]
     evidence = evidence or {}
     classes = list(artifact["classes"])
-    matrix = build_matrix(base_rows, classes, evidence, list(artifact.get("evidence_keys", [])), np)
+    evidence_keys = list(artifact.get("evidence_keys", []))
+    matrix = build_matrix(base_rows, classes, evidence, evidence_keys, np)
     predictions = np.asarray([str(row.get("prediction", "")) for row in base_rows], dtype=object)
     accept_indices = np.asarray([index for index, row in enumerate(base_rows) if row.get("action") == "accept"], dtype=np.int64)
     scores = np.full(len(base_rows), np.nan, dtype=np.float64)
@@ -376,10 +377,17 @@ def route_rows(artifact: dict[str, Any], base_rows: list[dict[str, Any]], *,
         base_action = str(row.get("action", "escalate"))
         action = base_action
         score = None
+        reason = "base_action_preserved"
+        evidence_feature_count = 0
         if base_action == "accept":
             score = float(scores[index])
+            features = evidence.get(str(row.get("id", "")), {})
+            evidence_feature_count = sum(key in features for key in evidence_keys)
             if score < threshold:
                 action = "escalate"
+                reason = "accept_score_below_threshold"
+            else:
+                reason = "accept_score_at_or_above_threshold"
         output = dict(row)
         output.update({
             "accept_error_router_format": FORMAT,
@@ -387,6 +395,8 @@ def route_rows(artifact: dict[str, Any], base_rows: list[dict[str, Any]], *,
             "action": action,
             "accept_correctness_probability": score,
             "accept_router_changed": action != base_action,
+            "accept_error_router_reason": reason,
+            "accept_error_router_evidence_feature_count": evidence_feature_count,
         })
         routed.append(output)
     return routed
