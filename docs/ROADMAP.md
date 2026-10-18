@@ -1709,14 +1709,14 @@ field-store/load pair.
 This rejects instruction-count ranking for pair discovery and reinforces that
 follow-up batches should start from exported parameter-field stores and loads.
 
-A refined 33-function `__thiscall` sample with 300–600-byte functions and
-instruction-level direct-call features produced 21 parameter-field stores and
-236 parameter loads, forming three exact same-formal/offset pairs. CFG/3
-replays of both pair-bearing functions (`00723330` and `00798ac0`) classified
-all three as `store_not_dominating_load`: two loads have a store-bypass path,
-and the third precedes its paired store. The calling-convention and size
-signals improved the store yield over `next20i`, but this sample still offers
-no pair that needs interprocedural call-effect filtering.
+A refined 53-function `__thiscall` sample with 300–600-byte functions and
+instruction-level direct-call features produced 29 parameter-field stores and
+390 parameter loads, forming 30 exact same-formal/offset pairs. CFG/3 replays
+of all seven pair-bearing functions classified all 30 as
+`store_not_dominating_load`; none qualified for interprocedural call-effect
+filtering. The calling-convention and size signals improved store yield over
+`next20i`, but the sampled functions still did not produce a dominating
+store/load pair.
 
 The generic `GhidraInterproceduralMemoryEffect/1` builder and versioned `/5`
 audit are merged in revenginstr PRs [#110](https://github.com/Hanz0Hatt0r1/revenginstr/pull/110)
