@@ -165,6 +165,7 @@ recalculate provenance fields when retaining an experiment.
 | [`ObjectRoleFeatureSet/1` rows](../schemas/object-role-feature-set-v1.schema.json) and [`ObjectRoleClusterAudit/1`](../schemas/object-role-cluster-audit-v1.schema.json) · [usage](OBJECT_ROLE_CLUSTERING.md) | Caller-normalized, provenance-linked feature hashes for receiver, field, vtable-slot, callgraph, and Effect-IR groups. The cluster report contains pairwise Jaccard candidates and connected components, with no semantic role or calibrated confidence claim. |
 | [`ObjectRoleFeatureExtractionManifest/1`](../schemas/object-role-feature-extraction-manifest-v1.schema.json) · [usage](OBJECT_ROLE_CLUSTERING.md) | Pins the required Function Effect IR and optional receiver-inference, vtable-slot, and callgraph inputs used to derive an object-role feature set, including empty and absent optional inputs. |
 | [`GhidraExportParity/1`](../schemas/ghidra-export-parity-v1.schema.json) · [usage](GHIDRA_EXPORT_PARITY.md) | Hashes and row counts for two TSVs, decoded header/row equality in order, and the first mismatch index. Record values and input paths are omitted. |
+| [`GhidraJsonlExportParity/1`](../schemas/ghidra-jsonl-export-parity-v1.schema.json) · [usage](GHIDRA_JSONL_EXPORT_PARITY.md) | Hashes and record counts for two JSONL exports, JSON object equality in order, and the first mismatch index. Record values and input paths are omitted. |
 
 ## Known schema coverage gaps
 

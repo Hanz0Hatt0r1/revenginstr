@@ -304,10 +304,12 @@ Function/Bounded P-code TSV row, and decoded payloads for all five Program
 Index tables and ARM32 Itanium vtable slots. Tests run P-code records through
 audit/schema validation and check exact TSV headers, column ordering, and rows
 against their v1 schemas. `revenginstr-export-parity` compares two UTF-8 TSV
-outputs in row order and emits hashes/counts plus the first mismatch without
-retaining record values. Nevergone now records byte-identical bounded forward
-and reverse outputs on one root and a forward output on a second root from the
-same analyzed program under equivalent priority rules. The [report and
+outputs in row order; `revenginstr-jsonl-export-parity` does the same for
+JSONL object records while ignoring object-key order. Both emit hashes/counts
+plus the first mismatch without retaining record values. Nevergone now records
+byte-identical bounded forward and reverse outputs on one root and a forward
+output on a second root from the same analyzed program under equivalent
+priority rules. The [report and
 invocation details](https://github.com/Hanz0Hatt0r1/nevergone-recomp/blob/main/docs/evidence/ghidra-export-parity.md)
 stay in that consumer. Expand reverse coverage and additional bounds before
 retiring the local fallbacks. The work remains open for fixtures accompanying
