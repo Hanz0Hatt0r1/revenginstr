@@ -6,6 +6,8 @@
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
 
+**Execution strategy (2026-10-19):** [Evidence-first analysis development strategy](EVIDENCE_FIRST_ANALYSIS_STRATEGY.md) defines the preferred implementation order, proof obligations, measurable PR gates, and consumer boundaries for M2–M6 and subsequent semantic work. This strategy guides future work; it does not mark planned capabilities as implemented.
+
 ## 1. North-star goal
 
 `revenginstr` should be able to take a supported native binary plus an already analyzed Ghidra project and produce a reproducible, auditable analysis package containing:
