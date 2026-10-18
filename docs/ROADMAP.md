@@ -561,7 +561,12 @@ query/resolution coverage separately, reject duplicate or out-of-population
 identities, and omit identities from the summary. The frozen consumer report
 remains the evidence for the coverage target. Projection-only benchmark
 manifests can summarize already-produced frozen artifacts without rerunning
-their expensive acquisition stages.
+their expensive acquisition stages. The first consumer report, [Nevergone's
+unseen500-v10 receiver coverage](https://github.com/Hanz0Hatt0r1/nevergone-recomp/blob/main/docs/evidence/frozen-unseen500-v10-receiver-coverage/README.md),
+finds receiver queries in 100/500 functions (20.0%), a unique-vtable query in
+53/500 functions (10.6%), and 66/203 resolved queries (32.5%). This unlabeled
+holdout reports coverage only; the >=35% target is not met, and exact-evidence
+gates remain unevaluated.
 
 ## Exit criteria
 
@@ -1349,9 +1354,9 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 3. ✅ Standardized combined metric projections for classifier, receiver, router and validation reports.
 4. ✅ Exporter/schema inventory; refreshed current three-repository snapshots and added source-list coverage.
 5. Receiver residual taxonomy v1.
-6. Frozen receiver coverage report.
-7. Classifier threshold/calibration sweep tooling.
-8. Classifier error-cluster report.
+6. ✅ Frozen receiver coverage report; first consumer report records current coverage below the M2.6 target.
+7. ✅ Classifier threshold/calibration sweep tooling.
+8. ✅ Classifier error-cluster report.
 9. Router evidence-aware reason codes and scoring inputs.
 10. Frozen router >=0.970 precision / >=0.55 coverage gate.
 11. Markdown + JSON KPI dashboard artifact.
