@@ -18,6 +18,7 @@ from typing import Any
 FORMAT = "REVENGINSTR.ReceiverInference/1"
 FAILURE_FORMAT = "REVENGINSTR.ReceiverFailureReason/1"
 ASSESSMENT_FORMAT = "REVENGINSTR.ReceiverCandidateAssessment/1"
+RECEIVER_TYPE_FORMAT = "REVENGINSTR.GhidraIndirectReceiverType/1"
 
 PRIMARY_FAILURE_REASON_CODES = frozenset({
     "ambiguous_phi",
@@ -207,10 +208,13 @@ def candidate_assessment(
 
 def primary_failure_reason(status: str, typed_sources: list[tuple[Any, str]],
                            class_vtables: dict[str, set[str]],
-                           terminal_to_classes: dict[str, set[str]]) -> str | None:
+                           terminal_to_classes: dict[str, set[str]], *,
+                           explicit_no_receiver: bool = False) -> str | None:
     if status == "resolved_unique_vtable":
         return None
     if status == "receiver_not_single_pointer":
+        if explicit_no_receiver:
+            return "non_virtual_call_indirect"
         return "receiver_not_single_pointer"
     if status == "ambiguous_receiver_class":
         return "mixed_receiver_candidates"
@@ -358,7 +362,18 @@ def _infer(
 
         if not include_failure_reasons:
             continue
-        reason = primary_failure_reason(status, typed_sources, class_vtables, terminal_to_classes)
+        # Do not infer this reason from a missing field or from absent type names.
+        explicit_no_receiver = (
+            receiver.get("format") == RECEIVER_TYPE_FORMAT
+            and receiver.get("receiver_present") == "0"
+        )
+        reason = primary_failure_reason(
+            status,
+            typed_sources,
+            class_vtables,
+            terminal_to_classes,
+            explicit_no_receiver=explicit_no_receiver,
+        )
         if reason is not None:
             if reason not in PRIMARY_FAILURE_REASON_CODES:
                 raise AssertionError(f"unregistered receiver failure reason: {reason}")

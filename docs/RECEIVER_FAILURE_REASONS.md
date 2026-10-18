@@ -11,6 +11,7 @@ queries. It does not contain class names, vtable ids, or routing decisions.
 | Code | Emitted when |
 |---|---|
 | `receiver_not_single_pointer` | The receiver is not a single pointer and no transparent single-pointer flow supplied a type. |
+| `non_virtual_call_indirect` | A `GhidraIndirectReceiverType/1` row explicitly records `receiver_present=0`; no first explicit call argument is available as an object receiver. |
 | `insufficient_receiver_type_evidence` | No usable direct or transparent-flow type name is available. |
 | `missing_vtable_catalog_entry` | A usable type name is present but does not map to a catalog class. |
 | `mixed_receiver_candidates` | Type evidence maps to multiple classes, including a terminal name shared by multiple catalog classes. |
@@ -18,7 +19,9 @@ queries. It does not contain class names, vtable ids, or routing decisions.
 
 These reasons describe only the receiver inference stage. They do not claim
 that a class or dispatch target is correct, and do not authorize target
-transfer.
+transfer. The non-virtual reason uses the exporter’s explicit receiver-presence
+fact; a missing column, an unknown format, or absent type names alone do not
+emit it. `ReceiverInference/1` keeps its existing status and wire format.
 
 ## Reserved for evidence-producing stages
 
@@ -33,7 +36,6 @@ corresponding failure from explicit evidence:
 - `factory_return_gap`
 - `nested_container_object_gap`
 - `slot_ambiguity`
-- `non_virtual_call_indirect`
 - `linker_veneer_artifact`
 - `pcode_decompiler_limitation`
 - `unsupported_pattern`
