@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/semantic-program-graph-v1.schema.json",
+  "title": "REVENGINSTR.SemanticProgramGraph/1",
+  "description": "Deterministic evidence-linked program graph projected from FunctionEffectIR/1 or /2. This initial projection includes program, function, operation, and parameter-rooted field entities.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "graph_id", "program_id", "source_effect_ir_format", "source_effect_ir_sha256", "nodes", "edges"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.SemanticProgramGraph/1"},
+    "graph_id": {"type": "string", "pattern": "^program:[0-9a-f]{64}$"},
+    "program_id": {"type": "string", "minLength": 1},
+    "source_effect_ir_format": {"enum": ["REVENGINSTR.FunctionEffectIR/1", "REVENGINSTR.FunctionEffectIR/2"]},
+    "source_effect_ir_sha256": {"$ref": "#/$defs/sha256"},
+    "nodes": {"type": "array", "minItems": 3, "items": {"$ref": "#/$defs/node"}},
+    "edges": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/edge"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "support": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["effect_id", "evidence_class", "provenance"],
+      "properties": {
+        "effect_id": {"$ref": "#/$defs/sha256"},
+        "evidence_class": {"enum": ["exact_static", "derived_structural"]},
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source_format", "artifact_sha256", "record_index"],
+          "properties": {
+            "source_format": {"enum": [
+              "REVENGINSTR.GhidraParameterStoreField/1",
+              "REVENGINSTR.GhidraParameterLoadField/1",
+              "REVENGINSTR.GhidraFunctionPcodeFlow/1"
+            ]},
+            "artifact_sha256": {"$ref": "#/$defs/sha256"},
+            "record_index": {"type": "integer", "minimum": 1}
+          }
+        }
+      }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "evidence_class", "confidence", "conflict_state", "support"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^(program|function|operation|field):[0-9a-f]{64}$"},
+        "kind": {"enum": ["program", "function", "operation", "field"]},
+        "entry": {"type": "string", "minLength": 1},
+        "function_entry": {"type": "string", "minLength": 1},
+        "owner_function_entry": {"type": "string", "minLength": 1},
+        "operation_address": {"type": "string", "minLength": 1},
+        "operation_time": {"type": ["integer", "null"], "minimum": 0},
+        "opcode": {"enum": ["LOAD", "STORE", "CALL", "CALLIND", "RETURN"]},
+        "kinds": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": [
+          "parameter_field_read", "parameter_field_write", "direct_call", "indirect_call", "return_op", "memory_read", "memory_write"
+        ]}},
+        "call_target_state": {"enum": ["not_applicable", "resolved", "unresolved", "indirect", "conflicted"]},
+        "target_entries": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "parameter_index": {"type": "integer", "minimum": 0},
+        "field_offset": {"type": "string", "pattern": "^-?0x[0-9a-f]+$"},
+        "evidence_class": {"enum": ["exact_static", "derived_structural", "mixed"]},
+        "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "conflict_state": {"enum": ["uncontested", "contested"]},
+        "support": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/support"}}
+      },
+      "allOf": [
+        {"if": {"properties": {"kind": {"const": "program"}}, "required": ["kind"]}, "then": {"properties": {"id": {"pattern": "^program:"}}}},
+        {"if": {"properties": {"kind": {"const": "function"}}, "required": ["kind"]}, "then": {"required": ["entry"], "properties": {"id": {"pattern": "^function:"}}}},
+        {"if": {"properties": {"kind": {"const": "operation"}}, "required": ["kind"]}, "then": {"required": ["function_entry", "operation_address", "operation_time", "opcode", "kinds", "call_target_state", "target_entries"]}},
+        {"if": {"properties": {"kind": {"const": "operation"}}, "required": ["kind"]}, "then": {"properties": {"id": {"pattern": "^operation:"}}}},
+        {"if": {"properties": {"kind": {"const": "field"}}, "required": ["kind"]}, "then": {"required": ["owner_function_entry", "parameter_index", "field_offset"], "properties": {"id": {"pattern": "^field:"}}}},
+        {
+          "if": {
+            "properties": {"kinds": {"contains": {"const": "direct_call"}}},
+            "required": ["kinds"]
+          },
+          "then": {
+            "properties": {"call_target_state": {"enum": ["resolved", "unresolved", "conflicted"]}}
+          }
+        },
+        {
+          "if": {
+            "properties": {"kinds": {"contains": {"const": "indirect_call"}}},
+            "required": ["kinds"]
+          },
+          "then": {
+            "properties": {"call_target_state": {"const": "indirect"}}
+          }
+        },
+        {
+          "if": {
+            "properties": {"kinds": {"not": {"contains": {"enum": ["direct_call", "indirect_call"]}}}},
+            "required": ["kinds"]
+          },
+          "then": {
+            "properties": {"call_target_state": {"const": "not_applicable"}}
+          }
+        },
+        {"if": {"properties": {"call_target_state": {"const": "resolved"}}, "required": ["call_target_state"]}, "then": {"properties": {"target_entries": {"minItems": 1, "maxItems": 1}}}},
+        {"if": {"properties": {"call_target_state": {"const": "conflicted"}}, "required": ["call_target_state"]}, "then": {"properties": {"target_entries": {"minItems": 2}}}},
+        {"if": {"properties": {"call_target_state": {"enum": ["not_applicable", "unresolved", "indirect"]}}, "required": ["call_target_state"]}, "then": {"properties": {"target_entries": {"maxItems": 0}, "conflict_state": {"const": "uncontested"}}}},
+        {"if": {"properties": {"call_target_state": {"const": "conflicted"}}, "required": ["call_target_state"]}, "then": {"properties": {"conflict_state": {"const": "contested"}}}}
+      ]
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "from", "to", "relation", "evidence_class", "confidence", "conflict_state", "support"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^edge:[0-9a-f]{64}$"},
+        "from": {"type": "string", "pattern": "^(program|function|operation|field):[0-9a-f]{64}$"},
+        "to": {"type": "string", "pattern": "^(program|function|operation|field):[0-9a-f]{64}$"},
+        "relation": {"enum": ["contains", "calls", "reads", "writes"]},
+        "evidence_class": {"enum": ["exact_static", "derived_structural", "mixed"]},
+        "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "conflict_state": {"enum": ["uncontested", "contested"]},
+        "support": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/support"}}
+      },
+      "allOf": [
+        {"if": {"properties": {"relation": {"const": "contains"}}, "required": ["relation"]}, "then": {"oneOf": [
+          {"properties": {"from": {"pattern": "^program:"}, "to": {"pattern": "^function:"}}},
+          {"properties": {"from": {"pattern": "^function:"}, "to": {"pattern": "^operation:"}}}
+        ]}},
+        {"if": {"properties": {"relation": {"const": "calls"}}, "required": ["relation"]}, "then": {"properties": {"from": {"pattern": "^operation:"}, "to": {"pattern": "^function:"}, "evidence_class": {"const": "exact_static"}}}},
+        {"if": {"properties": {"relation": {"enum": ["reads", "writes"]}}, "required": ["relation"]}, "then": {"properties": {"from": {"pattern": "^operation:"}, "to": {"pattern": "^field:"}, "evidence_class": {"const": "derived_structural"}}}}
+      ]
+    }
+  }
+}

@@ -1185,6 +1185,18 @@ Build consumer-owned gold subgraphs for independently understood subsystems and 
 
 Stretch: accepted-edge precision >=0.98 with useful cross-function/state/object graph coverage across multiple projects.
 
+### Current implementation status (2026-10-19)
+
+The initial `SemanticProgramGraph/1` builder now projects `FunctionEffectIR/1`
+and `/2` into deterministic program, function, operation, and
+parameter-rooted field entities. Resolved direct calls and structural field
+reads/writes retain source effect ids and artifact hashes; unresolved and
+indirect calls stay explicit, and multiple direct targets at one call site
+remain contested. This implements only the first structural slice of M10.1
+and M10.2. Receiver dispatch, recovered layouts, roles, states, resources,
+callbacks, execution contexts, program queries, audited gold graphs, and the
+M10 exit criteria remain open.
+
 ---
 
 # 16. M11 — Active learning and reviewer-feedback loop
