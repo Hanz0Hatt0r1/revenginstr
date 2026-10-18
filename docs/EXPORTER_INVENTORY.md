@@ -2,14 +2,14 @@
 
 This inventory records where reusable Ghidra export and analysis mechanisms
 live and which consumer compatibility layers remain. It uses the fetched
-`origin/main` snapshots checked on 2026-10-17 and refreshed after the second
-Nevergone parity root and NFS Shift source-to-runner audit:
+`origin/main` snapshots checked on 2026-10-18, after the Nevergone parity,
+NFS Shift source-to-runner, and NFS ARM64 P-code evidence updates:
 
 | Repository | Snapshot |
 |---|---|
-| `Hanz0Hatt0r1/revenginstr` | `f2c7ddc4` |
-| `Hanz0Hatt0r1/nevergone-recomp` | `e988acb1` |
-| `Hanz0Hatt0r1/nfs-shift-decompilation` | `c6ed81ca` |
+| `Hanz0Hatt0r1/revenginstr` | `432b528f9c3db36dda50c846aafe5afb3c141204` |
+| `Hanz0Hatt0r1/nevergone-recomp` | `8e700041d6c495f06b3c82e977a74af902a76aba` |
+| `Hanz0Hatt0r1/nfs-shift-decompilation` | `729c7e3820ca7c529a94edcaa2db76633a449f17` |
 
 The consumer working trees have local state, so this inventory describes the
 remote `main` snapshots only. Program-derived rows and invocation details stay
@@ -22,6 +22,7 @@ in their consumer repositories.
 | Portable high P-code corpus, corpus audit and foreign-project guard | `PortablePcodeCorpusExporter.java`, `revenginstr.pcode.audit`, `revenginstr.ood.foreign_guard` | `ExportMlPcodeCorpus.java` remains a legacy-format fallback; its comment records 2,000-function parity. New exports use the shared runner. | `run_shift_cross_project_pcode_probe.sh` calls the shared exporter, audit and guard; classifier transfer remains opt-in. | Canonical here, with consumer-owned format/data adapters. Keep corpus rows, labels and model configuration in each consumer. |
 | One-function P-code flow and bounded forward/reverse callgraph export | `ExportFunctionPcodeFlow.java`, `ExportBoundedCallGraphPcodeFlow.java`, `ExportBoundedReverseCallGraphPcodeFlow.java`; shared TSV contract, runner and `revenginstr-export-parity` in `revenginstr` | Nevergone's single-function exporter source is byte-identical to the shared source. Its bounded local exporters retain consumer-specific traversal priorities; the shared versions accept generic priority rules. Same-program bounded parity now covers two roots across three outputs (two forward, one reverse), byte-identical under equivalent priority policies; details and hashes stay in the [consumer evidence report](https://github.com/Hanz0Hatt0r1/nevergone-recomp/blob/main/docs/evidence/ghidra-export-parity.md). The runner selects shared scripts when available and keeps local fallbacks. | No consumer-local flow exporters appear in the inspected NFS `origin/main` tree; its cross-project probe uses the shared portable corpus path. | Shared implementations are canonical. Keep the Nevergone compatibility fallbacks until parity coverage spans additional roots and bounds. |
 | Generic address/reference and program-index export | `ExportGhidraAddressReferences.java`, `ExportGhidraAddressReferenceOwners.java`, `ExportGhidraAddressMetadata.java`, `ExportGhidraProgramIndex.java` and shared runners | `ExportAddressReferenceOwners.java` adapts shared rows to the retained Nevergone format; `run_nevergone_program_index.sh` delegates to the shared runner first. | `run_shift_global_references.sh` uses the shared address-reference exporter and a small output adapter. | Canonical here, with thin consumer adapters. Preserve consumer joins and historical file contracts at the boundary. |
+| Function identity and language metadata | `ExportGhidraFunctionIdentities.java`, `ExportGhidraLanguageAddressSpaces.java`, `ExportGhidraLanguageUserops.java` and their shared runners | Function selection plans and consumer-specific labels stay in Nevergone; the shared TSV/JSON contracts carry generic identities and language metadata. | Address plans and SHIFT-specific interpretation stay in NFS; the shared formats carry generic identities and language metadata. | Canonical in `revenginstr`; keep selection plans, labels and interpretation in the consumer repositories. |
 | High-P-code function CFG export and field store/load audits | `ExportFunctionPcodeCFG.java`, `ExportGhidraParameterStoreField.java`, `revenginstr.receiver.field_flow` | Generic export/audit contract; consumer supplies opaque `program_id` and source artifacts. | No title-specific evidence or labels required. | CFG/1 remains the default; CFG/2 adds logical memory space/width; CFG/3 adds physical space/pointer width. `GhidraMemoryStoreAccess/1` facts feed dominance `/2`; `GhidraDirectCallMemoryEffect/1` facts built from exact caller/callee P-code flows feed `/3`, which filters only closed write-free direct calls. Nevergone froze and replayed `/2` in [PR #729](https://github.com/Hanz0Hatt0r1/nevergone-recomp/pull/729): 2/2 exact rows remain possible effects, with no unique candidate. NFS Shift PRs [#2025](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2025) and [#2026](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2026) freeze 28 pairs; expanded PR [#2027](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2027) covers 31 pairs and includes one write-free direct call on an exact witness, alongside an unknown-effect barrier. `/3` remains unresolved. Keep both datasets and their measured outcomes consumer-owned. |
 | Instruction, slice, operand, scalar and compact-stream export | `ExportGhidraFunctionInstructions.java`, `ExportGhidraInstructionSlices.java`, `ExportGhidraFunctionOperands.java`, `ExportGhidraScalarUses.java`, `ExportGhidraCompactInstructionStream.java` | Shared-first runners are present for selected probes; consumer-specific joins remain local. | Five NFS Shift exporters are shared-first compatibility fallbacks with consumer adapters; see the [source-to-runner inventory](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/blob/main/evidence/ghidra_exporter_source_inventory.md). | Canonical here with thin adapters; keep the local fallbacks until per-format same-input parity and caller review are complete. |
 | Structural stores, parameters and defined strings | `ExportGhidraFieldStoreCandidates.java`, `ExportGhidraParameterStoreField.java`, `ExportGhidraPcodeDefinedStrings.java` | `ExportPcodeDefinedStrings.java` adapts shared rows to its historical TSV. The current-frame probe delegates to the shared field-store runner when available. `ExportParameterStoreField.java` remains a full local analysis implementation. | P1/vehicle and resource exporters that consume these primitives remain title-specific. | Canonical shared extraction with a thin defined-strings wrapper; Nevergone parameter-store logic is a duplicate pending same-input parity review. |
@@ -31,7 +32,8 @@ in their consumer repositories.
 
 ## Canonical Ghidra surface in `revenginstr`
 
-The shared Java exporters are grouped by their output contract:
+The 24 shared Java exporters are grouped by their output contract. The
+inventory test checks that this list and `ghidra/*.java` stay in sync:
 
 - **P-code and call/dataflow:** `PortablePcodeCorpusExporter`,
   `ExportFunctionPcodeFlow`, `ExportBoundedCallGraphPcodeFlow`,
@@ -40,7 +42,9 @@ The shared Java exporters are grouped by their output contract:
   `ExportGhidraIndirectCallEvidence`, `ExportIndirectCallReceiverTypes`.
 - **Program and address references:** `ExportGhidraProgramIndex`,
   `ExportGhidraAddressReferences`, `ExportGhidraAddressReferenceOwners`,
-  `ExportGhidraAddressMetadata`.
+  `ExportGhidraAddressMetadata`, `ExportGhidraFunctionIdentities`.
+- **Language metadata:** `ExportGhidraLanguageAddressSpaces`,
+  `ExportGhidraLanguageUserops`.
 - **Instruction and operand evidence:** `ExportGhidraFunctionInstructions`,
   `ExportGhidraInstructionSlices`, `ExportGhidraCompactInstructionStream`,
   `ExportGhidraFunctionOperands`, `ExportGhidraScalarUses`.
