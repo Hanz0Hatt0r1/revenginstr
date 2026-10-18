@@ -56,6 +56,12 @@ The matching `scripts/run_ghidra_*.sh` entry points are canonical runners. The
 Python modules listed above own portable parsing, aggregation, inference,
 classification and validation; consumers retain path discovery and local joins.
 
+`ghidra/preparation/ApplyDecompilerParameterId.java`, invoked by
+`scripts/run_ghidra_parameter_id.sh`, is an explicit writable preparation step,
+not an evidence exporter. It updates selected recovered signatures in the
+Ghidra project; use a disposable project copy when preserving the source
+analysis matters.
+
 ## Follow-up from this snapshot
 
 1. Expand Nevergone same-program parity coverage with reverse traversal and

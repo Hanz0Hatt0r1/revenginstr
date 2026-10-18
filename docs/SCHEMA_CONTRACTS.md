@@ -33,7 +33,9 @@ pages.
   or P-code order. That order is not guaranteed across Ghidra versions; compare
   keyed rows for parity unless the format page explicitly promises order.
   JSON object key order is not semantic.
-- Exporters are read-only and expect an already analyzed program. Invalid input,
+- Evidence exporters are read-only and expect an already analyzed program.
+  `scripts/run_ghidra_parameter_id.sh` is an explicit writable preparation step
+  that updates selected recovered function signatures. Invalid input,
   malformed rows, missing required targets, or headless failures return a
   non-zero status. Some targeted exporters also emit an explicit `found: false`
   row before failing; empty successful result sets are documented per exporter.

@@ -34,9 +34,13 @@ GHIDRA_HOME=/opt/ghidra \
 ```
 
 The runner uses `-readOnly -noanalysis` and a temporary script directory, so it
-does not alter the project analysis or compile unrelated scripts. Consumers
-should retain their existing exporter copy as a fallback until shared-first
-lookup has passed same-project output parity.
+does not alter the project analysis or compile unrelated scripts. Call
+operation argument lists follow the saved callee signatures. Apply Ghidra's
+`Decompiler Parameter ID` analyzer to the bounded call closure before exporting
+when those signatures are missing; `scripts/run_ghidra_parameter_id.sh` is the
+explicit writable preparation step. Consumers should retain their existing
+exporter copy as a fallback until shared-first lookup has passed same-project
+output parity.
 
 The runner also requires the exporter's `GhidraFunctionPcodeFlow/1` completion
 marker. Ghidra can return a zero process status after a post-script exception;

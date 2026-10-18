@@ -14,10 +14,25 @@ restrict a plan to one caller function and avoid scanning the other callers.
 Summary rows report direct callers, decompile failures, and matched calls.
 Consumers compare those counts with their own expected coverage and keep any
 project-specific fields in their local adapter.
-Call argument rows depend on Ghidra's recovered function signatures. If the
-`Decompiler Parameter ID` analyzer has not run, a caller's P-code may omit
-argument operands; run that analyzer before exporting. The wrapper remains
-read-only and reports unmatched caller functions in the summary.
+Call argument rows depend on Ghidra's recovered function signatures. The
+read-only exporter consumes signatures already saved in the project. Apply
+Parameter ID first to the functions in the bounded call closure, using a
+writable project copy when the original analysis must be preserved:
+
+```bash
+cp -a /path/to/projects/project-name /path/to/projects/project-name-paramid
+GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_parameter_id.sh \
+  /path/to/projects/project-name-paramid project-name program-name \
+  00401000 00402000 00403000
+```
+
+The runner updates the selected function signatures in the Ghidra database;
+subsequent export wrappers remain read-only. Pass callees before callers so
+recovered prototypes are available during caller analysis. For recursive call
+closures, run the full list twice. Include callers and callees whose P-code
+argument lists participate in the evidence path. The subtree exporter reports
+unmatched caller functions in its summary. For recursive closures, repeat the
+full list until a pass makes no further signature changes.
 
 An optional `--parameter-root-output <roots.tsv>` sidecar records a call
 argument only when its root varnode matches a formal parameter of the caller

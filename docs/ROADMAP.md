@@ -1718,6 +1718,24 @@ filtering. The calling-convention and size signals improved store yield over
 `next20i`, but the sampled functions still did not produce a dominating
 store/load pair.
 
+A writable Parameter ID replay exposed a data-preparation gap in the earlier
+`next100d` closure investigation. On a clean copy of the SHIFT Ghidra project,
+`ApplyDecompilerParameterId` recovered signatures for `00806ef0`, `008868c0`,
+`006382b0`, and `00638020`; subsequent read-only P-code exports then showed
+1, 2, and 3 actual arguments at their direct-call edges. The prior sidecar
+mapping `00638020.param0` to `006382b0.param1` did not survive this replay:
+the actual argument is a `MULTIEQUAL` of two `0062e1a0` call results, and the
+fresh caller-root sidecar has no row. The intermediate
+`008868c0.param0` → `006382b0.param0` mapping remains exact; the outer
+`00806ef0` argument is an `INT_OR` value derived from `Stack[0x4]`, so it also
+has no exact formal-root row. These roots leave the pair unresolved for `/5`;
+a complete `/5` replay for this candidate is still outstanding, and no effect
+has been promoted. The new `scripts/run_ghidra_parameter_id.sh` persists
+Parameter ID on a writable project copy before read-only evidence export.
+Prior call-root sidecars from projects whose signatures were not saved must be
+regenerated before reuse; the earlier conservative audit statuses do not
+establish the validity of those sidecars.
+
 The generic `GhidraInterproceduralMemoryEffect/1` builder and versioned `/5`
 audit are merged in revenginstr PRs [#110](https://github.com/Hanz0Hatt0r1/revenginstr/pull/110)
 and [#111](https://github.com/Hanz0Hatt0r1/revenginstr/pull/111). They propagate
@@ -1727,17 +1745,19 @@ monotone fixed point for cycles. Missing argument links, incomplete callee
 facts, unresolved stores, indirect calls, unknown operations and exhausted
 budgets remain barriers. `/1`–`/4` stay unchanged.
 
-**Next:** select fresh bounded x86-32 candidates from actual exported
-parameter-field `STORE` and `LOAD` rows, then prioritize same-formal,
-same-offset pairs whose store dominates the load and whose intervening
-direct-call closure has exact caller roots and complete memory facts. Freeze
-those consumer exports and replay `/4` versus `/5` while preserving unknown and
-indirect barriers. Keep positive alias filtering opt-in until a consumer replay
-contains a complete exact-root case where the status change follows from the
-pinned facts. Do not infer alias facts from decompiler text or instruction-
-level corpus labels. The `next100g` replay shows a useful target class:
-dominating pairs with one call on the witness, where the caller-root and callee
-effect closure can be frozen independently. The `next100h` results narrow that
-search further to exact same-formal roots whose callees export resolvable
-constant-offset stores and a complete write-free or disjoint transitive
-closure.
+**Next:** regenerate saved call-root and call-effect sidecars on a writable
+Parameter ID project copy, starting with closures used by `next100g`,
+`next100h`, and `next100d`. Then select fresh bounded x86-32 candidates from
+actual exported parameter-field `STORE` and `LOAD` rows, prioritizing
+same-formal, same-offset pairs whose store dominates the load and whose
+intervening direct-call closure has exact caller roots and complete memory
+facts. Freeze those consumer exports and replay `/4` versus `/5` while
+preserving unknown and indirect barriers. Keep positive alias filtering opt-in
+until a consumer replay contains a complete exact-root case where the status
+change follows from pinned facts. Do not infer alias facts from decompiler text
+or instruction-level corpus labels. The `next100g` replay shows a useful target
+class: dominating pairs with one call on the witness, where the caller-root and
+callee effect closure can be frozen independently. The `next100h` results
+narrow that search further to exact same-formal roots whose callees export
+resolvable constant-offset stores and a complete write-free or disjoint
+transitive closure.
