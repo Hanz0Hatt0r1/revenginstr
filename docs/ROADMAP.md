@@ -1,8 +1,7 @@
 # revenginstr Development Roadmap
 
 **Status:** active engineering plan  
-**Baseline date:** 2026-10-17  
-**Repository baseline:** `main` through `d918e9319ce0773e16f692a4dac1cdc92a1561e2`
+**Baseline:** 2026-10-18, `main` through `2e03135b324e684b1d78900782d33005f802d381`
 **Scope:** project-neutral reverse-engineering analysis infrastructure: evidence extraction, indirect-dispatch recovery, receiver/type/vtable inference, ML classification, selective routing, semantic inference, orchestration, validation, whole-program type/layout recovery, bounded hybrid static/dynamic analysis, semantic program graphs, feedback-driven learning, architecture/ABI expansion, decompiler/recompiler integration, and reusable interfaces.
 
 > This roadmap describes the development of `revenginstr` itself. Game-specific addresses, class names, offsets, labels, binary-derived semantic truth and project-local datasets remain in consumer repositories such as Nevergone or NFS Shift.
@@ -260,9 +259,10 @@ Finish the extraction of generic analysis logic into `revenginstr` and remove du
 reusable exporter surface using current `origin/main` snapshots of all three
 repositories and records compatibility wrappers, remaining duplicate
 implementations, consumer-specific tooling, and the evidence required before
-retiring any fallback. A regression test keeps all `ghidra/*.java` exporters
-listed. Consumer working trees were left unchanged. Keep the inventory current
-as each exporter is migrated.
+retiring any fallback. NFS Shift now has one same-input parity fixture for each
+of its five shared-first exporter formats; the compatibility fallbacks remain
+while callers are reviewed. A regression test keeps all `ghidra/*.java`
+exporters listed. Keep the inventory current as each exporter is migrated.
 
 Maintain an inventory of reusable exporters/runners classified as:
 
@@ -305,15 +305,21 @@ Index tables and ARM32 Itanium vtable slots. Tests run P-code records through
 audit/schema validation and check exact TSV headers, column ordering, and rows
 against their v1 schemas. `revenginstr-export-parity` compares two UTF-8 TSV
 outputs in row order; `revenginstr-jsonl-export-parity` does the same for
-JSONL object records while ignoring object-key order. Both emit hashes/counts
-plus the first mismatch without retaining record values. Nevergone now records
-byte-identical bounded forward and reverse outputs on one root and a forward
-output on a second root from the same analyzed program under equivalent
-priority rules. The [report and
-invocation details](https://github.com/Hanz0Hatt0r1/nevergone-recomp/blob/main/docs/evidence/ghidra-export-parity.md)
-stay in that consumer. Expand reverse coverage and additional bounds before
-retiring the local fallbacks. The work remains open for fixtures accompanying
-later exporter migrations.
+JSONL object records while ignoring object-key order and streams `.jsonl.gz`
+inputs. Both emit hashes/counts plus the first mismatch without retaining
+record values. Nevergone now records byte-identical bounded forward and reverse
+outputs on one root and a forward output on a second root from the same
+analyzed program under equivalent priority rules. The [report and invocation
+details](https://github.com/Hanz0Hatt0r1/nevergone-recomp/blob/main/docs/evidence/ghidra-export-parity.md)
+stay in that consumer. NFS Shift PRs [#2076](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2076),
+[#2077](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2077), and
+[#2078](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2078)
+cover one query for each of five shared-first formats. The compact gzip
+exports have equal ordered JSON records after decompression and key
+normalization, but their compressed bytes differ. Keep fallbacks pending caller
+review; targeted function parity does not cover all-functions mode. Expand
+reverse coverage and additional bounds before retiring Nevergone's local
+fallbacks. The work remains open for fixtures accompanying later migrations.
 The synthetic address-reference-owner TSV fixture now covers a resolved
 reference and the no-reference sentinel row against its v1 schema.
 The synthetic High-P-code flow fixture now includes complete load-to-return and
@@ -1604,31 +1610,33 @@ Mitigation: dry-run by default, stronger-existing-evidence precedence, suggestio
 
 # 26. Immediate next action
 
-**M2.3 consumer capture/replay now covers two consumers.** Nevergone's frozen
-CFG/3 and memory-store sidecar replay is pinned in [PR #729](https://github.com/Hanz0Hatt0r1/nevergone-recomp/pull/729); its two store/load pairs remain unresolved because intervening effects are possible. NFS Shift PRs [#2025](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2025) and [#2026](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2026) freeze ten functions and 28 pairs with no complete write-free callee. PRs [#2027](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2027) and [#2028](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2028) validate write-free call filtering while preserving unknown and indirect-call barriers. Scans 14–23 are frozen in PRs [#2029](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2029), [#2030](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2030), [#2031](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2031), [#2032](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2032), [#2033](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2033), [#2034](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2034), [#2035](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2035), [#2036](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2036), [#2037](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2037), [#2038](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2038), and [#2039](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2039). The 00a sample has no remaining eligible roots under the scanned filters; none of these screens establishes runtime value flow.
-
-NFS Shift [PR #2041](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2041)
-replays scan22 with the alias-aware `/5` audit. Its 30 interprocedural effect
-rows contain 12 `unknown_effect` and 18 `indirect_call` barriers. The two field
-pairs remain `store_not_dominating_load` in `/3`, `/4`, and `/5`, with zero
-status changes and zero unique candidates. The captured package has no exact
-caller-formal-root rows, callee CFGs, or callee memory-access facts, so this
-validates fail-closed handling of missing evidence only. It does not validate
-positive alias filtering or runtime value flow.
+**M2.3 capture/replay now covers the planned scan22 recapture and an exact-root
+follow-up.** Nevergone's frozen CFG/3 and memory-store sidecar replay is pinned
+in [PR #729](https://github.com/Hanz0Hatt0r1/nevergone-recomp/pull/729). NFS
+Shift [PR #2073](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2073)
+adds read-only scan22 recapture and scan24 exact-root artifacts with hash-pinned
+replay. Scan22 captured four callee CFG/3 records, twelve callee memory-access
+facts and five exact roots across callers, but none for its selected caller.
+Its `/5` replay preserves indirect-call and unknown-effect barriers and leaves
+both pairs unresolved. Scan24 has two exact roots and seventeen memory facts;
+its single pair remains a possible intervening memory effect. Scan23 exhausted
+the original 1,000-function sample under its existing filters. These results
+validate bounded evidence handling and fail-closed behavior; they do not
+validate runtime value flow or a positive alias-filtering promotion.
 
 The generic `GhidraInterproceduralMemoryEffect/1` builder and versioned `/5`
 audit are merged in revenginstr PRs [#110](https://github.com/Hanz0Hatt0r1/revenginstr/pull/110)
-and [#111](https://github.com/Hanz0Hatt0r1/revenginstr/pull/111). The builder
-propagates only exact caller-formal roots through bounded direct-call graphs,
-compares same-root byte ranges under the physical-space contract, and uses a
-finite monotone fixed point for cycles. Missing argument links, callee CFG or
-memory-access facts, unresolved stores, indirect calls, unknown operations,
-and incomplete or budget-exhausted closures stay barriers. `/1`–`/4` remain
-unchanged; a structural candidate is not runtime value flow.
+and [#111](https://github.com/Hanz0Hatt0r1/revenginstr/pull/111). They propagate
+only exact caller-formal roots through bounded direct-call graphs, compare
+same-root byte ranges under the physical-space contract, and use a finite
+monotone fixed point for cycles. Missing argument links, incomplete callee
+facts, unresolved stores, indirect calls, unknown operations and exhausted
+budgets remain barriers. `/1`–`/4` stay unchanged.
 
-Next, capture scan22's exact caller-formal roots, CFG/3 for the four callees,
-and their memory-store-access facts from the existing Ghidra analysis, then
-replay the same frozen audit. If those exports are unavailable or incomplete,
-record the gap and choose another bounded consumer screen; do not infer alias
-facts from decompiler text. Keep positive alias filtering opt-in until a
-consumer replay demonstrates it on complete evidence.
+**Next:** use a fresh bounded x86-32 P-code sample outside the exhausted
+1,000-function slice to find a caller/callee closure with an exact caller-formal
+root, a relevant field pair and complete CFG/memory-access facts. Freeze the
+consumer exports and replay `/4` versus `/5`, preserving unknown and indirect
+barriers. Keep positive alias filtering opt-in until a consumer replay contains
+a complete exact-root case where the status change follows from the pinned
+facts. Do not infer alias facts from decompiler text.
