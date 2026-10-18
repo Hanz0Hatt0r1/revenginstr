@@ -19,6 +19,7 @@ FORMAT = "REVENGINSTR.ReceiverInference/1"
 FAILURE_FORMAT = "REVENGINSTR.ReceiverFailureReason/1"
 ASSESSMENT_FORMAT = "REVENGINSTR.ReceiverCandidateAssessment/1"
 RECEIVER_TYPE_FORMAT = "REVENGINSTR.GhidraIndirectReceiverType/1"
+TRANSPARENT_RECEIVER_FLOW_OPS = frozenset({"COPY", "CAST", "INDIRECT", "MULTIEQUAL"})
 
 PRIMARY_FAILURE_REASON_CODES = frozenset({
     "ambiguous_phi",
@@ -209,7 +210,8 @@ def candidate_assessment(
 def primary_failure_reason(status: str, typed_sources: list[tuple[Any, str]],
                            class_vtables: dict[str, set[str]],
                            terminal_to_classes: dict[str, set[str]], *,
-                           explicit_no_receiver: bool = False) -> str | None:
+                           explicit_no_receiver: bool = False,
+                           unsupported_receiver_pattern: bool = False) -> str | None:
     if status == "resolved_unique_vtable":
         return None
     if status == "receiver_not_single_pointer":
@@ -225,6 +227,8 @@ def primary_failure_reason(status: str, typed_sources: list[tuple[Any, str]],
 
     type_names = [clean_type_name(raw) for raw, _source_kind in typed_sources]
     type_names = [name for name in type_names if name is not None]
+    if not type_names and unsupported_receiver_pattern:
+        return "unsupported_pattern"
     if any(
         name not in class_vtables
         and len(terminal_to_classes.get(terminal_class_name(name), set())) > 1
@@ -367,12 +371,24 @@ def _infer(
             receiver.get("format") == RECEIVER_TYPE_FORMAT
             and receiver.get("receiver_present") == "0"
         )
+        receiver_token = receiver.get("receiver_token")
+        token_match = (
+            re.match(r"^def:([A-Z][A-Z0-9_]*)@", receiver_token)
+            if isinstance(receiver_token, str)
+            else None
+        )
+        unsupported_receiver_pattern = (
+            receiver.get("format") == RECEIVER_TYPE_FORMAT
+            and token_match is not None
+            and token_match.group(1) not in TRANSPARENT_RECEIVER_FLOW_OPS
+        )
         reason = primary_failure_reason(
             status,
             typed_sources,
             class_vtables,
             terminal_to_classes,
             explicit_no_receiver=explicit_no_receiver,
+            unsupported_receiver_pattern=unsupported_receiver_pattern,
         )
         if reason is not None:
             if reason not in PRIMARY_FAILURE_REASON_CODES:

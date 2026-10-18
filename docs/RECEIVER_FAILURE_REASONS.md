@@ -12,6 +12,7 @@ queries. It does not contain class names, vtable ids, or routing decisions.
 |---|---|
 | `receiver_not_single_pointer` | The receiver is not a single pointer and no transparent single-pointer flow supplied a type. |
 | `non_virtual_call_indirect` | A `GhidraIndirectReceiverType/1` row explicitly records `receiver_present=0`; no first explicit call argument is available as an object receiver. |
+| `unsupported_pattern` | A Ghidra receiver row has no usable type evidence and its immediate `receiver_token` definition is a P-code operation other than `COPY`, `CAST`, `INDIRECT`, or `MULTIEQUAL`, which are the transparent operations followed by this inference stage. |
 | `insufficient_receiver_type_evidence` | No usable direct or transparent-flow type name is available. |
 | `missing_vtable_catalog_entry` | A usable type name is present but does not map to a catalog class. |
 | `mixed_receiver_candidates` | Type evidence maps to multiple classes, including a terminal name shared by multiple catalog classes. |
@@ -21,7 +22,10 @@ These reasons describe only the receiver inference stage. They do not claim
 that a class or dispatch target is correct, and do not authorize target
 transfer. The non-virtual reason uses the exporter’s explicit receiver-presence
 fact; a missing column, an unknown format, or absent type names alone do not
-emit it. `ReceiverInference/1` keeps its existing status and wire format.
+emit it. The unsupported-pattern reason describes this inference stage's
+immediate-def boundary; it does not mean that other analysis methods cannot
+recover the receiver. Both reasons keep `ReceiverInference/1`'s status and
+wire format unchanged.
 
 ## Reserved for evidence-producing stages
 
@@ -38,7 +42,6 @@ corresponding failure from explicit evidence:
 - `slot_ambiguity`
 - `linker_veneer_artifact`
 - `pcode_decompiler_limitation`
-- `unsupported_pattern`
 
 The current type/catalog stage does not emit these reserved codes. Missing
 evidence alone is not enough to assign a specific dataflow or toolchain cause.
