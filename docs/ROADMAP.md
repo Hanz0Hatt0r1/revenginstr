@@ -1203,10 +1203,20 @@ target. A captured Ghidra replay for GT5 Prologue function `00032830` validates
 one `CALLIND` join from exported data; see
 [`SemanticProgramGraph/2 replay`](evidence/semantic-program-graph-v2/gt5-prologue-00032830/README.md).
 
-These are still structural slices of M10.1–M10.3. Dispatch recovery, recovered
-layouts, roles, states, resources, callbacks, execution contexts, conflict-aware
-query views, program queries, audited gold graphs, and M10 exit criteria remain
-open.
+The graph families are still structural slices of M10.1–M10.3. Dispatch
+recovery, recovered layouts, roles, states, resources, callbacks, execution
+contexts, audited gold graphs, and M10 exit criteria remain open.
+
+`revenginstr-semantic-program-query` now selects nodes and edges by kind,
+relation, indirect-call state, conflict state, function entry, operation
+address, field offset, and provenance id. It emits a hash-pinned
+`SemanticProgramQueryResult/1` with endpoint context and supports exact-only,
+accepted-high-confidence, and exploratory views. A replay over the captured
+Ghidra graph returns its `CALLIND` and exact receiver observation; the same
+query runner also returns endpoint context and preserves source support. This
+is the first generic selector layer for M10.4. Queries that require CFG
+feasibility, field meaning, layout equivalence, resource/state/callback paths,
+audited subsystem gold data, and all M10 exit criteria remain open.
 
 ---
 

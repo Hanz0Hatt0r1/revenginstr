@@ -16,6 +16,11 @@ nodes and 24 edges. Exactly one `observes_receiver` edge joins the receiver row
 to the `CALLIND` at the matching function, address, and time. The indirect call
 does not become a `calls` edge.
 
+The indirect-call graph query returns that operation, its receiver observation
+as endpoint context, and the one `observes_receiver` edge. The
+`accepted-high-confidence` view returns no records because graph confidence is
+null.
+
 To regenerate the derived records from the captured exports, run from the
 repository root:
 
@@ -30,6 +35,12 @@ revenginstr-semantic-program-graph \
   docs/evidence/semantic-program-graph-v2/gt5-prologue-00032830/function-effect-ir.jsonl \
   --receiver-types docs/evidence/semantic-program-graph-v2/gt5-prologue-00032830/indirect-receiver-types.tsv \
   --output docs/evidence/semantic-program-graph-v2/gt5-prologue-00032830/semantic-program-graph.jsonl
+
+revenginstr-semantic-program-query \
+  docs/evidence/semantic-program-graph-v2/gt5-prologue-00032830/semantic-program-graph.jsonl \
+  --view exploratory --kind operation --call-target-state indirect \
+  --relation observes_receiver \
+  --output docs/evidence/semantic-program-graph-v2/gt5-prologue-00032830/indirect-call-query.jsonl
 ```
 
 | Artifact | SHA-256 |
@@ -38,3 +49,4 @@ revenginstr-semantic-program-graph \
 | Ghidra receiver TSV | `0c88934d362437923524e7c4abaf308810d7fdb92a8065a3c267b9ca2997d9be` |
 | Function Effect IR/2 | `3b10aaaf142e50db3d05a4cc1a0ec56dc2233f9b227fbc2ad7b660225f2e9e7a` |
 | Semantic Program Graph/2 | `b625d3a6ff58e19c92a78bbd0de8eb38eb25e0a06ab8f9befc281b061a980856` |
+| Semantic Program Query Result/1 | `03f39dc1333941c8f449036d645005530dfcdba61df383f01042dd0208d8a07c` |

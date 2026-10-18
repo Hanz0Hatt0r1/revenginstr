@@ -42,6 +42,7 @@ TOOLS = {
     "function-effect-ir": ("revenginstr.effect_ir", "main"),
     "structured-summary": ("revenginstr.structured_summary", "main"),
     "semantic-program-graph": ("revenginstr.semantic_program_graph", "main"),
+    "semantic-program-query": ("revenginstr.semantic_program_query", "main"),
     "semantic-role-evaluate": ("revenginstr.semantic_roles", "main"),
     "decision-ledger-audit": ("revenginstr.decision_ledger", "main"),
     "analysis-invalidation-plan": ("revenginstr.analysis_task_graph", "main"),

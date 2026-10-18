@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/semantic-program-query-result-v1.schema.json",
+  "title": "REVENGINSTR.SemanticProgramQueryResult/1",
+  "description": "Deterministic graph query matches with source graph identity and evidence-preserving endpoint context.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "query_id", "source_graph_id", "source_graph_format", "program_id", "source_graph_sha256", "view", "minimum_confidence", "filters", "nodes", "related_nodes", "edges"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.SemanticProgramQueryResult/1"},
+    "query_id": {"type": "string", "pattern": "^query:[0-9a-f]{64}$"},
+    "source_graph_id": {"type": "string", "pattern": "^program:[0-9a-f]{64}$"},
+    "source_graph_format": {"enum": ["REVENGINSTR.SemanticProgramGraph/1", "REVENGINSTR.SemanticProgramGraph/2"]},
+    "program_id": {"type": "string", "minLength": 1},
+    "source_graph_sha256": {"$ref": "#/$defs/sha256"},
+    "view": {"enum": ["exact-only", "accepted-high-confidence", "exploratory"]},
+    "minimum_confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "filters": {"$ref": "#/$defs/filters"},
+    "nodes": {"type": "array", "items": {"$ref": "#/$defs/node"}},
+    "related_nodes": {"type": "array", "items": {"$ref": "#/$defs/node"}},
+    "edges": {"type": "array", "items": {"$ref": "#/$defs/edge"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "filters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kinds", "relations", "call_target_states", "conflict_state", "function_entries", "operation_addresses", "field_offsets", "support_id"],
+      "properties": {
+        "kinds": {"type": "array", "uniqueItems": true, "items": {"enum": ["program", "function", "operation", "field", "receiver_observation"]}},
+        "relations": {"type": "array", "uniqueItems": true, "items": {"enum": ["contains", "calls", "reads", "writes", "observes_receiver"]}},
+        "call_target_states": {"type": "array", "uniqueItems": true, "items": {"enum": ["not_applicable", "resolved", "unresolved", "indirect", "conflicted"]}},
+        "conflict_state": {"enum": ["any", "uncontested", "contested"]},
+        "function_entries": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "operation_addresses": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "field_offsets": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "support_id": {"type": ["string", "null"]}
+      }
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "kind"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation):[0-9a-f]{64}$"},
+        "kind": {"enum": ["program", "function", "operation", "field", "receiver_observation"]}
+      },
+      "additionalProperties": true
+    },
+    "edge": {
+      "type": "object",
+      "required": ["id", "from", "to", "relation"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^edge:[0-9a-f]{64}$"},
+        "from": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation):[0-9a-f]{64}$"},
+        "to": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation):[0-9a-f]{64}$"},
+        "relation": {"enum": ["contains", "calls", "reads", "writes", "observes_receiver"]}
+      },
+      "additionalProperties": true
+    }
+  }
+}
