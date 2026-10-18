@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/frozen-accept-router-gate-row-v1.schema.json",
+  "title": "REVENGINSTR.FrozenAcceptRouterGate/1 input row",
+  "type": "object",
+  "required": ["id", "family_id", "truth", "prediction", "base_action", "action", "accept_error_router_format", "accept_error_router_reason", "accept_correctness_probability", "critical_case", "evidence_conflict_detected", "population", "external_evidence_present"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "family_id": {"type": "string", "minLength": 1},
+    "truth": {"type": "string", "minLength": 1},
+    "prediction": {"type": "string", "minLength": 1},
+    "base_action": {"enum": ["accept", "review", "escalate"]},
+    "action": {"enum": ["accept", "review", "escalate"]},
+    "accept_error_router_format": {"const": "REVENGINSTR.AcceptErrorRouter/1"},
+    "accept_error_router_reason": {"enum": ["base_action_preserved", "accept_score_below_threshold", "accept_score_at_or_above_threshold"]},
+    "accept_correctness_probability": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "critical_case": {"type": "boolean", "description": "Consumer-defined critical-risk subset membership; semantics remain consumer-owned."},
+    "evidence_conflict_detected": {"type": "boolean"},
+    "population": {"enum": ["in_distribution", "ood"]},
+    "external_evidence_present": {"type": "boolean"}
+  },
+  "additionalProperties": true
+}

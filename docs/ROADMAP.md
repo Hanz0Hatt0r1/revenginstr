@@ -1364,7 +1364,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 7. ✅ Classifier threshold/calibration sweep tooling.
 8. ✅ Classifier error-cluster report.
 9. ✅ Router evidence-aware reason codes and scoring inputs; inference records the threshold branch and present evidence-feature count.
-10. Frozen router >=0.970 precision / >=0.55 coverage gate.
+10. 🟡 Frozen router >=0.970 precision / >=0.55 coverage gate: generic evaluator and hash-bound holdout checks implemented; independent labeled consumer evidence is still required to pass the gate.
 11. Markdown + JSON KPI dashboard artifact.
 
 ## P1 — after measurement is stable

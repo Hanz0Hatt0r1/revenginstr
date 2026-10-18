@@ -7,8 +7,10 @@ from jsonschema import Draft202012Validator
 
 from revenginstr.ml.accept_error_router import (
     FORMAT,
+    identity_sha256,
     route_rows,
     safe_evidence_keys,
+    sha256_file,
     train_accept_error_router,
 )
 from revenginstr.ml.evidence_tokens import EVIDENCE_FORMAT, load_evidence
@@ -96,6 +98,9 @@ def test_accept_error_router_train_and_monotone_inference(tmp_path: Path) -> Non
         min_accept_examples=20,
     )
     assert manifest["format"] == FORMAT
+    assert manifest["source"]["base_oof_sha256"] == sha256_file(oof_path)
+    assert manifest["source"]["base_oof_id_sha256"] == identity_sha256([row["id"] for row in rows])
+    assert manifest["source"]["base_oof_family_sha256"] == identity_sha256([row["family_id"] for row in rows])
     assert manifest["calibration"]["kept_precision"] >= 0.95
     assert manifest["calibration"]["kept_coverage"] >= 0.70
     assert "source_entry" not in manifest["evidence_keys"]

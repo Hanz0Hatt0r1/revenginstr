@@ -8,6 +8,7 @@ correctness model assigns a score below a cross-fitted production threshold.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 from collections import Counter
@@ -22,6 +23,19 @@ BLOCKED_EVIDENCE_TERMS = (
     "label", "class_name", "classname", "vtable_id", "vtable_identity",
     "address", "source_entry", "function_name", "symbol_name",
 )
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def identity_sha256(values: list[str]) -> str:
+    payload = "".join(f"{value}\n" for value in sorted(set(values)))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -328,6 +342,13 @@ def train_accept_error_router(base_oof: Path, output_dir: Path, *, evidence_path
             "raw_names_used": False,
             "addresses_used": False,
             "blocked_evidence_terms": list(BLOCKED_EVIDENCE_TERMS),
+        },
+        "source": {
+            "base_oof_sha256": sha256_file(base_oof),
+            "evidence_sha256": sha256_file(evidence_path) if evidence_path else None,
+            "base_oof_rows": len(rows),
+            "base_oof_id_sha256": identity_sha256([str(row["id"]) for row in rows]),
+            "base_oof_family_sha256": identity_sha256([str(row["family_id"]) for row in rows]),
         },
     }
     output_dir.mkdir(parents=True, exist_ok=True)
