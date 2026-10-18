@@ -1368,7 +1368,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 8. ✅ Classifier error-cluster report.
 9. ✅ Router evidence-aware reason codes and scoring inputs; inference records the threshold branch and present evidence-feature count.
 10. 🟡 Frozen router >=0.970 precision / >=0.55 coverage gate: generic evaluator and hash-bound holdout checks implemented; independent labeled consumer evidence is still required to pass the gate.
-11. 🟡 Hash-pinned Markdown + JSON KPI dashboard generator and schemas implemented; first consumer dashboard artifact is pending.
+11. ✅ Hash-pinned Markdown + JSON KPI dashboard generator and schemas; first hash-pinned consumer artifact is published in the [Nevergone dashboard evidence](https://github.com/Hanz0Hatt0r1/nevergone-recomp/tree/main/docs/evidence/nevergone-kpi-dashboard-v1) with JSON output and replay manifest.
 
 ## P1 — after measurement is stable
 
