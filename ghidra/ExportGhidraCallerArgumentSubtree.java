@@ -37,6 +37,7 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
         String planId;
         String calleeEntry;
         int parameterIndex;
+        String callerEntry = "-";
     }
 
     private static class TypeInfo {
@@ -263,22 +264,30 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
     private List<PlanRow> readPlan(File file) throws Exception {
         ArrayList<PlanRow> rows = new ArrayList<PlanRow>();
         HashSet<String> planIds = new HashSet<String>();
+        String legacyHeader = "plan_id\tcallee_entry\tparameter_index";
+        String scopedHeader = legacyHeader + "\tcaller_entry";
+        boolean scopedPlan = false;
         try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
             String line; boolean first = true;
             while ((line = in.readLine()) != null) {
                 if (line.trim().isEmpty()) continue;
                 if (first) {
-                    if (!"plan_id\tcallee_entry\tparameter_index".equals(line))
-                        throw new IllegalArgumentException("Expected plan_id, callee_entry, parameter_index header");
+                    if (scopedHeader.equals(line)) scopedPlan = true;
+                    else if (!legacyHeader.equals(line))
+                        throw new IllegalArgumentException(
+                            "Expected plan_id, callee_entry, parameter_index header or " + scopedHeader);
                     first = false;
                     continue;
                 }
                 String[] c = line.split("\\t", -1);
-                if (c.length != 3) throw new IllegalArgumentException("Expected plan_id, callee_entry, parameter_index: " + line);
+                if (c.length != (scopedPlan ? 4 : 3))
+                    throw new IllegalArgumentException("Invalid caller argument plan row: " + line);
                 PlanRow r = new PlanRow();
                 r.planId = c[0]; r.calleeEntry = c[1]; r.parameterIndex = Integer.parseInt(c[2]);
+                if (scopedPlan) r.callerEntry = c[3];
                 if (r.planId.isEmpty() || r.calleeEntry.isEmpty() || r.parameterIndex < 0)
                     throw new IllegalArgumentException("Invalid plan row: " + line);
+                if (r.callerEntry.isEmpty()) throw new IllegalArgumentException("Invalid caller entry in plan row: " + line);
                 if (!planIds.add(r.planId)) throw new IllegalArgumentException("Duplicate plan_id: " + r.planId);
                 rows.add(r);
             }
@@ -365,11 +374,11 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
         return id;
     }
 
-    private void writeSummary(BufferedWriter out, PlanRow p, int direct, int decompiled, int failed,
+    private void writeSummary(BufferedWriter out, PlanRow p, String direct, int decompiled, int failed,
             int callersWithMatched, int matched, String status) throws Exception {
         out.write(String.join("\t",
             FORMAT, "summary", cell(p.planId), cell(p.calleeEntry), Integer.toString(p.parameterIndex),
-            Integer.toString(direct), Integer.toString(decompiled),
+            direct, Integer.toString(decompiled),
             Integer.toString(failed), Integer.toString(callersWithMatched), Integer.toString(matched),
             "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", cell(status)));
         out.newLine();
@@ -401,6 +410,9 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
             }
         }
         Function selectedCaller = callerEntry == null ? null : resolveFunction(callerEntry);
+        if (selectedCaller != null && plan.stream().anyMatch(p -> !"-".equals(p.callerEntry))) {
+            throw new IllegalArgumentException("--caller-entry cannot be combined with caller-scoped plan rows");
+        }
         Set<String> outputPaths = new HashSet<String>();
         outputPaths.add(output.getCanonicalPath());
         for (File requested : Arrays.asList(parameterRootOutput, parameterOffsetRootOutput)) {
@@ -424,7 +436,9 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
             for (PlanRow p : plan) {
                 if (monitor.isCancelled()) break;
                 Function callee = resolveFunction(p.calleeEntry);
-                Set<Function> callers = directCallers(callee, selectedCaller);
+                Function planCaller = selectedCaller;
+                if (planCaller == null && !"-".equals(p.callerEntry)) planCaller = resolveFunction(p.callerEntry);
+                Set<Function> callers = directCallers(callee, planCaller);
                 int decompiled = 0, failed = 0, callersWithMatched = 0, matched = 0;
                 for (Function caller : callers) {
                     DecompileResults results = decompiler.decompileFunction(caller, 60, monitor);
@@ -477,9 +491,12 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
                 if (callers.isEmpty()) status = selectedCaller == null ? "no_direct_callers" : "caller_filter_not_a_direct_caller";
                 else if (callerLimitReached) status = "caller_limit_reached";
                 else if (failed != 0) status = "caller_decompile_incomplete";
+                else if (planCaller != null && callersWithMatched == 0) status = "caller_filter_not_a_direct_caller";
                 else if (callersWithMatched != callers.size()) status = "caller_function_without_matched_call";
                 else status = "complete_caller_argument_subtrees";
-                writeSummary(out, p, callers.size(), decompiled, failed, callersWithMatched, matched, status);
+                String directCallerCount = planCaller != null && failed != 0
+                    ? "-" : Integer.toString(planCaller == null ? callers.size() : callersWithMatched);
+                writeSummary(out, p, directCallerCount, decompiled, failed, callersWithMatched, matched, status);
             }
         } finally { decompiler.dispose(); }
         println("CALLER_ARGUMENT_SUBTREE_FORMAT=" + FORMAT);

@@ -1,11 +1,13 @@
 # Bounded caller argument subtree export
 
 `ghidra/ExportGhidraCallerArgumentSubtree.java` exports bounded backward SSA trees
-for actual arguments at direct call sites. Its input TSV has exactly three
-columns: `plan_id`, `callee_entry`, and `parameter_index`. `plan_id` is an
-opaque stable key supplied by the caller. The output is metadata-only TSV and
-follows `schemas/ghidra-caller-argument-subtree-v1.schema.json`.
-The plan row contract is `schemas/ghidra-caller-argument-subtree-plan-v1.schema.json`.
+for actual arguments at direct call sites. Plan `/1` has three columns:
+`plan_id`, `callee_entry`, and `parameter_index`. Plan `/2` adds `caller_entry`;
+put `-` there to discover direct callers or an address to scope that row to one
+caller. `plan_id` is opaque consumer metadata. The output is metadata-only TSV
+and follows `schemas/ghidra-caller-argument-subtree-v1.schema.json`. Plan row
+contracts are `schemas/ghidra-caller-argument-subtree-plan-v1.schema.json` and
+`schemas/ghidra-caller-argument-subtree-plan-v2.schema.json`.
 
 The exporter caps each tree at 12 levels and 96 nodes, and each callee at 128
 direct caller functions. A summary row uses `caller_limit_reached` when another
@@ -15,6 +17,9 @@ selected caller is decompiled directly, so the filter also handles recursive
 self-calls and callsites missing from Ghidra's reference index; the exporter
 still verifies the direct P-code target before emitting argument rows. Without
 the filter, caller discovery uses call references and includes self-recursion.
+For a mixed closure export, use plan `/2` and set `caller_entry` on each row;
+this avoids the global caller cap without starting one Ghidra process per
+caller. Do not combine caller-scoped rows with `--caller-entry`.
 Summary rows report direct callers, decompile failures, and matched calls.
 Consumers compare those counts with their own expected coverage and keep any
 project-specific fields in their local adapter.

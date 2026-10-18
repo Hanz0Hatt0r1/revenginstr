@@ -1755,8 +1755,11 @@ The first broad caller-root export omitted 29 of 356 closure call arguments:
 were absent from Ghidra's reference index. The caller-argument exporter now
 includes call references to the current function and makes `--caller-entry`
 decompile the selected caller directly before checking its P-code target. A
-targeted replay recovered argument subtrees for all 356 call arguments; only
-71 had exact caller-formal/constant-offset roots, so the rest remain barriers.
+new plan `/2` adds a caller address to each plan row, allowing one read-only
+Ghidra invocation to scope every closure call without hitting the global cap.
+Its replay completed all 271 caller-target-parameter plans and emitted
+subtrees for all 356 call arguments; 71 had exact caller-formal/constant-offset
+roots, so the rest remain barriers.
 
 The small `next100h` closure for `00a3dda0` is complete across four functions:
 all four exported CFG/3, the flow contains 538 operations, and its 63 STOREs

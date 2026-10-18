@@ -6,7 +6,7 @@ if [[ $# -lt 5 ]]; then
   echo "  <plan.tsv> <output.tsv> [--parameter-root-output <roots.tsv>]" >&2
   echo "  [--parameter-offset-root-output <offset-roots.tsv>]" >&2
   echo "  [--caller-entry <address>]" >&2
-  echo "Plan columns: plan_id, callee_entry, parameter_index" >&2
+  echo "Plan columns: v1 plan_id, callee_entry, parameter_index; v2 adds caller_entry (or -)" >&2
   exit 2
 fi
 
