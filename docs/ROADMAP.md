@@ -369,7 +369,10 @@ one stable primary code for each unresolved row. It leaves the existing
 `ReceiverInference/1` output and schema unchanged. Current type/catalog evidence
 supports `receiver_not_single_pointer`, `insufficient_receiver_type_evidence`,
 `missing_vtable_catalog_entry`, `mixed_receiver_candidates`, and
-`ambiguous_receiver_vtable`. It emits `non_virtual_call_indirect` only when a
+`ambiguous_receiver_vtable`. It emits `ambiguous_phi` only when a
+`GhidraIndirectReceiverType/1` row explicitly identifies an immediate
+`MULTIEQUAL` definition and two distinct transparent-flow type names resolve
+unambiguously to different catalog classes. It emits `non_virtual_call_indirect` only when a
 `GhidraIndirectReceiverType/1` row explicitly records `receiver_present=0`,
 and `unsupported_pattern` only when that format has no usable type and its
 immediate receiver definition is outside the transparent P-code operations
@@ -1359,7 +1362,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 2. ✅ One-command benchmark runner.
 3. ✅ Standardized combined metric projections for classifier, receiver, router and validation reports.
 4. ✅ Exporter/schema inventory; refreshed current three-repository snapshots and added source-list coverage.
-5. Receiver residual taxonomy v1.
+5. ✅ Receiver residual taxonomy v1.
 6. ✅ Frozen receiver coverage report; first consumer report records current coverage below the M2.6 target.
 7. ✅ Classifier threshold/calibration sweep tooling.
 8. ✅ Classifier error-cluster report.
