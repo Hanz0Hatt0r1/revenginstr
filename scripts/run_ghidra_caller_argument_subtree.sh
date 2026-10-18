@@ -5,6 +5,7 @@ if [[ $# -lt 5 ]]; then
   echo "Usage: GHIDRA_HOME=/opt/ghidra $0 <project-dir> <project-name> <program-name>" >&2
   echo "  <plan.tsv> <output.tsv> [--parameter-root-output <roots.tsv>]" >&2
   echo "  [--parameter-offset-root-output <offset-roots.tsv>]" >&2
+  echo "  [--caller-entry <address>]" >&2
   echo "Plan columns: plan_id, callee_entry, parameter_index" >&2
   exit 2
 fi
@@ -19,6 +20,7 @@ POST_SCRIPT_ARGS=("$PLAN" "$OUTPUT")
 shift 5
 HAS_PARAMETER_ROOT_OUTPUT=0
 HAS_PARAMETER_OFFSET_ROOT_OUTPUT=0
+HAS_CALLER_ENTRY=0
 while [[ $# -gt 0 ]]; do
   [[ $# -ge 2 ]] || { echo "Missing path after $1" >&2; exit 2; }
   case "$1" in
@@ -31,6 +33,12 @@ while [[ $# -gt 0 ]]; do
         HAS_PARAMETER_OFFSET_ROOT_OUTPUT=1
       fi
       mkdir -p "$(dirname -- "$2")"
+      POST_SCRIPT_ARGS+=("$1" "$2")
+      shift 2
+      ;;
+    --caller-entry)
+      [[ $HAS_CALLER_ENTRY -eq 0 ]] || { echo "Duplicate option: $1" >&2; exit 2; }
+      HAS_CALLER_ENTRY=1
       POST_SCRIPT_ARGS+=("$1" "$2")
       shift 2
       ;;

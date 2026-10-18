@@ -31,6 +31,7 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
     private static final int MAX_DEPTH = 12;
     private static final int MAX_NODES = 96;
     private static final int MAX_CALLERS = 128;
+    private boolean callerLimitReached;
 
     private static class PlanRow {
         String planId;
@@ -210,15 +211,29 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
         catch (Exception ignored) { return null; }
     }
 
-    private Set<Function> directCallers(Function callee) {
+    private Set<Function> directCallers(Function callee, Function selectedCaller) {
         LinkedHashSet<Function> out = new LinkedHashSet<Function>();
         ReferenceIterator refs = currentProgram.getReferenceManager().getReferencesTo(callee.getEntryPoint());
         FunctionManager fm = currentProgram.getFunctionManager();
-        while (refs.hasNext() && out.size() < MAX_CALLERS) {
+        callerLimitReached = false;
+        while (refs.hasNext()) {
             Reference ref = refs.next();
             if (ref == null || ref.getFromAddress() == null) continue;
             Function f = fm.getFunctionContaining(ref.getFromAddress());
-            if (f != null && !f.equals(callee)) out.add(f);
+            if (f == null || f.equals(callee)) continue;
+            if (selectedCaller != null) {
+                if (f.equals(selectedCaller)) {
+                    out.add(f);
+                    break;
+                }
+                continue;
+            }
+            if (out.contains(f)) continue;
+            if (out.size() == MAX_CALLERS) {
+                callerLimitReached = true;
+                break;
+            }
+            out.add(f);
         }
         return out;
     }
@@ -348,25 +363,30 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
 
     public void run() throws Exception {
         String[] args = getScriptArgs();
-        if (args.length < 2 || args.length > 6 || (args.length % 2) != 0) throw new IllegalArgumentException(
+        if (args.length < 2 || args.length > 8 || (args.length % 2) != 0) throw new IllegalArgumentException(
             "Usage: ExportGhidraCallerArgumentSubtree.java <plan.tsv> <output.tsv> " +
-            "[--parameter-root-output <roots.tsv>] [--parameter-offset-root-output <offset-roots.tsv>]");
+            "[--parameter-root-output <roots.tsv>] [--parameter-offset-root-output <offset-roots.tsv>] " +
+            "[--caller-entry <address>]");
         List<PlanRow> plan = readPlan(new File(args[0]));
         File output = new File(args[1]); File parent = output.getParentFile(); if (parent != null) parent.mkdirs();
         File parameterRootOutput = null;
         File parameterOffsetRootOutput = null;
+        String callerEntry = null;
         for (int index = 2; index < args.length; index += 2) {
-            File requested = new File(args[index + 1]);
-            if ("--parameter-root-output".equals(args[index]) && parameterRootOutput == null) {
-                parameterRootOutput = requested;
+            if ("--caller-entry".equals(args[index]) && callerEntry == null) {
+                callerEntry = args[index + 1];
+            }
+            else if ("--parameter-root-output".equals(args[index]) && parameterRootOutput == null) {
+                parameterRootOutput = new File(args[index + 1]);
             }
             else if ("--parameter-offset-root-output".equals(args[index]) && parameterOffsetRootOutput == null) {
-                parameterOffsetRootOutput = requested;
+                parameterOffsetRootOutput = new File(args[index + 1]);
             }
             else {
-                throw new IllegalArgumentException("Unsupported or duplicate output option: " + args[index]);
+                throw new IllegalArgumentException("Unsupported or duplicate caller argument option: " + args[index]);
             }
         }
+        Function selectedCaller = callerEntry == null ? null : resolveFunction(callerEntry);
         Set<String> outputPaths = new HashSet<String>();
         outputPaths.add(output.getCanonicalPath());
         for (File requested : Arrays.asList(parameterRootOutput, parameterOffsetRootOutput)) {
@@ -390,7 +410,7 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
             for (PlanRow p : plan) {
                 if (monitor.isCancelled()) break;
                 Function callee = resolveFunction(p.calleeEntry);
-                Set<Function> callers = directCallers(callee);
+                Set<Function> callers = directCallers(callee, selectedCaller);
                 int decompiled = 0, failed = 0, callersWithMatched = 0, matched = 0;
                 for (Function caller : callers) {
                     DecompileResults results = decompiler.decompileFunction(caller, 60, monitor);
@@ -439,7 +459,8 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
                     if (callerMatched) callersWithMatched++;
                 }
                 String status;
-                if (callers.isEmpty()) status = "no_direct_callers";
+                if (callers.isEmpty()) status = selectedCaller == null ? "no_direct_callers" : "caller_filter_not_a_direct_caller";
+                else if (callerLimitReached) status = "caller_limit_reached";
                 else if (failed != 0) status = "caller_decompile_incomplete";
                 else if (callersWithMatched != callers.size()) status = "caller_function_without_matched_call";
                 else status = "complete_caller_argument_subtrees";
