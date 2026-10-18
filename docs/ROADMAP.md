@@ -1624,6 +1624,15 @@ the original 1,000-function sample under its existing filters. These results
 validate bounded evidence handling and fail-closed behavior; they do not
 validate runtime value flow or a positive alias-filtering promotion.
 
+A fresh x86-32 sample screened 100 additional Ghidra functions outside that
+slice. It produced 12 parameter-field stores and 133 parameter loads, but no
+exact formal/offset pair. A separate exact-root replay did find a direct call
+whose callee flow has no stores or nested calls; `/5` classified that call as
+`no_aliasing_memory_effect`. Its caller pair still remains
+`store_not_dominating_load` in `/2` and `/5`, because a CFG path reaches the
+load without executing the store. This validates the exact-root call-effect
+path, but does not promote the pair or validate runtime value flow.
+
 The generic `GhidraInterproceduralMemoryEffect/1` builder and versioned `/5`
 audit are merged in revenginstr PRs [#110](https://github.com/Hanz0Hatt0r1/revenginstr/pull/110)
 and [#111](https://github.com/Hanz0Hatt0r1/revenginstr/pull/111). They propagate
@@ -1633,10 +1642,11 @@ monotone fixed point for cycles. Missing argument links, incomplete callee
 facts, unresolved stores, indirect calls, unknown operations and exhausted
 budgets remain barriers. `/1`–`/4` stay unchanged.
 
-**Next:** use a fresh bounded x86-32 P-code sample outside the exhausted
-1,000-function slice to find a caller/callee closure with an exact caller-formal
-root, a relevant field pair and complete CFG/memory-access facts. Freeze the
-consumer exports and replay `/4` versus `/5`, preserving unknown and indirect
-barriers. Keep positive alias filtering opt-in until a consumer replay contains
-a complete exact-root case where the status change follows from the pinned
-facts. Do not infer alias facts from decompiler text.
+**Next:** prioritize fresh bounded x86-32 candidates that already have a
+same-formal, same-offset field pair whose store dominates its load. Then capture
+the caller-root, callee CFG and complete memory-access closure for each relevant
+direct call, freeze the consumer exports, and replay `/4` versus `/5` while
+preserving unknown and indirect barriers. Keep positive alias filtering opt-in
+until a consumer replay contains a complete exact-root case where the status
+change follows from the pinned facts. Do not infer alias facts from decompiler
+text.
