@@ -1681,6 +1681,19 @@ loads. Distinct caller formals still may alias. This validates both a positive
 structural candidate path and an unknown-effect barrier, without a `/2` to
 `/5` status change or a runtime value-flow claim.
 
+A follow-up one-call screen (`next100h`) exported 20 parameter-field stores
+and 408 parameter loads across 100 functions, forming nine exact pairs. The
+fresh `/2` and `/5` replays agreed on all nine: two
+`unique_cfg_store_candidate`, five `possible_intervening_memory_effect`, and
+two `store_not_dominating_load`. The three call-site mappings were captured
+exactly, but none justified removing the barrier: two callee formals mapped to
+caller parameter 1 while the tracked field was rooted at parameter 0; a third
+mapped to the tracked parameter at `+0x98` but the callee had unresolved store
+locations and `INDIRECT` effects. The interprocedural output retained seven
+`unknown_effect` and two `missing_callee_flow` rows. This adds positive
+structural candidate-path coverage while confirming that alias filtering does
+not promote a pair when roots or effects are insufficient.
+
 The generic `GhidraInterproceduralMemoryEffect/1` builder and versioned `/5`
 audit are merged in revenginstr PRs [#110](https://github.com/Hanz0Hatt0r1/revenginstr/pull/110)
 and [#111](https://github.com/Hanz0Hatt0r1/revenginstr/pull/111). They propagate
@@ -1700,3 +1713,6 @@ where the status change follows from the pinned facts. Do not infer alias facts
 from decompiler text or instruction-level corpus labels. The `next100g` replay
 shows a useful next target class: dominating pairs with one call on the witness,
 where the caller-root and callee effect closure can be frozen independently.
+The `next100h` results narrow that search further to exact same-formal roots
+whose callees export resolvable constant-offset stores and a complete
+write-free or disjoint transitive closure.
