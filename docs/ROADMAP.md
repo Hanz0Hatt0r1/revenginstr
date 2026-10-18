@@ -421,6 +421,11 @@ P-code snapshots. It records 37 structural paths across 11 functions (28
 generic projection against consumer exports; it does not assign factory
 semantics, returned object identity, execution feasibility, or runtime type.
 
+The scan18 load-return replay in [NFS Shift PR #2075](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2075)
+freezes three parameter-rooted `LOAD`-to-`RETURN` paths from seven rows in one
+function. It validates the structural edge projection only; getter/accessor
+semantics and returned object identity remain unassigned.
+
 **Conservative all-path store-dominance audit implemented:** opt-in
 `GhidraFunctionPcodeCFG/2` records the explicit entry block and nullable
 `LOAD`/`STORE` logical-space and access-width fields; CFG/3 additionally records
@@ -540,7 +545,7 @@ freeze and replay scan22 through `/4` and `/5`; the two pairs remain
 Remaining propagation work:
 
 1. consumer-validated factory hypotheses linked to call-result-to-return paths; the NFS replay validates structural paths only, so factory semantics and returned object identity remain open;
-2. consumer-validated getter/accessor hypotheses from load-to-return evidence;
+2. consumer-validated getter/accessor hypotheses from load-to-return evidence; the NFS replay covers three structural paths, but does not label getter/accessor semantics or returned identity;
 3. validate `/5` with complete caller-root, callee-CFG, and callee-memory-access evidence; then extend alias-aware reaching definitions only if richer consumer evidence demonstrates a concrete gap, before treating paired field stores and loads as value flow;
 4. constructor/vtable anchors.
 
