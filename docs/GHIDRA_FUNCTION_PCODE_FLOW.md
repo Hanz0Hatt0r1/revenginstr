@@ -55,6 +55,11 @@ the option also supports demangled symbols that contain commas. Keep
 program-specific fragments in the consumer adapter; the generic exporters do
 not choose title-specific names.
 
+Their completion message reports `capped=true` when the function budget stops
+queued work and `depth-capped=true` when the depth limit excludes at least one
+otherwise reachable direct caller or callee. A flow export with either flag
+set is bounded and must not be treated as a complete direct-call closure.
+
 The caller-argument subtree runner checks the exporter's completion marker and
 each requested parameter-root marker. This catches Ghidra post-script failures
 that can otherwise return a zero exit status.
