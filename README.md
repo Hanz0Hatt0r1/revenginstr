@@ -4,6 +4,8 @@ Reusable reverse-engineering analysis tooling extracted from the Nevergone and N
 
 `revenginstr` is the project-neutral analysis core. Game-specific labels, addresses, class names, offsets, datasets and semantic evidence remain in consumer repositories.
 
+**Development direction:** The [evidence-first analysis strategy](docs/EVIDENCE_FIRST_ANALYSIS_STRATEGY.md) sets the planned order for CALLIND inventory, pointer provenance, interprocedural effects, receiver recovery, independent ML validation, and bounded autonomous analysis. The [roadmap](docs/ROADMAP.md) retains the detailed milestone targets.
+
 ## Current core
 
 The repository now owns these generic mechanisms:
