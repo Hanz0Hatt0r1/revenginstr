@@ -311,6 +311,8 @@ def _stage_plan(manifest: dict[str, Any], mode: str) -> tuple[list[dict[str, Any
             raise BenchmarkError(f"duplicate projection id: {projection_id}")
         projection_ids.add(projection_id)
         projection_artifacts = {projection["artifact"]}
+        if projection.get("population_artifact"):
+            projection_artifacts.add(projection["population_artifact"])
         exact = projection.get("exact_evidence")
         if exact:
             projection_artifacts.add(exact.get("actual_artifact", projection["artifact"]))
@@ -330,6 +332,11 @@ def _stage_plan(manifest: dict[str, Any], mode: str) -> tuple[list[dict[str, Any
             raise BenchmarkError(f"validation projection {projection_id!r} requires a JSON report artifact")
         if projection["kind"] != "validation" and artifacts[projection["artifact"]]["content"] != "jsonl":
             raise BenchmarkError(f"{projection['kind']} projection {projection_id!r} requires a JSONL artifact")
+        population_artifact = projection.get("population_artifact")
+        if population_artifact and artifacts[population_artifact]["content"] != "jsonl":
+            raise BenchmarkError(f"receiver projection {projection_id!r} population must be a JSONL artifact")
+        if population_artifact and projection["kind"] != "receiver":
+            raise BenchmarkError(f"projection {projection_id!r} can use a population only for receiver coverage")
         if exact:
             actual_id = exact.get("actual_artifact", projection["artifact"])
             expected_id = exact["expected_artifact"]
@@ -479,6 +486,9 @@ def run_benchmark(manifest_path: Path, *, mode: str = "full", output_path: Path 
     for projection in projections:
         if artifacts[projection["artifact"]]["role"] == "input":
             inputs.add(projection["artifact"])
+        population_artifact = projection.get("population_artifact")
+        if population_artifact and artifacts[population_artifact]["role"] == "input":
+            inputs.add(population_artifact)
         exact = projection.get("exact_evidence")
         if exact:
             for artifact_id in (exact.get("actual_artifact", projection["artifact"]), exact["expected_artifact"]):

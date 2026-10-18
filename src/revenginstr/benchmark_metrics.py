@@ -145,20 +145,52 @@ def _classification(rows: list[dict[str, Any]], config: dict[str, Any]) -> dict[
     return result
 
 
-def _receiver(rows: list[dict[str, Any]], config: dict[str, Any]) -> dict[str, Any]:
+def _receiver(
+    rows: list[dict[str, Any]], config: dict[str, Any], population_rows: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     status_field = config.get("status_field", "status")
     if not all(isinstance(row.get(status_field), str) and row[status_field] for row in rows):
         raise MetricProjectionError(f"receiver rows must contain string field {status_field!r}")
     counts = Counter(row[status_field] for row in rows)
     resolved_statuses = set(config.get("resolved_statuses", ["resolved_unique_vtable"]))
     resolved = sum(count for status, count in counts.items() if status in resolved_statuses)
+    receiver: dict[str, Any] = {
+        "status_counts": dict(sorted(counts.items())),
+        "resolved_rows": resolved,
+        "coverage": resolved / len(rows) if rows else None,
+    }
+    if population_rows is not None:
+        id_field = config.get("function_id_field", "source_id")
+
+        def identities(items: list[dict[str, Any]], label: str) -> set[str]:
+            values = set()
+            for row_number, row in enumerate(items, 1):
+                value = row.get(id_field)
+                if not isinstance(value, str) or not value:
+                    raise MetricProjectionError(f"{label} row {row_number}: missing function identity {id_field!r}")
+                values.add(value)
+            return values
+
+        population_ids = identities(population_rows, "receiver population")
+        if len(population_ids) != len(population_rows):
+            raise MetricProjectionError("receiver population contains duplicate function identities")
+        query_ids = identities(rows, "receiver")
+        unknown_ids = query_ids - population_ids
+        if unknown_ids:
+            raise MetricProjectionError("receiver queries reference functions outside the frozen population")
+        resolved_ids = identities(
+            [row for row in rows if row[status_field] in resolved_statuses], "resolved receiver",
+        )
+        receiver["function_coverage"] = {
+            "population_functions": len(population_ids),
+            "functions_with_receiver_queries": len(query_ids),
+            "query_function_fraction": len(query_ids) / len(population_ids) if population_ids else None,
+            "functions_with_resolved_queries": len(resolved_ids),
+            "resolved_function_fraction": len(resolved_ids) / len(population_ids) if population_ids else None,
+        }
     return {
         "row_count": len(rows),
-        "receiver": {
-            "status_counts": dict(sorted(counts.items())),
-            "resolved_rows": resolved,
-            "coverage": resolved / len(rows) if rows else None,
-        },
+        "receiver": receiver,
     }
 
 
@@ -354,7 +386,11 @@ def project(config: dict[str, Any], artifact: dict[str, Any], paths: dict[str, P
         if not rows:
             raise MetricProjectionError(f"{kind} projection artifact is empty")
         if kind == "receiver":
-            projected = _receiver(rows, config)
+            population_artifact = config.get("population_artifact")
+            population_rows = _read_jsonl(paths[population_artifact]) if population_artifact else None
+            if population_artifact and not population_rows:
+                raise MetricProjectionError("receiver population artifact is empty")
+            projected = _receiver(rows, config, population_rows)
         elif kind == "receiver_assessment":
             projected = _receiver_assessment(rows)
         elif kind == "receiver_candidate_evidence":
