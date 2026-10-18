@@ -132,12 +132,28 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
             HighFunction high, Varnode node, int depth, Set<Varnode> seen) {
         if (node == null || depth >= MAX_DEPTH || !seen.add(node)) return null;
         try {
-            int directParameter = parameterIndex(high, node);
-            if (directParameter >= 0) return new ParameterRoot(directParameter, 0L);
-
             PcodeOp definition = node.getDef();
-            if (definition == null || definition.getNumInputs() < 1) return null;
+            if (definition == null) {
+                int directParameter = parameterIndex(high, node);
+                return directParameter >= 0 ? new ParameterRoot(directParameter, 0L) : null;
+            }
+
             int opcode = definition.getOpcode();
+            if (opcode == PcodeOp.MULTIEQUAL) {
+                if (definition.getNumInputs() < 1) return null;
+                ParameterRoot merged = null;
+                for (int i = 0; i < definition.getNumInputs(); ++i) {
+                    ParameterRoot incoming = decodeParameterRoot(
+                        high, definition.getInput(i), depth + 1, seen);
+                    if (incoming == null) return null;
+                    if (merged == null) merged = incoming;
+                    else if (merged.parameterIndex != incoming.parameterIndex ||
+                            merged.offsetBytes != incoming.offsetBytes) return null;
+                }
+                return merged;
+            }
+
+            if (definition.getNumInputs() < 1) return null;
             if ((opcode == PcodeOp.COPY || opcode == PcodeOp.CAST) &&
                     definition.getInput(0).getSize() == node.getSize()) {
                 return decodeParameterRoot(high, definition.getInput(0), depth + 1, seen);
@@ -431,7 +447,8 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
                         Varnode argumentRoot = op.getInput(arg);
                         int argumentNodeId = walk(out, p, caller, op.getSeqnum().getTarget(), argumentRoot,
                             -1, -1, 0, "root", nextId, budget, new HashSet<Varnode>());
-                        int callerParameterIndex = parameterIndex(high, argumentRoot);
+                        int callerParameterIndex = argumentRoot == null || argumentRoot.getDef() != null
+                            ? -1 : parameterIndex(high, argumentRoot);
                         if (parameterRootOut != null && argumentNodeId >= 0 && callerParameterIndex >= 0) {
                             parameterRootOut.write(String.join("\t", PARAMETER_ROOT_FORMAT,
                                 cell(p.planId), cell(p.calleeEntry), Integer.toString(p.parameterIndex),

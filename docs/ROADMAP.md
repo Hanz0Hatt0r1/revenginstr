@@ -1685,14 +1685,19 @@ A follow-up one-call screen (`next100h`) exported 20 parameter-field stores
 and 408 parameter loads across 100 functions, forming nine exact pairs. The
 fresh `/2` and `/5` replays agreed on all nine: two
 `unique_cfg_store_candidate`, five `possible_intervening_memory_effect`, and
-two `store_not_dominating_load`. The three call-site mappings were captured
-exactly, but none justified removing the barrier: two callee formals mapped to
-caller parameter 1 while the tracked field was rooted at parameter 0; a third
-mapped to the tracked parameter at `+0x98` but the callee had unresolved store
-locations and `INDIRECT` effects. The interprocedural output retained seven
-`unknown_effect` and two `missing_callee_flow` rows. This adds positive
-structural candidate-path coverage while confirming that alias filtering does
-not promote a pair when roots or effects are insufficient.
+two `store_not_dominating_load`. A subsequent live replay found that two of
+the three apparent exact call-site roots were false: their argument roots were
+loop-carried `MULTIEQUAL` values, but the exporter had treated shared
+`HighVariable` identity as proof of a direct formal root and ignored changing
+backedge offsets (`+0x12c` and `+0x13a * 4`). The exporter now rejects derived
+values as direct roots and accepts a `MULTIEQUAL` only when every incoming
+branch resolves to the same formal and byte offset. Replaying the same calls
+removed both false roots; the third root, a direct constant-offset path from
+caller parameter 0 at `+0x98`, remains exact. Rebuilding the interprocedural
+effects and `/5` audit from the corrected root sidecar retained seven
+`unknown_effect` and two `missing_callee_flow` rows, with all nine audit
+statuses unchanged; no alias-filtering promotion was justified. This corrects
+the earlier root evidence and makes loop-carried argument mapping fail closed.
 
 The generic `GhidraInterproceduralMemoryEffect/1` builder and versioned `/5`
 audit are merged in revenginstr PRs [#110](https://github.com/Hanz0Hatt0r1/revenginstr/pull/110)
@@ -1715,4 +1720,5 @@ shows a useful next target class: dominating pairs with one call on the witness,
 where the caller-root and callee effect closure can be frozen independently.
 The `next100h` results narrow that search further to exact same-formal roots
 whose callees export resolvable constant-offset stores and a complete
-write-free or disjoint transitive closure.
+write-free or disjoint transitive closure. Re-export prior caller-root evidence
+with the stricter `MULTIEQUAL` rule before using it to support alias decisions.

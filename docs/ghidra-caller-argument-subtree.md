@@ -21,18 +21,23 @@ read-only and reports unmatched caller functions in the summary.
 
 An optional `--parameter-root-output <roots.tsv>` sidecar records a call
 argument only when its root varnode matches a formal parameter of the caller
-function. It follows `REVENGINSTR.GhidraCallerArgumentParameterRoot/1` and keeps
+function and has no defining P-code operation. A derived SSA value is not a
+direct root merely because Ghidra assigned it the same `HighVariable` as a
+formal. It follows `REVENGINSTR.GhidraCallerArgumentParameterRoot/1` and keeps
 the plan id, callee formal, caller/call-site, and caller formal indices.
 
 An optional `--parameter-offset-root-output <offset-roots.tsv>` sidecar also
 records exact constant pointer offsets from a caller formal. Its
 `REVENGINSTR.GhidraCallerArgumentParameterRoot/2` rows include a signed byte
 offset; only same-width COPY/CAST and constant INT_ADD, INT_SUB, PTRSUB, or
-PTRADD chains are accepted. Side-effect-dependent `INDIRECT` values and other
-expressions are omitted. The interprocedural memory consumer accepts both
-versions and shifts callee store offsets before proving byte ranges disjoint.
-It tracks at most 64 exact offsets per formal; overflow remains may-alias. The
-default invocation and subtree output remain unchanged.
+PTRADD chains are accepted. A `MULTIEQUAL` is accepted only when every incoming
+value resolves to the same formal and byte offset; cycles, unresolved branches,
+and loop-carried values with changing offsets are omitted. Side-effect-dependent
+`INDIRECT` values and other expressions are also omitted. The interprocedural
+memory consumer accepts both versions and shifts callee store offsets before
+proving byte ranges disjoint. It tracks at most 64 exact offsets per formal;
+overflow remains may-alias. The default invocation and subtree output remain
+unchanged.
 The synthetic caller-argument and formal-root TSVs in
 `tests/fixtures/caller-argument/` exercise a two-edge recursive propagation
 path and are validated against both exporter row schemas.
