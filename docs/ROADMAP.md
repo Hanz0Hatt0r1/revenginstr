@@ -1633,6 +1633,22 @@ whose callee flow has no stores or nested calls; `/5` classified that call as
 load without executing the store. This validates the exact-root call-effect
 path, but does not promote the pair or validate runtime value flow.
 
+Four follow-up address-stratified screens (`next100b`–`next100e`) covered 400
+planned functions and exported 31 parameter-field stores and 459 parameter
+loads. They produced 14 exact same-formal/offset pairs. Manual replay of the
+dominating candidates found two pairs in one function in `next100b`, two in
+`next100d`, and one in `next100e`; `/2` kept each at
+`possible_intervening_memory_effect`. The remaining pairs checked in those
+screens had stores that did not dominate their loads. The `next100e` strongest
+candidate was replayed through `/5` as well: its direct-call closure returned
+`unknown_effect` because exact caller-formal argument roots were absent and
+the closure contained unresolved/indirect operations and missing CFG facts, so
+`/5` preserved `possible_intervening_memory_effect`. The argument subtree
+showed a global address and a loop value rather than the caller's formal
+parameter; treating that as a non-alias proof would be unsound. These screens
+add no positive alias-filtering promotion and do not establish memory value
+flow.
+
 The generic `GhidraInterproceduralMemoryEffect/1` builder and versioned `/5`
 audit are merged in revenginstr PRs [#110](https://github.com/Hanz0Hatt0r1/revenginstr/pull/110)
 and [#111](https://github.com/Hanz0Hatt0r1/revenginstr/pull/111). They propagate
@@ -1642,11 +1658,10 @@ monotone fixed point for cycles. Missing argument links, incomplete callee
 facts, unresolved stores, indirect calls, unknown operations and exhausted
 budgets remain barriers. `/1`–`/4` stay unchanged.
 
-**Next:** prioritize fresh bounded x86-32 candidates that already have a
-same-formal, same-offset field pair whose store dominates its load. Then capture
-the caller-root, callee CFG and complete memory-access closure for each relevant
-direct call, freeze the consumer exports, and replay `/4` versus `/5` while
-preserving unknown and indirect barriers. Keep positive alias filtering opt-in
-until a consumer replay contains a complete exact-root case where the status
-change follows from the pinned facts. Do not infer alias facts from decompiler
-text.
+**Next:** continue fresh bounded x86-32 screening for a same-formal,
+same-offset field pair whose store dominates its load and whose intervening
+direct-call closure has exact caller roots and complete memory facts. Freeze
+those consumer exports and replay `/4` versus `/5` while preserving unknown and
+indirect barriers. Keep positive alias filtering opt-in until a consumer replay
+contains a complete exact-root case where the status change follows from the
+pinned facts. Do not infer alias facts from decompiler text.
