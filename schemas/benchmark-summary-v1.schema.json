@@ -166,7 +166,19 @@
       "properties": {
         "status_counts": {"$ref": "#/$defs/countMap"},
         "resolved_rows": {"type": "integer", "minimum": 0},
-        "coverage": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+        "coverage": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "function_coverage": {
+          "type": "object",
+          "required": ["population_functions", "functions_with_receiver_queries", "query_function_fraction", "functions_with_resolved_queries", "resolved_function_fraction"],
+          "properties": {
+            "population_functions": {"type": "integer", "minimum": 0},
+            "functions_with_receiver_queries": {"type": "integer", "minimum": 0},
+            "query_function_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+            "functions_with_resolved_queries": {"type": "integer", "minimum": 0},
+            "resolved_function_fraction": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+          },
+          "additionalProperties": false
+        }
       },
       "additionalProperties": false
     },

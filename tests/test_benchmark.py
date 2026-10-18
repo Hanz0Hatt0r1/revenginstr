@@ -85,6 +85,17 @@ def test_benchmark_manifest_and_summary_schemas_are_valid() -> None:
         Draft202012Validator.check_schema(schema)
 
 
+def test_benchmark_manifest_requires_work_when_execution_stages_are_empty(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["stages"] = []
+    manifest["metrics"] = []
+    manifest.pop("projections", None)
+    schema = json.loads((ROOT / "schemas" / "benchmark-manifest-v1.schema.json").read_text(encoding="utf-8"))
+
+    assert Draft202012Validator(schema).is_valid(manifest) is False
+
+
 def test_benchmark_runs_a_pinned_smoke_pipeline_and_records_hashes(tmp_path: Path) -> None:
     manifest_path = _write_manifest(tmp_path)
     summary, code = run_benchmark(manifest_path, mode="smoke", output_path=tmp_path / "summary.json")
@@ -105,6 +116,40 @@ def test_benchmark_runs_a_pinned_smoke_pipeline_and_records_hashes(tmp_path: Pat
     else:
         assert summary["stages"][0]["peak_rss_bytes"] is None
     assert json.loads((tmp_path / "summary.json").read_text(encoding="utf-8")) == summary
+
+
+def test_benchmark_pins_receiver_population_and_emits_aggregate_coverage(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    query_path = tmp_path / "receiver-queries.jsonl"
+    population_path = tmp_path / "receiver-population.jsonl"
+    query_path.write_text(json.dumps({"source_id": "private-function", "status": "resolved_unique_vtable"}) + "\n",
+                          encoding="utf-8")
+    population_path.write_text("".join(json.dumps({"source_id": value}) + "\n"
+                                        for value in ("private-function", "function-b", "function-c")),
+                               encoding="utf-8")
+    for artifact_id, path in (("receiver_queries", query_path), ("receiver_population", population_path)):
+        manifest["artifacts"][artifact_id] = {
+            "path": str(path), "role": "input", "kind": "file", "content": "jsonl", "sha256": _sha256(path),
+        }
+    manifest["stages"] = []
+    manifest["metrics"] = []
+    manifest["artifacts"].pop("audit")
+    manifest["projections"] = [{
+        "id": "frozen-receiver", "kind": "receiver", "artifact": "receiver_queries",
+        "population_artifact": "receiver_population",
+    }]
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    summary, code = run_benchmark(manifest_path, mode="smoke", output_path=tmp_path / "summary.json")
+
+    assert code == 0
+    projection = summary["projections"][0]
+    assert projection["receiver"]["function_coverage"]["population_functions"] == 3
+    assert projection["receiver"]["function_coverage"]["resolved_function_fraction"] == pytest.approx(1 / 3)
+    assert summary["artifacts"]["receiver_population"]["pinned"] is True
+    assert summary["stages"] == []
+    assert "private-function" not in json.dumps(summary)
 
 
 def test_benchmark_runs_receiver_argument_store_flow_stage(tmp_path: Path) -> None:
@@ -995,6 +1040,48 @@ def test_receiver_projection_exact_evidence_compares_without_emitting_keys(tmp_p
     assert result["exact_evidence"]["mismatch_rows"] == 1
     assert result["exact_evidence"]["passed"] is False
     assert "opaque-id" not in json.dumps(result)
+
+
+def test_receiver_projection_reports_query_and_function_coverage(tmp_path: Path) -> None:
+    queries = tmp_path / "receiver-queries.jsonl"
+    population = tmp_path / "population.jsonl"
+    queries.write_text("".join(json.dumps(row) + "\n" for row in [
+        {"source_id": "function-a", "status": "resolved_unique_vtable"},
+        {"source_id": "function-a", "status": "unresolved_receiver_class"},
+        {"source_id": "function-b", "status": "unresolved_receiver_class"},
+    ]), encoding="utf-8")
+    population.write_text("".join(json.dumps({"source_id": value}) + "\n"
+                                  for value in ("function-a", "function-b", "function-c", "function-d")),
+                          encoding="utf-8")
+
+    result = project(
+        {"id": "receiver", "kind": "receiver", "artifact": "queries", "population_artifact": "population"},
+        {"content": "jsonl"}, {"queries": queries, "population": population},
+    )
+
+    assert result["receiver"]["coverage"] == pytest.approx(1 / 3)
+    assert result["receiver"]["function_coverage"] == {
+        "population_functions": 4,
+        "functions_with_receiver_queries": 2,
+        "query_function_fraction": 0.5,
+        "functions_with_resolved_queries": 1,
+        "resolved_function_fraction": 0.25,
+    }
+    assert "function-a" not in json.dumps(result)
+
+
+def test_receiver_projection_rejects_queries_outside_population(tmp_path: Path) -> None:
+    queries = tmp_path / "receiver-queries.jsonl"
+    population = tmp_path / "population.jsonl"
+    queries.write_text(json.dumps({"source_id": "unknown", "status": "unresolved_receiver_class"}) + "\n",
+                       encoding="utf-8")
+    population.write_text(json.dumps({"source_id": "known"}) + "\n", encoding="utf-8")
+
+    with pytest.raises(MetricProjectionError, match="outside the frozen population"):
+        project(
+            {"id": "receiver", "kind": "receiver", "artifact": "queries", "population_artifact": "population"},
+            {"content": "jsonl"}, {"queries": queries, "population": population},
+        )
 
 
 def test_receiver_assessment_projection_reports_aggregate_candidate_metrics(tmp_path: Path) -> None:

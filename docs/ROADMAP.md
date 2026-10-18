@@ -555,6 +555,14 @@ aggregate metrics enter shared summaries. This completes the reusable harness
 contract, while coverage and exact-evidence exit targets still require
 consumer-owned frozen datasets and results.
 
+Receiver projections can additionally join query rows against a hash-pinned
+function population. They report query-level resolution and function-level
+query/resolution coverage separately, reject duplicate or out-of-population
+identities, and omit identities from the summary. The frozen consumer report
+remains the evidence for the coverage target. Projection-only benchmark
+manifests can summarize already-produced frozen artifacts without rerunning
+their expensive acquisition stages.
+
 ## Exit criteria
 
 Near-term:

@@ -58,11 +58,22 @@ accuracy, confusion matrix, action coverage and calibration bins. Calibration
 uses confidence as a probability of correctness and only scores rows with both
 labels and confidence.
 
+A report may omit execution stages when it summarizes already-produced frozen
+artifacts. Such manifests must still declare at least one projection or metric;
+the ordinary input hash and schema checks still apply.
+
 Receiver projections count statuses and compute coverage over statuses named
 in `resolved_statuses` (default: `resolved_unique_vtable`). `reason_fields` can
 map available OOD, conflict and failure reason columns into count maps; absent
 reason data is not inferred. A validation projection summarizes frozen
 selection or drift reports without treating unlabeled rows as accuracy.
+
+For a frozen function-level denominator, a receiver projection may also name a
+JSONL `population_artifact` and `function_id_field` (default: `source_id`). The
+population must contain unique identities, and every receiver query must join
+to one of them. The summary reports query-level resolution separately from
+the fraction of population functions with any receiver query and with a
+resolved query; identities are never copied into the summary.
 
 `receiver_assessment` projections accept `ReceiverCandidateAssessment/1`
 JSONL and report status counts, candidate-count distribution, rows and total
