@@ -1217,6 +1217,13 @@ Generalize vtable/object dispatch contracts beyond ARM32 Itanium where evidence 
 
 Create legal synthetic fixtures for calling conventions, direct/indirect calls, tagged/thunked targets, vtables, field access, return values and representative compiler idioms on each supported ISA/ABI combination.
 
+The native P-code C lowerer also has an ARM64 execution gate for its x86
+binary80 path. It checks a small generated-code fixture, including minimum
+binary80 subnormal arithmetic. This does not establish full-corpus/runtime
+parity or exact equivalence for rare double-rounding cases on hosts with wider
+`long double` precision; the guest floating-point control state still needs an
+explicit consumer mapping.
+
 ### M12.5 Transfer evaluation
 
 Run architecture-held-out and project-held-out checks to distinguish semantic transfer from architecture fingerprinting. Report feature drift and acceptance calibration separately for each ISA/ABI.

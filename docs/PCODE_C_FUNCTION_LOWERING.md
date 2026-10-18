@@ -45,8 +45,9 @@ context layout unchanged.
 
 The current subset covers scalar varnodes up to 8 bytes; raw 10-byte and
 16-byte copy, memory, bitwise, extension, shift, and extraction operations;
-binary80 conversions and arithmetic on x86 hosts with a 64-bit-significand
-`long double`, integer and boolean operations listed in
+binary80 conversions and arithmetic on hosts whose `long double` can represent
+the binary80 exponent range and at least 64 significand bits, integer and
+boolean operations listed in
 `src/revenginstr/pcode/c_lowering.py`, integer division and remainder, 4-byte
 and 8-byte floating arithmetic/conversions, `LOAD`,
 `STORE`, direct conditional and unconditional branches within the function,
@@ -60,10 +61,15 @@ space is compacted while preserving overlapping byte ranges. Computed jumps
 branch to in-function instruction labels. Enumerated external flow targets and
 dynamic targets outside the function dispatch through
 `RviPcodeContext.call`; the consumer decides whether each target is supported.
-Binary80 helpers use the calling thread's current x87 control state;
-the consumer must keep it aligned with the guest state for matching rounding.
-On non-x86 hosts or hosts without binary80 `long double`, those operations
-return an error. The 16-byte path treats values as opaque bytes except for the
+Binary80 values are decoded from and encoded to the architectural 10-byte
+format rather than copied into the host `long double` representation. Each
+P-code operation rounds its result back to binary80 using the calling thread's
+floating-point rounding mode; the consumer must keep that mode aligned with the
+guest x87 state. Hosts with more than 64 significand bits evaluate an operation
+at the wider host precision before rounding back, so rare double-rounding cases
+may differ from native x87. Hosts without the required `long double` range,
+precision, or subnormal support return an error. The 16-byte path treats
+values as opaque bytes except for the
 listed bitwise and byte-oriented operations; it does not imply packed SIMD
 arithmetic semantics. Relative branch targets outside the current
 instruction's P-code fail closed. An x86 `WAIT` is emitted as a host `FWAIT`;

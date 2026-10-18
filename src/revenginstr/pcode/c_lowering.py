@@ -756,11 +756,8 @@ static int64_t rvi_signed_integer(uint64_t value, unsigned size) {
     return result;
 }
 static int rvi_float80_host_supported(void) {
-#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64)
-    return LDBL_MANT_DIG == 64 && LDBL_MAX_EXP == 16384 && sizeof(long double) >= 10;
-#else
-    return 0;
-#endif
+    return LDBL_MANT_DIG >= 64 && LDBL_MAX_EXP >= 16384 &&
+           LDBL_MIN_EXP <= -16381 && ldexpl(1.0L, -16445) != 0.0L;
 }
 static int rvi_x87_wait(void) {
 #if (defined(__i386__) || defined(__x86_64__)) && (defined(__GNUC__) || defined(__clang__))
@@ -774,17 +771,68 @@ static int rvi_x87_wait(void) {
 #endif
 }
 static int rvi_float80_load(const uint8_t input[10], long double *value) {
-    uint8_t bytes[sizeof(long double)] = {0};
+    uint64_t significand = 0;
+    unsigned sign_exponent, exponent;
+    int binary_exponent;
     if (!input || !value || !rvi_float80_host_supported()) return -1;
-    memcpy(bytes, input, 10);
-    memcpy(value, bytes, sizeof(*value));
+    for (unsigned i = 0; i < 8; ++i) significand |= (uint64_t)input[i] << (i * 8);
+    sign_exponent = (unsigned)input[8] | ((unsigned)input[9] << 8);
+    exponent = sign_exponent & 0x7fff;
+    if (exponent == 0x7fff) {
+        if (significand == UINT64_C(0x8000000000000000)) *value = INFINITY;
+        else *value = nanl("");
+    } else {
+        if (exponent == 0) exponent = 1;
+        else if (!(significand >> 63)) return -1;
+        binary_exponent = (int)exponent - 16383 - 63;
+        *value = ldexpl((long double)significand, binary_exponent);
+    }
+    if (sign_exponent & 0x8000) *value = copysignl(*value, -1.0L);
     return 0;
 }
 static int rvi_float80_store(long double value, uint8_t output[10]) {
-    uint8_t bytes[sizeof(long double)] = {0};
+    uint64_t significand;
+    unsigned exponent = 0;
+    int sign = signbit(value) != 0;
+    uint16_t sign_exponent;
+    long double magnitude = fabsl(value);
     if (!output || !rvi_float80_host_supported()) return -1;
-    memcpy(bytes, &value, sizeof(value));
-    memcpy(output, bytes, 10);
+    if (isinf(value)) {
+        exponent = 0x7fff;
+        significand = UINT64_C(0x8000000000000000);
+    } else if (isnan(value)) {
+        exponent = 0x7fff;
+        significand = UINT64_C(0xc000000000000000);
+    } else if (magnitude >= ldexpl(1.0L, -16382)) {
+        int binary_exponent;
+        long double fraction = frexpl(magnitude, &binary_exponent);
+        long double rounded = fabsl(rintl(sign ? -ldexpl(fraction, 64) : ldexpl(fraction, 64)));
+        int biased_exponent = binary_exponent - 1 + 16383;
+        if (rounded >= ldexpl(1.0L, 64)) {
+            rounded = ldexpl(1.0L, 63);
+            ++biased_exponent;
+        }
+        if (biased_exponent >= 0x7fff) {
+            exponent = 0x7fff;
+            significand = UINT64_C(0x8000000000000000);
+        } else {
+            exponent = (unsigned)biased_exponent;
+            significand = (uint64_t)(rounded - ldexpl(1.0L, 63)) |
+                          UINT64_C(0x8000000000000000);
+        }
+    } else {
+        long double rounded = fabsl(rintl(sign ? -ldexpl(magnitude, 16445) : ldexpl(magnitude, 16445)));
+        if (rounded >= ldexpl(1.0L, 63)) {
+            exponent = 1;
+            significand = UINT64_C(0x8000000000000000);
+        } else {
+            significand = (uint64_t)rounded;
+        }
+    }
+    sign_exponent = (uint16_t)(exponent | (sign ? 0x8000 : 0));
+    for (unsigned i = 0; i < 8; ++i) output[i] = (uint8_t)(significand >> (i * 8));
+    output[8] = (uint8_t)sign_exponent;
+    output[9] = (uint8_t)(sign_exponent >> 8);
     return 0;
 }
 static int rvi_float80_from_float(uint64_t bits, unsigned size, uint8_t output[10]) {

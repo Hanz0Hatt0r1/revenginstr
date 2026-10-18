@@ -301,8 +301,6 @@ int main(void) {
 
 
 def test_codegen_executes_binary80_conversions_arithmetic_copy_and_truncation(tmp_path: Path) -> None:
-    if platform.machine().lower() not in {"x86_64", "amd64", "i386", "i486", "i586", "i686", "x86"}:
-        pytest.skip("binary80 runtime requires an x86 host with 80-bit long double")
     row = _function_row()
     row["instructions"] = [
         {"address": "0x00401000", "mnemonic": "FLD", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
@@ -352,19 +350,24 @@ def test_codegen_executes_binary80_conversions_arithmetic_copy_and_truncation(tm
             "opcode": "FLOAT2FLOAT", "output": _varnode("register", "0x0", 4),
             "inputs": [_varnode("unique", "0x140", 10)],
         }]},
-        {"address": "0x0040100b", "mnemonic": "RET", "flow_type": "TERMINATOR", "flows": [], "pcode": [{
+        {"address": "0x0040100b", "mnemonic": "FADD", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "FLOAT_ADD", "output": _varnode("register", "0x40", 10),
+            "inputs": [_varnode("const", "0x1", 10, constant=True),
+                       _varnode("const", "0x1", 10, constant=True)],
+        }]},
+        {"address": "0x0040100c", "mnemonic": "RET", "flow_type": "TERMINATOR", "flows": [], "pcode": [{
             "opcode": "RETURN", "output": None, "inputs": [_varnode("register", "0x20", 4)],
         }]},
     ]
     row["instruction_count"] = len(row["instructions"])
     source, operation_count = compile_function(row, _address_spaces())
-    assert operation_count == 12
+    assert operation_count == 13
 
     compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
     if compiler is None:
         pytest.skip("C compiler not available")
     harness = r'''
-typedef struct { uint8_t registers[64]; uint8_t ram[512]; } TestState;
+typedef struct { uint8_t registers[128]; uint8_t ram[512]; } TestState;
 static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {
     TestState *state = (TestState *)opaque;
     uint8_t *base = strcmp(space, "register") == 0 ? state->registers :
@@ -397,6 +400,8 @@ int main(void) {
     if (state.registers[0x10] != 1 || memcmp(state.registers + 0x20, expected80, 10) != 0) return 3;
     if (memcmp(state.ram + 0x100, expected80, 10) != 0 ||
         memcmp(state.registers + 0x30, expected80, 10) != 0) return 4;
+    const uint8_t expected_subnormal80[10] = {2, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    if (memcmp(state.registers + 0x40, expected_subnormal80, 10) != 0) return 5;
     return 0;
 }
 '''
@@ -414,8 +419,6 @@ int main(void) {
 def test_codegen_truncates_binary80_to_an_integral_binary80_value(
     tmp_path: Path, input_bits: str, expected_bits: int,
 ) -> None:
-    if platform.machine().lower() not in {"x86_64", "amd64", "i386", "i486", "i586", "i686", "x86"}:
-        pytest.skip("binary80 runtime requires an x86 host with 80-bit long double")
     row = _function_row()
     row["instruction_count"] = 4
     row["instructions"] = [
@@ -467,6 +470,38 @@ int main(void) {{
 '''
     c_path = tmp_path / "binary80-trunc.c"
     executable = tmp_path / "binary80-trunc"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
+def test_codegen_rejects_unnormal_binary80_encodings(tmp_path: Path) -> None:
+    row = _function_row()
+    row["instructions"] = [
+        {"address": "0x00401000", "mnemonic": "FNAN", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "FLOAT_NAN", "output": _varnode("register", "0x10", 1),
+            "inputs": [_varnode("const", "0x40000000000000000000", 10, constant=True)],
+        }]},
+        {"address": "0x00401001", "mnemonic": "RET", "flow_type": "TERMINATOR", "flows": [], "pcode": [{
+            "opcode": "RETURN", "output": None, "inputs": [_varnode("register", "0x20", 4)],
+        }]},
+    ]
+    row["instruction_count"] = len(row["instructions"])
+    source, operation_count = compile_function(row, _address_spaces())
+    assert operation_count == 2
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    harness = r'''
+int rvi_00401000(RviPcodeContext *ctx);
+int main(void) {
+    RviPcodeContext context = {0};
+    return rvi_00401000(&context) == -1 ? 0 : 1;
+}
+'''
+    c_path = tmp_path / "binary80-unnormal.c"
+    executable = tmp_path / "binary80-unnormal"
     c_path.write_text(source + "\n" + harness, encoding="utf-8")
     subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
     subprocess.run([str(executable)], check=True)
