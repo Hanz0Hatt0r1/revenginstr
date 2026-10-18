@@ -1,7 +1,8 @@
 # Comparing Ghidra JSONL exporter output
 
-`revenginstr-jsonl-export-parity` compares UTF-8 JSONL exports one object per
-line. It preserves record order and ignores JSON object key order. The report
+`revenginstr-jsonl-export-parity` compares UTF-8 JSONL exports, including gzip
+compressed `.jsonl.gz` files, one object per line. It preserves record order
+and ignores JSON object key order. The report
 contains hashes, record counts, byte equality, semantic record equality, and
 the first differing record index; it never contains exported values or paths.
 
