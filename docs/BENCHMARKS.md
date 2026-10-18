@@ -58,6 +58,10 @@ accuracy, confusion matrix, action coverage and calibration bins. Calibration
 uses confidence as a probability of correctness and only scores rows with both
 labels and confidence.
 
+A report may omit execution stages when it summarizes already-produced frozen
+artifacts. Such manifests must still declare at least one projection or metric;
+the ordinary input hash and schema checks still apply.
+
 Receiver projections count statuses and compute coverage over statuses named
 in `resolved_statuses` (default: `resolved_unique_vtable`). `reason_fields` can
 map available OOD, conflict and failure reason columns into count maps; absent

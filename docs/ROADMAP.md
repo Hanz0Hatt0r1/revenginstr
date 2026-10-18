@@ -559,7 +559,9 @@ Receiver projections can additionally join query rows against a hash-pinned
 function population. They report query-level resolution and function-level
 query/resolution coverage separately, reject duplicate or out-of-population
 identities, and omit identities from the summary. The frozen consumer report
-remains the evidence for the coverage target.
+remains the evidence for the coverage target. Projection-only benchmark
+manifests can summarize already-produced frozen artifacts without rerunning
+their expensive acquisition stages.
 
 ## Exit criteria
 

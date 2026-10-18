@@ -42,7 +42,7 @@
     "configs": {"type": "object"},
     "stages": {
       "type": "array",
-      "minItems": 1,
+      "minItems": 0,
       "items": {"$ref": "#/$defs/stage"}
     },
     "metrics": {
@@ -54,6 +54,11 @@
       "items": {"$ref": "#/$defs/projection"}
     }
   },
+  "anyOf": [
+    {"properties": {"stages": {"minItems": 1}}, "required": ["stages"]},
+    {"properties": {"metrics": {"minItems": 1}}, "required": ["metrics"]},
+    {"properties": {"projections": {"minItems": 1}}, "required": ["projections"]}
+  ],
   "$defs": {
     "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
     "schemaContract": {

@@ -85,6 +85,17 @@ def test_benchmark_manifest_and_summary_schemas_are_valid() -> None:
         Draft202012Validator.check_schema(schema)
 
 
+def test_benchmark_manifest_requires_work_when_execution_stages_are_empty(tmp_path: Path) -> None:
+    manifest_path = _write_manifest(tmp_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["stages"] = []
+    manifest["metrics"] = []
+    manifest.pop("projections", None)
+    schema = json.loads((ROOT / "schemas" / "benchmark-manifest-v1.schema.json").read_text(encoding="utf-8"))
+
+    assert Draft202012Validator(schema).is_valid(manifest) is False
+
+
 def test_benchmark_runs_a_pinned_smoke_pipeline_and_records_hashes(tmp_path: Path) -> None:
     manifest_path = _write_manifest(tmp_path)
     summary, code = run_benchmark(manifest_path, mode="smoke", output_path=tmp_path / "summary.json")
@@ -121,6 +132,9 @@ def test_benchmark_pins_receiver_population_and_emits_aggregate_coverage(tmp_pat
         manifest["artifacts"][artifact_id] = {
             "path": str(path), "role": "input", "kind": "file", "content": "jsonl", "sha256": _sha256(path),
         }
+    manifest["stages"] = []
+    manifest["metrics"] = []
+    manifest["artifacts"].pop("audit")
     manifest["projections"] = [{
         "id": "frozen-receiver", "kind": "receiver", "artifact": "receiver_queries",
         "population_artifact": "receiver_population",
@@ -134,6 +148,7 @@ def test_benchmark_pins_receiver_population_and_emits_aggregate_coverage(tmp_pat
     assert projection["receiver"]["function_coverage"]["population_functions"] == 3
     assert projection["receiver"]["function_coverage"]["resolved_function_fraction"] == pytest.approx(1 / 3)
     assert summary["artifacts"]["receiver_population"]["pinned"] is True
+    assert summary["stages"] == []
     assert "private-function" not in json.dumps(summary)
 
 
