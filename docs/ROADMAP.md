@@ -414,6 +414,13 @@ receiver types are fallback joins.
 
 **Bounded caller-argument, field-store, field-load, and return anchors implemented:** `revenginstr-receiver-argument-flow` projects bounded subtree roots into actual-argument-to-formal-parameter edges and captures generic call-result producers when explicit in P-code; `revenginstr-receiver-store-flow` projects parameter-to-field-store evidence into destination and stored-value edges. `revenginstr-receiver-argument-store-flow` and `revenginstr-receiver-argument-load-flow` join those artifacts by exact function/parameter keys with provenance from both inputs. `revenginstr-receiver-field-access-pairs` groups same-function stores and loads only when formal parameter and numeric field offset match. `revenginstr-receiver-load-return-flow` traces parameter-rooted loads through P-code def-use chains to `RETURN` operations without assigning getter semantics; `revenginstr-receiver-call-return-flow` traces call-result values through P-code to function returns as a generic factory-return anchor, without assigning factory semantics. The caller-argument exporter can optionally emit direct caller-formal roots; `revenginstr-receiver-argument-propagate` walks those exact links backward under depth and edge caps. `revenginstr-receiver-field-store-load-audit` now joins parameter/offset-compatible pairs to a program-pinned High-P-code CFG and reports bounded paths with no explicit intervening store/call; that status is a candidate path only, not proof of feasible execution or memory reaching-definition. The generic alias-aware interprocedural audit and `/5` consumer are implemented; positive consumer validation remains open.
 
+The NFS Shift replay in [PR #2074](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2074)
+applies the generic call-result-to-return exporter to 64 frozen scan16–18
+P-code snapshots. It records 37 structural paths across 11 functions (28
+`CALL`, 9 `CALLIND`) with hashes and byte-for-byte replay. This validates the
+generic projection against consumer exports; it does not assign factory
+semantics, returned object identity, execution feasibility, or runtime type.
+
 **Conservative all-path store-dominance audit implemented:** opt-in
 `GhidraFunctionPcodeCFG/2` records the explicit entry block and nullable
 `LOAD`/`STORE` logical-space and access-width fields; CFG/3 additionally records
@@ -532,7 +539,7 @@ freeze and replay scan22 through `/4` and `/5`; the two pairs remain
 
 Remaining propagation work:
 
-1. consumer-validated factory hypotheses linked to call-result-to-return paths;
+1. consumer-validated factory hypotheses linked to call-result-to-return paths; the NFS replay validates structural paths only, so factory semantics and returned object identity remain open;
 2. consumer-validated getter/accessor hypotheses from load-to-return evidence;
 3. validate `/5` with complete caller-root, callee-CFG, and callee-memory-access evidence; then extend alias-aware reaching definitions only if richer consumer evidence demonstrates a concrete gap, before treating paired field stores and loads as value flow;
 4. constructor/vtable anchors.
@@ -1373,7 +1380,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 ## P1 — after measurement is stable
 
 12. ✅ Receiver provenance graph IR schema and reference validator; graph construction is still open.
-13. Interprocedural receiver propagation v1 (bounded caller-argument and field-store anchors plus exact one-hop joins landed; recursive propagation and store/load joins remain open).
+13. 🟡 Interprocedural receiver propagation v1; bounded caller-argument, field-store/load, and return anchors plus exact one-hop joins are implemented, while positive memory-flow and semantic receiver validation remain open.
 14. ✅ Initial Effect IR schema + structural extractor v1; additional effect classes and semantic evaluation remain open.
 15. ✅ Initial generic semantic-label/evaluation format and paired scorer; family-isolated consumer gold sets remain open.
 16. ✅ Structured function summary v1; [`FunctionSummary/1–2`](FUNCTION_SUMMARY.md) preserves claim provenance and pins the source Effect IR hash.
