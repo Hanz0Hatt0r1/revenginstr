@@ -139,6 +139,9 @@ def build_semantic_program_graphs(
                     entry, effect["operation_address"], effect["operation_time"], effect["opcode"],
                 )
                 operations[key].append(effect)
+            opcodes_by_site: dict[tuple[Any, ...], set[str]] = defaultdict(set)
+            for function_entry, address, operation_time, opcode in operations:
+                opcodes_by_site[(function_entry, address, operation_time)].add(opcode)
 
             for key, operation_effects in sorted(
                 operations.items(),
@@ -148,6 +151,7 @@ def build_semantic_program_graphs(
                 ),
             ):
                 _, address, operation_time, opcode = key
+                opcode_conflict = len(opcodes_by_site[(entry, address, operation_time)]) > 1
                 operation_node = _stable_id("operation", [program_id, *key])
                 operation_support = [_support(effect) for effect in operation_effects]
                 kinds = sorted({effect["kind"] for effect in operation_effects})
@@ -167,6 +171,11 @@ def build_semantic_program_graphs(
                     target_state = "unresolved"
                 else:
                     target_state = "not_applicable"
+                conflict_reasons = []
+                if len(targets) > 1:
+                    conflict_reasons.append("target_disagreement")
+                if opcode_conflict:
+                    conflict_reasons.append("opcode_disagreement")
                 _add_node(nodes, {
                     "id": operation_node,
                     "kind": "operation",
@@ -177,10 +186,11 @@ def build_semantic_program_graphs(
                     "kinds": kinds,
                     "call_target_state": target_state,
                     "target_entries": sorted(targets),
+                    "conflict_reasons": conflict_reasons,
                     "evidence_class": _evidence_class(operation_support),
                     "support": operation_support,
                     "confidence": None,
-                    "conflict_state": "contested" if target_state == "conflicted" else "uncontested",
+                    "conflict_state": "contested" if conflict_reasons else "uncontested",
                 })
                 _add_edge(edges, {
                     "from": function_node,
@@ -217,13 +227,13 @@ def build_semantic_program_graphs(
                         "evidence_class": "derived_structural",
                         "support": support,
                         "confidence": None,
-                        "conflict_state": "uncontested",
+                        "conflict_state": "contested" if opcode_conflict else "uncontested",
                     })
 
                 for target, call_effects in sorted(targets.items()):
                     target_node = _stable_id("function", [program_id, target])
                     support = [_support(effect) for effect in call_effects]
-                    conflict_state = "contested" if target_state == "conflicted" else "uncontested"
+                    conflict_state = "contested" if conflict_reasons else "uncontested"
                     _add_node(nodes, {
                         "id": target_node,
                         "kind": "function",

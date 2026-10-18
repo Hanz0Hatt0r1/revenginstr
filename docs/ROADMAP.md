@@ -1192,10 +1192,11 @@ and `/2` into deterministic program, function, operation, and
 parameter-rooted field entities. Resolved direct calls and structural field
 reads/writes retain source effect ids and artifact hashes; unresolved and
 indirect calls stay explicit, and multiple direct targets at one call site
-remain contested. This implements only the first structural slice of M10.1
-and M10.2. Receiver dispatch, recovered layouts, roles, states, resources,
-callbacks, execution contexts, program queries, audited gold graphs, and the
-M10 exit criteria remain open.
+remain contested. Cross-export opcode disagreements at the same function,
+address, and P-code time also remain contested. This implements only the first
+structural slice of M10.1–M10.3. Receiver dispatch, recovered layouts, roles,
+states, resources, callbacks, execution contexts, program queries, audited
+gold graphs, and the M10 exit criteria remain open.
 
 ---
 

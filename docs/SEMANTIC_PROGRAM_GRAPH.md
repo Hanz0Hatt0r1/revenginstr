@@ -20,7 +20,10 @@ Field identity is scoped to the function entry, formal parameter index, and
 constant byte offset. The graph does not equate same-offset fields in separate
 functions or infer class/object identity. When the same call site has multiple
 distinct exact direct targets, all candidate edges are retained and marked
-`contested`; no target is silently selected.
+`contested`; no target is silently selected. If independent inputs report
+different P-code opcodes for the same function, address, and P-code time,
+affected operation and access edges are also marked `contested` with
+`opcode_disagreement`.
 
 Every node and edge carries source effect ids, evidence classes, source
 artifact SHA-256 values, and record ordinals. `confidence` is null because the

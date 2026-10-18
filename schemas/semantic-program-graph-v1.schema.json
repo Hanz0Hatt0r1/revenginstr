@@ -58,6 +58,7 @@
         ]}},
         "call_target_state": {"enum": ["not_applicable", "resolved", "unresolved", "indirect", "conflicted"]},
         "target_entries": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "conflict_reasons": {"type": "array", "uniqueItems": true, "items": {"enum": ["target_disagreement", "opcode_disagreement"]}},
         "parameter_index": {"type": "integer", "minimum": 0},
         "field_offset": {"type": "string", "pattern": "^-?0x[0-9a-f]+$"},
         "evidence_class": {"enum": ["exact_static", "derived_structural", "mixed"]},
@@ -68,7 +69,7 @@
       "allOf": [
         {"if": {"properties": {"kind": {"const": "program"}}, "required": ["kind"]}, "then": {"properties": {"id": {"pattern": "^program:"}}}},
         {"if": {"properties": {"kind": {"const": "function"}}, "required": ["kind"]}, "then": {"required": ["entry"], "properties": {"id": {"pattern": "^function:"}}}},
-        {"if": {"properties": {"kind": {"const": "operation"}}, "required": ["kind"]}, "then": {"required": ["function_entry", "operation_address", "operation_time", "opcode", "kinds", "call_target_state", "target_entries"]}},
+        {"if": {"properties": {"kind": {"const": "operation"}}, "required": ["kind"]}, "then": {"required": ["function_entry", "operation_address", "operation_time", "opcode", "kinds", "call_target_state", "target_entries", "conflict_reasons"]}},
         {"if": {"properties": {"kind": {"const": "operation"}}, "required": ["kind"]}, "then": {"properties": {"id": {"pattern": "^operation:"}}}},
         {"if": {"properties": {"kind": {"const": "field"}}, "required": ["kind"]}, "then": {"required": ["owner_function_entry", "parameter_index", "field_offset"], "properties": {"id": {"pattern": "^field:"}}}},
         {
@@ -100,8 +101,11 @@
         },
         {"if": {"properties": {"call_target_state": {"const": "resolved"}}, "required": ["call_target_state"]}, "then": {"properties": {"target_entries": {"minItems": 1, "maxItems": 1}}}},
         {"if": {"properties": {"call_target_state": {"const": "conflicted"}}, "required": ["call_target_state"]}, "then": {"properties": {"target_entries": {"minItems": 2}}}},
-        {"if": {"properties": {"call_target_state": {"enum": ["not_applicable", "unresolved", "indirect"]}}, "required": ["call_target_state"]}, "then": {"properties": {"target_entries": {"maxItems": 0}, "conflict_state": {"const": "uncontested"}}}},
-        {"if": {"properties": {"call_target_state": {"const": "conflicted"}}, "required": ["call_target_state"]}, "then": {"properties": {"conflict_state": {"const": "contested"}}}}
+        {"if": {"properties": {"call_target_state": {"enum": ["not_applicable", "unresolved", "indirect"]}}, "required": ["call_target_state"]}, "then": {"properties": {"target_entries": {"maxItems": 0}}}},
+        {"if": {"properties": {"call_target_state": {"const": "conflicted"}}, "required": ["call_target_state"]}, "then": {"properties": {"conflict_state": {"const": "contested"}, "conflict_reasons": {"contains": {"const": "target_disagreement"}}}}},
+        {"if": {"properties": {"conflict_state": {"const": "contested"}}, "required": ["conflict_state"]}, "then": {"properties": {"conflict_reasons": {"minItems": 1}}}},
+        {"if": {"properties": {"conflict_reasons": {"minItems": 1}}, "required": ["conflict_reasons"]}, "then": {"properties": {"conflict_state": {"const": "contested"}}}},
+        {"if": {"properties": {"conflict_state": {"const": "uncontested"}}, "required": ["conflict_state"]}, "then": {"properties": {"conflict_reasons": {"maxItems": 0}}}}
       ]
     },
     "edge": {
