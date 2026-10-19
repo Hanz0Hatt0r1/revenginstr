@@ -1109,7 +1109,9 @@ the signatures already stored in Ghidra, including declaration source and ABI.
 varnode widths at resolved direct P-code call sites with exact source links.
 Both are evidence acquisition paths, not a prototype inference engine; the
 call observations do not claim that all callers were exported or recover
-pointer/scalar types.
+pointer/scalar types. `FunctionPrototypeCallsiteCompatibility/1` now compares
+observed direct-call arity with stored fixed or variadic signatures, but its
+per-call results do not establish whole-program compatibility.
 
 ### M8.2 Struct/class layout recovery
 

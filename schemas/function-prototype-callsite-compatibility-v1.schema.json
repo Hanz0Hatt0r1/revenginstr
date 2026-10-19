@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/function-prototype-callsite-compatibility-v1.schema.json",
+  "title": "REVENGINSTR.FunctionPrototypeCallsiteCompatibility/1 JSONL record",
+  "description": "Arity-only comparison between one resolved direct call site and a stored Ghidra function prototype; this does not establish complete caller coverage or signature correctness.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program_id", "program_sha256", "architecture", "caller_entry", "callee_entry", "call_address", "call_time", "observed_argument_count", "expected_parameter_count", "has_varargs", "signature_source", "status", "call_evidence_ref", "prototype_evidence_ref"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.FunctionPrototypeCallsiteCompatibility/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "program_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "architecture": {"$ref": "#/$defs/architecture"},
+    "caller_entry": {"$ref": "#/$defs/address"},
+    "callee_entry": {"$ref": "#/$defs/address"},
+    "call_address": {"$ref": "#/$defs/address"},
+    "call_time": {"type": "integer", "minimum": 0},
+    "observed_argument_count": {"type": "integer", "minimum": 0},
+    "expected_parameter_count": {"type": ["integer", "null"], "minimum": 0},
+    "has_varargs": {"type": ["boolean", "null"]},
+    "signature_source": {"type": ["string", "null"], "minLength": 1},
+    "status": {"enum": ["compatible", "incompatible", "no_signature"]},
+    "call_evidence_ref": {"$ref": "#/$defs/call_evidence_ref"},
+    "prototype_evidence_ref": {"oneOf": [{"$ref": "#/$defs/prototype_evidence_ref"}, {"type": "null"}]}
+  },
+  "allOf": [{
+    "if": {"properties": {"status": {"const": "no_signature"}}, "required": ["status"]},
+    "then": {"properties": {"expected_parameter_count": {"type": "null"}, "has_varargs": {"type": "null"}, "signature_source": {"type": "null"}, "prototype_evidence_ref": {"type": "null"}}},
+    "else": {"properties": {"expected_parameter_count": {"type": "integer"}, "has_varargs": {"type": "boolean"}, "signature_source": {"type": "string"}, "prototype_evidence_ref": {"$ref": "#/$defs/prototype_evidence_ref"}}}
+  }],
+  "$defs": {
+    "address": {"type": "string", "pattern": "^(?:[A-Za-z_$][\\w$]*:)?(?:0x)?[0-9a-fA-F]+$"},
+    "architecture": {
+      "type": "object", "additionalProperties": false,
+      "required": ["language_id", "pointer_width_bytes", "endianness"],
+      "properties": {
+        "language_id": {"type": "string", "minLength": 1},
+        "pointer_width_bytes": {"type": "integer", "minimum": 1},
+        "endianness": {"enum": ["little", "big"]}
+      }
+    },
+    "evidence_ref": {
+      "type": "object", "additionalProperties": false,
+      "required": ["artifact_sha256", "record_index", "source_format"],
+      "properties": {
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "record_index": {"type": "integer", "minimum": 1},
+        "source_format": {"type": "string", "minLength": 1}
+      }
+    },
+    "call_evidence_ref": {"allOf": [{"$ref": "#/$defs/evidence_ref"}, {"properties": {"source_format": {"const": "REVENGINSTR.DirectCallArgumentObservation/1"}}}]},
+    "prototype_evidence_ref": {"allOf": [{"$ref": "#/$defs/evidence_ref"}, {"properties": {"source_format": {"const": "REVENGINSTR.GhidraFunctionPrototype/1"}}}]}
+  }
+}
