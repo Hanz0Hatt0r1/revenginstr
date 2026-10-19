@@ -1134,13 +1134,17 @@ reviewer-supplied `TypeLayoutMemberMap/1` keys and retains both source hashes.
 Optional `TypeLayoutSizeReview/1` input adds exact size only with independently
 hash-pinned source evidence; disagreements with the observed extent or other
 size reviews become explicit conflicts. Its NFS SHIFT replay reproduces
-reviewed write offsets and a 56-byte lower bound while leaving field types,
-vtable anchors, and exact size unresolved. The Nevergone `CCJoyStick::init`
-projection has a 337-byte observed lower bound; symbolized factory code
-independently requests a 340-byte allocation and calls the exact constructor,
-so the retained reviewer output includes that exact size. Field types, vtable
-anchors, relationships, and broader consumer accuracy remain open. Synthetic
-fixtures validate the wire contract and fail-closed conflicts.
+reviewed offsets and a 56-byte lower bound, with a four-byte `data_pointer`
+candidate at `+0x20` and the observed `0x00af0860` vtable anchor; the pointer's
+referent and exact object size remain unresolved. The Nevergone
+`CCJoyStick::init` projection has a 337-byte observed lower bound; symbolized
+factory code requests a 340-byte allocation and calls the exact constructor.
+Nine of its thirteen observed fields now have reviewer-pinned type candidates:
+three `cocos2d::CCSprite*` fields, two integers, and four booleans. The other
+four fields, containing-object vtable, ownership, and audit-acceptance metrics
+remain open. Both consumers exercise layout recovery, while broader
+independent field/type gold validation remains open. Synthetic fixtures
+validate the wire contract and fail-closed conflicts.
 
 ## Exit criteria
 
@@ -1563,7 +1567,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 ## P3 — whole-program recovery and active evidence
 
 28. Function prototype hypothesis schema and compatibility evaluator.
-29. 🟡 Object/type layout hypothesis schema, exact-size review input, synthetic fixtures, deterministic reviewer-keyed read/write builder, and NFS SHIFT plus Nevergone projections implemented; broader field/type gold validation remains open.
+29. 🟡 Object/type layout hypothesis schema, exact-size and field-type review inputs, synthetic fixtures, deterministic reviewer-keyed read/write builder, and NFS SHIFT plus Nevergone projections implemented; broader field/type gold validation remains open.
 30. Allocation/lifetime/ownership evidence projection.
 31. Bounded runtime probe-request and correlation contracts.
 32. Static/runtime differential replay and information-gain metrics.
