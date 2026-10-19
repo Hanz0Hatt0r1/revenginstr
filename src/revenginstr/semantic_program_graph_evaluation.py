@@ -21,6 +21,12 @@ FORMAT = "REVENGINSTR.SemanticProgramGraphEvaluation/1"
 GOLD_FORMAT = "REVENGINSTR.SemanticProgramGraphGold/1"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _NODE_ID = re.compile(r"^(?:program|function|operation|field|receiver_observation):[0-9a-f]{64}$")
+_GOLD_SOURCE_OPCODES = {
+    "calls": {"CALL"},
+    "reads": {"LOAD"},
+    "writes": {"STORE"},
+    "observes_receiver": {"CALLIND"},
+}
 
 
 def _nonempty_string(value: Any, where: str) -> str:
@@ -206,6 +212,18 @@ def evaluate_semantic_program_graph(
             raise ValueError(f"gold record {index}: graph_id is not present in graph input")
         if graph["program_id"] != row["program_id"]:
             raise ValueError(f"gold record {index}: program_id disagrees with graph")
+        graph_nodes = {node["id"]: node for node in graph["nodes"]}
+        for relation, source, _ in gold_edges:
+            expected_opcodes = _GOLD_SOURCE_OPCODES.get(relation)
+            source_node = graph_nodes.get(source)
+            if (
+                expected_opcodes is not None
+                and source_node is not None
+                and source_node.get("opcode") not in expected_opcodes
+            ):
+                raise ValueError(
+                    f"gold record {index}: {relation!r} source operation has an incompatible opcode"
+                )
 
         for relation, source, target in gold_edges:
             key = (graph_id, relation, source, target)

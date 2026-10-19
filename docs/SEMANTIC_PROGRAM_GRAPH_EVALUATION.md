@@ -9,8 +9,11 @@ rejects edge endpoint kinds that do not match the relation.
 The `record_index` meaning is defined by `source_format` (for example, a
 one-based TSV data row or a Markdown line); consumer evidence documentation
 must state that indexing convention. Gold edge endpoint kinds must be valid
-for their relation and graph version. Reviewers must assess source records
-independently of the graph projection.
+for their relation and graph version. When a gold edge's source operation is
+present in the evaluated graph, the evaluator also checks the expected opcode
+(`CALL`, `LOAD`, `STORE`, or `CALLIND`); absent source nodes remain eligible to
+score as recall misses. Reviewers must assess source records independently of
+the graph projection.
 Unknown or incomplete relations are excluded from recall and edge precision.
 
 Run the hash-pinned evaluator with:

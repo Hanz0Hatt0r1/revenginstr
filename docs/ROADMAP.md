@@ -1239,8 +1239,9 @@ feasibility or runtime execution.
 `SemanticProgramGraphEvaluation/1` now define scoped consumer gold and report
 relation-specific recall only where labels declare completeness. The evaluator
 also reports unsupported candidate-edge rate and provenance-field coverage.
-The gold validator and schema reject relation/node-kind mismatches, so malformed
-labels cannot silently lower recall.
+The evaluator and gold schema reject relation/node-kind mismatches; the
+evaluator also checks source opcodes when those operations are present, so
+malformed labels cannot silently lower recall.
 Reviewer-curated raw P-code projection audits match 2/2 GT5 and 7/7 NFS SHIFT
 direct-call edges; the Nevergone consumer-owned player-facing subgraph matches
 all 3 documented calls (see the
