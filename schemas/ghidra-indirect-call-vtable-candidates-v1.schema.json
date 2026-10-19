@@ -160,8 +160,12 @@
       "required": [
         "parent_candidate_evidence", "parent_call_address", "parent_dispatch_target",
         "selector_value", "selector_case_export", "member_offset_bytes",
-        "member_count", "member_address_pcode", "subobject_constructor_entry",
+        "member_count", "subobject_constructor_entry",
         "constructor_call_path", "member_store_destination_pcode"
+      ],
+      "anyOf": [
+        {"required": ["member_address_evidence"]},
+        {"required": ["member_address_pcode"]}
       ],
       "properties": {
         "parent_candidate_evidence": {"$ref": "#/$defs/evidence_ref"},
@@ -171,6 +175,7 @@
         "selector_case_export": {"$ref": "#/$defs/source_excerpt_ref"},
         "member_offset_bytes": {"type": "integer", "minimum": 0},
         "member_count": {"type": ["integer", "null"], "minimum": 1},
+        "member_address_evidence": {"$ref": "#/$defs/evidence_ref"},
         "member_address_pcode": {"$ref": "#/$defs/evidence_ref"},
         "subobject_constructor_entry": {"$ref": "#/$defs/address"},
         "constructor_call_path": {

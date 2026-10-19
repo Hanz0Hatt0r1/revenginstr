@@ -234,10 +234,11 @@ factory, store-graph, vtable-slot, and raw-byte references. The second-level
 records partial target candidates for `00665801` (`00674f10`, `007091d0`) and
 `00665841` (`00674f30`, `00677210`) from vtables initialized in returned
 subobjects. Those rows retain the parent call, selector case, member offset,
-constructor path, and exact P-code store references. They remain partial: the
-first-level target `00663030`, selector-1 returns at `+0x74`, runtime selector
-values, and unobserved writers remain unresolved. The `/6` results remain
-unchanged.
+constructor path, and exact P-code store references. A pinned-disassembly
+case also traces `00663030` selector 3 to vtable `00af0628`, adding
+`007091d0`/`00677210` as another origin pair. The rows remain partial because
+runtime selector values, selector-1 returns at `+0x74`, and unobserved writers
+remain unresolved. The `/6` results remain unchanged.
 The replay also includes the 32-row, read-only generic Ghidra pointer-table
 export at [`ghidra-pointer-table-slots.jsonl`](scan37/replay-0041dd40/ghidra-pointer-table-slots.jsonl);
 its schema and invocation are documented in

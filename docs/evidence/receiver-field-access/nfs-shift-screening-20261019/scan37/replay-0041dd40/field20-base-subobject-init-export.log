@@ -1,0 +1,59 @@
+openjdk version "21.0.12.1" 2026-08-18
+OpenJDK Runtime Environment (build 21.0.12.1+1)
+OpenJDK 64-Bit Server VM (build 21.0.12.1+1, mixed mode)
+INFO  Using log config file: jar:file:/opt/ghidra/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)
+INFO  Using log file: /home/pes/.config/ghidra/ghidra_12.1.2_DEV/application.log (LoggingInitialization)
+INFO  Loading user preferences: /home/pes/.config/ghidra/ghidra_12.1.2_DEV/preferences (Preferences)
+INFO  Searching for classes... (ClassSearcher)
+INFO  Class search complete (1713 ms) (ClassSearcher)
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)
+INFO  Initializing Random Number Generator... (SecureRandomFactory)
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)
+INFO  Headless startup complete (10687 ms) (AnalyzeHeadless)
+INFO  Class searcher loaded 59 extension points (21 false positives) (ClassSearcher)
+INFO  HEADLESS Script Paths:
+    /opt/ghidra/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/JVM/ghidra_scripts
+    /opt/ghidra/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/VersionTracking/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/PyGhidra/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /home/pes/.config/ghidra/ghidra_12.1.2_DEV/Extensions/Lisa/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/Atmel/ghidra_scripts
+    /opt/ghidra/Ghidra/Debug/Debugger/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/Decompiler/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/FunctionID/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/PIC/ghidra_scripts
+    /home/pes/.config/ghidra/ghidra_12.1.2_DEV/Extensions/SleighDevTools/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/BSim/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/BytePatterns/ghidra_scripts
+    /home/pes/.config/ghidra/ghidra_12.1.2_DEV/Extensions/Jython/ghidra_scripts
+    /tmp/tmp.7MkYpFWqdd
+    /opt/ghidra/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /home/pes/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/DATA/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/Base/ghidra_scripts
+    /home/pes/.config/ghidra/ghidra_12.1.2_DEV/Extensions/MachineLearning/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/PDB/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/8051/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/FileFormats/ghidra_scripts (HeadlessAnalyzer)
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)
+INFO  Opening existing project: /home/pes/ghidra_projects/shift/shift (HeadlessAnalyzer)
+INFO  Opening project: /home/pes/ghidra_projects/shift/shift (HeadlessProject)
+INFO  REPORT: Processing read-only project file: /SHIFT.exe (HeadlessAnalyzer)
+INFO  REPORT: Execute script: ExportProgramPcodeFlowBatch.java 'docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-base-subobject-init-functions.txt' 'docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-base-subobject-init-pcode-flow.tsv' 'docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-base-subobject-init-callind.jsonl' 'docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-base-subobject-init-acquisition.jsonl' '2' '900'  (HeadlessAnalyzer)
+INFO  SCRIPT: /tmp/tmp.7MkYpFWqdd/ExportProgramPcodeFlowBatch.java (HeadlessAnalyzer)
+INFO  ExportProgramPcodeFlowBatch.java> GHIDRA_PROGRAM_PCODE_FLOW_FORMAT=REVENGINSTR.GhidraPcodeFlowAcquisition/1 (GhidraScript)
+INFO  ExportProgramPcodeFlowBatch.java> requested=2 (GhidraScript)
+INFO  ExportProgramPcodeFlowBatch.java> max_total_seconds=900 (GhidraScript)
+INFO  ExportProgramPcodeFlowBatch.java> complete=2 (GhidraScript)
+INFO  ExportProgramPcodeFlowBatch.java> no_pcode=0 (GhidraScript)
+INFO  ExportProgramPcodeFlowBatch.java> decompile_failed=0 (GhidraScript)
+INFO  ExportProgramPcodeFlowBatch.java> flow_rows=185 (GhidraScript)
+INFO  ExportProgramPcodeFlowBatch.java> flow=/home/pes/work/revenginstr-field20-vtable-targets-20261019/docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-base-subobject-init-pcode-flow.tsv (GhidraScript)
+INFO  ExportProgramPcodeFlowBatch.java> callind_evidence=/home/pes/work/revenginstr-field20-vtable-targets-20261019/docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-base-subobject-init-callind.jsonl (GhidraScript)
+INFO  ExportProgramPcodeFlowBatch.java> acquisition=/home/pes/work/revenginstr-field20-vtable-targets-20261019/docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-base-subobject-init-acquisition.jsonl (GhidraScript)

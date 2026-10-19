@@ -154,10 +154,13 @@ The returned-object getters expose these static cases:
 | `006770b0` | 4 | parent `+0x128` | index `< 10`, stride `0x5c` |
 | `006770b0` | 5 | parent `+0x550` | singleton |
 
-The existing first-level rows do not bind the runtime selector register. Each
-known getter also returns parent `+0x74` for selector 1; that member's vtable
-is still unresolved. The first-level candidate `00663030` also has no recovered
-returned-vtable provenance.
+The existing first-level rows do not bind the runtime selector register. The
+known getters at `00676040` and `006770b0` also return parent `+0x74` for
+selector 1; that member's vtable is still unresolved. A separate selector-3
+path through `00663030` returns parent `+0x7c`. Base constructor `006634a0`
+writes vtable `00af0628` there. The exact getter instructions are retained in
+[`field20-63030-selector-disassembly.md`](field20-63030-selector-disassembly.md);
+they do not prove selector 3 is supplied at runtime.
 
 The constructor helpers write vtables `00af6b38` at `+0x128`, `00af7050` at
 `+0x4c0`, and `00af723c` at `+0x550`. The getter conditions above therefore
@@ -182,17 +185,20 @@ raw file offset `006a4a00`. The six little-endian entries are:
 | `00af7050` | `+0xc` | `006f5a5c` | `30 4f 67 00` | `00674f30` |
 | `00af723c` | `+0x8` | `006f5c44` | `d0 91 70 00` | `007091d0` |
 | `00af723c` | `+0xc` | `006f5c48` | `10 72 67 00` | `00677210` |
+| `00af0628` | `+0x8` | `006ef030` | `d0 91 70 00` | `007091d0` |
+| `00af0628` | `+0xc` | `006ef034` | `10 72 67 00` | `00677210` |
 
 The seven paths for the first two vtables retain each applicable parent
 constructor, including `006749e0` calling base constructor `006747b0`; the
-three paths for `00af723c` are the applicable `006747b0`, `006749e0`, and
-`00675040` constructor roots. Each vtable origin in
+three `00af723c` paths are the applicable `006747b0`, `006749e0`, and
+`00675040` constructor roots. The `00af0628` origin adds the `00673150` parent
+constructor path through `006634a0`. Each vtable origin in
 [`field20-nested-vtable-call-candidates.jsonl`](field20-nested-vtable-call-candidates.jsonl)
-links back to its first-level candidate row, the getter return case, the
+links back to its first-level candidate row, the selector case, the
 constructor call path, the exact helper STORE/PTRSUB rows, and the raw slot
 address and bytes. The schema labels these rows
-`partial_static_target_candidates` to preserve the missing selector-1,
-`00663030`, runtime-selection, and unobserved-writer cases.
+`partial_static_target_candidates` because runtime selector values, the
+selector-1 `+0x74` member, and unobserved writers remain unresolved.
 
 The new generic [`IndirectCallPointerSlot/1` replay](indirect-call-pointer-slots.jsonl)
 joins all 22 closure targets to their exact `PointerProvenance/1` rows. It

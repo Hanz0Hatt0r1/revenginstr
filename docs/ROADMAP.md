@@ -2230,14 +2230,16 @@ A read-only replay of the two known getter bodies and three subobject
 constructors now adds partial static target sets for `00665801` (`00674f10`,
 `007091d0`) and `00665841` (`00674f30`, `00677210`). The nested candidate
 records retain the parent candidate, selector case, member offset, helper-call
-path, exact vtable stores, and raw table bytes. They remain partial because
-the `00663030` return vtable and selector-1 returns at parent `+0x74` are
-unresolved; runtime selector values and unobserved writers are also unknown.
-The field writer/copy inventory and both replay chains are documented in the
+path, exact vtable stores, and raw table bytes. A pinned-disassembly trace
+adds the selector-3 result of `00663030` at parent `+0x7c`, initialized with
+vtable `00af0628`; its `+0x8/+0xc` slots add origins for `007091d0` and
+`00677210`. The rows remain partial because runtime selector values, the
+selector-1 returns at parent `+0x74`, and unobserved writers are unresolved.
+The field writer/copy inventory and replay chains are documented in the
 [manual static review](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/manual-static-vtable-review.md).
 
-**Next:** trace the `00663030` return provenance and the nested receiver at
-parent `+0x74`, or capture bounded runtime selector/receiver values. Keep
+**Next:** trace the nested receiver at parent `+0x74` and capture bounded
+runtime selector/receiver values. Keep
 unresolved targets and roots as barriers. The five focused candidate pairs
 still have a fresh CFG/5 memory-effect replay: four remain possible and one
 remains unique because `CALLIND` and `STORE` effects are unresolved. The
