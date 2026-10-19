@@ -1297,7 +1297,19 @@ Mixed, unchanged, or incomplete comparisons remain `correlation`; this is not
 
 ### M9.4 Runtime value-flow confirmation
 
-Use runtime observations to confirm or reject high-value static candidates such as receiver identity, field write/read linkage, state transitions, factory returns and lifetime events. A runtime witness can strengthen a candidate but cannot retroactively make unsupported static paths exact.
+**Pair-scoped runtime value-flow replay v1 implemented:**
+`RuntimeValueFlowManifest/1` pins one exact address-correlation report, one
+consumer-generated `RuntimeValueObservation/1` JSONL file, and explicit
+candidate pairs. Receiver identity, field write/read, state transition,
+factory return/use and allocation/release relations compare only opaque
+HMAC-shaped tokens. Both pair endpoints must map to their declared static
+nodes through unique exact address matches. Declared gaps and partial sampling
+remain visible; only the selected pair can be `witnessed`, `observed_mismatch`
+or `inconclusive`. Token authenticity is not verified, no raw values enter the
+report, and no pair upgrades a static path to `confirmed_exact`. The pinned
+Nevergone example is synthetic; obtaining in-game value observations remains
+open because the current device capture contains only startup function entries.
+See [`runtime value-flow replay`](RUNTIME_VALUE_FLOW.md).
 
 ### M9.5 Information-gain evaluation
 
