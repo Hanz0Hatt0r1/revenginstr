@@ -41,7 +41,8 @@
             "factory",
             "singleton",
             "vtable_write",
-            "receiver"
+            "receiver",
+            "memory_store"
           ]
         }
       }

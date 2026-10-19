@@ -343,3 +343,12 @@ revenginstr-receiver-field-store-load-dominance-audit \
 These screens and replays make no claim about branch feasibility, function
 semantics, or runtime behavior. Missing roots, nested callees, indirect calls,
 and unresolved writes remain barriers.
+
+The focused scan37 pointer-slot review and the generic call-result-to-store
+replay are documented in
+[`scan37/replay-0041dd40/manual-static-vtable-review.md`](scan37/replay-0041dd40/manual-static-vtable-review.md)
+and
+[`scan37/replay-0041dd40/call-store-flow-replay.md`](scan37/replay-0041dd40/call-store-flow-replay.md).
+The latter retains five call-result paths into the reviewed `+0x20` store and
+one additional generic call-to-store path; it does not resolve the `MULTIEQUAL`
+branch or runtime referent.

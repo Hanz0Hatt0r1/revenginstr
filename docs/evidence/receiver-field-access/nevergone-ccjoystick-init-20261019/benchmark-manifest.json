@@ -172,7 +172,7 @@
     },
     "receiver_graph": {
       "path": "../../../../schemas/receiver-provenance-graph-v1.schema.json",
-      "sha256": "43cb888633ef724846361d6bcf67f32fa80b11272cd211be8e296d05178814de",
+      "sha256": "a8e9475e64b2300d110f9324726fac8c743c771e2314848fd61826c309d1bf94",
       "version": "receiver provenance graph v1 schema"
     },
     "semantic_program_graph_v1": {

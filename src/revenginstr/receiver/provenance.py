@@ -894,13 +894,29 @@ def parameter_load_return_main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def build_call_return_graphs(
+def _build_call_sink_graphs(
     pcode_rows: list[dict[str, str]],
     *,
     program_id: str,
+    sink_opcode: str,
     max_graphs: int = DEFAULT_MAX_ARGUMENT_GRAPHS,
 ) -> list[dict[str, Any]]:
-    """Trace call results through P-code data dependencies to function returns."""
+    """Trace explicit call results to one class of P-code sink."""
+    sink_config = {
+        "RETURN": (
+            None, "return", "function_return", "return", "call_return_flow",
+            "return_flow", "call-return",
+        ),
+        "STORE": (
+            2, "local", "memory_store", "memory_store", "call_store_flow",
+            "data_flow", "call-store",
+        ),
+    }
+    try:
+        (sink_input_index, source_node_kind, sink_node_id, sink_node_kind,
+         edge_id, relation, budget_name) = sink_config[sink_opcode]
+    except KeyError as error:
+        raise ValueError(f"unsupported call-result sink: {sink_opcode}") from error
     if not program_id:
         raise ValueError("program_id must be non-empty")
     if max_graphs < 1:
@@ -914,7 +930,7 @@ def build_call_return_graphs(
             continue
         parents: dict[str, tuple[str, dict[str, str]] | None] = {call_token: None}
         pending = [call_token]
-        return_paths: dict[tuple[str, str, int], list[dict[str, str]]] = {}
+        sink_paths: dict[tuple[str, str, int], list[dict[str, str]]] = {}
 
         def path_to(value: str) -> list[dict[str, str]]:
             path: list[dict[str, str]] = []
@@ -931,31 +947,32 @@ def build_call_return_graphs(
             value = pending[cursor]
             cursor += 1
             for user, input_index in users.get((function_entry, value), []):
+                if user["opcode"] == sink_opcode:
+                    if sink_input_index is None or input_index == sink_input_index:
+                        sink_key = (function_entry, user["op_address"], int(user["op_time"]))
+                        if sink_key not in sink_paths:
+                            if len(graphs) + len(sink_paths) >= max_graphs:
+                                raise ValueError(f"{budget_name} graph budget exceeded: {max_graphs}")
+                            sink_paths[sink_key] = [*path_to(value), user]
+                    continue
                 if user["opcode"] in {"CALL", "CALLIND", "CALLOTHER"}:
                     continue
                 if user["opcode"] == "INDIRECT" and input_index != 0:
-                    continue
-                if user["opcode"] == "RETURN":
-                    return_key = (function_entry, user["op_address"], int(user["op_time"]))
-                    if return_key not in return_paths:
-                        if len(graphs) + len(return_paths) >= max_graphs:
-                            raise ValueError(f"call-return graph budget exceeded: {max_graphs}")
-                        return_paths[return_key] = [*path_to(value), user]
                     continue
                 output = user["output"]
                 if output != "-" and output not in parents:
                     parents[output] = (value, user)
                     pending.append(output)
 
-        for return_key, path in return_paths.items():
+        for sink_key, path in sink_paths.items():
             if len(graphs) >= max_graphs:
-                raise ValueError(f"call-return graph budget exceeded: {max_graphs}")
+                raise ValueError(f"{budget_name} graph budget exceeded: {max_graphs}")
             call_source_id = json.dumps(
                 [program_id, function_entry, call["op_address"], int(call["op_time"])],
                 ensure_ascii=False, separators=(",", ":"),
             )
-            return_source_id = json.dumps(
-                [program_id, *return_key], ensure_ascii=False, separators=(",", ":")
+            sink_source_id = json.dumps(
+                [program_id, *sink_key], ensure_ascii=False, separators=(",", ":")
             )
             provenance = []
             for operation in path:
@@ -971,18 +988,18 @@ def build_call_return_graphs(
             graph = {
                 "format": FORMAT,
                 "graph_id": json.dumps(
-                    [program_id, call_source_id, return_source_id],
+                    [program_id, call_source_id, sink_source_id],
                     ensure_ascii=False, separators=(",", ":"),
                 ),
                 "nodes": [
-                    {"id": "call_result", "kind": "return"},
-                    {"id": "function_return", "kind": "return"},
+                    {"id": "call_result", "kind": source_node_kind},
+                    {"id": sink_node_id, "kind": sink_node_kind},
                 ],
                 "edges": [{
-                    "id": "call_return_flow",
+                    "id": edge_id,
                     "from": "call_result",
-                    "to": "function_return",
-                    "relation": "return_flow",
+                    "to": sink_node_id,
+                    "relation": relation,
                     "evidence_class": "derived_structural",
                     "provenance": provenance,
                 }],
@@ -992,6 +1009,36 @@ def build_call_return_graphs(
 
     graphs.sort(key=lambda graph: graph["graph_id"])
     return graphs
+
+
+def build_call_return_graphs(
+    pcode_rows: list[dict[str, str]],
+    *,
+    program_id: str,
+    max_graphs: int = DEFAULT_MAX_ARGUMENT_GRAPHS,
+) -> list[dict[str, Any]]:
+    """Trace call results through P-code data dependencies to function returns."""
+    return _build_call_sink_graphs(
+        pcode_rows,
+        program_id=program_id,
+        sink_opcode="RETURN",
+        max_graphs=max_graphs,
+    )
+
+
+def build_call_store_graphs(
+    pcode_rows: list[dict[str, str]],
+    *,
+    program_id: str,
+    max_graphs: int = DEFAULT_MAX_ARGUMENT_GRAPHS,
+) -> list[dict[str, Any]]:
+    """Trace call results used as the stored value of a P-code STORE."""
+    return _build_call_sink_graphs(
+        pcode_rows,
+        program_id=program_id,
+        sink_opcode="STORE",
+        max_graphs=max_graphs,
+    )
 
 
 def call_return_main(argv: list[str] | None = None) -> int:
@@ -1016,6 +1063,33 @@ def call_return_main(argv: list[str] | None = None) -> int:
             handle.write(json.dumps(graph, sort_keys=True) + "\n")
     print("input P-code flow rows:", len(pcode_rows))
     print("call-return graphs:", len(graphs))
+    print("max graphs:", args.max_graphs)
+    print("output:", args.output)
+    return 0
+
+
+def call_store_main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Trace call-result data dependencies to P-code STORE value operands."
+    )
+    parser.add_argument("function_pcode_flow_tsv", type=Path)
+    parser.add_argument("--program-id", required=True, help="Opaque consumer join key for the selected program.")
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--max-graphs", type=int, default=DEFAULT_MAX_ARGUMENT_GRAPHS)
+    args = parser.parse_args(argv)
+
+    from revenginstr.receiver.infer import read_tsv
+
+    pcode_rows = read_tsv(args.function_pcode_flow_tsv)
+    graphs = build_call_store_graphs(
+        pcode_rows, program_id=args.program_id, max_graphs=args.max_graphs
+    )
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    with args.output.open("w", encoding="utf-8") as handle:
+        for graph in graphs:
+            handle.write(json.dumps(graph, sort_keys=True) + "\n")
+    print("input P-code flow rows:", len(pcode_rows))
+    print("call-store graphs:", len(graphs))
     print("max graphs:", args.max_graphs)
     print("output:", args.output)
     return 0

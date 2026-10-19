@@ -34,6 +34,7 @@ TOOLS = {
     "receiver-load-return-flow": ("revenginstr.receiver.provenance", "parameter_load_return_main"),
     "receiver-argument-propagate": ("revenginstr.receiver.provenance", "recursive_argument_main"),
     "receiver-call-return-flow": ("revenginstr.receiver.provenance", "call_return_main"),
+    "receiver-call-store-flow": ("revenginstr.receiver.provenance", "call_store_main"),
     "direct-call-memory-effects": ("revenginstr.receiver.call_effects", "main"),
     "direct-call-memory-effect-closure": ("revenginstr.receiver.call_effect_closure", "main"),
     "interprocedural-memory-effects": ("revenginstr.receiver.interprocedural_memory", "main"),
