@@ -1,0 +1,7 @@
+format	row_type	plan_id	callee_entry	parameter_index	direct_caller_functions	caller_functions_decompiled	caller_functions_failed	callers_with_matched_calls	matched_caller_calls	caller_entry	caller_name	caller_call_site	node_id	parent_node_id	input_index	depth	edge_kind	node_token	type_display	pointer_depth	pointee_type_display	constant_value	defining_opcode	defining_address	defining_time	call_target_entry	call_target_name	truncation	status
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0067cbc0_0	0067cbc0	0	-	-	-	-	-	00458170	FUN_00458170	0045818a	0	-1	-1	0	root	def:CAST@0045817c:600:4	AptCharacterInst *	1	AptCharacterInst	-	CAST	0045817c	600	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0067cbc0_0	0067cbc0	0	-	-	-	-	-	00458170	FUN_00458170	0045818a	1	0	0	1	value	def:INT_ADD@0045817c:20:4	int	0	-	-	INT_ADD	0045817c	20	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0067cbc0_0	0067cbc0	0	-	-	-	-	-	00458170	FUN_00458170	0045818a	2	1	0	2	base	def:CAST@0045817c:599:4	int	0	-	-	CAST	0045817c	599	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0067cbc0_0	0067cbc0	0	-	-	-	-	-	00458170	FUN_00458170	0045818a	3	2	0	3	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0067cbc0_0	0067cbc0	0	-	-	-	-	-	00458170	FUN_00458170	0045818a	4	1	1	2	offset	const:0xc:4	int	0	-	0xc	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	root_0067cbc0_0	0067cbc0	0	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees

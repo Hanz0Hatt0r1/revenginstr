@@ -1,0 +1,4 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+0067cbc0	0067cbc0	0	COPY	def:0067cbc0:0:4	def:0067cbc0:6:4	-	-
+0067cbc0	0067cbc0	6	CAST	def:0067cbc0:6:4	register:register:00000004:4	-	-
+0067cbc0	0067cbc2	3	RETURN	-	const:0x0:4;def:0067cbc0:0:4	-	-

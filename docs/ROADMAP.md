@@ -1920,6 +1920,29 @@ produced 64 stores, 1,302 loads, 1,180 memory STORE facts, and sixteen pairs
 across ten functions. `/6` reported five possible effects and eleven
 non-dominating stores, again with no unique candidate.
 
+Scan28 sampled 256 midpoint quantiles from 1,713 remaining functions in the
+broader one-or-more-parameter, 40–800-byte population. It produced six
+parameter-field stores, 583 loads, 848 memory STORE facts, and one exact pair
+in `004301a0`. The load at `004301a9` precedes its paired store at `004301b3`,
+so `/6` reports `store_not_dominating_load`; there is no `/5` candidate to
+replay.
+
+Scan29 sampled 256 midpoint quantiles from the 1,457 functions left in that
+broad population. It produced eight parameter-field stores, 689 loads, 991
+memory STORE facts, and five pairs in `00458170` and `004d90b0`. The initial
+`/6` screen reported four `possible_intervening_memory_effect` pairs and one
+`store_not_dominating_load`. A focused replay of the four pairs in `00458170`
+captured the exact root for the call at `0045818a` to `0067cbc0`: caller
+parameter 0 plus `0xc`. The callee's complete three-operation flow contains
+only `COPY`, `CAST`, and `RETURN`, so the interprocedural sidecar classifies
+that call as `no_aliasing_memory_effect`. Call-aware `/6` promotes the pair
+from store `00458187` to load `004581a7` to one `unique_cfg_store_candidate`;
+the other three pairs in that function remain possible because unresolved
+memory writes and calls remain on their paths. The fifth pair remains
+non-dominating. This is structural evidence, not a claim about branch
+feasibility or runtime value flow. Retained exports and replay inputs are in
+the [scan29 evidence bundle](evidence/receiver-field-access/nfs-shift-screening-20261019/README.md).
+
 The exact-root scan26 replay for `004d6700` formed two pairs at offset
 `0x334`. Five of eleven planned caller-argument slots had exact formal-plus-
 offset roots. Across the pairs, interprocedural effects contained six
@@ -1942,10 +1965,11 @@ nested flows keep the effect unknown. The complete retained selections,
 exports, roots, effects, and audits are in the
 [scan25–27 evidence bundle](evidence/receiver-field-access/nfs-shift-screening-20261019/README.md).
 
-**Next:** screen a new bounded family selected from exact parameter-field
-`STORE`/`LOAD` rows. Prioritize pairs whose witness contains few direct calls,
-then collect the full reachable call closure, exact caller roots, and complete
-memory facts before comparing `/5` and `/6`. The 561-function higher-parameter
-population used by scan26 and scan27 is exhausted. Keep missing callees,
-indirect calls, unknown roots, and possible aliases as barriers; do not infer
-alias facts from decompiler text or instruction-level corpus labels.
+**Next:** screen the remaining 1,201 functions in the broader one-or-more-
+parameter population in bounded batches. Use `/6` to eliminate pairs whose
+stores do not dominate their loads; only then collect full direct-call
+closures, exact caller roots, and complete memory facts for `/5`/`/6` replay.
+The 561-function higher-parameter population used by scan26 and scan27 is
+exhausted. Keep missing callees, indirect calls, unknown roots, and possible
+aliases as barriers; do not infer alias facts from decompiler text or
+instruction-level corpus labels.

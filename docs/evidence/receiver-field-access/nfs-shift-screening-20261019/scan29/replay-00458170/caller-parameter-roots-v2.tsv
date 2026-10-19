@@ -1,0 +1,2 @@
+format	plan_id	callee_entry	parameter_index	caller_entry	caller_call_site	caller_parameter_index	caller_parameter_offset_bytes	argument_node_id	status
+REVENGINSTR.GhidraCallerArgumentParameterRoot/2	root_0067cbc0_0	0067cbc0	0	00458170	0045818a	0	0xc	0	constant_offset_parameter_root
