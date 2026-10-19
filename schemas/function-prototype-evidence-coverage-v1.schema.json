@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/function-prototype-evidence-coverage-v1.schema.json",
+  "title": "REVENGINSTR.FunctionPrototypeEvidenceCoverage/1 report",
+  "description": "Program-wide coverage audit for function index, batch High-P-code, decompiler parameters, and resolved direct-call observations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program_id", "program_sha256", "architecture", "source_artifacts", "function_population", "pcode_flow", "decompiler_parameters", "direct_calls", "indirect_calls", "full_program_coverage"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.FunctionPrototypeEvidenceCoverage/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "program_sha256": {"$ref": "#/$defs/sha256"},
+    "architecture": {"$ref": "#/$defs/architecture"},
+    "source_artifacts": {"$ref": "#/$defs/source_artifacts"},
+    "function_population": {"$ref": "#/$defs/population"},
+    "pcode_flow": {"$ref": "#/$defs/pcode_flow"},
+    "decompiler_parameters": {"$ref": "#/$defs/decompiler_parameters"},
+    "direct_calls": {"$ref": "#/$defs/direct_calls"},
+    "indirect_calls": {"$ref": "#/$defs/indirect_calls"},
+    "full_program_coverage": {"type": "boolean"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "architecture": {
+      "type": "object", "additionalProperties": false,
+      "required": ["language_id", "pointer_width_bytes", "endianness"],
+      "properties": {"language_id": {"type": "string", "minLength": 1}, "pointer_width_bytes": {"type": "integer", "minimum": 1}, "endianness": {"enum": ["little", "big"]}}
+    },
+    "artifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["artifact_sha256", "source_format"],
+      "properties": {"artifact_sha256": {"$ref": "#/$defs/sha256"}, "source_format": {"type": "string", "minLength": 1}}
+    },
+    "flow_artifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["artifact_sha256", "source_format", "record_count"],
+      "properties": {"artifact_sha256": {"$ref": "#/$defs/sha256"}, "source_format": {"const": "REVENGINSTR.GhidraFunctionPcodeFlow/1"}, "record_count": {"type": "integer", "minimum": 0}}
+    },
+    "source_artifacts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["function_index", "acquisition", "decompiler_parameters", "call_observations", "indirect_call_evidence", "flows"],
+      "properties": {
+        "function_index": {"$ref": "#/$defs/artifact"},
+        "acquisition": {"$ref": "#/$defs/artifact"},
+        "decompiler_parameters": {"$ref": "#/$defs/artifact"},
+        "call_observations": {"$ref": "#/$defs/artifact"},
+        "indirect_call_evidence": {"$ref": "#/$defs/artifact"},
+        "flows": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/flow_artifact"}}
+      }
+    },
+    "population": {
+      "type": "object", "additionalProperties": false,
+      "required": ["total", "internal", "external"],
+      "properties": {"total": {"type": "integer", "minimum": 1}, "internal": {"type": "integer", "minimum": 0}, "external": {"type": "integer", "minimum": 0}}
+    },
+    "pcode_flow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["requested", "state_counts", "flow_rows", "missing_entries", "unexpected_entries", "rows_without_acquisition", "operation_count_mismatches", "callind_count_mismatches", "complete_for_population"],
+      "properties": {
+        "requested": {"type": "integer", "minimum": 0},
+        "state_counts": {"type": "object", "additionalProperties": false, "required": ["complete", "no_pcode", "decompile_failed"], "properties": {"complete": {"type": "integer", "minimum": 0}, "no_pcode": {"type": "integer", "minimum": 0}, "decompile_failed": {"type": "integer", "minimum": 0}}},
+        "flow_rows": {"type": "integer", "minimum": 0},
+        "missing_entries": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "unexpected_entries": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "rows_without_acquisition": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "operation_count_mismatches": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "callind_count_mismatches": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "complete_for_population": {"type": "boolean"}
+      }
+    },
+    "decompiler_parameters": {
+      "type": "object", "additionalProperties": false,
+      "required": ["selected", "status_counts", "missing_entries", "unexpected_entries", "complete_for_population"],
+      "properties": {
+        "selected": {"type": "integer", "minimum": 0},
+        "status_counts": {"type": "object", "additionalProperties": false, "required": ["complete", "external", "decompile_failed", "no_high_function", "prototype_unavailable"], "properties": {"complete": {"type": "integer", "minimum": 0}, "external": {"type": "integer", "minimum": 0}, "decompile_failed": {"type": "integer", "minimum": 0}, "no_high_function": {"type": "integer", "minimum": 0}, "prototype_unavailable": {"type": "integer", "minimum": 0}}},
+        "missing_entries": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "unexpected_entries": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "complete_for_population": {"type": "boolean"}
+      }
+    },
+    "call_site": {
+      "type": "object", "additionalProperties": false,
+      "required": ["caller_entry", "call_address", "call_time", "callee_entry"],
+      "properties": {"caller_entry": {"type": "string", "minLength": 1}, "call_address": {"type": "string", "minLength": 1}, "call_time": {"type": "integer", "minimum": 0}, "callee_entry": {"type": "string", "minLength": 1}}
+    },
+    "direct_calls": {
+      "type": "object", "additionalProperties": false,
+      "required": ["expected_resolved_sites", "observed_sites", "unresolved_sites", "missing_sites", "extra_sites", "complete_for_flow_artifacts"],
+      "properties": {
+        "expected_resolved_sites": {"type": "integer", "minimum": 0},
+        "observed_sites": {"type": "integer", "minimum": 0},
+        "unresolved_sites": {"type": "array", "items": {"$ref": "#/$defs/indirect_call_site"}},
+        "missing_sites": {"type": "array", "items": {"$ref": "#/$defs/call_site"}},
+        "extra_sites": {"type": "array", "items": {"$ref": "#/$defs/call_site"}},
+        "complete_for_flow_artifacts": {"type": "boolean"}
+      }
+    },
+    "indirect_call_site": {
+      "type": "object", "additionalProperties": false,
+      "required": ["function_entry", "call_address", "call_time"],
+      "properties": {"function_entry": {"type": "string", "minLength": 1}, "call_address": {"type": "string", "minLength": 1}, "call_time": {"type": "integer", "minimum": 0}}
+    },
+    "indirect_calls": {
+      "type": "object", "additionalProperties": false,
+      "required": ["expected_sites", "observed_sites", "missing_sites", "extra_sites", "complete_for_flow_artifacts"],
+      "properties": {
+        "expected_sites": {"type": "integer", "minimum": 0},
+        "observed_sites": {"type": "integer", "minimum": 0},
+        "missing_sites": {"type": "array", "items": {"$ref": "#/$defs/indirect_call_site"}},
+        "extra_sites": {"type": "array", "items": {"$ref": "#/$defs/indirect_call_site"}},
+        "complete_for_flow_artifacts": {"type": "boolean"}
+      }
+    }
+  }
+}
