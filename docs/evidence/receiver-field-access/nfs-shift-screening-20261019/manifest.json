@@ -2256,6 +2256,12 @@
       "rows": 58
     },
     {
+      "path": "scan37/replay-0041dd40/field20-parameter-loads.tsv",
+      "bytes": 282,
+      "sha256": "c2ac65755e457219d7663062cc48880053a953295d84c7d3e44937d362eef91e",
+      "rows": 1
+    },
+    {
       "path": "scan37/replay-0041dd40/field20-parameter-stores.tsv",
       "bytes": 1143,
       "sha256": "6d9cb681d903d6fe49114258ac463b5a96796be7d687e9edd6779765a3ccfa37",
@@ -2340,8 +2346,8 @@
     },
     {
       "path": "scan37/replay-0041dd40/manual-static-vtable-review.md",
-      "bytes": 8423,
-      "sha256": "a993e16d8fee4604e23da06d530e492e777f9879ef1825e248f89048415241f0"
+      "bytes": 8864,
+      "sha256": "f17d8f368bf885f7d1128bd6a66a82e7636395a1f2531fcbfc3e33dc2f21011b"
     },
     {
       "path": "scan37/replay-0041dd40/memory-store-access-full-closure-scope.jsonl",
@@ -2397,9 +2403,9 @@
     },
     {
       "path": "scan37/replay-0041dd40/nfs-shift-member-map.jsonl",
-      "bytes": 1020,
-      "sha256": "230a066c8625bde19bd8e1e75c29fa64d9358ffe4608b5debecd161f6833b5fd",
-      "rows": 4
+      "bytes": 1275,
+      "sha256": "b383f77e12f34da467894b1d6b3f10dd5a340d60779eacc3cc3b35cc6ac47a9b",
+      "rows": 5
     },
     {
       "path": "scan37/replay-0041dd40/scan37-function-pcode-cfg-v4-export.log",
@@ -2432,8 +2438,8 @@
     },
     {
       "path": "scan37/replay-0041dd40/type-layout-builder-output.jsonl",
-      "bytes": 18824,
-      "sha256": "22566c2382f24ad841d9d9e83aa3e64bf17f1c6a23a90891bcf89624572a2e70",
+      "bytes": 19386,
+      "sha256": "dd1ebe914c70d0a56e81039c514515b3ef0c41aa1aff2388beb0bcd348aef791",
       "rows": 1
     },
     {

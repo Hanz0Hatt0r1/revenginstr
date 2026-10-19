@@ -71,6 +71,13 @@ contains 58 STORE rows; four are parameter-0-rooted accesses at offset `+0x20`:
 | `0066ebc0` | `0066ebd2` | constant zero | Releases a non-null cached object through its first virtual method, then clears the field. |
 
 `AptCIH::GetAnimationInst` at `009d1880` is an exact load of `[this + 0x20]`.
+The read-only parameter-field exporter also captured this as one
+`GhidraParameterLoadField/1` row in
+[`field20-parameter-loads.tsv`](field20-parameter-loads.tsv), with root
+parameter 0 and width 4. The reviewer membership map joins that getter to the
+same opaque cluster as the four exact writers above; the generated type-layout
+candidate therefore retains both the getter read and the constructor/copy/
+lazy-store/reset writes at `+0x20`.
 The [`PointerProvenance/1` replay](field20-pointer-provenance.jsonl) keeps the
 value reaching `0066f215` ambiguous: five call-result barriers and two null
 alternatives. The candidate field therefore has observed initialization,

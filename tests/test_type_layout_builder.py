@@ -159,14 +159,21 @@ def test_nfs_shift_reviewed_member_map_replays_exact_field_evidence() -> None:
         "scan37/replay-0041dd40"
     )
     stores = evidence_root / "field20-memory-store-access.jsonl"
+    loads = evidence_root / "field20-parameter-loads.tsv"
     members = evidence_root / "nfs-shift-member-map.jsonl"
     binary_sha256 = "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
     member_schema = json.loads((ROOT / "schemas/type-layout-member-map-v1.schema.json").read_text())
     Draft202012Validator.check_schema(member_schema)
     for line in members.read_text(encoding="utf-8").splitlines():
         Draft202012Validator(member_schema).validate(json.loads(line))
+    load_schema = json.loads((ROOT / "schemas/ghidra-parameter-load-field-v1.schema.json").read_text())
+    Draft202012Validator.check_schema(load_schema)
+    with loads.open(encoding="utf-8", newline="") as handle:
+        for load_row in csv.DictReader(handle, delimiter="\t"):
+            Draft202012Validator(load_schema).validate(load_row)
     rows = build_type_layout_hypotheses(
-        [stores], [members], program_id="nfs-shift:SHIFT.exe", program_sha256=binary_sha256,
+        [stores], [members], parameter_load_paths=[loads],
+        program_id="nfs-shift:SHIFT.exe", program_sha256=binary_sha256,
         language_id="x86:LE:32:default", pointer_width_bytes=4,
         addressable_unit_bytes=1, endianness="little",
     )
@@ -175,7 +182,9 @@ def test_nfs_shift_reviewed_member_map_replays_exact_field_evidence() -> None:
     assert row["type_id"] == "cluster-vtable-00af0860"
     fields = {field["offset_bytes"]: field for field in row["fields"]}
     assert 0x20 in fields
-    field20_writes = [access for access in fields[0x20]["accesses"] if access["kind"] == "write"]
+    field20_accesses = fields[0x20]["accesses"]
+    field20_writes = [access for access in field20_accesses if access["kind"] == "write"]
+    field20_reads = [access for access in field20_accesses if access["kind"] == "read"]
     store_records = {
         evidence["record_key"]
         for access in field20_writes
@@ -183,6 +192,13 @@ def test_nfs_shift_reviewed_member_map_replays_exact_field_evidence() -> None:
         if evidence["source_format"] == "REVENGINSTR.GhidraMemoryStoreAccess/1"
     }
     assert len(store_records) == 4
+    load_records = {
+        evidence["record_key"]
+        for access in field20_reads
+        for evidence in access["evidence"]
+        if evidence["source_format"] == "REVENGINSTR.GhidraParameterLoadField/1"
+    }
+    assert load_records == {"function=009d1880;address=009d1880;time=1;output=def:LOAD@009d1880:1:4"}
     assert row["object_size"]["minimum_observed_bytes"] == 56
     assert row["object_size"]["exact_size_bytes"] is None
     assert row["vtable_anchors"] == []
@@ -194,9 +210,11 @@ def test_nfs_shift_reviewed_member_map_replays_exact_field_evidence() -> None:
     assert json.loads(built_output.read_text(encoding="utf-8")) == row
     manifest_path = ROOT / "docs/evidence/receiver-field-access/nfs-shift-screening-20261019/manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    for path in (members, built_output):
+    for path in (loads, members, built_output):
         relative = path.relative_to(manifest_path.parent).as_posix()
         artifact = next(item for item in manifest["artifacts"] if item["path"] == relative)
         content = path.read_bytes()
         assert artifact["bytes"] == len(content)
         assert artifact["sha256"] == hashlib.sha256(content).hexdigest()
+        declared_rows = len(content.decode("utf-8").splitlines()) - (1 if path.suffix == ".tsv" else 0)
+        assert artifact["rows"] == declared_rows

@@ -38,8 +38,9 @@ members.
 For example, the reviewed NFS SHIFT mapping in
 [`nfs-shift-member-map.jsonl`](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/nfs-shift-member-map.jsonl)
 projects the constructor, copy, lazy getter, and destructor stores for the
-opaque cluster `cluster-vtable-00af0860`. It reproduces the `+0x20` writes and
-56-byte minimum extent without promoting the referent type or exact size. The
+opaque cluster `cluster-vtable-00af0860`. It reproduces the `+0x20` writes,
+the exact getter read at `+0x20`, and a 56-byte minimum extent. The referent
+type and exact size remain unresolved. The
 reproducible builder output is retained
 [here](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/type-layout-builder-output.jsonl).
 Run the same projection with:
@@ -47,6 +48,7 @@ Run the same projection with:
 ```sh
 revenginstr-type-layout-hypothesis \
   --memory-store-jsonl field20-memory-store-access.jsonl \
+  --parameter-loads-tsv field20-parameter-loads.tsv \
   --member-map-jsonl nfs-shift-member-map.jsonl \
   --program-id 'nfs-shift:SHIFT.exe' \
   --program-sha256 eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1 \
