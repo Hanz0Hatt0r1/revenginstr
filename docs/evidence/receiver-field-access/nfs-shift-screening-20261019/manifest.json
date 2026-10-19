@@ -2290,6 +2290,12 @@
       "rows": 10
     },
     {
+      "path": "scan37/replay-0041dd40/field20-call-store-flow.jsonl",
+      "bytes": 6839,
+      "sha256": "5da217124af539089390fa7d78a2c7f7c6fd5a70e9b51900daa243bd03d90fe4",
+      "rows": 6
+    },
+    {
       "path": "scan37/replay-0041dd40/field20-callind.jsonl",
       "bytes": 7196,
       "sha256": "3d2d7128f0bc0924b19110eeff56d5711a042d81aeb6d3c3488ac1ff142c3c57",
@@ -2336,6 +2342,12 @@
       "bytes": 3603,
       "sha256": "86520e8906da7f962f3b88fa400a1d9af3b6280c4bdba8fb18f7d1bd81f1c267",
       "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-vtable-call-candidates.jsonl",
+      "bytes": 28135,
+      "sha256": "00aff4b6e0d154c0ccb4e1ab82a31be175dcf283e3487f6fbb8c6c2abf6e09a4",
+      "rows": 4
     },
     {
       "path": "scan37/replay-0041dd40/function-pcode-cfg-v4-full-closure-scope.jsonl",
@@ -2404,8 +2416,8 @@
     },
     {
       "path": "scan37/replay-0041dd40/manual-static-vtable-review.md",
-      "bytes": 8864,
-      "sha256": "f17d8f368bf885f7d1128bd6a66a82e7636395a1f2531fcbfc3e33dc2f21011b"
+      "bytes": 10794,
+      "sha256": "b04d4b8902472b34793881f2e24262b48a276418d5fefe5ecb3e11c0bd72442c"
     },
     {
       "path": "scan37/replay-0041dd40/memory-store-access-full-closure-scope.jsonl",

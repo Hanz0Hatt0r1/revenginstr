@@ -191,17 +191,20 @@ entries, constructor/append chain, target instruction bytes, and limits are
 recorded in
 [`manual-static-vtable-review.md`](scan37/replay-0041dd40/manual-static-vtable-review.md).
 `00664a10` returns the second reader's runtime field value, so it still does
-not identify the receiver used by later calls in `006657e0` and `00665820`;
-their four anchors remain unresolved. This manual review does not change the
-`/6` statuses or establish that runtime memory cannot be overwritten.
+not identify the runtime receiver used by later calls in `006657e0` and
+`00665820`. Static vtable evidence now gives bounded candidate sets for the
+first-level cached-field calls, while the two calls on their returned objects
+remain unresolved. This manual review does not change the `/6` statuses or
+establish that runtime memory cannot be overwritten.
 The generic [`IndirectCallPointerSlot/1` replay](scan37/replay-0041dd40/indirect-call-pointer-slots.jsonl)
 joins all 22 closure `CALLIND` sites to the exact pointer-provenance rows. Six
 have a single aligned constant-offset pointer-slot shape. The four downstream
 sites are `006657ed` (`+0x30`), `00665801` (`+0x8`), `0066582d` (`+0x34`), and
 `00665841` (`+0xc`). These offsets describe loads through runtime-derived
 pointer anchors; they do not associate those anchors with a specific table or
-resolve a function entry. The other 16 sites are not a single resolved
-constant-offset target load.
+resolve a function entry by themselves. The vtable candidate replay below
+joins the two cached-field calls to five constructor-observed vtables; the
+other 16 sites are not a single resolved constant-offset target load.
 
 The read-only Ghidra xrefs in
 [`anchor-address-references.jsonl`](scan37/replay-0041dd40/anchor-address-references.jsonl)
@@ -223,9 +226,14 @@ The new [`TypeLayoutHypothesis/1` row](scan37/replay-0041dd40/field20-type-layou
 captures this as an opaque review-level cluster with a 56-byte minimum
 observed extent and a 4-byte data-pointer candidate; it leaves exact size and
 pointee identity unresolved.
-This narrows the static writer and lifecycle paths without resolving the
-runtime referent/type at the four downstream sites. No downstream function
-target is promoted, and the `/6` results remain unchanged.
+The new [`GhidraIndirectCallVtableCandidates/1` capture](scan37/replay-0041dd40/field20-vtable-call-candidates.jsonl)
+contains three static target candidates (`00663030`, `00676040`, `006770b0`)
+for each first-level call at `006657ed` and `0066582d`, with constructor,
+factory, store-graph, vtable-slot, and raw-byte references. It does not select
+the runtime branch or rule out unobserved writers. The calls at `00665801`
+and `00665841` remain unresolved because their receivers are returned objects
+whose vtables are not bound by this evidence. The `/6` results remain
+unchanged.
 The replay also includes the 32-row, read-only generic Ghidra pointer-table
 export at [`ghidra-pointer-table-slots.jsonl`](scan37/replay-0041dd40/ghidra-pointer-table-slots.jsonl);
 its schema and invocation are documented in

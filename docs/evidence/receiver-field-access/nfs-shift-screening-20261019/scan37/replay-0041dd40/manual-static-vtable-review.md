@@ -95,6 +95,40 @@ Their hashes bind each derived pointer-provenance alternative back to the
 P-code rows. This narrows the static writer gap; it does not promote the four
 `/6` rows or identify a target class.
 
+## Bounded first-level vtable targets
+
+The retained P-code now links each of the five constructor call results in
+`0066eff0` to the `+0x20` store at `0066f215`. The six-row
+[`field20-call-store-flow.jsonl`](field20-call-store-flow.jsonl) capture records
+those result-to-store paths, including the null alternative. Joining those
+paths to the constructor vtable writes and the pinned executable's raw table
+bytes yields a bounded candidate set for the two first-level calls whose
+receiver is the cached field:
+
+| CALLIND | Slot | Candidate target | Observed vtable origin(s) |
+| --- | ---: | --- | --- |
+| `006657ed` | `+0x30` | `00663030` | `00af6bf0` |
+| `006657ed` | `+0x30` | `00676040` | `00af6a50` |
+| `006657ed` | `+0x30` | `006770b0` | `00af6ce0`, `00af6e00`, `00af6f20` |
+| `0066582d` | `+0x34` | `00663030` | `00af6bf0` |
+| `0066582d` | `+0x34` | `00676040` | `00af6a50` |
+| `0066582d` | `+0x34` | `006770b0` | `00af6ce0`, `00af6e00`, `00af6f20` |
+
+The candidate set covers the five concrete vtable values observed in this
+lazy-construction flow. It does not show which type-tag branch executes at
+runtime, exclude unobserved writers, or establish a unique runtime target.
+The raw slot values and file offsets, factory calls, constructor-return
+proofs, and `+0x20` store-graph references are retained per origin in
+[`field20-vtable-call-candidates.jsonl`](field20-vtable-call-candidates.jsonl)
+using [`GhidraIndirectCallVtableCandidates/1`](../../../../../../schemas/ghidra-indirect-call-vtable-candidates-v1.schema.json).
+
+The later calls `00665801` (`+0x8`) and `00665841` (`+0xc`) use the prior
+`CALLIND` results as receivers. Their returned objects have no concrete vtable
+binding in the retained evidence, so both rows deliberately have empty target
+sets and status `unresolved_return_object_vtable`. In particular, the
+original cached object's vtable entries at `+0x8` and `+0xc` are not evidence
+for these calls.
+
 The new generic [`IndirectCallPointerSlot/1` replay](indirect-call-pointer-slots.jsonl)
 joins all 22 closure targets to their exact `PointerProvenance/1` rows. It
 reports six aligned constant-offset pointer-slot candidates. For the four

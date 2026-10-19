@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-indirect-call-vtable-candidates-v1.schema.json",
+  "title": "REVENGINSTR.GhidraIndirectCallVtableCandidates/1 record",
+  "description": "Bounded static target candidates for indirect calls whose receiver is tied to observed constructor and vtable evidence; unresolved returned-object receivers remain explicit.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "program_id",
+    "program_sha256",
+    "binary_program",
+    "function_entry",
+    "call_address",
+    "call_time",
+    "slot_offset_bytes",
+    "status",
+    "receiver",
+    "candidate_targets",
+    "callind_evidence",
+    "pointer_slot_projection",
+    "limitations"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraIndirectCallVtableCandidates/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "program_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "binary_program": {"type": "string", "minLength": 1},
+    "function_entry": {"$ref": "#/$defs/address"},
+    "call_address": {"$ref": "#/$defs/address"},
+    "call_time": {"type": "integer", "minimum": 0},
+    "slot_offset_bytes": {"type": "integer", "minimum": 0},
+    "status": {
+      "enum": ["bounded_static_target_candidates", "unresolved_return_object_vtable"]
+    },
+    "receiver": {"$ref": "#/$defs/receiver"},
+    "candidate_targets": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/candidate_target"}
+    },
+    "callind_evidence": {"$ref": "#/$defs/evidence_ref"},
+    "pointer_slot_projection": {"$ref": "#/$defs/evidence_ref"},
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "bounded_static_target_candidates"}}, "required": ["status"]},
+      "then": {"properties": {"candidate_targets": {"minItems": 1}}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "unresolved_return_object_vtable"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "candidate_targets": {"maxItems": 0},
+          "receiver": {"properties": {"kind": {"const": "prior_indirect_call_result"}}}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "address": {"type": "string", "pattern": "^0x[0-9a-fA-F]{8}$"},
+    "evidence_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_path", "artifact_sha256", "record_index", "source_format"],
+      "properties": {
+        "artifact_path": {"type": "string", "minLength": 1},
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "record_index": {"type": "integer", "minimum": 0},
+        "source_format": {"type": "string", "minLength": 1}
+      }
+    },
+    "receiver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "field_offset_bytes", "prior_call_address"],
+      "properties": {
+        "kind": {"enum": ["AptCIH_cached_field", "prior_indirect_call_result"]},
+        "field_offset_bytes": {"type": ["integer", "null"], "minimum": 0},
+        "prior_call_address": {"anyOf": [{"$ref": "#/$defs/address"}, {"type": "null"}]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"kind": {"const": "AptCIH_cached_field"}}, "required": ["kind"]},
+          "then": {"properties": {"field_offset_bytes": {"type": "integer"}, "prior_call_address": {"type": "null"}}}
+        },
+        {
+          "if": {"properties": {"kind": {"const": "prior_indirect_call_result"}}, "required": ["kind"]},
+          "then": {"properties": {"field_offset_bytes": {"type": "null"}, "prior_call_address": {"$ref": "#/$defs/address"}}}
+        }
+      ]
+    },
+    "candidate_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_address", "vtable_origins"],
+      "properties": {
+        "target_address": {"$ref": "#/$defs/address"},
+        "vtable_origins": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/vtable_origin"}
+        }
+      }
+    },
+    "vtable_origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "constructor_entry", "constructor_return_proofs", "factory_call_address",
+        "factory_call_pcode", "field20_store_graph", "file_offset", "raw_bytes",
+        "slot_address", "slot_offset_bytes", "target_address", "vtable_address",
+        "vtable_store", "vtable_store_pcode", "vtable_value_pcode"
+      ],
+      "properties": {
+        "constructor_entry": {"$ref": "#/$defs/address"},
+        "constructor_return_proofs": {
+          "type": "array", "minItems": 1, "items": {"$ref": "#/$defs/evidence_ref"}
+        },
+        "factory_call_address": {"$ref": "#/$defs/address"},
+        "factory_call_pcode": {"$ref": "#/$defs/evidence_ref"},
+        "field20_store_graph": {"$ref": "#/$defs/evidence_ref"},
+        "file_offset": {"type": "integer", "minimum": 0},
+        "raw_bytes": {"type": "string", "pattern": "^[0-9a-fA-F]{8}$"},
+        "slot_address": {"$ref": "#/$defs/address"},
+        "slot_offset_bytes": {"type": "integer", "minimum": 0},
+        "target_address": {"$ref": "#/$defs/address"},
+        "vtable_address": {"$ref": "#/$defs/address"},
+        "vtable_store": {"$ref": "#/$defs/evidence_ref"},
+        "vtable_store_pcode": {"$ref": "#/$defs/evidence_ref"},
+        "vtable_value_pcode": {"$ref": "#/$defs/evidence_ref"}
+      }
+    }
+  }
+}

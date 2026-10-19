@@ -2216,20 +2216,26 @@ records the input and output hashes. The bounded instruction slice at
 The four downstream memory-read anchors now have a generic structural
 projection: `IndirectCallPointerSlot/1` identifies aligned pointer-slot access
 shapes at `006657ed` (`+0x30`), `00665801` (`+0x8`), `0066582d` (`+0x34`), and
-`00665841` (`+0xc`). The exact target addresses remain unknown. A read-only
-Ghidra reference export confirms that `006657e0` and `00665820` are reached
-from the two wrapper functions, while their receiver comes from the runtime
-field at `AptCIH + 0x20`. The field is initialized to zero in `0066ee90` and
-copied by `00663f50`; an additional vtable write in `0043c792` is reached from
-the cleanup path `0066efc0`, not a new factory. These facts narrow the observed
-static construction path but do not bind the runtime field value to a table.
+`00665841` (`+0xc`). Exact static vtable evidence narrows the first-level
+cached-field calls at `006657ed` and `0066582d` to the same three target
+addresses, `00663030`, `00676040`, and `006770b0`, across five concrete
+constructor variants in the observed `AptCIH + 0x20` lazy-construction flow.
+The candidate rows retain the constructor, factory, field-store, vtable-slot,
+and raw-byte evidence in
+[`field20-vtable-call-candidates.jsonl`](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-vtable-call-candidates.jsonl).
+This is a bounded static set: it does not identify runtime branch selection,
+exclude unobserved writers, or establish a unique runtime target. The calls at
+`00665801` and `00665841` use results of the preceding virtual calls; their
+returned-object vtables remain unresolved and their candidate sets stay empty.
+The field writer/copy inventory and six result-to-store paths are documented
+in the [manual static review](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/manual-static-vtable-review.md).
 
-**Next:** trace all exact writes and copy sources for the runtime `+0x20`
-field, or acquire bounded runtime evidence for those four receivers. Keep
-unknown targets and roots as barriers. The five focused candidate pairs now
-have a fresh CFG/5 memory-effect replay: four remain possible and one remains
-unique because `CALLIND` and `STORE` effects are unresolved. The bounded slice
-at `006642a5` is not a complete function flow or CFG. Assess bodies smaller
-than 40 bytes only if this unresolved set or new pair evidence gives a concrete
+**Next:** trace the returned-object provenance after the first-level calls, or
+acquire bounded runtime evidence for those returned receivers. Keep unresolved
+targets and roots as barriers. The five focused candidate pairs now have a
+fresh CFG/5 memory-effect replay: four remain possible and one remains unique
+because `CALLIND` and `STORE` effects are unresolved. The bounded slice at
+`006642a5` is not a complete function flow or CFG. Assess bodies smaller than
+40 bytes only if this unresolved set or new pair evidence gives a concrete
 reason to extend the population screen. Do not infer alias facts from
 decompiler text or instruction-level corpus labels.
