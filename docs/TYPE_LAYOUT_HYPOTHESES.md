@@ -127,5 +127,9 @@ fields in `review` state. The current hypothesis contract has neither a
 confidence score nor prototype records, so high-confidence reviewer acceptance
 and prototype compatibility are explicitly reported as not evaluated. Synthetic
 replays validate metric behavior and coverage handling; they are not consumer
-accuracy results. Independent frozen consumer gold is still needed before M8.5
-or the layout exit criteria can be considered complete.
+accuracy results. The exact synthetic replay in
+`tests/fixtures/type-layout-gold/` is hash-linked to its source observation and
+scores the known `+0x20` field at precision/recall 1.0; type accuracy remains
+undefined because the fixture hypothesis is not a reviewed type decision.
+Independent frozen consumer gold is still needed before M8.5 or the layout exit
+criteria can be considered complete.

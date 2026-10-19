@@ -11,6 +11,7 @@ from revenginstr.type_layout_evaluation import evaluate_type_layouts, main
 
 ROOT = Path(__file__).resolve().parents[1]
 PREDICTIONS = ROOT / "tests/fixtures/type-layout-hypothesis/synthetic.jsonl"
+GOLD_FIXTURE = ROOT / "tests/fixtures/type-layout-gold/synthetic.jsonl"
 
 
 def write_jsonl(path: Path, rows: list[dict]) -> None:
@@ -73,6 +74,25 @@ def test_evaluation_scores_only_explicitly_audited_offsets_and_reports_type_metr
     schema = json.loads((ROOT / "schemas/type-layout-evaluation-v1.schema.json").read_text())
     Draft202012Validator.check_schema(schema)
     Draft202012Validator(schema).validate(result)
+
+
+def test_synthetic_exact_layout_gold_fixture_is_independent_and_scores_offsets() -> None:
+    source = ROOT / "tests/fixtures/type-layout-gold/synthetic-source.jsonl"
+    gold_rows = [json.loads(line) for line in GOLD_FIXTURE.read_text().splitlines()]
+    gold_schema = json.loads((ROOT / "schemas/type-layout-gold-v1.schema.json").read_text())
+    Draft202012Validator.check_schema(gold_schema)
+    for row in gold_rows:
+        Draft202012Validator(gold_schema).validate(row)
+    assert gold_rows[0]["fields"][0]["evidence_refs"][0]["artifact_sha256"] == hashlib.sha256(
+        source.read_bytes()
+    ).hexdigest()
+
+    result = evaluate_type_layouts(PREDICTIONS, GOLD_FIXTURE)
+
+    assert result["field_offset_precision"] == 1
+    assert result["field_offset_recall"] == 1
+    assert result["field_offset_f1"] == 1
+    assert result["compatible_type_accuracy"] is None
 
 
 def test_evaluation_rejects_positive_field_outside_audited_offsets(tmp_path: Path) -> None:
