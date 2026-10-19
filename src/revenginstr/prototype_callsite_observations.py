@@ -19,6 +19,14 @@ FLOW_COLUMNS = {
 _ADDRESS = re.compile(r"^(?:[A-Za-z_$][\w$]*:)?(?:0x)?[0-9a-fA-F]+$")
 
 
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
 def _address(value: str, where: str) -> str:
     if not value or not _ADDRESS.fullmatch(value):
         raise ValueError(f"{where}: invalid address {value!r}")
@@ -52,50 +60,46 @@ def observe_call_arguments(paths: list[Path], *, program_id: str) -> list[dict[s
         if path in seen_paths:
             continue
         seen_paths.add(path)
-        raw = path.read_bytes()
-        digest = hashlib.sha256(raw).hexdigest()
-        try:
-            text = raw.decode("utf-8")
-        except UnicodeDecodeError as error:
-            raise ValueError(f"{path}: input is not valid UTF-8") from error
-        reader = csv.DictReader(text.splitlines(), delimiter="\t")
-        if reader.fieldnames is None or len(reader.fieldnames) != len(set(reader.fieldnames)) or set(reader.fieldnames) != FLOW_COLUMNS:
-            raise ValueError(f"{path}: expected exact GhidraFunctionPcodeFlow/1 columns")
-        for record_index, row in enumerate(reader, 1):
-            where = f"{path}:data-row-{record_index}"
-            if None in row or any(value is None for value in row.values()):
-                raise ValueError(f"{where}: malformed TSV row")
-            if row["opcode"] != "CALL":
-                continue
-            target = row["callee_entry"]
-            if target == "-":
-                continue
-            caller = _address(row["function_entry"], f"{where}: function_entry")
-            call_address = _address(row["op_address"], f"{where}: op_address")
-            callee = _address(target, f"{where}: callee_entry")
-            call_time = row["op_time"]
-            if not call_time.isdecimal():
-                raise ValueError(f"{where}: op_time must be a non-negative decimal integer")
-            identity = (caller, call_address, str(int(call_time)))
-            if identity in call_sites:
-                raise ValueError(f"{where}: duplicate direct call site {identity}")
-            call_sites.add(identity)
-            arguments = _arguments(row["inputs"], where)
-            observations.append({
-                "format": FORMAT,
-                "program_id": program_id,
-                "caller_entry": caller,
-                "callee_entry": callee,
-                "call_address": call_address,
-                "call_time": int(call_time),
-                "argument_count": len(arguments),
-                "arguments": arguments,
-                "evidence_ref": {
-                    "artifact_sha256": digest,
-                    "record_index": record_index,
-                    "source_format": SOURCE_FORMAT,
-                },
-            })
+        digest = _sha256(path)
+        with path.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle, delimiter="\t")
+            if reader.fieldnames is None or len(reader.fieldnames) != len(set(reader.fieldnames)) or set(reader.fieldnames) != FLOW_COLUMNS:
+                raise ValueError(f"{path}: expected exact GhidraFunctionPcodeFlow/1 columns")
+            for record_index, row in enumerate(reader, 1):
+                where = f"{path}:data-row-{record_index}"
+                if None in row or any(value is None for value in row.values()):
+                    raise ValueError(f"{where}: malformed TSV row")
+                if row["opcode"] != "CALL":
+                    continue
+                target = row["callee_entry"]
+                if target == "-":
+                    continue
+                caller = _address(row["function_entry"], f"{where}: function_entry")
+                call_address = _address(row["op_address"], f"{where}: op_address")
+                callee = _address(target, f"{where}: callee_entry")
+                call_time = row["op_time"]
+                if not call_time.isdecimal():
+                    raise ValueError(f"{where}: op_time must be a non-negative decimal integer")
+                identity = (caller, call_address, str(int(call_time)))
+                if identity in call_sites:
+                    raise ValueError(f"{where}: duplicate direct call site {identity}")
+                call_sites.add(identity)
+                arguments = _arguments(row["inputs"], where)
+                observations.append({
+                    "format": FORMAT,
+                    "program_id": program_id,
+                    "caller_entry": caller,
+                    "callee_entry": callee,
+                    "call_address": call_address,
+                    "call_time": int(call_time),
+                    "argument_count": len(arguments),
+                    "arguments": arguments,
+                    "evidence_ref": {
+                        "artifact_sha256": digest,
+                        "record_index": record_index,
+                        "source_format": SOURCE_FORMAT,
+                    },
+                })
     return observations
 
 
