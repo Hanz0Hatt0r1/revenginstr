@@ -72,6 +72,14 @@ def _matches_node(row: dict[str, Any], filters: dict[str, Any]) -> bool:
             return False
     if filters["type_ids"] and row.get("type_id") not in filters["type_ids"]:
         return False
+    if filters.get("call_argument_tokens"):
+        arguments = row.get("call_arguments")
+        if not isinstance(arguments, list) or not any(
+            isinstance(argument, dict)
+            and argument.get("value_token") in filters["call_argument_tokens"]
+            for argument in arguments
+        ):
+            return False
     return _supports(row, filters["support_id"])
 
 
@@ -97,6 +105,7 @@ def query_graphs(
     operation_addresses: list[str] | None = None,
     field_offsets: list[str] | None = None,
     type_ids: list[str] | None = None,
+    call_argument_tokens: list[str] | None = None,
     support_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """Return matching graph facts and endpoint context with source provenance."""
@@ -114,6 +123,8 @@ def query_graphs(
         raise ValueError("unsupported edge relation filter")
     if set(call_target_states or []) - set(CALL_STATES):
         raise ValueError("unsupported call target state filter")
+    if any(not isinstance(token, str) or not token for token in call_argument_tokens or []):
+        raise ValueError("call argument tokens must be non-empty strings")
     if not graphs:
         raise ValueError("Semantic Program Graph input is empty")
     filters = {
@@ -127,10 +138,13 @@ def query_graphs(
         "type_ids": sorted(set(type_ids or [])),
         "support_id": support_id,
     }
+    if call_argument_tokens:
+        filters["call_argument_tokens"] = sorted(set(call_argument_tokens))
     node_filters_active = any((
         filters["kinds"], filters["call_target_states"],
         filters["function_entries"], filters["operation_addresses"],
-        filters["field_offsets"], filters["type_ids"], filters["support_id"],
+        filters["field_offsets"], filters["type_ids"], filters.get("call_argument_tokens", []),
+        filters["support_id"],
     ))
 
     results = []
@@ -223,6 +237,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--operation-address", action="append", default=[])
     parser.add_argument("--field-offset", action="append", default=[])
     parser.add_argument("--type-id", action="append", default=[])
+    parser.add_argument("--call-argument-token", action="append", default=[])
     parser.add_argument("--support-id")
     args = parser.parse_args(argv)
     try:
@@ -240,6 +255,7 @@ def main(argv: list[str] | None = None) -> int:
             operation_addresses=args.operation_address,
             field_offsets=args.field_offset,
             type_ids=args.type_id,
+            call_argument_tokens=args.call_argument_token,
             support_id=args.support_id,
         )
     except ValueError as error:

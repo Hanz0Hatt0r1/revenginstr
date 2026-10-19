@@ -42,6 +42,20 @@ revenginstr-semantic-program-query program-graphs.jsonl \
 
 The returned nodes keep the ordered P-code value tokens, widths, and row
 provenance. This does not resolve `def:` tokens or assign argument semantics.
+Use `--call-argument-token` to select exact tokens as alternatives. For
+example, this selects direct calls with an observed zero argument:
+
+```sh
+revenginstr-semantic-program-query program-graphs.jsonl \
+  --view exact-only \
+  --kind operation \
+  --relation calls \
+  --call-argument-token const:0x0:4 \
+  --output calls-passing-zero.jsonl
+```
+
+The token match is literal and retains the whole argument list on each result
+node; it does not explain what the value means.
 
 For `/3` and `/4` graphs, layout fields can be selected by type id and byte offset. The
 result includes the owning type node as related context:

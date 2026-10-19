@@ -108,6 +108,22 @@ def test_v4_joins_call_arguments_to_exact_resolved_call_sites() -> None:
     ]
     assert len(queried) == 36
 
+    constant_query = query_graphs(
+        graphs,
+        source_sha256=graph_sha256,
+        view="exact-only",
+        kinds=["operation"],
+        relations=["calls"],
+        call_argument_tokens=["const:0x0:4"],
+    )[0]
+    _validator("semantic-program-query-result-v1.schema.json").validate(constant_query)
+    assert constant_query["filters"]["call_argument_tokens"] == ["const:0x0:4"]
+    assert constant_query["nodes"]
+    assert all(
+        any(argument["value_token"] == "const:0x0:4" for argument in node["call_arguments"])
+        for node in constant_query["nodes"]
+    )
+
     path_query = query_paths(
         graphs,
         source_sha256=graph_sha256,

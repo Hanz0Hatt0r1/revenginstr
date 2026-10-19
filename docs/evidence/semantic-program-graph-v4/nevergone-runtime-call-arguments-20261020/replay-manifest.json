@@ -49,10 +49,10 @@
       "sha256": "b421ac10ba2c172bbda2e05abb6f6481e0ee9ef75af99a3588b71f85a06303a0"
     },
     {
-      "bytes": 3968,
+      "bytes": 4085,
       "id": "query_result_schema",
       "path": "../../../../schemas/semantic-program-query-result-v1.schema.json",
-      "sha256": "154e34d0d4b7874f35a20f76d210597fb084bf6119257e8c37f469b90ae22104"
+      "sha256": "cf6f756f37f5e07ed6a2cda268a0e80e6885a6a13b91076ee5fe7c4e4aa0d824"
     },
     {
       "id": "path_query_result_schema",

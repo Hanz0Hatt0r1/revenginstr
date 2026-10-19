@@ -34,6 +34,7 @@
         "function_entries": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
         "operation_addresses": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
         "field_offsets": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "call_argument_tokens": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
         "type_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
         "support_id": {"type": ["string", "null"]}
       }
