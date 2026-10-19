@@ -603,10 +603,28 @@
       "rows": 4
     },
     {
+      "path": "scan29/replay-00458170/field-store-load-dominance-v5.jsonl",
+      "bytes": 8410,
+      "sha256": "c7a85db09f770d5a153ae61fc9f41a6aff334c6d2f6e74a94a019c17b094a832",
+      "rows": 4
+    },
+    {
       "path": "scan29/replay-00458170/field-store-load-dominance-v6.jsonl",
       "bytes": 8190,
       "sha256": "f5972c28d9d74eede7e174bc9b84c13ff9b2cd200bb664682b3ec7cefd3a5ccb",
       "rows": 4
+    },
+    {
+      "path": "scan29/replay-00458170/function-pcode-cfg-v3-projected-from-v4.jsonl",
+      "bytes": 79425,
+      "sha256": "5f14d85e0856b7af5efdede3d4a07d6af21a66c065fec36f80bbde0ab17a9218",
+      "rows": 3
+    },
+    {
+      "path": "scan29/replay-00458170/interprocedural-memory-effects-v1.jsonl",
+      "bytes": 30834,
+      "sha256": "1eb1de36093269cadf413b3abd1bb55344d2df45b733a777f582748671322e4a",
+      "rows": 20
     },
     {
       "path": "scan29/replay-00458170/interprocedural-memory-effects-v2.jsonl",

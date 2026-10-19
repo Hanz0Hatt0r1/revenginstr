@@ -61,6 +61,18 @@ other three pairs in `00458170` remain possible because unresolved memory
 writes and calls still lie on their paths. This is structural evidence only;
 it does not establish feasible execution or runtime value flow.
 
+The focused replay also validates the generic `/5` consumer against these
+hash-pinned facts. The retained CFG/4 is projected to CFG/3 by
+[`project_ghidra_function_pcode_cfg_v4_to_v3.py`](../../../../scripts/project_ghidra_function_pcode_cfg_v4_to_v3.py),
+which changes only the format tag and removes each operation's
+`indirect_effect_link`; blocks, operation identities, and memory metadata are
+preserved. The resulting CFG/3 projection, interprocedural effect `/1`, and
+dominance audit `/5` are retained in the focused replay directory. The `/5`
+audit reports one `unique_cfg_store_candidate` for store `00458187` and load
+`004581a7` at offset `0x4`; the other three pairs remain
+`possible_intervening_memory_effect`. This confirms a positive consumer path
+without promoting branch feasibility, runtime value flow, or type identity.
+
 Scans30–34 exhausted the remaining 1,201 functions in the same one-or-more-
 `param_n` population: four midpoint-quantile batches of 256 and a final batch
 of 177. They produced nineteen exact pairs. Seventeen stores do not dominate
