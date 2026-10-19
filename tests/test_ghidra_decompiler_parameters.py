@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -24,8 +25,6 @@ def test_real_decompiler_parameter_replay_matches_schema_and_source_flow() -> No
 
     flow = (FIXTURES / "sample-caller-flow.tsv").read_bytes()
     call = json.loads((FIXTURES / "call-observations.jsonl").read_text().splitlines()[0])
-    import hashlib
-
     assert call["evidence_ref"]["artifact_sha256"] == hashlib.sha256(flow).hexdigest()
     assert call["callee_entry"] == records[0]["function_entry"]
     assert call["argument_count"] == records[0]["parameter_count"]

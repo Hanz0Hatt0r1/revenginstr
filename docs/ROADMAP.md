@@ -1121,9 +1121,13 @@ joins these rows to hash-pinned direct-call argument observations and emits
 constraint, never as a type label; conflicting call sites are marked
 `conflicted`, and emitted confidence scores stay below the evaluator's
 high-confidence threshold. A real Ghidra replay covers the two-function sample
-fixture. The generic inference path exists, but independent consumer gold, full
-program coverage accounting, calibrated confidence and indirect-call
-constraints remain required before M8.1 is complete.
+fixture. The generic inference and coverage paths now exist, but independent
+consumer gold, calibrated confidence and indirect-call target constraints
+remain required before M8.1 is complete. The new
+`FunctionPrototypeEvidenceCoverage/1` audit now checks population, P-code row
+counts, decompiler result status, and direct/indirect call-site capture against
+the exact supplied artifacts. A complete report means evidence capture covers
+that Ghidra program index; it does not mean recovered prototypes are correct.
 
 ### M8.2 Struct/class layout recovery
 

@@ -83,6 +83,26 @@ Because hypothesis schema `/1` has no variadic marker, variadic observations
 retain their fixed parameter prefix but emit `parameter_count: null` instead
 of presenting the prefix as the total argument count.
 
+`revenginstr-prototype-coverage` audits whether the evidence set covers the
+program index: it checks P-code acquisition states and operation counts,
+decompiler-parameter status for each indexed function, and exact direct and
+indirect call-site counts against supplied flow artifacts.
+
+```sh
+revenginstr-prototype-coverage functions.tsv.gz acquisition.jsonl \
+  decompiler-parameters.jsonl direct-call-arguments.jsonl \
+  indirect-call-evidence.jsonl flow.tsv --output coverage.json
+```
+
+`FunctionPrototypeEvidenceCoverage/1` is complete only when every indexed
+function has the expected acquisition and parameter result, batch operation
+counts match the P-code flows, and all direct/indirect call-site observations
+match those flows. This is an artifact-coverage statement; it does not say that
+the prototypes are correct, that an unresolved direct call has a target, or
+that an indirect call target was resolved. The v1 program index has no in-band
+binary identity, so supply it from the same Ghidra program used for the other
+inputs; the report hashes the index artifact.
+
 `FunctionPrototypeGold/1` describes one independently adjudicated function.
 `complete_properties` names the top-level signature properties the reviewer
 verified; `complete_parameter_indices` names parameter positions verified
