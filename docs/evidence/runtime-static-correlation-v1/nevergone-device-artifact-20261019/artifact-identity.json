@@ -1,0 +1,78 @@
+{
+  "format": "REVENGINSTR.InstalledAndroidNativeArtifactIdentity/1",
+  "observed_date": "2026-10-19",
+  "source": {
+    "operation": "REA pull_adb_package",
+    "evidence_id": "ev_47574a40780b86ddf6505cfe9e97a2a4def219184e5ad9a06707d1757b54980e"
+  },
+  "package": {
+    "name": "com.hippiegame.nevergone",
+    "version_name": "1.0.9",
+    "version_code": "9"
+  },
+  "apk": {
+    "bytes": 42601950,
+    "sha256": "97296efc9d32fdd46bdf2dba475aeb13adb4cc6d2957ddf02da7a5d9c56e9508"
+  },
+  "native_library": {
+    "abi": "armeabi-v7a",
+    "path": "lib/armeabi-v7a/libcocos2dcpp.so",
+    "elf_class": 32,
+    "machine": "ARM",
+    "sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e"
+  },
+  "static_graph": {
+    "program_id": "nevergone-1.0.9-armv7-libcocos2dcpp",
+    "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e"
+  },
+  "address_domain": {
+    "static_image_base": "0x10000",
+    "elf_load_domain": {
+      "lowest_pt_load_virtual_address": "0x0",
+      "runtime_module_base_maps_to": "0x0"
+    },
+    "basis": "Ghidra ELF image base; graph addresses equal ELF code addresses plus this base",
+    "symbol_entries": [
+      {
+        "symbol": "MEPlayer::setControlsState(CONTROLSSTATE)",
+        "elf_symbol_value": "0x31ddef",
+        "elf_code_entry": "0x31ddee",
+        "graph_entry": "0x32ddee"
+      },
+      {
+        "symbol": "MEPlayer::filpPlayer(bool, MEPLAYERSTATE)",
+        "elf_symbol_value": "0x31a4ed",
+        "elf_code_entry": "0x31a4ec",
+        "graph_entry": "0x32a4ec"
+      },
+      {
+        "symbol": "MeActionsSystem::filpAction(bool)",
+        "elf_symbol_value": "0x329109",
+        "elf_code_entry": "0x329108",
+        "graph_entry": "0x339108"
+      },
+      {
+        "symbol": "cocos2d::CCSprite::setFlipX(bool)",
+        "elf_symbol_value": "0x539757",
+        "elf_code_entry": "0x539756",
+        "graph_entry": "0x549756"
+      }
+    ],
+    "direct_calls": [
+      {
+        "source": "MEPlayer::setControlsState(CONTROLSSTATE)",
+        "elf_callsite": "0x31de44",
+        "elf_target": "0x31a4ec",
+        "graph_callsite": "0x32de44",
+        "graph_target": "0x32a4ec"
+      },
+      {
+        "source": "MeActionsSystem::filpAction(bool)",
+        "elf_callsite": "0x329114",
+        "elf_target": "0x539756",
+        "graph_callsite": "0x339114",
+        "graph_target": "0x549756"
+      }
+    ]
+  }
+}

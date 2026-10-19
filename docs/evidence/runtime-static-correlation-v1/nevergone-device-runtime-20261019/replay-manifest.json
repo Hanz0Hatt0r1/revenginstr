@@ -1,0 +1,42 @@
+{
+  "format": "REVENGINSTR.RuntimeStaticCorrelationReplay/1",
+  "input_origin": "real installed Nevergone binary and sampled startup runtime function entries; the pinned graph omits both observed resource functions",
+  "artifacts": [
+    {
+      "id": "semantic_graph",
+      "path": "../../semantic-program-graph-v3/nevergone-ccjoystick/semantic-program-graph.jsonl",
+      "bytes": 52588,
+      "sha256": "83093ddcab1e2a39abae5a53174ab1e835f501a92394ca09cc328682454186e3"
+    },
+    {
+      "id": "static_identity",
+      "path": "../nevergone-synthetic/static-identity.json",
+      "bytes": 314,
+      "sha256": "3cc89c41b5f5a55f2143ad74c1c03ae453878b5d8c68d2f6b80161227b03a96e"
+    },
+    {
+      "id": "capture_manifest",
+      "path": "capture-manifest.json",
+      "bytes": 450,
+      "sha256": "8025319b570d3ec9d09e0e25f9ea31f7aa15b2833ec74adf4da65ad02d9d4e66"
+    },
+    {
+      "id": "observations",
+      "path": "observations.jsonl",
+      "bytes": 17150,
+      "sha256": "134c9896542eecc833fbf77281dc036501bca763431b8ddefac6234e5d08823f"
+    },
+    {
+      "id": "expected_correlation",
+      "path": "correlation.json",
+      "bytes": 28456,
+      "sha256": "2aa09d108ee970f0ae4c4eb04d624d032e3c6b1c971f7036bdc04225921c2f53"
+    },
+    {
+      "id": "installed_artifact_identity",
+      "path": "../nevergone-device-artifact-20261019/artifact-identity.json",
+      "bytes": 2409,
+      "sha256": "62ea5be9ff21c2adbee97e06a7c6f1c7d2488fd91a6b966bee014fe53863b7cc"
+    }
+  ]
+}

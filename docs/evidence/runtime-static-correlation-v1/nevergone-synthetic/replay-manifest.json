@@ -1,0 +1,48 @@
+{
+  "artifacts": [
+    {
+      "bytes": 52588,
+      "id": "semantic_graph",
+      "path": "../../semantic-program-graph-v3/nevergone-ccjoystick/semantic-program-graph.jsonl",
+      "sha256": "83093ddcab1e2a39abae5a53174ab1e835f501a92394ca09cc328682454186e3"
+    },
+    {
+      "bytes": 314,
+      "id": "static_identity",
+      "path": "static-identity.json",
+      "sha256": "3cc89c41b5f5a55f2143ad74c1c03ae453878b5d8c68d2f6b80161227b03a96e"
+    },
+    {
+      "bytes": 556,
+      "id": "capture_manifest",
+      "path": "capture-manifest.json",
+      "sha256": "ab86c8a323189d9f5250b4d26e6053be9f8aa97ea5d0fbd186c7a7cdb8cdcc08"
+    },
+    {
+      "bytes": 1118,
+      "id": "observations",
+      "path": "observations.jsonl",
+      "sha256": "8fc3bb42fd1ee4443edf6b39667f487d3082e1efd5047cbe8c8188b6c7bdce73"
+    },
+    {
+      "bytes": 3492,
+      "id": "expected_correlation",
+      "path": "correlation.json",
+      "sha256": "c88058fcab630f7c238193b8a38645186840c68fbb13ac062514995586db717c"
+    },
+    {
+      "bytes": 4191,
+      "id": "benchmark_manifest",
+      "path": "benchmark-manifest.json",
+      "sha256": "14c0eebda49bbdeff5e4fc898379bf8cc110a6544fed9b487a7cae54c01ecc3b"
+    },
+    {
+      "bytes": 2409,
+      "id": "installed_artifact_identity",
+      "path": "../nevergone-device-artifact-20261019/artifact-identity.json",
+      "sha256": "62ea5be9ff21c2adbee97e06a7c6f1c7d2488fd91a6b966bee014fe53863b7cc"
+    }
+  ],
+  "format": "REVENGINSTR.RuntimeStaticCorrelationReplay/1",
+  "input_origin": "real installed Nevergone binary and static graph; synthetic runtime module base and addresses; no game runtime PC events"
+}

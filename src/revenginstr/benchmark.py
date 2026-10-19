@@ -42,6 +42,7 @@ TOOLS = {
     "function-effect-ir": ("revenginstr.effect_ir", "main"),
     "structured-summary": ("revenginstr.structured_summary", "main"),
     "semantic-program-graph": ("revenginstr.semantic_program_graph", "main"),
+    "runtime-static-correlation": ("revenginstr.runtime_static_correlation", "main"),
     "semantic-program-query": ("revenginstr.semantic_program_query", "main"),
     "semantic-program-path-query": ("revenginstr.semantic_program_path_query", "main"),
     "semantic-program-graph-evaluate": ("revenginstr.semantic_program_graph_evaluation", "main"),
