@@ -75,19 +75,17 @@ def _matches_node(row: dict[str, Any], filters: dict[str, Any]) -> bool:
             return False
     if filters["type_ids"] and row.get("type_id") not in filters["type_ids"]:
         return False
-    if filters.get("call_argument_tokens"):
+    call_argument_tokens = filters.get("call_argument_tokens", [])
+    call_argument_definition_states = filters.get("call_argument_definition_states", [])
+    if call_argument_tokens or call_argument_definition_states:
         arguments = row.get("call_arguments")
         if not isinstance(arguments, list) or not any(
             isinstance(argument, dict)
-            and argument.get("value_token") in filters["call_argument_tokens"]
-            for argument in arguments
-        ):
-            return False
-    if filters.get("call_argument_definition_states"):
-        arguments = row.get("call_arguments")
-        if not isinstance(arguments, list) or not any(
-            isinstance(argument, dict)
-            and argument.get("definition_resolution_state") in filters["call_argument_definition_states"]
+            and (not call_argument_tokens or argument.get("value_token") in call_argument_tokens)
+            and (
+                not call_argument_definition_states
+                or argument.get("definition_resolution_state") in call_argument_definition_states
+            )
             for argument in arguments
         ):
             return False

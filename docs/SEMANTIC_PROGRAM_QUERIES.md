@@ -73,6 +73,8 @@ revenginstr-semantic-program-query program-graphs.jsonl \
 
 The matched call nodes retain the full argument list and its evidence refs. A
 graph without definition annotations produces no matches for this selector.
+When combined with `--call-argument-token`, both filters must match the same
+argument.
 
 For `/3` and `/4` graphs, layout fields can be selected by type id and byte offset. The
 result includes the owning type node as related context:

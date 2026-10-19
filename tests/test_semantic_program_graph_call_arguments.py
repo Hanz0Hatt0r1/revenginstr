@@ -153,6 +153,18 @@ def test_v4_joins_call_arguments_to_exact_resolved_call_sites() -> None:
         for node in exact_definition_query["nodes"]
     )
 
+    cross_argument_query = query_graphs(
+        graphs,
+        source_sha256=graph_sha256,
+        view="exact-only",
+        kinds=["operation"],
+        relations=["calls"],
+        call_argument_tokens=["const:0x0:4"],
+        call_argument_definition_states=["exact_definition"],
+    )[0]
+    _validator("semantic-program-query-result-v1.schema.json").validate(cross_argument_query)
+    assert not cross_argument_query["nodes"]
+
     path_query = query_paths(
         graphs,
         source_sha256=graph_sha256,
