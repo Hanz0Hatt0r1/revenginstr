@@ -43,7 +43,26 @@ Field nodes retain access evidence, type candidates, and conflicts. These
 nodes remain candidate/review data, use null confidence, and stay out of the
 accepted-high-confidence view. Explicitly conflicted inputs remain contested.
 When both receiver observations and layouts are supplied, `/3` retains both
-inputs and joins them independently.
+inputs and joins them independently. Supplying call arguments as well emits
+`/4` and retains all three inputs.
+
+Supply an optional `DirectCallArgumentObservation/1` JSONL file to emit `/4`:
+
+```sh
+revenginstr-semantic-program-graph function-effects.jsonl \
+  --type-layout-hypotheses type-layout-hypotheses.jsonl \
+  --call-arguments direct-call-arguments.jsonl \
+  --output program-graphs.jsonl
+```
+
+The builder pins the observation-file hash and executable hash. When layouts
+are also supplied, their executable hash must agree. It attaches an
+argument count, ordered value tokens, widths, observation row index, and the
+source P-code reference to an operation only when caller, call address,
+P-code time, resolved callee, and the original P-code artifact/row all match.
+Unmatched or ambiguous observations fail closed. Argument tokens remain
+static observations; `def:` tokens are not resolved here, and constants do
+not establish resource names, prototypes, or runtime value flow.
 
 This first projection emits program, function, operation, and
 parameter-rooted field nodes. It emits `contains` edges for observed program,

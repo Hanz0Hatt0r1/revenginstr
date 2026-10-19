@@ -21,6 +21,7 @@ from revenginstr.runtime_static_correlation import (
 )
 from revenginstr.semantic_program_graph import (
     FORMAT_V3,
+    FORMAT_V4,
     _read_jsonl,
     validate_graph_references,
 )
@@ -111,8 +112,8 @@ def correlate_runtime_indirect_calls(
     identity = _read_static_identity(static_identity)
     capture = _read_capture(capture)
     observations = _validate_indirect_observations(observations, capture)
-    if graph.get("format") != FORMAT_V3:
-        raise ValueError("runtime indirect-call correlation requires SemanticProgramGraph/3")
+    if graph.get("format") not in {FORMAT_V3, FORMAT_V4}:
+        raise ValueError("runtime indirect-call correlation requires SemanticProgramGraph/3 or /4")
     validate_graph_references(graph)
     if identity["semantic_graph_sha256"] != graph_sha256:
         raise ValueError("static identity does not pin this Semantic Program Graph")

@@ -1265,7 +1265,7 @@ core. Runtime capture, identity correlation, and evaluation remain open.
 Join runtime events to static function, instruction, object, field and callgraph identities using exact program/build hashes and normalized addresses. ASLR mapping between ELF and analyzer image bases, sampling gaps and unmatched events are explicit metadata rather than guessed joins.
 
 **Address-only correlation v1 implemented:** a caller-pinned
-`RuntimeStaticIdentity/1` binds the exact SemanticProgramGraph/3 bytes and
+`RuntimeStaticIdentity/1` binds the exact SemanticProgramGraph/3 or /4 bytes and
 program SHA-256. `RuntimeCaptureManifest/1` repeats the exact build identity,
 pins the static identity, records the runtime module base and sampling gaps;
 the identity pins the static analyzer image base, so the address delta is
@@ -1295,7 +1295,8 @@ field, call-edge, and sampled-value joins remain open. See the
 machine address, and observed target entry. The
 `revenginstr-runtime-indirect-call-correlate` command maps each address through
 the same pinned module delta, then independently joins the caller function,
-exact `CALLIND` operation, and target function in `SemanticProgramGraph/3`.
+exact `CALLIND` operation, and target function in `SemanticProgramGraph/3` or
+`/4`.
 Unmatched targets, ambiguous graph identities, mapping failures, sampling gaps,
 and input hashes remain explicit. This provides a project-neutral way to bind
 consumer-collected runtime dispatch events; no NFS Shift runtime capture has
@@ -1537,6 +1538,21 @@ The three NFS field edges remain review-only because their structural evidence
 is not calibrated. These bounded call-only results meet the precision gate for
 those relations, but accepted derived relations and reconstruction/query of
 two broader semantic subsystems remain open; M10.5 is not complete.
+
+`SemanticProgramGraph/4` now optionally joins hash-pinned
+`DirectCallArgumentObservation/1` rows to one exact resolved `CALL`, requiring
+caller, address, P-code time, callee, and the underlying P-code artifact and
+record to agree. The Nevergone replay attaches 36 call-site observations
+across `GameLevels::LoadGameLevels` and
+`CCFileUtilsAndroid::getFileData`, preserving 70 ordered value tokens (10
+constants) and complete row provenance; its 90-node, 128-edge graph rebuilds
+deterministically. These are P-code operand observations: `def:` tokens remain
+unresolved and no argument meaning, prototype, resource identity, or runtime
+value flow is inferred. Generic queries, bounded path queries, and runtime
+address correlators accept `/4`; see the [call-argument graph replay](evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/README.md).
+This extends graph access to static call arguments but does not close M10.5,
+whose broad subsystem reconstruction and accepted derived-relation evaluation
+remain open.
 
 ---
 

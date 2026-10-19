@@ -12,6 +12,7 @@ from revenginstr.semantic_program_graph import (
     FORMAT_V1,
     FORMAT_V2,
     FORMAT_V3,
+    FORMAT_V4,
     _read_jsonl,
     validate_graph_references,
 )
@@ -338,7 +339,7 @@ def query_graphs(
     results = []
     seen_graph_ids: set[str] = set()
     for graph in graphs:
-        if graph.get("format") not in {FORMAT_V1, FORMAT_V2, FORMAT_V3}:
+        if graph.get("format") not in {FORMAT_V1, FORMAT_V2, FORMAT_V3, FORMAT_V4}:
             raise ValueError(f"unsupported graph format: {graph.get('format')!r}")
         graph_id = graph["graph_id"]
         if graph_id in seen_graph_ids:

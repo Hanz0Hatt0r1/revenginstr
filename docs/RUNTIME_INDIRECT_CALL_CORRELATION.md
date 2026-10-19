@@ -2,7 +2,7 @@
 
 `revenginstr-runtime-indirect-call-correlate` joins a bounded runtime event to
 the exact caller function, `CALLIND` operation address, and executed target
-function in one hash-pinned `SemanticProgramGraph/3`. It takes a
+function in one hash-pinned `SemanticProgramGraph/3` or `/4`. It takes a
 `RuntimeStaticIdentity/1`, the capture manifest already used by runtime address
 correlation, and `RuntimeIndirectCallObservation/1` rows:
 

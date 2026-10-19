@@ -10,7 +10,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from revenginstr.semantic_program_graph import FORMAT_V3, _read_jsonl, validate_graph_references
+from revenginstr.semantic_program_graph import FORMAT_V3, FORMAT_V4, _read_jsonl, validate_graph_references
 
 STATIC_IDENTITY_FORMAT = "REVENGINSTR.RuntimeStaticIdentity/1"
 CAPTURE_FORMAT = "REVENGINSTR.RuntimeCaptureManifest/1"
@@ -196,8 +196,8 @@ def correlate_runtime_addresses(
     _digest(observations_sha256, "runtime observations SHA-256")
     identity = _read_static_identity(static_identity)
     capture = _read_capture(capture)
-    if graph.get("format") != FORMAT_V3:
-        raise ValueError("runtime correlation requires SemanticProgramGraph/3")
+    if graph.get("format") not in {FORMAT_V3, FORMAT_V4}:
+        raise ValueError("runtime correlation requires SemanticProgramGraph/3 or /4")
     validate_graph_references(graph)
     if identity["semantic_graph_sha256"] != graph_sha256:
         raise ValueError("static identity does not pin this Semantic Program Graph")

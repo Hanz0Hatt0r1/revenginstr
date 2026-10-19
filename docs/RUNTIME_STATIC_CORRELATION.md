@@ -1,6 +1,6 @@
 # Runtime to static address correlation
 
-`revenginstr-runtime-static-correlate` accepts one `SemanticProgramGraph/3`, a
+`revenginstr-runtime-static-correlate` accepts one `SemanticProgramGraph/3` or `/4`, a
 caller-pinned `RuntimeStaticIdentity/1`, one `RuntimeCaptureManifest/1`, and
 bounded `RuntimeAddressObservation/1` JSONL rows. The identity records the
 static analyzer image base; the capture records the runtime module address

@@ -1,7 +1,7 @@
 # Semantic program queries
 
 `revenginstr-semantic-program-query` applies deterministic selectors to a
-`SemanticProgramGraph/1`, `/2`, or `/3` JSONL file and emits one
+`SemanticProgramGraph/1`, `/2`, `/3`, or `/4` JSONL file and emits one
 `SemanticProgramQueryResult/1` record per program graph. Results pin both the
 source graph id and the complete input-file SHA-256; matched nodes and edges
 keep their original evidence support.
@@ -27,7 +27,23 @@ revenginstr-semantic-program-query program-graphs.jsonl \
   --output contested-exact-calls.jsonl
 ```
 
-For `/3` graphs, layout fields can be selected by type id and byte offset. The
+In `/4`, exact-joined direct-call argument tokens are fields on their source
+operation nodes. Select those call sites with the usual function and relation
+filters:
+
+```sh
+revenginstr-semantic-program-query program-graphs.jsonl \
+  --view accepted-high-confidence \
+  --kind operation \
+  --function-entry 002d2f1c \
+  --relation calls \
+  --output calls-with-arguments.jsonl
+```
+
+The returned nodes keep the ordered P-code value tokens, widths, and row
+provenance. This does not resolve `def:` tokens or assign argument semantics.
+
+For `/3` and `/4` graphs, layout fields can be selected by type id and byte offset. The
 result includes the owning type node as related context:
 
 ```sh

@@ -14,9 +14,11 @@ from revenginstr.structured_summary import validate_function_effect_ir
 FORMAT_V1 = "REVENGINSTR.SemanticProgramGraph/1"
 FORMAT_V2 = "REVENGINSTR.SemanticProgramGraph/2"
 FORMAT_V3 = "REVENGINSTR.SemanticProgramGraph/3"
+FORMAT_V4 = "REVENGINSTR.SemanticProgramGraph/4"
 FORMAT = FORMAT_V1
 RECEIVER_TYPE_FORMAT = "REVENGINSTR.GhidraIndirectReceiverType/1"
 TYPE_LAYOUT_FORMAT = "REVENGINSTR.TypeLayoutHypothesis/1"
+CALL_ARGUMENT_FORMAT = "REVENGINSTR.DirectCallArgumentObservation/1"
 RECEIVER_COLUMNS = (
     "format", "source_id", "function_entry", "call_index", "call_address",
     "call_time", "arg_count", "receiver_present", "receiver_storage_kind",
@@ -49,7 +51,7 @@ def _valid_edge_endpoints(graph_format: str) -> dict[str, set[tuple[str, str]]]:
     if graph_format == FORMAT_V1:
         endpoints["contains"].discard(("function", "receiver_observation"))
         endpoints.pop("observes_receiver")
-    if graph_format != FORMAT_V3:
+    if graph_format not in {FORMAT_V3, FORMAT_V4}:
         endpoints.pop("has_field")
         endpoints["contains"].discard(("program", "type"))
         endpoints["contains"].discard(("type", "layout_field"))
@@ -155,6 +157,74 @@ def _validate_type_layout_rows(
     return by_program
 
 
+def _validate_call_argument_rows(
+    rows: list[dict[str, Any]], *, known_programs: set[str],
+) -> tuple[dict[str, list[dict[str, Any]]], dict[str, str]]:
+    if not rows:
+        raise ValueError("DirectCallArgumentObservation input is empty")
+    by_program: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    program_hashes: dict[str, str] = {}
+    seen_sites: set[tuple[str, str, str, int]] = set()
+    expected_fields = {
+        "format", "program_id", "program_sha256", "caller_entry", "callee_entry",
+        "call_address", "call_time", "argument_count", "arguments", "evidence_ref",
+    }
+    for record_index, row in enumerate(rows, 1):
+        where = f"call-argument record {record_index}"
+        if not isinstance(row, dict) or set(row) != expected_fields:
+            raise ValueError(f"{where}: malformed DirectCallArgumentObservation/1 fields")
+        if row.get("format") != CALL_ARGUMENT_FORMAT:
+            raise ValueError(f"{where}: unsupported format")
+        program_id = row.get("program_id")
+        if not isinstance(program_id, str) or program_id not in known_programs:
+            raise ValueError(f"{where}: program_id is absent from Function Effect IR")
+        program_sha256 = row.get("program_sha256")
+        if not isinstance(program_sha256, str) or not _is_sha256(program_sha256):
+            raise ValueError(f"{where}: invalid program_sha256")
+        if program_id in program_hashes and program_hashes[program_id] != program_sha256:
+            raise ValueError(f"{where}: program_sha256 conflicts within program")
+        program_hashes[program_id] = program_sha256
+        for name in ("caller_entry", "callee_entry", "call_address"):
+            if not isinstance(row.get(name), str) or not row[name]:
+                raise ValueError(f"{where}: {name} must be a non-empty string")
+        call_time = row.get("call_time")
+        argument_count = row.get("argument_count")
+        if type(call_time) is not int or call_time < 0:
+            raise ValueError(f"{where}: call_time must be a non-negative integer")
+        if type(argument_count) is not int or argument_count < 0:
+            raise ValueError(f"{where}: argument_count must be a non-negative integer")
+        arguments = row.get("arguments")
+        if not isinstance(arguments, list) or len(arguments) != argument_count:
+            raise ValueError(f"{where}: argument_count disagrees with arguments")
+        for argument_index, argument in enumerate(arguments):
+            if not isinstance(argument, dict) or set(argument) != {"index", "value_token", "width_bytes"}:
+                raise ValueError(f"{where}: malformed argument {argument_index}")
+            if type(argument.get("index")) is not int or argument["index"] != argument_index:
+                raise ValueError(f"{where}: argument indices must be contiguous from zero")
+            if not isinstance(argument.get("value_token"), str) or not argument["value_token"]:
+                raise ValueError(f"{where}: argument value_token must be non-empty")
+            if type(argument.get("width_bytes")) is not int or argument["width_bytes"] < 1:
+                raise ValueError(f"{where}: argument width_bytes must be positive")
+        evidence_ref = row.get("evidence_ref")
+        if not isinstance(evidence_ref, dict) or set(evidence_ref) != {
+            "artifact_sha256", "record_index", "source_format",
+        }:
+            raise ValueError(f"{where}: malformed evidence_ref")
+        if (
+            not _is_sha256(evidence_ref.get("artifact_sha256", ""))
+            or type(evidence_ref.get("record_index")) is not int
+            or evidence_ref["record_index"] < 1
+            or evidence_ref.get("source_format") != "REVENGINSTR.GhidraFunctionPcodeFlow/1"
+        ):
+            raise ValueError(f"{where}: invalid P-code evidence_ref")
+        site = (program_id, row["caller_entry"], row["call_address"], call_time)
+        if site in seen_sites:
+            raise ValueError(f"{where}: duplicate call site {site[1:]}")
+        seen_sites.add(site)
+        by_program[program_id].append({**row, "_record_index": record_index})
+    return by_program, program_hashes
+
+
 def _support_key(support: dict[str, Any]) -> tuple[Any, ...]:
     if "effect_id" in support:
         return ("effect", support["effect_id"])
@@ -200,7 +270,7 @@ def _add_edge(edges: dict[str, dict[str, Any]], edge: dict[str, Any]) -> None:
 
 def validate_graph_references(graph: dict[str, Any]) -> None:
     graph_format = graph.get("format")
-    if graph_format not in {FORMAT_V1, FORMAT_V2, FORMAT_V3}:
+    if graph_format not in {FORMAT_V1, FORMAT_V2, FORMAT_V3, FORMAT_V4}:
         raise ValueError(f"unsupported semantic program graph format: {graph_format!r}")
     node_ids = [node["id"] for node in graph["nodes"]]
     edge_ids = [edge["id"] for edge in graph["edges"]]
@@ -237,7 +307,7 @@ def validate_graph_references(graph: dict[str, Any]) -> None:
             if observation["id"] in observations_with_edges:
                 raise ValueError("receiver observation has multiple CALLIND joins")
             observations_with_edges.add(observation["id"])
-    if graph_format in {FORMAT_V2, FORMAT_V3}:
+    if graph_format in {FORMAT_V2, FORMAT_V3, FORMAT_V4}:
         for node in graph["nodes"]:
             if node["kind"] != "receiver_observation":
                 continue
@@ -245,7 +315,11 @@ def validate_graph_references(graph: dict[str, Any]) -> None:
             expects_edge = node["join_state"] in {"matched", "matched_contested"}
             if has_edge != expects_edge:
                 raise ValueError("receiver observation join_state disagrees with graph edges")
-    if graph_format == FORMAT_V3:
+    if graph_format in {FORMAT_V3, FORMAT_V4} and (
+        graph_format == FORMAT_V3
+        or "source_type_layout_hypotheses_format" in graph
+        or "source_type_layout_hypotheses_sha256" in graph
+    ):
         layout_sha256 = graph.get("source_type_layout_hypotheses_sha256")
         if (
             graph.get("source_type_layout_hypotheses_format") != TYPE_LAYOUT_FORMAT
@@ -276,6 +350,76 @@ def validate_graph_references(graph: dict[str, Any]) -> None:
                 for support in node["support"]
             ):
                 raise ValueError("layout graph node does not reference its pinned hypothesis row")
+    if graph_format == FORMAT_V4:
+        if (
+            graph.get("source_call_arguments_format") != CALL_ARGUMENT_FORMAT
+            or not _is_sha256(graph.get("source_call_arguments_sha256", ""))
+            or not _is_sha256(graph.get("source_call_arguments_program_sha256", ""))
+        ):
+            raise ValueError("SemanticProgramGraph/4 requires pinned call-argument input")
+        annotation_fields = {
+            "call_argument_count", "call_arguments", "call_argument_callee_entry",
+            "call_argument_observation_record_index", "call_argument_source_evidence_ref",
+        }
+        annotated_nodes = 0
+        for node in graph["nodes"]:
+            present_fields = annotation_fields & set(node)
+            if not present_fields:
+                continue
+            if present_fields != annotation_fields:
+                raise ValueError("call-argument annotation must include all provenance and value fields")
+            annotated_nodes += 1
+            arguments = node.get("call_arguments")
+            count = node.get("call_argument_count")
+            record_index = node.get("call_argument_observation_record_index")
+            if (
+                node.get("kind") != "operation"
+                or node.get("opcode") != "CALL"
+                or node.get("call_target_state") != "resolved"
+                or type(count) is not int
+                or not isinstance(arguments, list)
+                or count != len(arguments)
+                or type(record_index) is not int
+                or record_index < 1
+            ):
+                raise ValueError("call arguments must attach to one resolved CALL operation")
+            if node.get("target_entries") != [node.get("call_argument_callee_entry")]:
+                raise ValueError("call-argument callee does not match resolved CALL target")
+            for index, argument in enumerate(arguments):
+                if (
+                    not isinstance(argument, dict)
+                    or set(argument) != {"index", "value_token", "width_bytes"}
+                    or type(argument.get("index")) is not int
+                    or argument["index"] != index
+                    or not isinstance(argument.get("value_token"), str)
+                    or type(argument.get("width_bytes")) is not int
+                    or argument["width_bytes"] < 1
+                ):
+                    raise ValueError("call-argument list is malformed")
+            source_ref = node.get("call_argument_source_evidence_ref")
+            if not isinstance(source_ref, dict) or set(source_ref) != {
+                "artifact_sha256", "record_index", "source_format",
+            }:
+                raise ValueError("call arguments lack their source P-code evidence_ref")
+            if (
+                source_ref.get("source_format") != "REVENGINSTR.GhidraFunctionPcodeFlow/1"
+                or not _is_sha256(source_ref.get("artifact_sha256", ""))
+                or type(source_ref.get("record_index")) is not int
+                or source_ref["record_index"] < 1
+                or not any(
+                    support.get("provenance", {}).get("source_format") == source_ref["source_format"]
+                    and support.get("provenance", {}).get("artifact_sha256") == source_ref["artifact_sha256"]
+                    and support.get("provenance", {}).get("record_index") == source_ref["record_index"]
+                    for support in node["support"]
+                )
+            ):
+                raise ValueError("call-argument P-code reference must match operation support")
+        if annotated_nodes == 0:
+            raise ValueError("SemanticProgramGraph/4 requires at least one attached call-argument observation")
+    elif any(
+        "call_argument_observation_record_index" in node for node in graph["nodes"]
+    ):
+        raise ValueError("call-argument observations require SemanticProgramGraph/4")
 
 
 def _read_receiver_types(path: Path) -> tuple[list[dict[str, Any]], str]:
@@ -337,8 +481,10 @@ def build_semantic_program_graphs(
     receiver_sha256: str | None = None,
     type_layout_rows: list[dict[str, Any]] | None = None,
     type_layout_sha256: str | None = None,
+    call_argument_rows: list[dict[str, Any]] | None = None,
+    call_argument_sha256: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Project effects, receiver observations, and optional object layouts."""
+    """Project effects, optional receiver/layout evidence, and call arguments."""
     if not records:
         raise ValueError("Function Effect IR input is empty")
     if any(not isinstance(record, dict) for record in records):
@@ -368,9 +514,24 @@ def build_semantic_program_graphs(
             if program_id not in known_programs:
                 raise ValueError(f"receiver row belongs to unknown program: {program_id!r}")
             receiver_by_program[program_id].append(row)
+    call_arguments_by_program: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    call_argument_program_hashes: dict[str, str] = {}
+    if call_argument_rows is not None:
+        if call_argument_sha256 is None or not _is_sha256(call_argument_sha256):
+            raise ValueError("call arguments require their source SHA-256")
+        call_arguments_by_program, call_argument_program_hashes = _validate_call_argument_rows(
+            call_argument_rows, known_programs=set(by_program)
+        )
+        for program_id, layouts in layout_by_program.items():
+            if program_id in call_argument_program_hashes and any(
+                row["program_sha256"] != call_argument_program_hashes[program_id]
+                for row in layouts
+            ):
+                raise ValueError("call-argument program_sha256 does not match type-layout program_sha256")
 
     graphs: list[dict[str, Any]] = []
     for program_id, functions in sorted(by_program.items()):
+        program_call_arguments = call_arguments_by_program.get(program_id, [])
         nodes: dict[str, dict[str, Any]] = {}
         edges: dict[str, dict[str, Any]] = {}
         all_support: list[dict[str, Any]] = []
@@ -517,6 +678,36 @@ def build_semantic_program_graphs(
                         "confidence": None,
                         "conflict_state": conflict_state,
                     })
+
+        for row in program_call_arguments:
+            same_site = operations_by_site.get((
+                row["caller_entry"], row["call_address"], row["call_time"],
+            ), [])
+            candidates = [
+                operation for operation in same_site
+                if operation.get("opcode") == "CALL"
+                and operation.get("call_target_state") == "resolved"
+                and operation.get("target_entries") == [row["callee_entry"]]
+            ]
+            if len(candidates) != 1:
+                raise ValueError(
+                    "call-argument observation does not match one exact resolved CALL site: "
+                    f"{row['caller_entry']}:{row['call_address']}#{row['call_time']}"
+                )
+            operation = candidates[0]
+            source_ref = row["evidence_ref"]
+            if not any(
+                support.get("provenance") == source_ref
+                for support in operation["support"]
+            ):
+                raise ValueError(
+                    "call-argument evidence_ref does not match the CALL operation P-code source"
+                )
+            operation["call_argument_count"] = row["argument_count"]
+            operation["call_arguments"] = row["arguments"]
+            operation["call_argument_callee_entry"] = row["callee_entry"]
+            operation["call_argument_observation_record_index"] = row["_record_index"]
+            operation["call_argument_source_evidence_ref"] = source_ref
 
         for row in receiver_by_program.get(program_id, []):
             entry = row["function_entry"]
@@ -700,7 +891,8 @@ def build_semantic_program_graphs(
 
         graph = {
             "format": (
-                FORMAT_V3 if type_layout_rows is not None
+                FORMAT_V4 if program_call_arguments
+                else FORMAT_V3 if type_layout_rows is not None
                 else FORMAT_V2 if receiver_rows is not None
                 else FORMAT_V1
             ),
@@ -717,13 +909,19 @@ def build_semantic_program_graphs(
         if type_layout_rows is not None:
             graph["source_type_layout_hypotheses_format"] = TYPE_LAYOUT_FORMAT
             graph["source_type_layout_hypotheses_sha256"] = type_layout_sha256
+        if program_call_arguments:
+            graph["source_call_arguments_format"] = CALL_ARGUMENT_FORMAT
+            graph["source_call_arguments_sha256"] = call_argument_sha256
+            graph["source_call_arguments_program_sha256"] = call_argument_program_hashes[program_id]
         graph = {
             key: graph[key]
             for key in (
                 "format", "graph_id", "program_id", "source_effect_ir_format",
                 "source_effect_ir_sha256", "source_receiver_types_format",
                 "source_receiver_types_sha256", "source_type_layout_hypotheses_format",
-                "source_type_layout_hypotheses_sha256", "nodes", "edges",
+                "source_type_layout_hypotheses_sha256", "source_call_arguments_format",
+                "source_call_arguments_sha256", "source_call_arguments_program_sha256",
+                "nodes", "edges",
             )
             if key in graph
         }
@@ -779,6 +977,10 @@ def main(argv: list[str] | None = None) -> int:
         "--type-layout-hypotheses", type=Path,
         help="optional TypeLayoutHypothesis/1 JSONL; adds candidate type and field nodes",
     )
+    parser.add_argument(
+        "--call-arguments", type=Path,
+        help="optional DirectCallArgumentObservation/1 JSONL; joins exact resolved CALL sites",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     records, source_sha256 = _read_jsonl(args.function_effect_ir)
@@ -790,6 +992,10 @@ def main(argv: list[str] | None = None) -> int:
     type_layout_sha256 = None
     if args.type_layout_hypotheses is not None:
         type_layout_rows, type_layout_sha256 = _read_jsonl(args.type_layout_hypotheses)
+    call_argument_rows = None
+    call_argument_sha256 = None
+    if args.call_arguments is not None:
+        call_argument_rows, call_argument_sha256 = _read_jsonl(args.call_arguments)
     graphs = build_semantic_program_graphs(
         records,
         source_sha256=source_sha256,
@@ -797,6 +1003,8 @@ def main(argv: list[str] | None = None) -> int:
         receiver_sha256=receiver_sha256,
         type_layout_rows=type_layout_rows,
         type_layout_sha256=type_layout_sha256,
+        call_argument_rows=call_argument_rows,
+        call_argument_sha256=call_argument_sha256,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", encoding="utf-8") as handle:
@@ -819,6 +1027,12 @@ def main(argv: list[str] | None = None) -> int:
         ))
         print("layout fields:", sum(
             node["kind"] == "layout_field" for graph in graphs for node in graph["nodes"]
+        ))
+    if call_argument_sha256 is not None:
+        print("source call-argument observations SHA-256:", call_argument_sha256)
+        print("call sites with argument observations:", sum(
+            "call_argument_observation_record_index" in node
+            for graph in graphs for node in graph["nodes"]
         ))
     print("output:", args.output)
     return 0

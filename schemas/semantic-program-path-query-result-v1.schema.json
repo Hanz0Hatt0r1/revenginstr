@@ -15,7 +15,7 @@
     "format": {"const": "REVENGINSTR.SemanticProgramPathQueryResult/1"},
     "query_id": {"type": "string", "pattern": "^path-query:[0-9a-f]{64}$"},
     "source_graph_id": {"type": "string", "pattern": "^program:[0-9a-f]{64}$"},
-    "source_graph_format": {"enum": ["REVENGINSTR.SemanticProgramGraph/1", "REVENGINSTR.SemanticProgramGraph/2", "REVENGINSTR.SemanticProgramGraph/3"]},
+    "source_graph_format": {"enum": ["REVENGINSTR.SemanticProgramGraph/1", "REVENGINSTR.SemanticProgramGraph/2", "REVENGINSTR.SemanticProgramGraph/3", "REVENGINSTR.SemanticProgramGraph/4"]},
     "program_id": {"type": "string", "minLength": 1},
     "source_graph_sha256": {"$ref": "#/$defs/sha256"},
     "cfg_source_sha256": {"$ref": "#/$defs/sha256"},

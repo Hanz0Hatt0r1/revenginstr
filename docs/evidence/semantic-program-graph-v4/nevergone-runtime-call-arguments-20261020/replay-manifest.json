@@ -1,0 +1,74 @@
+{
+  "artifacts": [
+    {
+      "bytes": 29693,
+      "id": "function_effect_ir",
+      "path": "../../semantic-program-graph-v3/nevergone-runtime-correlation-20261020/function-effects.jsonl",
+      "sha256": "9ce34ab4ada5f43da49912ef75043a28692ab95cf2bfecc1edb3d44d8c10d8d7"
+    },
+    {
+      "bytes": 21116,
+      "id": "type_layout_hypotheses",
+      "path": "../../semantic-program-graph-v3/nevergone-ccjoystick/type-layout-hypothesis.jsonl",
+      "sha256": "db9c2d161456ac73a931e0e1d08e8dc2fd71bbc3d7c3559b94e1b5b543f0e35b"
+    },
+    {
+      "bytes": 4007,
+      "id": "LoadGameLevels_pcode",
+      "path": "../../runtime-static-correlation-v1/nevergone-device-runtime-20261019/LoadGameLevels.pcode-flow.tsv",
+      "sha256": "930d7acd70c8f92df3d1b191efb04ce9ace78b22a701ea4d663eec68b0c5e592"
+    },
+    {
+      "bytes": 53542,
+      "id": "getFileData_pcode",
+      "path": "../../runtime-static-correlation-v1/nevergone-device-runtime-20261019/CCFileUtilsAndroid-getFileData.pcode-flow.tsv",
+      "sha256": "a15289511ed196ce41591c196d3c76c1f8cdb48f1c6dec7285aef3b3f0218dfd"
+    },
+    {
+      "bytes": 23485,
+      "id": "call_arguments",
+      "path": "call-arguments.jsonl",
+      "sha256": "3ea5e756a606d8ff0b4d9e10eda79df51326013a4f67e84a989ef0b3316d1546"
+    },
+    {
+      "bytes": 228991,
+      "id": "semantic_graph",
+      "path": "semantic-program-graph.jsonl",
+      "sha256": "de0abaa666307d38c4ceb11371b62b936e9a307bcdd1d59ae3078ba7ae51ef8f"
+    },
+    {
+      "bytes": 20489,
+      "id": "graph_schema_v4",
+      "path": "../../../../schemas/semantic-program-graph-v4.schema.json",
+      "sha256": "30b86890d2f00067f7f9c1d0ac4f68aed491df1914a78b9e8fd4deefd116dff3"
+    },
+    {
+      "bytes": 2069,
+      "id": "call_argument_schema",
+      "path": "../../../../schemas/direct-call-argument-observation-v1.schema.json",
+      "sha256": "b421ac10ba2c172bbda2e05abb6f6481e0ee9ef75af99a3588b71f85a06303a0"
+    },
+    {
+      "bytes": 3968,
+      "id": "query_result_schema",
+      "path": "../../../../schemas/semantic-program-query-result-v1.schema.json",
+      "sha256": "154e34d0d4b7874f35a20f76d210597fb084bf6119257e8c37f469b90ae22104"
+    },
+    {
+      "id": "path_query_result_schema",
+      "path": "../../../../schemas/semantic-program-path-query-result-v1.schema.json",
+      "bytes": 7305,
+      "sha256": "080bcae87edd4861555cf8547d2cb0944a625a6a784df3885cffd6a855bfa680"
+    }
+  ],
+  "format": "REVENGINSTR.SemanticProgramGraphCallArgumentReplay/1",
+  "program_id": "nevergone-1.0.9-armv7-libcocos2dcpp",
+  "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
+  "summary": {
+    "arguments": 70,
+    "call_argument_observations": 36,
+    "constant_arguments": 10,
+    "graph_edges": 128,
+    "graph_nodes": 90
+  }
+}
