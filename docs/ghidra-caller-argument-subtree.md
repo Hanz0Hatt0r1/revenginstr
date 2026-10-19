@@ -50,6 +50,21 @@ direct root merely because Ghidra assigned it the same `HighVariable` as a
 formal. It follows `REVENGINSTR.GhidraCallerArgumentParameterRoot/1` and keeps
 the plan id, callee formal, caller/call-site, and caller formal indices.
 
+For prototype inference, request the program-pinned v3 form:
+
+```sh
+GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_caller_argument_subtree.sh \
+  <project-dir> <project-name> <program-name> <plan.tsv> <output.tsv> \
+  --prototype-parameter-root-output <prototype-roots.tsv>
+```
+
+`GhidraCallerArgumentParameterRoot/3` carries the Ghidra program id and
+executable SHA-256 in every row. `revenginstr-prototype-infer` requires those
+values to match its decompiler and call observations before using a root to
+propagate a formal parameter shape. This sidecar records exact untransformed
+formal arguments only; the v1/v2 memory-analysis sidecars retain their existing
+contracts.
+
 An optional `--parameter-offset-root-output <offset-roots.tsv>` sidecar also
 records exact constant pointer offsets from a caller formal. Its
 `REVENGINSTR.GhidraCallerArgumentParameterRoot/2` rows include a signed byte

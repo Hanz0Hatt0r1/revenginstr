@@ -71,14 +71,20 @@ GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_decompiler_parameters.sh \
 ```
 
 `revenginstr-prototype-infer decompiler-parameters.jsonl call-observations.jsonl
---output hypotheses.jsonl` produces `FunctionPrototypeHypothesis/1` rows. It
-uses High-P-code parameter types as provisional shapes and direct-call arity
-only as a compatibility constraint. It does not infer pointer/scalar types
-from argument widths, does not treat the selected call set as complete, and
-marks every hypothesis `review` unless observed arity conflicts force
-`conflicted`. The current confidence score is a bounded triage heuristic, not
-a calibrated probability; independent audited gold and whole-program coverage
-are still needed before high-confidence use.
+--caller-parameter-roots caller-roots.tsv --output hypotheses.jsonl` produces
+`FunctionPrototypeHypothesis/1` rows. High-P-code parameter types provide
+provisional shapes; Ghidra `Undefined` types stay `unknown`. An optional
+program-pinned `GhidraCallerArgumentParameterRoot/3` sidecar can propagate a
+callee formal's pointer/scalar/aggregate shape to a caller formal only when
+Ghidra proves the call argument is that exact formal with no defining P-code.
+Propagation reaches a fixed point across direct calls, and contradictory
+constraints remain `unknown` with `evidence_conflict`. Per-parameter evidence
+links the decompiler record, exact call observation, and program-pinned root
+record. Argument widths and constant-offset/cast roots do not supply types.
+The selected call set is not treated as complete, and hypotheses stay `review`
+unless arity or type conflicts force `conflicted`. Confidence remains a bounded
+triage heuristic, not a calibrated probability; independent audited gold is
+still needed before high-confidence use.
 Because hypothesis schema `/1` has no variadic marker, variadic observations
 retain their fixed parameter prefix but emit `parameter_count: null` instead
 of presenting the prefix as the total argument count.
@@ -87,6 +93,13 @@ of presenting the prefix as the total argument count.
 program index: it checks P-code acquisition states and operation counts,
 decompiler-parameter status for each indexed function, and exact direct and
 indirect call-site counts against supplied flow artifacts.
+
+`tests/fixtures/ghidra-untyped-prototype/` is a real Ghidra 12.1.2 replay of a
+stripped x86 object with no DWARF. It demonstrates default Ghidra analysis
+recovering a pointer formal in one function and an exact caller-parameter root
+carrying that pointer shape into a second function whose original type is
+`undefined4`. The fixture includes a full population coverage report; it is a
+pipeline regression, not independently adjudicated gold.
 
 ```sh
 revenginstr-prototype-coverage functions.tsv.gz acquisition.jsonl \

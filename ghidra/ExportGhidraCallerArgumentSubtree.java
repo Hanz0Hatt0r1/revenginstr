@@ -27,6 +27,7 @@ import java.util.*;
 public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
     private static final String FORMAT = "REVENGINSTR.GhidraCallerArgumentSubtree/1";
     private static final String PARAMETER_ROOT_FORMAT = "REVENGINSTR.GhidraCallerArgumentParameterRoot/1";
+    private static final String PROTOTYPE_PARAMETER_ROOT_FORMAT = "REVENGINSTR.GhidraCallerArgumentParameterRoot/3";
     private static final String PARAMETER_OFFSET_ROOT_FORMAT = "REVENGINSTR.GhidraCallerArgumentParameterRoot/2";
     private static final int MAX_DEPTH = 12;
     private static final int MAX_NODES = 96;
@@ -310,6 +311,12 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
         out.newLine();
     }
 
+    private void writePrototypeParameterRootHeader(BufferedWriter out) throws Exception {
+        out.write("format\tprogram_id\tprogram_sha256\tplan_id\tcallee_entry\tparameter_index\t" +
+            "caller_entry\tcaller_call_site\tcaller_parameter_index\targument_node_id\tstatus");
+        out.newLine();
+    }
+
     private void writeParameterOffsetRootHeader(BufferedWriter out) throws Exception {
         out.write("format\tplan_id\tcallee_entry\tparameter_index\tcaller_entry\tcaller_call_site\t" +
             "caller_parameter_index\tcaller_parameter_offset_bytes\targument_node_id\tstatus");
@@ -386,13 +393,15 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
 
     public void run() throws Exception {
         String[] args = getScriptArgs();
-        if (args.length < 2 || args.length > 8 || (args.length % 2) != 0) throw new IllegalArgumentException(
+        if (args.length < 2 || args.length > 10 || (args.length % 2) != 0) throw new IllegalArgumentException(
             "Usage: ExportGhidraCallerArgumentSubtree.java <plan.tsv> <output.tsv> " +
-            "[--parameter-root-output <roots.tsv>] [--parameter-offset-root-output <offset-roots.tsv>] " +
+            "[--parameter-root-output <roots.tsv>] [--prototype-parameter-root-output <prototype-roots.tsv>] " +
+            "[--parameter-offset-root-output <offset-roots.tsv>] " +
             "[--caller-entry <address>]");
         List<PlanRow> plan = readPlan(new File(args[0]));
         File output = new File(args[1]); File parent = output.getParentFile(); if (parent != null) parent.mkdirs();
         File parameterRootOutput = null;
+        File prototypeParameterRootOutput = null;
         File parameterOffsetRootOutput = null;
         String callerEntry = null;
         for (int index = 2; index < args.length; index += 2) {
@@ -401,6 +410,9 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
             }
             else if ("--parameter-root-output".equals(args[index]) && parameterRootOutput == null) {
                 parameterRootOutput = new File(args[index + 1]);
+            }
+            else if ("--prototype-parameter-root-output".equals(args[index]) && prototypeParameterRootOutput == null) {
+                prototypeParameterRootOutput = new File(args[index + 1]);
             }
             else if ("--parameter-offset-root-output".equals(args[index]) && parameterOffsetRootOutput == null) {
                 parameterOffsetRootOutput = new File(args[index + 1]);
@@ -413,9 +425,13 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
         if (selectedCaller != null && plan.stream().anyMatch(p -> !"-".equals(p.callerEntry))) {
             throw new IllegalArgumentException("--caller-entry cannot be combined with caller-scoped plan rows");
         }
+        String programSha = currentProgram.getExecutableSHA256();
+        if (prototypeParameterRootOutput != null &&
+                (programSha == null || !programSha.matches("[0-9a-f]{64}")))
+            throw new IllegalStateException("Program-pinned parameter roots require an executable SHA-256");
         Set<String> outputPaths = new HashSet<String>();
         outputPaths.add(output.getCanonicalPath());
-        for (File requested : Arrays.asList(parameterRootOutput, parameterOffsetRootOutput)) {
+        for (File requested : Arrays.asList(parameterRootOutput, prototypeParameterRootOutput, parameterOffsetRootOutput)) {
             if (requested == null) continue;
             if (!outputPaths.add(requested.getCanonicalPath()))
                 throw new IllegalArgumentException("caller argument outputs must use different files");
@@ -424,14 +440,18 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
         DecompInterface decompiler = new DecompInterface();
         if (!decompiler.openProgram(currentProgram)) throw new IllegalStateException("Could not open current program");
         int parameterRootRows = 0;
+        int prototypeParameterRootRows = 0;
         int parameterOffsetRootRows = 0;
         try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(output), StandardCharsets.UTF_8));
              BufferedWriter parameterRootOut = parameterRootOutput == null ? null : new BufferedWriter(
                  new OutputStreamWriter(new FileOutputStream(parameterRootOutput), StandardCharsets.UTF_8));
+             BufferedWriter prototypeParameterRootOut = prototypeParameterRootOutput == null ? null : new BufferedWriter(
+                 new OutputStreamWriter(new FileOutputStream(prototypeParameterRootOutput), StandardCharsets.UTF_8));
              BufferedWriter parameterOffsetRootOut = parameterOffsetRootOutput == null ? null : new BufferedWriter(
                  new OutputStreamWriter(new FileOutputStream(parameterOffsetRootOutput), StandardCharsets.UTF_8))) {
             writeHeader(out);
             if (parameterRootOut != null) writeParameterRootHeader(parameterRootOut);
+            if (prototypeParameterRootOut != null) writePrototypeParameterRootHeader(prototypeParameterRootOut);
             if (parameterOffsetRootOut != null) writeParameterOffsetRootHeader(parameterOffsetRootOut);
             for (PlanRow p : plan) {
                 if (monitor.isCancelled()) break;
@@ -470,6 +490,16 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
                             parameterRootOut.newLine();
                             parameterRootRows++;
                         }
+                        if (prototypeParameterRootOut != null && argumentNodeId >= 0 && callerParameterIndex >= 0) {
+                            prototypeParameterRootOut.write(String.join("\t", PROTOTYPE_PARAMETER_ROOT_FORMAT,
+                                cell(currentProgram.getName()), cell(programSha),
+                                cell(p.planId), cell(p.calleeEntry), Integer.toString(p.parameterIndex),
+                                cell(caller.getEntryPoint()), cell(op.getSeqnum().getTarget()),
+                                Integer.toString(callerParameterIndex), Integer.toString(argumentNodeId),
+                                "direct_parameter_root"));
+                            prototypeParameterRootOut.newLine();
+                            prototypeParameterRootRows++;
+                        }
                         if (parameterOffsetRootOut != null && argumentNodeId >= 0) {
                             ParameterRoot rootedArgument = decodeParameterRoot(
                                 high, argumentRoot, 0, new HashSet<Varnode>());
@@ -506,6 +536,11 @@ public class ExportGhidraCallerArgumentSubtree extends GhidraScript {
             println("CALLER_ARGUMENT_PARAMETER_ROOT_FORMAT=" + PARAMETER_ROOT_FORMAT);
             println("CALLER_ARGUMENT_PARAMETER_ROOT_ROWS=" + parameterRootRows);
             println("CALLER_ARGUMENT_PARAMETER_ROOT_OUTPUT=" + parameterRootOutput.getAbsolutePath());
+        }
+        if (prototypeParameterRootOutput != null) {
+            println("CALLER_ARGUMENT_PROTOTYPE_PARAMETER_ROOT_FORMAT=" + PROTOTYPE_PARAMETER_ROOT_FORMAT);
+            println("CALLER_ARGUMENT_PROTOTYPE_PARAMETER_ROOT_ROWS=" + prototypeParameterRootRows);
+            println("CALLER_ARGUMENT_PROTOTYPE_PARAMETER_ROOT_OUTPUT=" + prototypeParameterRootOutput.getAbsolutePath());
         }
         if (parameterOffsetRootOutput != null) {
             println("CALLER_ARGUMENT_PARAMETER_OFFSET_ROOT_FORMAT=" + PARAMETER_OFFSET_ROOT_FORMAT);
