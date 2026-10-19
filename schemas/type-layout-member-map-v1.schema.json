@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/type-layout-member-map-v1.schema.json",
+  "title": "REVENGINSTR.TypeLayoutMemberMap/1 record",
+  "description": "A reviewer-supplied exact mapping from one function root parameter to an opaque type identifier in a pinned program.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program_id", "program_sha256", "type_id", "function_entry", "root_parameter_index"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.TypeLayoutMemberMap/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "program_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "type_id": {"type": "string", "minLength": 1},
+    "function_entry": {"type": "string", "minLength": 1},
+    "root_parameter_index": {"type": "integer", "minimum": 0}
+  }
+}

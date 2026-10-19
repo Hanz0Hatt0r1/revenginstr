@@ -2396,6 +2396,12 @@
       "sha256": "77b80501fd885d35afb90400d555349a5b7ac2ed1555df9d93b49553a051200f"
     },
     {
+      "path": "scan37/replay-0041dd40/nfs-shift-member-map.jsonl",
+      "bytes": 1020,
+      "sha256": "230a066c8625bde19bd8e1e75c29fa64d9358ffe4608b5debecd161f6833b5fd",
+      "rows": 4
+    },
+    {
       "path": "scan37/replay-0041dd40/scan37-function-pcode-cfg-v4-export.log",
       "bytes": 3997,
       "sha256": "8e6c654249abd7ee4512988f07c84d407e2f531aba6111266174b608b0648197"
@@ -2423,6 +2429,12 @@
       "bytes": 114393,
       "sha256": "6cc7f71c47b670cdf51411a0155ccc62d7a45bfdceb029435271306dc91d45ac",
       "rows": 64
+    },
+    {
+      "path": "scan37/replay-0041dd40/type-layout-builder-output.jsonl",
+      "bytes": 18824,
+      "sha256": "22566c2382f24ad841d9d9e83aa3e64bf17f1c6a23a90891bcf89624572a2e70",
+      "rows": 1
     },
     {
       "path": "scan37/selection-source.json",

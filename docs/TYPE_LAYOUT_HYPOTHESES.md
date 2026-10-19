@@ -20,9 +20,43 @@ names, or promote a vtable anchor to class identity. Addresses are only
 meaningful in the pinned program context. Overlapping field candidates are
 allowed so ambiguity remains representable.
 
-The synthetic fixture in `tests/fixtures/type-layout-hypothesis/synthetic.jsonl`
-exercises a bounded size claim, a pointer-width field candidate, a vtable
-anchor, and an unresolved composition relationship. It is contract coverage,
-not a consumer accuracy result. The next implementation step is a deterministic
-builder from hash-pinned memory-access and type/vtable evidence, followed by
-independently reviewed layouts from more than one consumer.
+The deterministic builder is available as `revenginstr-type-layout-hypothesis`.
+It joins `GhidraMemoryStoreAccess/1` rows to exact
+[`TypeLayoutMemberMap/1`](../schemas/type-layout-member-map-v1.schema.json)
+keys `(function_entry, root_parameter_index)`. The map pins `program_id`, the
+binary SHA-256, and an opaque reviewer-chosen `type_id`; the caller supplies the
+architecture. The builder emits write observations only, leaves type
+candidates, vtable anchors, relationships, and exact object size empty, and
+derives a minimum observed extent only from non-negative offsets with known
+store widths. Every emitted field and size bound retains both its exact store
+row and the reviewer map row. Unmatched roots, unresolved locations, and
+negative offsets do not contribute.
+
+For example, the reviewed NFS SHIFT mapping in
+[`nfs-shift-member-map.jsonl`](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/nfs-shift-member-map.jsonl)
+projects the constructor, copy, lazy getter, and destructor stores for the
+opaque cluster `cluster-vtable-00af0860`. It reproduces the `+0x20` writes and
+56-byte minimum extent without promoting the referent type or exact size. The
+reproducible builder output is retained
+[here](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/type-layout-builder-output.jsonl).
+Run the same projection with:
+
+```sh
+revenginstr-type-layout-hypothesis \
+  --memory-store-jsonl field20-memory-store-access.jsonl \
+  --member-map-jsonl nfs-shift-member-map.jsonl \
+  --program-id 'nfs-shift:SHIFT.exe' \
+  --program-sha256 eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1 \
+  --language-id x86:LE:32:default \
+  --pointer-width-bytes 4 \
+  --addressable-unit-bytes 1 \
+  --endianness little \
+  --output type-layout-hypothesis.jsonl
+```
+
+The synthetic fixture in
+`tests/fixtures/type-layout-hypothesis/synthetic.jsonl`
+continues to exercise richer candidate fields, a vtable anchor, and an
+unresolved composition relationship. These are contract and builder checks,
+not a consumer accuracy result; independently reviewed layouts from more than
+one consumer remain open.
