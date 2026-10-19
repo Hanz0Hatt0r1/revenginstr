@@ -21,16 +21,19 @@ meaningful in the pinned program context. Overlapping field candidates are
 allowed so ambiguity remains representable.
 
 The deterministic builder is available as `revenginstr-type-layout-hypothesis`.
-It joins `GhidraMemoryStoreAccess/1` rows to exact
+It joins `GhidraMemoryStoreAccess/1` rows and optional
+`GhidraParameterLoadField/1` TSV rows to exact
 [`TypeLayoutMemberMap/1`](../schemas/type-layout-member-map-v1.schema.json)
 keys `(function_entry, root_parameter_index)`. The map pins `program_id`, the
 binary SHA-256, and an opaque reviewer-chosen `type_id`; the caller supplies the
-architecture. The builder emits write observations only, leaves type
-candidates, vtable anchors, relationships, and exact object size empty, and
-derives a minimum observed extent only from non-negative offsets with known
-store widths. Every emitted field and size bound retains both its exact store
-row and the reviewer map row. Unmatched roots, unresolved locations, and
-negative offsets do not contribute.
+architecture. The builder emits separate read and write observations, leaves
+type candidates, vtable anchors, relationships, and exact object size empty,
+and derives a minimum observed extent only from non-negative offsets with
+known access widths. Every emitted field and size bound retains its exact
+access row and the reviewer map row. Unmatched roots, unresolved store
+locations, and negative offsets do not contribute. Parameter loads can be the
+only access input when a consumer has no store capture for the selected
+members.
 
 For example, the reviewed NFS SHIFT mapping in
 [`nfs-shift-member-map.jsonl`](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/nfs-shift-member-map.jsonl)
@@ -53,6 +56,17 @@ revenginstr-type-layout-hypothesis \
   --endianness little \
   --output type-layout-hypothesis.jsonl
 ```
+
+The builder was also exercised on the consumer-owned Nevergone
+[`CCJoyStick::init` memory evidence](https://github.com/Hanz0Hatt0r1/nevergone-recomp/tree/main/docs/evidence/field-store-load-cfg-ccjoystick-init)
+with one explicit mapping for function `002a6584`, root parameter 0, and opaque
+id `nevergone:opaque-object-002a6584`. The layout output had 13 observed field
+offsets from 12 STORE and 9 LOAD sites, with a 337-byte minimum extent. The
+binary hash was pinned to
+`94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e`.
+This is a second-consumer projection smoke, not a verified class layout: exact
+size, field types, and class identity remain unknown, and raw Nevergone rows
+stay in that consumer repository.
 
 The synthetic fixture in
 `tests/fixtures/type-layout-hypothesis/synthetic.jsonl`

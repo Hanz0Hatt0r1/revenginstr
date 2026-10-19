@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import os
@@ -14,7 +15,13 @@ from typing import Any, Iterable, Iterator
 
 STORE_FORMAT = "REVENGINSTR.GhidraMemoryStoreAccess/1"
 MEMBER_FORMAT = "REVENGINSTR.TypeLayoutMemberMap/1"
+LOAD_FORMAT = "REVENGINSTR.GhidraParameterLoadField/1"
 OUTPUT_FORMAT = "REVENGINSTR.TypeLayoutHypothesis/1"
+LOAD_COLUMNS = (
+    "format", "function_entry", "function_name", "load_address", "load_time",
+    "base_parameter_index", "field_offset", "address_pattern", "value_size",
+    "value_token", "status",
+)
 STORE_KEYS = {
     "format", "program_id", "function_entry", "address", "time", "opcode",
     "memory_space", "memory_physical_space", "memory_width_bytes",
@@ -80,6 +87,15 @@ def _require_int(value: Any, where: str, *, minimum: int | None = None) -> int:
         suffix = f" >= {minimum}" if minimum is not None else ""
         raise ValueError(f"{where}: expected integer{suffix}")
     return value
+
+
+def _parse_decimal(value: str, where: str, *, minimum: int = 0) -> int:
+    if not re.fullmatch(r"[0-9]+", value):
+        raise ValueError(f"{where}: expected decimal integer")
+    parsed = int(value)
+    if parsed < minimum:
+        raise ValueError(f"{where}: expected integer >= {minimum}")
+    return parsed
 
 
 def _nullable_positive_int(value: Any, where: str) -> int | None:
@@ -168,10 +184,36 @@ def _validate_member(
     return function_entry, root_index, type_id
 
 
+def _read_parameter_loads(
+    paths: list[Path], *, max_rows: int,
+) -> Iterator[tuple[Path, str, int, dict[str, str]]]:
+    rows_seen = 0
+    for path in paths:
+        digest = _sha256(path)
+        with path.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle, delimiter="\t")
+            if tuple(reader.fieldnames or ()) != LOAD_COLUMNS:
+                raise ValueError(f"{path}: unexpected GhidraParameterLoadField/1 TSV header")
+            for line_no, row in enumerate(reader, 2):
+                if row is None:
+                    continue
+                if None in row:
+                    raise ValueError(f"{path}:{line_no}: malformed GhidraParameterLoadField/1 TSV row")
+                if all(value is None or not value.strip() for value in row.values()):
+                    continue
+                rows_seen += 1
+                if rows_seen > max_rows:
+                    raise ValueError(f"combined parameter-load row budget exceeded: {max_rows}")
+                if set(row) != set(LOAD_COLUMNS) or any(not isinstance(value, str) for value in row.values()):
+                    raise ValueError(f"{path}:{line_no}: malformed GhidraParameterLoadField/1 TSV row")
+                yield path, digest, line_no, row
+
+
 def build_type_layout_hypotheses(
     memory_store_paths: list[Path],
     member_map_paths: list[Path],
     *,
+    parameter_load_paths: list[Path] | None = None,
     program_id: str,
     program_sha256: str,
     language_id: str,
@@ -181,8 +223,9 @@ def build_type_layout_hypotheses(
     max_rows: int = DEFAULT_MAX_ROWS,
 ) -> list[dict[str, Any]]:
     """Join exact STORE rows to explicit member-map keys and emit sorted candidates."""
-    if not memory_store_paths or not member_map_paths:
-        raise ValueError("at least one memory-store input and member-map input are required")
+    parameter_load_paths = parameter_load_paths or []
+    if not member_map_paths or (not memory_store_paths and not parameter_load_paths):
+        raise ValueError("provide a member map and at least one memory-store or parameter-load input")
     if not isinstance(program_sha256, str) or not SHA256_RE.fullmatch(program_sha256):
         raise ValueError("program_sha256 must be 64 lowercase hexadecimal characters")
     _require_int(max_rows, "max_rows", minimum=1)
@@ -217,7 +260,7 @@ def build_type_layout_hypotheses(
             )
             memberships[join_key] = (row, map_ref)
 
-    grouped: dict[str, dict[int, dict[int | None, list[dict[str, str]]]]] = defaultdict(
+    grouped: dict[str, dict[int, dict[tuple[str, int | None], list[dict[str, str]]]]] = defaultdict(
         lambda: defaultdict(lambda: defaultdict(list))
     )
     size_evidence: dict[str, dict[int, list[dict[str, str]]]] = defaultdict(lambda: defaultdict(list))
@@ -256,10 +299,52 @@ def build_type_layout_hypotheses(
             offset = row["offset_bytes"]
             width = row["memory_width_bytes"]
             access_refs = [store_ref, member_ref]
-            grouped[type_id][offset][width].extend(access_refs)
+            grouped[type_id][offset][("write", width)].extend(access_refs)
             if width is not None:
                 extent = offset + width
                 size_evidence[type_id][extent].extend(access_refs)
+
+    seen_loads: set[tuple[str, str, str]] = set()
+    for path, digest, line_no, row in _read_parameter_loads(parameter_load_paths or [], max_rows=max_rows):
+        where = f"{path}:{line_no}"
+        if row["format"] != LOAD_FORMAT or row["status"] != "parameter_field_load":
+            raise ValueError(f"{where}: expected {LOAD_FORMAT}")
+        function_entry = _require_text(row["function_entry"], f"{where}: function_entry")
+        _require_text(row["function_name"], f"{where}: function_name")
+        address = _require_text(row["load_address"], f"{where}: load_address")
+        load_time = row["load_time"]
+        if load_time != "-":
+            _parse_decimal(load_time, f"{where}: load_time")
+        root_index = _parse_decimal(row["base_parameter_index"], f"{where}: base_parameter_index")
+        offset_text = row["field_offset"]
+        if not re.fullmatch(r"-?0x[0-9a-f]+", offset_text):
+            raise ValueError(f"{where}: invalid field_offset {offset_text!r}")
+        offset = int(offset_text, 16)
+        _require_text(row["address_pattern"], f"{where}: address_pattern")
+        width = _parse_decimal(row["value_size"], f"{where}: value_size", minimum=1)
+        value_token = _require_text(row["value_token"], f"{where}: value_token")
+        site_key = (function_entry, address, load_time)
+        if site_key in seen_loads:
+            raise ValueError(f"{where}: duplicate parameter-load site {site_key!r}")
+        seen_loads.add(site_key)
+        if offset < 0:
+            continue
+        membership = memberships.get((function_entry, root_index))
+        if membership is None:
+            continue
+        member_row, member_ref = membership
+        type_id = member_row["type_id"]
+        load_ref = _evidence(
+            source_format=LOAD_FORMAT,
+            source_sha256=digest,
+            record_key=(
+                f"function={function_entry};address={address};time={load_time};output={value_token}"
+            ),
+            evidence_class="exact_static",
+        )
+        access_refs = [load_ref, member_ref]
+        grouped[type_id][offset][("read", width)].extend(access_refs)
+        size_evidence[type_id][offset + width].extend(access_refs)
 
     results: list[dict[str, Any]] = []
     for type_id in sorted(grouped):
@@ -267,13 +352,13 @@ def build_type_layout_hypotheses(
         offsets = grouped[type_id]
         for offset in sorted(offsets):
             accesses = []
-            for width, refs in sorted(
+            for access_key, refs in sorted(
                 offsets[offset].items(),
-                key=lambda item: (item[0] is None, item[0] or 0),
+                key=lambda item: (item[0][0], item[0][1] is None, item[0][1] or 0),
             ):
                 accesses.append({
-                    "kind": "write",
-                    "width_bytes": width,
+                    "kind": access_key[0],
+                    "width_bytes": access_key[1],
                     "evidence": _sort_evidence(refs),
                 })
             type_fields.append({
@@ -327,7 +412,8 @@ def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--memory-store-jsonl", action="append", type=Path, required=True)
+    parser.add_argument("--memory-store-jsonl", action="append", type=Path, default=[])
+    parser.add_argument("--parameter-loads-tsv", action="append", type=Path, default=[])
     parser.add_argument("--member-map-jsonl", action="append", type=Path, required=True)
     parser.add_argument("--program-id", required=True)
     parser.add_argument("--program-sha256", required=True)
@@ -341,13 +427,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.output != Path("-"):
         output_resolved = args.output.resolve()
-        inputs = args.memory_store_jsonl + args.member_map_jsonl
+        inputs = args.memory_store_jsonl + args.parameter_loads_tsv + args.member_map_jsonl
         if any(path.resolve() == output_resolved for path in inputs):
             parser.error("output must not overwrite an input artifact")
     try:
         rows = build_type_layout_hypotheses(
             args.memory_store_jsonl,
             args.member_map_jsonl,
+            parameter_load_paths=args.parameter_loads_tsv,
             program_id=args.program_id,
             program_sha256=args.program_sha256,
             language_id=args.language_id,

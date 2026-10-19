@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 from pathlib import Path
@@ -11,6 +12,11 @@ from revenginstr.type_layout_builder import build_type_layout_hypotheses
 
 ROOT = Path(__file__).resolve().parents[1]
 PROGRAM_SHA256 = "a" * 64
+LOAD_HEADER = (
+    "format", "function_entry", "function_name", "load_address", "load_time",
+    "base_parameter_index", "field_offset", "address_pattern", "value_size",
+    "value_token", "status",
+)
 
 
 def write_jsonl(path: Path, rows: list[dict]) -> None:
@@ -52,9 +58,17 @@ def member_row(*, function: str = "fn1", root: int = 0, type_id: str = "opaque-1
     }
 
 
-def build(store_path: Path, member_path: Path) -> list[dict]:
+def write_loads(path: Path, rows: list[list[str]]) -> None:
+    path.write_text(
+        "\t".join(LOAD_HEADER) + "\n" + "".join("\t".join(row) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+
+
+def build(store_path: Path, member_path: Path, load_path: Path | None = None) -> list[dict]:
     return build_type_layout_hypotheses(
         [store_path], [member_path],
+        parameter_load_paths=[load_path] if load_path else None,
         program_id="sample.exe", program_sha256=PROGRAM_SHA256,
         language_id="x86:LE:64:default", pointer_width_bytes=8,
         addressable_unit_bytes=1, endianness="little",
@@ -64,6 +78,7 @@ def build(store_path: Path, member_path: Path) -> list[dict]:
 def test_builder_projects_exact_writes_and_bound_without_type_inference(tmp_path: Path) -> None:
     stores = tmp_path / "stores.jsonl"
     members = tmp_path / "members.jsonl"
+    loads = tmp_path / "loads.tsv"
     write_jsonl(stores, [
         store_row(function="fn1", address="401000", time=2, offset=0x20),
         store_row(function="fn1", address="401004", time=4, offset=0x34),
@@ -72,18 +87,51 @@ def test_builder_projects_exact_writes_and_bound_without_type_inference(tmp_path
         store_row(function="fn1", address="401030", time=9, offset=-4),
     ])
     write_jsonl(members, [member_row()])
+    write_loads(loads, [
+        ["REVENGINSTR.GhidraParameterLoadField/1", "fn1", "getter", "401008", "10", "0",
+         "0x20", "ptradd", "4", "def:LOAD@401008:10:4", "parameter_field_load"],
+        ["REVENGINSTR.GhidraParameterLoadField/1", "fn1", "getter", "401040", "15", "0",
+         "0x38", "ptradd", "2", "def:LOAD@401040:15:2", "parameter_field_load"],
+        ["REVENGINSTR.GhidraParameterLoadField/1", "fn1", "getter", "401044", "18", "0",
+         "-0x4", "ptradd", "4", "def:LOAD@401044:18:4", "parameter_field_load"],
+        ["REVENGINSTR.GhidraParameterLoadField/1", "fn2", "other", "401050", "20", "0",
+         "0x100", "ptradd", "4", "def:LOAD@401050:20:4", "parameter_field_load"],
+    ])
+    load_schema = json.loads((ROOT / "schemas/ghidra-parameter-load-field-v1.schema.json").read_text())
+    Draft202012Validator.check_schema(load_schema)
+    with loads.open(encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle, delimiter="\t"):
+            Draft202012Validator(load_schema).validate(row)
 
-    rows = build(stores, members)
-    assert rows == build(stores, members)
+    rows = build(stores, members, loads)
+    assert rows == build(stores, members, loads)
     assert len(rows) == 1
     row = rows[0]
     assert row["type_id"] == "opaque-1"
-    assert [field["offset_bytes"] for field in row["fields"]] == [0x20, 0x34]
-    assert row["object_size"]["minimum_observed_bytes"] == 0x38
+    assert [field["offset_bytes"] for field in row["fields"]] == [0x20, 0x34, 0x38]
+    assert row["object_size"]["minimum_observed_bytes"] == 0x3A
     assert row["object_size"]["exact_size_bytes"] is None
     assert row["vtable_anchors"] == []
     assert row["relationships"] == []
     assert all(not field["type_candidates"] for field in row["fields"])
+    assert {access["kind"] for access in row["fields"][0]["accesses"]} == {"read", "write"}
+    read_evidence = [
+        evidence
+        for access in row["fields"][0]["accesses"] if access["kind"] == "read"
+        for evidence in access["evidence"]
+    ]
+    assert {evidence["source_format"] for evidence in read_evidence} == {
+        "REVENGINSTR.GhidraParameterLoadField/1", "REVENGINSTR.TypeLayoutMemberMap/1",
+    }
+    load_only = build_type_layout_hypotheses(
+        [], [members], parameter_load_paths=[loads],
+        program_id="sample.exe", program_sha256=PROGRAM_SHA256,
+        language_id="x86:LE:64:default", pointer_width_bytes=8,
+        addressable_unit_bytes=1, endianness="little",
+    )[0]
+    assert {field["offset_bytes"] for field in load_only["fields"]} == {0x20, 0x38}
+    assert all(access["kind"] == "read" for field in load_only["fields"] for access in field["accesses"])
+    assert load_only["object_size"]["minimum_observed_bytes"] == 0x3A
     assert {e["evidence_class"] for f in row["fields"] for a in f["accesses"] for e in a["evidence"]} == {
         "exact_static", "human_review",
     }
