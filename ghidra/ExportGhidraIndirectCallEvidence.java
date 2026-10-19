@@ -5,6 +5,9 @@ import ghidra.program.model.address.Address;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.listing.FunctionIterator;
 import ghidra.program.model.pcode.HighFunction;
+import ghidra.program.model.pcode.HighVariable;
+import ghidra.program.model.pcode.HighSymbol;
+import ghidra.program.model.pcode.LocalSymbolMap;
 import ghidra.program.model.pcode.PcodeOp;
 import ghidra.program.model.pcode.PcodeOpAST;
 import ghidra.program.model.pcode.SequenceNumber;
@@ -24,7 +27,7 @@ import java.util.Set;
 
 /** Export bounded High-P-code target expressions for indirect calls in one function. */
 public class ExportGhidraIndirectCallEvidence extends GhidraScript {
-    private static final String FORMAT = "REVENGINSTR.GhidraIndirectCallEvidence/3";
+    private static final String FORMAT = "REVENGINSTR.GhidraIndirectCallEvidence/4";
     private static final int MAX_DEPTH = 6;
 
     private static final class TargetResolution {
@@ -77,9 +80,7 @@ public class ExportGhidraIndirectCallEvidence extends GhidraScript {
                 while (operations.hasNext() && !monitor.isCancelled()) {
                     PcodeOpAST op = operations.next();
                     if (op.getOpcode() != PcodeOp.CALLIND || op.getNumInputs() < 1) continue;
-                    SequenceNumber seq = op.getSeqnum();
-                    Varnode target = op.getInput(0);
-                    out.write(row(args[0], function, seq, target, op.getNumInputs()));
+                    out.write(row(args[0], function, op, high));
                     out.newLine();
                     indirectCalls++;
                 }
@@ -126,8 +127,10 @@ public class ExportGhidraIndirectCallEvidence extends GhidraScript {
         throw new IllegalArgumentException("Function not found: " + token);
     }
 
-    private String row(String requested, Function function, SequenceNumber seq,
-            Varnode target, int inputCount) {
+    private String row(String requested, Function function, PcodeOpAST op, HighFunction high) {
+        SequenceNumber seq = op.getSeqnum();
+        Varnode target = op.getNumInputs() > 0 ? op.getInput(0) : null;
+        TargetResolution resolution = resolveTarget(target, 0);
         return "{\"format\":" + q(FORMAT) +
             ",\"program\":" + q(currentProgram.getName()) +
             ",\"program_sha256\":" + q(currentProgram.getExecutableSHA256()) +
@@ -138,8 +141,41 @@ public class ExportGhidraIndirectCallEvidence extends GhidraScript {
             ",\"call_time\":" + seq.getTime() +
             ",\"target\":" + q(nodeToken(target)) +
             ",\"target_expression\":" + q(expression(target, 0, new HashSet<String>())) +
-            ",\"target_resolution\":" + targetResolutionJson(resolveTarget(target, 0)) +
-            ",\"arg_count\":" + Math.max(0, inputCount - 1) + "}";
+            ",\"target_resolution\":" + targetResolutionJson(resolution) +
+            ",\"parameter_roots\":" + parameterRootsJson(high, op, resolution.functionEntry != null) +
+            ",\"arg_count\":" + Math.max(0, op.getNumInputs() - 1) + "}";
+    }
+
+    private String parameterRootsJson(HighFunction high, PcodeOp op, boolean targetResolved) {
+        if (!targetResolved) return "[]";
+        StringBuilder roots = new StringBuilder("[");
+        for (int argumentIndex = 0; argumentIndex + 1 < op.getNumInputs(); argumentIndex++) {
+            Varnode argument = op.getInput(argumentIndex + 1);
+            if (argument == null || argument.getDef() != null) continue;
+            int callerParameterIndex = parameterIndex(high, argument);
+            if (callerParameterIndex < 0) continue;
+            if (roots.length() > 1) roots.append(',');
+            roots.append("{\"parameter_index\":").append(argumentIndex)
+                .append(",\"caller_parameter_index\":").append(callerParameterIndex)
+                .append(",\"argument_token\":").append(q(nodeToken(argument))).append('}');
+        }
+        return roots.append(']').toString();
+    }
+
+    private int parameterIndex(HighFunction high, Varnode node) {
+        if (high == null || node == null || node.getHigh() == null) return -1;
+        LocalSymbolMap map = high.getLocalSymbolMap();
+        if (map == null) return -1;
+        HighVariable target = node.getHigh();
+        for (int index = 0; index < map.getNumParams(); index++) {
+            HighSymbol symbol = map.getParamSymbol(index);
+            if (symbol == null || symbol.getHighVariable() == null) continue;
+            HighVariable parameter = symbol.getHighVariable();
+            if (parameter == target) return index;
+            if (parameter.getRepresentative() != null && target.getRepresentative() != null &&
+                    parameter.getRepresentative().equals(target.getRepresentative())) return index;
+        }
+        return -1;
     }
 
     private String targetResolutionJson(TargetResolution resolution) {

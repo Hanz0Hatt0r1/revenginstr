@@ -86,10 +86,11 @@ unless arity or type conflicts force `conflicted`. Confidence remains a bounded
 triage heuristic, not a calibrated probability; independent audited gold is
 still needed before high-confidence use.
 Optionally pass `--indirect-call-evidence indirect-call-evidence.jsonl` to add
-arity constraints only for `/3` CALLIND records whose static function-pointer
-slot resolves to one exact function entry in the same Ghidra program. Dynamic,
-unreadable, and ambiguous expressions add no target constraint. These indirect
-observations do not propagate argument types.
+arity constraints only for `/3` or `/4` CALLIND records whose static
+function-pointer slot resolves to one exact function entry in the same Ghidra
+program. V4 can also propagate parameter shape when P-code identifies an
+argument as one exact caller formal with no defining operation. Dynamic,
+unreadable, ambiguous, and transformed arguments do not propagate shape.
 Because hypothesis schema `/1` has no variadic marker, variadic observations
 retain their fixed parameter prefix but emit `parameter_count: null` instead
 of presenting the prefix as the total argument count.

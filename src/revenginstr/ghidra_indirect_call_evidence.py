@@ -7,6 +7,7 @@ from typing import Any
 FORMAT_V1 = "REVENGINSTR.GhidraIndirectCallEvidence/1"
 FORMAT_V2 = "REVENGINSTR.GhidraIndirectCallEvidence/2"
 FORMAT_V3 = "REVENGINSTR.GhidraIndirectCallEvidence/3"
+FORMAT_V4 = "REVENGINSTR.GhidraIndirectCallEvidence/4"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _FIELDS_V1 = {
     "format", "program", "requested", "function_entry", "call_address", "call_time",
@@ -14,6 +15,7 @@ _FIELDS_V1 = {
 }
 _FIELDS_V2 = _FIELDS_V1 | {"program_sha256", "architecture"}
 _FIELDS_V3 = _FIELDS_V2 | {"target_resolution"}
+_FIELDS_V4 = _FIELDS_V3 | {"parameter_roots"}
 
 
 def validate_row(
@@ -34,6 +36,8 @@ def validate_row(
         expected = _FIELDS_V2
     elif source_format == FORMAT_V3:
         expected = _FIELDS_V3
+    elif source_format == FORMAT_V4:
+        expected = _FIELDS_V4
     else:
         raise ValueError(f"{where}: unsupported indirect-call evidence format")
     if set(row) != expected:
@@ -46,7 +50,7 @@ def validate_row(
             raise ValueError(f"{where}: {field} must be a non-negative integer")
     if program_id is not None and row["program"] != program_id:
         raise ValueError(f"{where}: program does not match {program_id!r}")
-    if source_format in {FORMAT_V2, FORMAT_V3}:
+    if source_format in {FORMAT_V2, FORMAT_V3, FORMAT_V4}:
         digest = row["program_sha256"]
         if not isinstance(digest, str) or not _SHA256.fullmatch(digest):
             raise ValueError(f"{where}: invalid program_sha256")
@@ -65,7 +69,7 @@ def validate_row(
             raise ValueError(f"{where}: program_sha256 does not match the expected binary")
         if expected_architecture is not None and current_architecture != expected_architecture:
             raise ValueError(f"{where}: architecture does not match the expected program")
-    if source_format == FORMAT_V3:
+    if source_format in {FORMAT_V3, FORMAT_V4}:
         resolution = row["target_resolution"]
         if not isinstance(resolution, dict) or set(resolution) != {"status", "slot_address", "function_entry"}:
             raise ValueError(f"{where}: invalid target_resolution")
@@ -86,4 +90,26 @@ def validate_row(
             raise ValueError(f"{where}: resolved constant target has invalid slot/function entry")
         if status not in {"resolved_static_function_pointer", "resolved_constant_function"} and function_entry is not None:
             raise ValueError(f"{where}: unresolved target must not name a function entry")
+    if source_format == FORMAT_V4:
+        roots = row["parameter_roots"]
+        if not isinstance(roots, list):
+            raise ValueError(f"{where}: parameter_roots must be an array")
+        if roots and row["target_resolution"]["function_entry"] is None:
+            raise ValueError(f"{where}: unresolved target cannot have parameter roots")
+        seen_indices = set()
+        for root in roots:
+            if not isinstance(root, dict) or set(root) != {
+                "parameter_index", "caller_parameter_index", "argument_token",
+            }:
+                raise ValueError(f"{where}: invalid parameter root")
+            for field in ("parameter_index", "caller_parameter_index"):
+                if type(root[field]) is not int or root[field] < 0:
+                    raise ValueError(f"{where}: invalid parameter root {field}")
+            if root["parameter_index"] >= row["arg_count"]:
+                raise ValueError(f"{where}: parameter root exceeds call argument count")
+            if root["parameter_index"] in seen_indices:
+                raise ValueError(f"{where}: duplicate parameter root index")
+            seen_indices.add(root["parameter_index"])
+            if not isinstance(root["argument_token"], str) or not root["argument_token"]:
+                raise ValueError(f"{where}: invalid parameter root argument_token")
     return source_format

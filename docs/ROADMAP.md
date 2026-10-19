@@ -1121,10 +1121,14 @@ hash-pinned direct-call arguments and can propagate shape only along
 program-pinned exact caller-formal roots. Conflicting call arity or types are
 marked `conflicted`, and emitted confidence stays below the evaluator's
 high-confidence threshold. Real Ghidra replays cover both an imported-signature
-sample and a stripped, no-DWARF x86 object. The generic inference and coverage
-paths now exist, but independent consumer gold, calibrated confidence and
-indirect-call target constraints remain required before M8.1 is complete. The
-stripped fixture now also has source-backed `FunctionPrototypeGold/1` for two
+sample and stripped, no-DWARF x86 objects. Indirect-call evidence v3 now
+resolves only exact static function-pointer targets; v4 adds exact
+caller-formal roots for untransformed arguments and uses those links for arity
+and shape constraints. Dynamic or multi-target dispatch and return-shape
+propagation remain unresolved. The generic inference and coverage paths exist,
+but independent consumer gold and calibrated confidence remain required before
+M8.1 is complete. The stripped fixture now also has source-backed
+`FunctionPrototypeGold/1` for two
 functions: parameter counts and shapes score 2/2, returns score 1/2, and neither
 hypothesis reaches the default 0.95 acceptance threshold. This isolates return
 shape inference as a measured gap without presenting the micro-fixture as

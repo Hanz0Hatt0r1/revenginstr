@@ -113,7 +113,7 @@ def test_unresolved_indirect_target_does_not_constrain_prototype(tmp_path: Path)
 
 
 def test_real_ghidra_static_target_constrains_the_matching_prototype(tmp_path: Path) -> None:
-    fixture = ROOT / "tests/fixtures/ghidra-indirect-call-v3"
+    fixture = ROOT / "tests/fixtures/ghidra-indirect-call-v4"
     direct_calls = tmp_path / "direct-calls.jsonl"
     direct_calls.write_text("", encoding="utf-8")
     rows = infer_prototypes(
@@ -126,8 +126,68 @@ def test_real_ghidra_static_target_constrains_the_matching_prototype(tmp_path: P
     assert target["status"] == "review"
     assert target["conflicts"] == []
     assert any(
-        ref["source_format"] == "REVENGINSTR.GhidraIndirectCallEvidence/3"
+        ref["source_format"] == "REVENGINSTR.GhidraIndirectCallEvidence/4"
         for ref in target["candidates"][0]["evidence_refs"]
+    )
+
+
+def test_v4_indirect_exact_parameter_root_propagates_shape(tmp_path: Path) -> None:
+    fixture = ROOT / "tests/fixtures/ghidra-untyped-prototype"
+    decompiler_path = fixture / "decompiler-parameters.jsonl"
+    decompiler = json.loads(decompiler_path.read_text().splitlines()[0])
+    evidence = {
+        "format": "REVENGINSTR.GhidraIndirectCallEvidence/4",
+        "program": decompiler["program_id"],
+        "program_sha256": decompiler["program_sha256"],
+        "architecture": decompiler["architecture"],
+        "requested": "00010017",
+        "function_entry": "0x00010017",
+        "call_address": "0x0001002b",
+        "call_time": 99,
+        "target": "def:CAST@0001002b:22:4",
+        "target_expression": "CAST(address:00011000:4)",
+        "target_resolution": {
+            "status": "resolved_static_function_pointer",
+            "slot_address": "0x00011000", "function_entry": "0x00010000",
+        },
+        "parameter_roots": [{
+            "parameter_index": 0, "caller_parameter_index": 0,
+            "argument_token": "register:EBX:4",
+        }],
+        "arg_count": 2,
+    }
+    evidence_path = tmp_path / "indirect-v4.jsonl"
+    evidence_path.write_text(json.dumps(evidence) + "\n", encoding="utf-8")
+    direct_calls = tmp_path / "empty-direct-calls.jsonl"
+    direct_calls.write_text("", encoding="utf-8")
+
+    rows = infer_prototypes(
+        decompiler_path, direct_calls, indirect_call_evidence_path=evidence_path,
+    )
+    caller = next(row for row in rows if row["function_entry"] == "00010017")
+    Draft202012Validator(HYPOTHESIS_SCHEMA).validate(caller)
+    assert caller["candidates"][0]["parameters"][0]["kind"] == "pointer"
+    assert any(
+        ref["source_format"] == evidence["format"]
+        for ref in caller["candidates"][0]["parameters"][0]["evidence_refs"]
+    )
+
+
+def test_real_ghidra_indirect_parameter_root_changes_unknown_formal_to_scalar() -> None:
+    fixture = ROOT / "tests/fixtures/ghidra-indirect-call-v4"
+    rows = infer_prototypes(
+        fixture / "decompiler-parameters.jsonl",
+        fixture / "direct-call-observations.jsonl",
+        indirect_call_evidence_path=fixture / "callind.jsonl",
+    )
+    expected = [json.loads(line) for line in (fixture / "hypotheses.jsonl").read_text().splitlines()]
+    assert rows == expected
+    caller = next(row for row in rows if row["function_entry"] == "0040100f")
+    Draft202012Validator(HYPOTHESIS_SCHEMA).validate(caller)
+    assert caller["candidates"][0]["parameters"][0]["kind"] == "scalar"
+    assert any(
+        ref["source_format"] == "REVENGINSTR.GhidraIndirectCallEvidence/4"
+        for ref in caller["candidates"][0]["parameters"][0]["evidence_refs"]
     )
 
 
