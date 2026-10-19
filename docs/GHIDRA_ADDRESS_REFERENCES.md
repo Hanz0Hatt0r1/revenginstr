@@ -14,5 +14,7 @@ Run it against an existing Ghidra project:
 
 Targets may use bare hexadecimal addresses, a 0x prefix, or Ghidra's DAT_
 label prefix. Missing targets produce a found: false row and fail the
-headless command. The schema is in
+headless command. The runner also requires a success marker and exact output
+row count, so a script failure cannot pass just because `analyzeHeadless`
+returned zero. The schema is in
 schemas/ghidra-address-references-v1.schema.json.
