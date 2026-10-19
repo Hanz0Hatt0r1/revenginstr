@@ -76,6 +76,23 @@
       "role": "input",
       "sha256": "308a90c88b719f1bb0bdbd3f605dd18968a2fe4e284b51cde6ac2a4c63749bc0"
     },
+    "reviewed_layout_graph": {
+      "content": "jsonl",
+      "format": "REVENGINSTR.SemanticProgramGraph/3",
+      "kind": "file",
+      "path": "../../semantic-program-graph-v3/nevergone-ccjoystick/semantic-program-graph.jsonl",
+      "role": "input",
+      "schema": "semantic_program_graph_v3",
+      "sha256": "83093ddcab1e2a39abae5a53174ab1e835f501a92394ca09cc328682454186e3"
+    },
+    "reviewed_layout_query": {
+      "content": "jsonl",
+      "format": "REVENGINSTR.SemanticProgramQueryResult/1",
+      "kind": "file",
+      "path": "frozen-replay/reviewed-layout-field-query.jsonl",
+      "role": "output",
+      "schema": "semantic_program_query_result_v1"
+    },
     "semantic_graph": {
       "content": "jsonl",
       "format": "REVENGINSTR.SemanticProgramGraph/1",
@@ -162,6 +179,11 @@
       "path": "../../../../schemas/semantic-program-graph-v1.schema.json",
       "sha256": "73da66526eb6a2bae655c685744530a3ae179751b91952748a4d0b00c9eb90e3",
       "version": "REVENGINSTR.SemanticProgramGraph/1"
+    },
+    "semantic_program_graph_v3": {
+      "path": "../../../../schemas/semantic-program-graph-v3.schema.json",
+      "sha256": "2310a0fca32c5c29301ac596df0925cbf4a7de5177742c1142f5256894afd067",
+      "version": "REVENGINSTR.SemanticProgramGraph/3"
     },
     "semantic_program_query_result_v1": {
       "path": "../../../../schemas/semantic-program-query-result-v1.schema.json",
@@ -254,6 +276,31 @@
       ],
       "outputs": [
         "field_query"
+      ],
+      "tool": "semantic-program-query"
+    },
+    {
+      "args": [
+        "${artifact:reviewed_layout_graph}",
+        "--view",
+        "exploratory",
+        "--kind",
+        "layout_field",
+        "--type-id",
+        "nevergone:opaque-object-002a6584",
+        "--field-offset",
+        "0x119",
+        "--field-offset",
+        "0x11a",
+        "--output",
+        "${artifact:reviewed_layout_query}"
+      ],
+      "id": "query_reviewed_layout_fields",
+      "inputs": [
+        "reviewed_layout_graph"
+      ],
+      "outputs": [
+        "reviewed_layout_query"
       ],
       "tool": "semantic-program-query"
     }

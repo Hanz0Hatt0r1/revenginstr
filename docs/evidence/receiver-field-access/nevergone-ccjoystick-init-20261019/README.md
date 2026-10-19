@@ -51,6 +51,14 @@ schema. This replay keeps fields scoped to function entry, formal parameter,
 and offset; it does not connect them to a type/layout hypothesis or infer the
 fields' runtime meaning.
 
+The benchmark also queries the separately reviewed Nevergone layout graph at
+the same offsets. It returns two `review` layout fields, each with a one-byte
+boolean candidate and read/write provenance. That graph uses the opaque
+program id `nevergone-1.0.9-armv7-libcocos2dcpp`; the field TSV capture uses
+`nevergone:libcocos2dcpp.so`. Their manifests pin the same exact program SHA,
+but the query preserves the separate graph identities and creates no edge
+between them.
+
 ## Reproduce
 
 From the repository root, run:
@@ -66,8 +74,9 @@ The benchmark manifest pins the schemas, stage inputs, and expected audit
 output. The accompanying artifact manifest also pins the checked-in
 FunctionEffectIR, graph, and query projection files. The benchmark replays the
 CFG audit, builds FunctionEffectIR/1 and SemanticProgramGraph/1, then queries
-the two paired fields. Its audit comparison covers status, both access
-identities, CFG witnesses, memory-effect results, claim scope, and provenance.
+both the paired fields and the separately reviewed layout graph. Its audit
+comparison covers status, both access identities, CFG witnesses,
+memory-effect results, claim scope, and provenance.
 The generated files under `frozen-replay/` are not checked in; remove that
 directory before repeating the command because benchmark output paths are
 deliberately protected from accidental overwrite.

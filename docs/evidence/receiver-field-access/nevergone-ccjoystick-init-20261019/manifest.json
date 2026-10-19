@@ -2,14 +2,14 @@
   "apk_sha256": "97296efc9d32fdd46bdf2dba475aeb13adb4cc6d2957ddf02da7a5d9c56e9508",
   "artifacts": [
     {
-      "bytes": 4262,
+      "bytes": 4775,
       "path": "docs/evidence/receiver-field-access/nevergone-ccjoystick-init-20261019/README.md",
-      "sha256": "ba8fb1393f163489e128b34ba49f4fdb1ffc569fe25eba1ab99404b669cab6e1"
+      "sha256": "2258ba33a23c9199fe3cf77c2638153c41f70cf8b68282876220e48654dce691"
     },
     {
-      "bytes": 8676,
+      "bytes": 10190,
       "path": "docs/evidence/receiver-field-access/nevergone-ccjoystick-init-20261019/benchmark-manifest.json",
-      "sha256": "f2b92832a23cac921b107f1317a2da73d5c69d6f979d86523b1a454f66a224f6"
+      "sha256": "ee0c569afa2160196ec854eab51b5275660f04b5f5c0437ded61230ab6ccf694"
     },
     {
       "bytes": 2800,
@@ -64,6 +64,18 @@
       "path": "docs/evidence/receiver-field-access/nevergone-ccjoystick-init-20261019/semantic-program-graph.jsonl",
       "rows": 1,
       "sha256": "eb9524284407e271a7fd3c35ed7e918167f6d543920ec71c264e1d02b4c10315"
+    },
+    {
+      "bytes": 9382,
+      "path": "docs/evidence/receiver-field-access/nevergone-ccjoystick-init-20261019/reviewed-layout-field-query.jsonl",
+      "rows": 1,
+      "sha256": "303a527af49f39f9c8ffae8ed34a9335854998955cf48fbc81e64825761dabef"
+    },
+    {
+      "bytes": 52588,
+      "path": "docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick/semantic-program-graph.jsonl",
+      "rows": 1,
+      "sha256": "83093ddcab1e2a39abae5a53174ab1e835f501a92394ca09cc328682454186e3"
     }
   ],
   "format": "REVENGINSTR.ConsumerEvidenceBundle/1",
