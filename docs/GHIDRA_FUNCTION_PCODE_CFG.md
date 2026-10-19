@@ -80,6 +80,28 @@ Version 4 is defined by
 The flag also enables version 3 memory metadata so all newer analysis facts
 remain available in one pinned CFG artifact.
 
+Pass `--entry-block-indices` to emit version 5. The exporter records every
+basic block whose start address equals the function entry, in block-index
+order. A function with multiple matching blocks is represented by all of them;
+a function with no matching block is still exported with an empty list. This
+keeps unusual decompiler graphs visible without selecting an arbitrary root.
+Version 5 includes the physical memory fields and source-linked `INDIRECT`
+operations from version 4. Dominance audits treat every listed block as an
+independent entry root and require the candidate store to dominate the load
+from every root; an empty list produces `incomplete_evidence`.
+
+```bash
+GHIDRA_HOME=/opt/ghidra \
+  scripts/run_ghidra_function_pcode_cfg.sh \
+  /path/to/projects project-name program-name function-pcode-cfg.jsonl \
+  'analysis:opaque-id' 00401000 --entry-block-indices
+```
+
+Version 5 is defined by
+[`GhidraFunctionPcodeCFG/5`](../schemas/ghidra-function-pcode-cfg-v5.schema.json).
+The existing version 1–4 records and their single-entry behavior remain
+unchanged.
+
 The runner checks that the exporter emitted its format completion marker in
 addition to checking Ghidra's process exit. Some Ghidra versions can log a
 post-script exception while returning a zero exit status; missing completion
@@ -87,8 +109,9 @@ markers therefore fail the runner.
 
 For metadata exports, `--skip-missing-entry-blocks` lets a batch continue when
 Ghidra returns a High-P-code graph with no block starting at the function entry.
-The default still fails the export. Skipped functions have no CFG row, and the
-exporter reports each omitted entry with
+Use it with versions 2–4; CFG/5 records an empty entry list instead and rejects
+this flag. Without the flag, versions 2–4 fail the export. Skipped functions
+have no CFG row, and the exporter reports each omitted entry with
 `GHIDRA_FUNCTION_PCODE_CFG_SKIPPED_ENTRY=<address> reason=entry_block_not_found`
 plus exported/skipped counts. Preserve that log with the JSONL: a skipped CFG
 is missing evidence and must remain a barrier in downstream audits.

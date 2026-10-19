@@ -18,6 +18,7 @@ CFG_FORMAT = "REVENGINSTR.GhidraFunctionPcodeCFG/1"
 CFG_FORMAT_V2 = "REVENGINSTR.GhidraFunctionPcodeCFG/2"
 CFG_FORMAT_V3 = "REVENGINSTR.GhidraFunctionPcodeCFG/3"
 CFG_FORMAT_V4 = "REVENGINSTR.GhidraFunctionPcodeCFG/4"
+CFG_FORMAT_V5 = "REVENGINSTR.GhidraFunctionPcodeCFG/5"
 REACHING_FORMAT = "REVENGINSTR.FieldStoreLoadDominanceAudit/1"
 REACHING_FORMAT_V2 = "REVENGINSTR.FieldStoreLoadDominanceAudit/2"
 REACHING_FORMAT_V3 = "REVENGINSTR.FieldStoreLoadDominanceAudit/3"
@@ -178,17 +179,19 @@ def _index_cfg(
     for record_index, record in enumerate(records, 1):
         where = f"P-code CFG record {record_index}"
         cfg_format = record.get("format") if isinstance(record, dict) else None
-        has_memory_metadata = cfg_format in {CFG_FORMAT_V2, CFG_FORMAT_V3, CFG_FORMAT_V4}
-        v3 = cfg_format in {CFG_FORMAT_V3, CFG_FORMAT_V4}
-        v4 = cfg_format == CFG_FORMAT_V4
-        expected_record_fields = (
-            {"format", "program_id", "function_entry", "entry_block_index", "blocks"}
-            if has_memory_metadata else {"format", "program_id", "function_entry", "blocks"}
-        )
+        has_memory_metadata = cfg_format in {CFG_FORMAT_V2, CFG_FORMAT_V3, CFG_FORMAT_V4, CFG_FORMAT_V5}
+        v3 = cfg_format in {CFG_FORMAT_V3, CFG_FORMAT_V4, CFG_FORMAT_V5}
+        v4 = cfg_format in {CFG_FORMAT_V4, CFG_FORMAT_V5}
+        v5 = cfg_format == CFG_FORMAT_V5
+        expected_record_fields = {"format", "program_id", "function_entry", "blocks"}
+        if v5:
+            expected_record_fields.add("entry_block_indices")
+        elif has_memory_metadata:
+            expected_record_fields.add("entry_block_index")
         if (
             not isinstance(record, dict)
             or set(record) != expected_record_fields
-            or cfg_format not in {CFG_FORMAT, CFG_FORMAT_V2, CFG_FORMAT_V3, CFG_FORMAT_V4}
+            or cfg_format not in {CFG_FORMAT, CFG_FORMAT_V2, CFG_FORMAT_V3, CFG_FORMAT_V4, CFG_FORMAT_V5}
             or not isinstance(record.get("program_id"), str)
             or not record["program_id"]
             or not isinstance(record.get("function_entry"), str)
@@ -200,7 +203,18 @@ def _index_cfg(
         identity_key = (record["program_id"], function_entry)
         if identity_key in indexed:
             raise ValueError(f"{where}: duplicate program/function identity")
-        entry_block_index = _int(record["entry_block_index"], f"{where} entry block") if has_memory_metadata else None
+        entry_block_indices: list[int] | None = None
+        entry_block_index: int | None = None
+        if v5:
+            raw_entry_indices = record["entry_block_indices"]
+            if not isinstance(raw_entry_indices, list):
+                raise ValueError(f"{where}: entry block indices must be a list")
+            entry_block_indices = [_int(value, f"{where} entry block") for value in raw_entry_indices]
+            if entry_block_indices != sorted(set(entry_block_indices)):
+                raise ValueError(f"{where}: entry block indices must be unique and sorted")
+        elif has_memory_metadata:
+            entry_block_index = _int(record["entry_block_index"], f"{where} entry block")
+            entry_block_indices = [entry_block_index]
         blocks: dict[int, dict[str, Any]] = {}
         operations: dict[tuple[str, int], tuple[int, int, str]] = {}
         operation_details: dict[tuple[str, int], dict[str, Any]] = {}
@@ -315,11 +329,20 @@ def _index_cfg(
                 or source_operation[2] != source_opcode
             ):
                 raise ValueError(f"{where}: INDIRECT effect link does not match a distinct CFG operation")
-        if has_memory_metadata and (entry_block_index not in blocks or blocks[entry_block_index]["start_address"] != function_entry):
-            raise ValueError(f"{where}: entry block does not start at the function entry")
+        if has_memory_metadata:
+            if v5:
+                actual_entry_indices = sorted(
+                    index for index, block in blocks.items()
+                    if block["start_address"] == function_entry
+                )
+                if entry_block_indices != actual_entry_indices:
+                    raise ValueError(f"{where}: entry block indices do not enumerate every function-entry block")
+            elif entry_block_index not in blocks or blocks[entry_block_index]["start_address"] != function_entry:
+                raise ValueError(f"{where}: entry block does not start at the function entry")
         indexed[identity_key] = (record_index, {
             "format": cfg_format,
             "entry_block_index": entry_block_index,
+            "entry_block_indices": entry_block_indices,
             "blocks": blocks,
             "operations": operations,
             "operation_details": operation_details,
@@ -418,11 +441,11 @@ def _index_memory_store_accesses(
         operation_location = cfg["operations"].get((fact["address"], time))
         if operation_location is None or operation_location[2] != "STORE":
             raise ValueError(f"{where}: operation does not match CFG STORE")
-        if cfg["format"] in {CFG_FORMAT_V2, CFG_FORMAT_V3, CFG_FORMAT_V4}:
+        if cfg["format"] in {CFG_FORMAT_V2, CFG_FORMAT_V3, CFG_FORMAT_V4, CFG_FORMAT_V5}:
             cfg_detail = cfg["operation_details"][(fact["address"], time)]
             if fact["memory_space"] != cfg_detail["memory_space"] or fact["memory_width_bytes"] != cfg_detail["memory_width_bytes"]:
                 raise ValueError(f"{where}: memory shape disagrees with CFG")
-            if cfg["format"] in {CFG_FORMAT_V3, CFG_FORMAT_V4} and (
+            if cfg["format"] in {CFG_FORMAT_V3, CFG_FORMAT_V4, CFG_FORMAT_V5} and (
                 fact["memory_physical_space"] != cfg_detail["memory_physical_space"]
                 or fact["memory_pointer_width_bytes"] != cfg_detail["memory_pointer_width_bytes"]
             ):
@@ -1108,7 +1131,7 @@ def _index_interprocedural_memory_effects(
                 cfg_by_function[(fact["program_id"], entry)][0]
                 for entry in [fact["function_entry"], *closure_entries]
                 if (fact["program_id"], entry) in cfg_by_function
-                and cfg_by_function[(fact["program_id"], entry)][1]["format"] == CFG_FORMAT_V4
+                and cfg_by_function[(fact["program_id"], entry)][1]["format"] in {CFG_FORMAT_V4, CFG_FORMAT_V5}
             })
             if link_cfg_indices != expected_link_cfg_indices:
                 raise ValueError(f"{where}: INDIRECT link CFG provenance does not match the closure")
@@ -1231,7 +1254,7 @@ def audit_field_store_load_dominance(
         raise ValueError("interprocedural memory effect SHA-256 requires interprocedural rows")
     cfg_by_function = _index_cfg(cfg_records)
     indirect_effect_links_enabled = any(
-        cfg["format"] == CFG_FORMAT_V4 for _, cfg in cfg_by_function.values()
+        cfg["format"] in {CFG_FORMAT_V4, CFG_FORMAT_V5} for _, cfg in cfg_by_function.values()
     )
     if access_facts_enabled:
         memory_access_by_operation, memory_access_indices_by_function, memory_access_record_indices = (
@@ -1382,7 +1405,7 @@ def audit_field_store_load_dominance(
                     raise ValueError(f"field-access pair {pair_index}: memory fact disagrees with paired store root or offset")
                 if candidate_access_fact["memory_width_bytes"] != store_width:
                     raise ValueError(f"field-access pair {pair_index}: memory fact disagrees with paired store width")
-                if cfg["format"] in {CFG_FORMAT_V3, CFG_FORMAT_V4} and load_detail is not None and (
+                if cfg["format"] in {CFG_FORMAT_V3, CFG_FORMAT_V4, CFG_FORMAT_V5} and load_detail is not None and (
                     candidate_access_fact["memory_physical_space"] != load_detail["memory_physical_space"]
                     or candidate_access_fact["memory_pointer_width_bytes"] != load_detail["memory_pointer_width_bytes"]
                 ):
@@ -1408,14 +1431,19 @@ def audit_field_store_load_dominance(
                         field_width=store_width if isinstance(store_width, int) else 0,
                     ) is not None:
                         non_alias_store_locations.add((address, operation_time))
-        entry_index = cfg["entry_block_index"]
+        entry_indices = cfg["entry_block_indices"]
         entry_to_store = None
         bypass_store = None
         clean_after_store = None
         effect_after_store = None
         store_reachable = None
         store_dominates = None
-        if cfg["format"] not in {CFG_FORMAT_V2, CFG_FORMAT_V3, CFG_FORMAT_V4} or store_location is None or load_location is None:
+        if (
+            not entry_indices
+            or cfg["format"] not in {CFG_FORMAT_V2, CFG_FORMAT_V3, CFG_FORMAT_V4, CFG_FORMAT_V5}
+            or store_location is None
+            or load_location is None
+        ):
             status = "incomplete_evidence"
         elif any(value is None for value in (store_memory_space, load_memory_space, store_width, load_width)):
             status = "incomplete_evidence"
@@ -1425,20 +1453,30 @@ def audit_field_store_load_dominance(
             status = "incomplete_evidence"
         else:
             budget = max_path_expansions - path_expansions
-            entry_to_store, _unused, used = _find_routes(
-                cfg, (entry_index, 0), store_location[:2], max_expansions=budget,
-            )
-            path_expansions += used
+            for entry_index in entry_indices:
+                route, _unused, used = _find_routes(
+                    cfg, (entry_index, 0), store_location[:2], max_expansions=budget,
+                )
+                path_expansions += used
+                budget = max_path_expansions - path_expansions
+                if entry_to_store is None and route is not None:
+                    entry_to_store = route
+                    break
             store_reachable = entry_to_store is not None
             if not store_reachable:
                 status = "store_not_reachable"
             else:
                 budget = max_path_expansions - path_expansions
-                bypass_store, _unused, used = _find_routes(
-                    cfg, (entry_index, 0), load_location[:2], stop_at=store_location[:2],
-                    max_expansions=budget,
-                )
-                path_expansions += used
+                for entry_index in entry_indices:
+                    bypass, _unused, used = _find_routes(
+                        cfg, (entry_index, 0), load_location[:2], stop_at=store_location[:2],
+                        max_expansions=budget,
+                    )
+                    path_expansions += used
+                    budget = max_path_expansions - path_expansions
+                    if bypass_store is None and bypass is not None:
+                        bypass_store = bypass
+                        break
                 store_dominates = bypass_store is None
                 budget = max_path_expansions - path_expansions
                 clean_after_store, effect_after_store, used = _find_routes(
@@ -1446,9 +1484,9 @@ def audit_field_store_load_dominance(
                     classify_effects=True, tracked_memory_space=store_memory_space,
                     tracked_physical_space=(
                         store_detail.get("memory_physical_space")
-                        if cfg["format"] in {CFG_FORMAT_V3, CFG_FORMAT_V4} else None
+                        if cfg["format"] in {CFG_FORMAT_V3, CFG_FORMAT_V4, CFG_FORMAT_V5} else None
                     ),
-                    physical_space_aware=cfg["format"] in {CFG_FORMAT_V3, CFG_FORMAT_V4},
+                    physical_space_aware=cfg["format"] in {CFG_FORMAT_V3, CFG_FORMAT_V4, CFG_FORMAT_V5},
                     access_facts_enabled=access_facts_enabled,
                     non_alias_store_locations=non_alias_store_locations,
                     non_effect_call_locations=no_effect_call_locations,

@@ -28,6 +28,7 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
     private static final String FORMAT_V2 = "REVENGINSTR.GhidraFunctionPcodeCFG/2";
     private static final String FORMAT_V3 = "REVENGINSTR.GhidraFunctionPcodeCFG/3";
     private static final String FORMAT_V4 = "REVENGINSTR.GhidraFunctionPcodeCFG/4";
+    private static final String FORMAT_V5 = "REVENGINSTR.GhidraFunctionPcodeCFG/5";
 
     @Override
     protected void run() throws Exception {
@@ -49,6 +50,7 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
         boolean sawPhysicalMemoryMetadataFlag = false;
         boolean includePhysicalMemoryMetadata = false;
         boolean includeIndirectEffectLinks = false;
+        boolean includeEntryBlockIndices = false;
         boolean skipMissingEntryBlocks = false;
         List<Function> functions = new ArrayList<>();
         Set<String> seenEntries = new HashSet<>();
@@ -56,7 +58,7 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
             monitor.checkCancelled();
             String token = args[i].trim();
             if ("--memory-metadata".equals(token)) {
-                if (sawLogicalMemoryMetadataFlag || sawPhysicalMemoryMetadataFlag) {
+                if (sawLogicalMemoryMetadataFlag || sawPhysicalMemoryMetadataFlag || includeEntryBlockIndices) {
                     throw new IllegalArgumentException("Conflicting or duplicate memory metadata flag");
                 }
                 sawLogicalMemoryMetadataFlag = true;
@@ -64,7 +66,7 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
                 continue;
             }
             if ("--physical-memory-metadata".equals(token)) {
-                if (sawPhysicalMemoryMetadataFlag || sawLogicalMemoryMetadataFlag) {
+                if (sawPhysicalMemoryMetadataFlag || sawLogicalMemoryMetadataFlag || includeEntryBlockIndices) {
                     throw new IllegalArgumentException("Conflicting or duplicate memory metadata flag");
                 }
                 sawPhysicalMemoryMetadataFlag = true;
@@ -73,9 +75,19 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
                 continue;
             }
             if ("--indirect-effect-links".equals(token)) {
-                if (includeIndirectEffectLinks) {
+                if (includeIndirectEffectLinks || includeEntryBlockIndices) {
                     throw new IllegalArgumentException("Duplicate indirect effect links flag");
                 }
+                includeIndirectEffectLinks = true;
+                includePhysicalMemoryMetadata = true;
+                sawMemoryMetadataFlag = true;
+                continue;
+            }
+            if ("--entry-block-indices".equals(token)) {
+                if (includeEntryBlockIndices || sawMemoryMetadataFlag) {
+                    throw new IllegalArgumentException("Conflicting or duplicate CFG entry-block metadata flag");
+                }
+                includeEntryBlockIndices = true;
                 includeIndirectEffectLinks = true;
                 includePhysicalMemoryMetadata = true;
                 sawMemoryMetadataFlag = true;
@@ -103,6 +115,9 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
         if (skipMissingEntryBlocks && !includeMemoryMetadata) {
             throw new IllegalArgumentException("--skip-missing-entry-blocks requires a memory metadata flag");
         }
+        if (skipMissingEntryBlocks && includeEntryBlockIndices) {
+            throw new IllegalArgumentException("--skip-missing-entry-blocks conflicts with --entry-block-indices");
+        }
 
         DecompInterface decompiler = new DecompInterface();
         if (!decompiler.toggleCCode(false) || !decompiler.toggleSyntaxTree(true)) {
@@ -122,7 +137,7 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
                 }
                 String json = functionJson(programId, function, results.getHighFunction(),
                     includeMemoryMetadata, includePhysicalMemoryMetadata, includeIndirectEffectLinks,
-                    skipMissingEntryBlocks);
+                    includeEntryBlockIndices, skipMissingEntryBlocks);
                 if (json == null) {
                     skippedEntryBlocks.add(function.getEntryPoint().toString());
                     continue;
@@ -134,7 +149,8 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
         } finally {
             decompiler.dispose();
         }
-        String exportedFormat = includeIndirectEffectLinks ? FORMAT_V4
+        String exportedFormat = includeEntryBlockIndices ? FORMAT_V5
+            : includeIndirectEffectLinks ? FORMAT_V4
             : includePhysicalMemoryMetadata ? FORMAT_V3
             : includeMemoryMetadata ? FORMAT_V2 : FORMAT_V1;
         println("GHIDRA_FUNCTION_PCODE_CFG_FORMAT=" + exportedFormat);
@@ -151,27 +167,33 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
             String programId, Function function, HighFunction high,
             boolean includeMemoryMetadata, boolean includePhysicalMemoryMetadata,
             boolean includeIndirectEffectLinks,
+            boolean includeEntryBlockIndices,
             boolean skipMissingEntryBlocks) {
         List<PcodeBlockBasic> blocks = high.getBasicBlocks();
         IdentityHashMap<PcodeBlockBasic, Integer> indices = new IdentityHashMap<>();
         for (int i = 0; i < blocks.size(); i++) indices.put(blocks.get(i), i);
         int entryBlockIndex = -1;
+        List<Integer> entryBlockIndices = new ArrayList<>();
         for (int i = 0; i < blocks.size(); i++) {
             if (blocks.get(i).getStart().equals(function.getEntryPoint())) {
-                if (entryBlockIndex >= 0) throw new IllegalStateException("Multiple entry blocks for " + function.getEntryPoint());
-                entryBlockIndex = i;
+                if (entryBlockIndex >= 0 && !includeEntryBlockIndices) {
+                    throw new IllegalStateException("Multiple entry blocks for " + function.getEntryPoint());
+                }
+                if (entryBlockIndex < 0) entryBlockIndex = i;
+                entryBlockIndices.add(i);
             }
         }
-        if (includeMemoryMetadata && entryBlockIndex < 0) {
+        if (includeMemoryMetadata && entryBlockIndex < 0 && !includeEntryBlockIndices) {
             if (skipMissingEntryBlocks) return null;
             throw new IllegalStateException("Entry block not found for " + function.getEntryPoint());
         }
         StringBuilder out = new StringBuilder(256).append("{\"format\":")
-            .append(q(includeIndirectEffectLinks ? FORMAT_V4
+            .append(q(includeEntryBlockIndices ? FORMAT_V5 : includeIndirectEffectLinks ? FORMAT_V4
                 : includePhysicalMemoryMetadata ? FORMAT_V3 : includeMemoryMetadata ? FORMAT_V2 : FORMAT_V1))
             .append(",\"program_id\":").append(q(programId))
             .append(",\"function_entry\":").append(q(function.getEntryPoint().toString()))
-            .append(includeMemoryMetadata ? ",\"entry_block_index\":" + entryBlockIndex : "")
+            .append(includeEntryBlockIndices ? ",\"entry_block_indices\":" + integerArray(entryBlockIndices)
+                : includeMemoryMetadata ? ",\"entry_block_index\":" + entryBlockIndex : "")
             .append(",\"blocks\":[");
         for (int i = 0; i < blocks.size(); i++) {
             if (i > 0) out.append(',');
@@ -220,6 +242,15 @@ public class ExportFunctionPcodeCFG extends GhidraScript {
             out.append("]}");
         }
         return out.append("]}").toString();
+    }
+
+    private String integerArray(List<Integer> values) {
+        StringBuilder result = new StringBuilder("[");
+        for (int i = 0; i < values.size(); i++) {
+            if (i > 0) result.append(',');
+            result.append(values.get(i));
+        }
+        return result.append(']').toString();
     }
 
     private String indirectEffectLink(PcodeOp operation, HighFunction high) {

@@ -185,8 +185,9 @@ Ghidra's `INDIRECT` input 1 is a special operation reference to the P-code
 operation that caused the indirect effect. `GhidraFunctionPcodeFlow/1` keeps
 that operand as a constant token for compatibility, so it does not preserve
 the relationship. `GhidraFunctionPcodeCFG/4`, requested with
-`--indirect-effect-links`, resolves the token through `HighFunction.getOpRef`
-and records the exact source address, sequence time, and opcode. The shared CFG
+`--indirect-effect-links`, and CFG/5, requested with `--entry-block-indices`,
+resolve the token through `HighFunction.getOpRef` and record the exact source
+address, sequence time, and opcode. The shared CFG
 reader rejects a link unless that source is another operation in the same
 function with the matching opcode.
 
@@ -202,6 +203,7 @@ memory/call evidence. This removes duplicate barriers without changing the
 existing fail-closed rules for unknown or potentially aliasing source effects.
 
 The `/1` flow, CFG `/1`–`/3`, interprocedural effect `/1`, and dominance audit
-`/1`–`/5` contracts remain unchanged. Use CFG/4 consistently for the caller
-and every function in the direct-call closure; mixed or missing CFG evidence
-does not authorize marker removal.
+`/1`–`/5` contracts remain unchanged. Use CFG/4 or CFG/5 consistently for the
+caller and every function in the direct-call closure; mixed or missing CFG
+evidence does not authorize marker removal. CFG/5 treats every matching entry
+block as a root; an empty entry list remains incomplete evidence.
