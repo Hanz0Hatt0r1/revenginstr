@@ -1,0 +1,61 @@
+{
+  "baseline_capture_id": "synthetic-nevergone-module-base-replay",
+  "baseline_report_sha256": "c88058fcab630f7c238193b8a38645186840c68fbb13ac062514995586db717c",
+  "comparison_id": "synthetic-horizontal-control-action",
+  "format": "REVENGINSTR.RuntimeDifferential/1",
+  "intervention": {
+    "baseline_label": "released",
+    "dimension": "action",
+    "fixed_context_sha256": "76cfd6bc6ee87286260611d8777bbff4862483dc2c3b1a903d0db9d0fc6b2431",
+    "name": "horizontal_control",
+    "treatment_label": "left_pressed"
+  },
+  "manifest_sha256": "d5123f407842a0818c5404bf0b46606c9e0a2af1b74f1a644d04d5bfb94aad61",
+  "program_id": "nevergone-1.0.9-armv7-libcocos2dcpp",
+  "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
+  "ranked_candidates": [
+    {
+      "baseline_count": 0,
+      "change": "added",
+      "delta": 1,
+      "event_kind": "function_entry",
+      "evidence_class": "correlation",
+      "function_entries": [
+        "0032a4ec"
+      ],
+      "matched_node_ids": [
+        "function:1c25362c381fae5a75a4588bb423b6cce1599e06939509f134673f6aee619cae"
+      ],
+      "normalized_address": "0x32a4ec",
+      "rank": 1,
+      "treatment_count": 1
+    }
+  ],
+  "sampling": {
+    "baseline": {
+      "gaps": [
+        {
+          "first_sequence": 5,
+          "last_sequence": 5,
+          "reason": "synthetic dropped event"
+        }
+      ],
+      "status": "sampled"
+    },
+    "treatment": {
+      "gaps": [],
+      "status": "unknown"
+    }
+  },
+  "semantic_graph_sha256": "83093ddcab1e2a39abae5a53174ab1e835f501a92394ca09cc328682454186e3",
+  "static_identity_sha256": "3cc89c41b5f5a55f2143ad74c1c03ae453878b5d8c68d2f6b80161227b03a96e",
+  "summary": {
+    "baseline_event_count": 6,
+    "baseline_unmapped_count": 1,
+    "changed_signature_count": 1,
+    "treatment_event_count": 7,
+    "treatment_unmapped_count": 1
+  },
+  "treatment_capture_id": "synthetic-nevergone-left-action-treatment",
+  "treatment_report_sha256": "28b0b881815caeca29190400d8b48aeb8af934f7950f2e10496521e5f4e583de"
+}

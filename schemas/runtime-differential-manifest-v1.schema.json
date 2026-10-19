@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/runtime-differential-manifest-v1.schema.json",
+  "title": "REVENGINSTR.RuntimeDifferentialManifest/1",
+  "description": "Caller-declared one-factor comparison between two exact runtime/static correlation reports.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "comparison_id", "baseline_report_sha256", "treatment_report_sha256", "intervention"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.RuntimeDifferentialManifest/1"},
+    "comparison_id": {"type": "string", "minLength": 1},
+    "baseline_report_sha256": {"$ref": "#/$defs/sha256"},
+    "treatment_report_sha256": {"$ref": "#/$defs/sha256"},
+    "intervention": {"$ref": "#/$defs/intervention"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "intervention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dimension", "name", "baseline_label", "treatment_label", "fixed_context_sha256"],
+      "properties": {
+        "dimension": {"enum": ["input", "state", "action"]},
+        "name": {"type": "string", "minLength": 1, "maxLength": 256},
+        "baseline_label": {"type": "string", "minLength": 1, "maxLength": 256},
+        "treatment_label": {"type": "string", "minLength": 1, "maxLength": 256},
+        "fixed_context_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/runtime-differential-v1.schema.json",
+  "title": "REVENGINSTR.RuntimeDifferential/1",
+  "description": "Rank normalized event-frequency changes between two pinned captures as correlation evidence only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "comparison_id", "program_id", "program_sha256", "semantic_graph_sha256", "static_identity_sha256", "baseline_capture_id", "treatment_capture_id", "baseline_report_sha256", "treatment_report_sha256", "manifest_sha256", "intervention", "sampling", "summary", "ranked_candidates"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.RuntimeDifferential/1"},
+    "comparison_id": {"type": "string", "minLength": 1},
+    "program_id": {"type": "string", "minLength": 1},
+    "program_sha256": {"$ref": "#/$defs/sha256"},
+    "semantic_graph_sha256": {"$ref": "#/$defs/sha256"},
+    "static_identity_sha256": {"$ref": "#/$defs/sha256"},
+    "baseline_capture_id": {"type": "string", "minLength": 1},
+    "treatment_capture_id": {"type": "string", "minLength": 1},
+    "baseline_report_sha256": {"$ref": "#/$defs/sha256"},
+    "treatment_report_sha256": {"$ref": "#/$defs/sha256"},
+    "manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "intervention": {"$ref": "#/$defs/intervention"},
+    "sampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseline", "treatment"],
+      "properties": {
+        "baseline": {"$ref": "#/$defs/sampling"},
+        "treatment": {"$ref": "#/$defs/sampling"}
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseline_event_count", "treatment_event_count", "baseline_unmapped_count", "treatment_unmapped_count", "changed_signature_count"],
+      "properties": {
+        "baseline_event_count": {"type": "integer", "minimum": 1, "maximum": 100000},
+        "treatment_event_count": {"type": "integer", "minimum": 1, "maximum": 100000},
+        "baseline_unmapped_count": {"type": "integer", "minimum": 0, "maximum": 100000},
+        "treatment_unmapped_count": {"type": "integer", "minimum": 0, "maximum": 100000},
+        "changed_signature_count": {"type": "integer", "minimum": 0, "maximum": 200000}
+      }
+    },
+    "ranked_candidates": {"type": "array", "maxItems": 200000, "items": {"$ref": "#/$defs/candidate"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "intervention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dimension", "name", "baseline_label", "treatment_label", "fixed_context_sha256"],
+      "properties": {
+        "dimension": {"enum": ["input", "state", "action"]},
+        "name": {"type": "string", "minLength": 1, "maxLength": 256},
+        "baseline_label": {"type": "string", "minLength": 1, "maxLength": 256},
+        "treatment_label": {"type": "string", "minLength": 1, "maxLength": 256},
+        "fixed_context_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["first_sequence", "last_sequence", "reason"],
+      "properties": {
+        "first_sequence": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+        "last_sequence": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+        "reason": {"type": "string", "minLength": 1}
+      }
+    },
+    "sampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "gaps"],
+      "properties": {
+        "status": {"enum": ["complete", "sampled", "unknown"]},
+        "gaps": {"type": "array", "maxItems": 10000, "items": {"$ref": "#/$defs/gap"}}
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rank", "event_kind", "normalized_address", "baseline_count", "treatment_count", "delta", "change", "matched_node_ids", "function_entries", "evidence_class"],
+      "properties": {
+        "rank": {"type": "integer", "minimum": 1},
+        "event_kind": {"enum": ["function_entry", "function_exit", "call_target", "instruction"]},
+        "normalized_address": {"type": "string", "pattern": "^0x[0-9a-f]{1,16}$"},
+        "baseline_count": {"type": "integer", "minimum": 0, "maximum": 100000},
+        "treatment_count": {"type": "integer", "minimum": 0, "maximum": 100000},
+        "delta": {"type": "integer", "minimum": -100000, "maximum": 100000, "not": {"const": 0}},
+        "change": {"enum": ["added", "removed", "increased", "decreased"]},
+        "matched_node_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "function_entries": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "evidence_class": {"const": "correlation"}
+      }
+    }
+  }
+}

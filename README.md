@@ -32,6 +32,7 @@ The repository now owns these generic mechanisms:
 - conservative receiver class/vtable identity inference from consumer-owned catalogs;
 - leakage-safe evidence aggregation;
 - deterministic structural P-code metrics and coarse numeric evidence tokenization;
+- hash-pinned runtime/static address correlation and caller-declared pairwise differential summaries;
 - portable P-code function-family mining with deterministic MinHash/LSH;
 - family-grouped selective classification with calibrated correctness confidence and contrastive family OOD;
 - optional evidence-aware selective classification using `REVENGINSTR.Evidence/1`;
@@ -89,6 +90,12 @@ REVENGINSTR.FunctionSummary/2
 REVENGINSTR.AnalysisFeedback/1
 REVENGINSTR.AnalysisDecisionLedgerEvent/1
 REVENGINSTR.AnalysisDecisionLedgerAudit/1
+REVENGINSTR.RuntimeStaticIdentity/1
+REVENGINSTR.RuntimeCaptureManifest/1
+REVENGINSTR.RuntimeAddressObservation/1
+REVENGINSTR.RuntimeStaticCorrelation/1
+REVENGINSTR.RuntimeDifferentialManifest/1
+REVENGINSTR.RuntimeDifferential/1
 ```
 
 JSON Schemas in `schemas/` define portable evidence, benchmark, determinism and
@@ -120,6 +127,8 @@ The convergence-state and decision-ledger contracts are documented in
 The function-level evidence projection and compact structured summary are
 documented in [`docs/FUNCTION_EFFECT_IR.md`](docs/FUNCTION_EFFECT_IR.md) and
 [`docs/FUNCTION_SUMMARY.md`](docs/FUNCTION_SUMMARY.md).
+Runtime address correlation and pairwise differential evidence are documented
+in [`docs/RUNTIME_DIFFERENTIAL.md`](docs/RUNTIME_DIFFERENTIAL.md).
 
 The generic Ghidra function-instruction export is documented in
 docs/GHIDRA_FUNCTION_INSTRUCTIONS.md.

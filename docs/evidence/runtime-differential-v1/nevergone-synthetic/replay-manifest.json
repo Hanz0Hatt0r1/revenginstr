@@ -1,0 +1,54 @@
+{
+  "format": "REVENGINSTR.RuntimeDifferentialReplay/1",
+  "input_origin": "synthetic baseline and treatment correlation reports with one synthetic horizontal-control action change",
+  "artifacts": [
+    {
+      "id": "semantic_graph",
+      "path": "../../semantic-program-graph-v3/nevergone-ccjoystick/semantic-program-graph.jsonl",
+      "bytes": 52588,
+      "sha256": "83093ddcab1e2a39abae5a53174ab1e835f501a92394ca09cc328682454186e3"
+    },
+    {
+      "id": "static_identity",
+      "path": "../../runtime-static-correlation-v1/nevergone-synthetic/static-identity.json",
+      "bytes": 314,
+      "sha256": "3cc89c41b5f5a55f2143ad74c1c03ae453878b5d8c68d2f6b80161227b03a96e"
+    },
+    {
+      "id": "baseline_report",
+      "path": "../../runtime-static-correlation-v1/nevergone-synthetic/correlation.json",
+      "bytes": 3492,
+      "sha256": "c88058fcab630f7c238193b8a38645186840c68fbb13ac062514995586db717c"
+    },
+    {
+      "id": "treatment_capture",
+      "path": "treatment-capture.json",
+      "bytes": 449,
+      "sha256": "64f0b958c5b3e7af4bb09e48ca8047963977508b8c6763e1bf22adfceaabfab5"
+    },
+    {
+      "id": "treatment_observations",
+      "path": "treatment-observations.jsonl",
+      "bytes": 1329,
+      "sha256": "1d300055a24eaa8d57226af0f1e98b15ccd556a09b3edb8e4ce37a432e7af004"
+    },
+    {
+      "id": "treatment_report",
+      "path": "treatment-correlation.json",
+      "bytes": 3815,
+      "sha256": "28b0b881815caeca29190400d8b48aeb8af934f7950f2e10496521e5f4e583de"
+    },
+    {
+      "id": "intervention",
+      "path": "intervention.json",
+      "bytes": 565,
+      "sha256": "d5123f407842a0818c5404bf0b46606c9e0a2af1b74f1a644d04d5bfb94aad61"
+    },
+    {
+      "id": "expected_differential",
+      "path": "differential.json",
+      "bytes": 2046,
+      "sha256": "856d50a877f730bb89fd4c7de8f37dd9e998ace753541089549f72ab6aff2198"
+    }
+  ]
+}
