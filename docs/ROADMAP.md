@@ -1099,6 +1099,11 @@ Infer evidence-backed candidates for:
 
 Exact debug/import/type information always outranks inferred prototypes. Conflicting call sites fail toward review rather than being silently unified.
 
+`FunctionPrototypeHypothesis/1`, `FunctionPrototypeGold/1`, and a scoped
+compatibility evaluator now exist with synthetic exact fixtures. They are
+contracts and scoring infrastructure only: no prototype inference engine or
+independent consumer gold corpus exists yet, so M8.1 remains partial.
+
 ### M8.2 Struct/class layout recovery
 
 Build a versioned `TypeLayoutHypothesis`-class representation containing:
@@ -1148,10 +1153,11 @@ validate the wire contract and fail-closed conflicts. `TypeLayoutGold/1` and
 `revenginstr-type-layout-evaluate` now score field offsets only inside explicit
 audited coverage, and report compatible reviewed-type accuracy, coverage,
 conflict rates, and review acceptance. Synthetic tests exercise partial-gold
-handling. The consumer gold sets, prototype compatibility input, and an
-independent confidence signal are still absent; prototype and high-confidence
-acceptance metrics are returned as not evaluated. M8.5 is therefore partial,
-not complete.
+handling. Independent consumer layout/prototype gold sets and a field-level
+confidence signal are still absent. The synthetic prototype evaluator can now
+be hash-linked to the layout report, but no consumer prototype gold has been
+adjudicated, and high-confidence field acceptance remains not evaluated. M8.5
+is therefore partial, not complete.
 
 ## Exit criteria
 
@@ -1573,7 +1579,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 
 ## P3 — whole-program recovery and active evidence
 
-28. Function prototype hypothesis schema and compatibility evaluator.
+28. 🟡 Function prototype hypothesis/gold schemas, coverage-aware compatibility evaluator, and synthetic fixture implemented; inference and independent consumer gold remain open.
 29. 🟡 Object/type layout hypothesis schema, exact-size and field-type review inputs, synthetic fixtures, deterministic reviewer-keyed read/write builder, and NFS SHIFT plus Nevergone projections implemented; broader field/type gold validation remains open.
 30. Allocation/lifetime/ownership evidence projection.
 31. Bounded runtime probe-request and correlation contracts.

@@ -46,6 +46,7 @@ TOOLS = {
     "semantic-program-path-query": ("revenginstr.semantic_program_path_query", "main"),
     "semantic-program-graph-evaluate": ("revenginstr.semantic_program_graph_evaluation", "main"),
     "type-layout-evaluate": ("revenginstr.type_layout_evaluation", "main"),
+    "function-prototype-evaluate": ("revenginstr.prototype_evaluation", "main"),
     "semantic-role-evaluate": ("revenginstr.semantic_roles", "main"),
     "decision-ledger-audit": ("revenginstr.decision_ledger", "main"),
     "analysis-invalidation-plan": ("revenginstr.analysis_task_graph", "main"),

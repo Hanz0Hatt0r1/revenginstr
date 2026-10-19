@@ -7,11 +7,14 @@ from pathlib import Path
 import pytest
 from jsonschema import Draft202012Validator
 
+from revenginstr.prototype_evaluation import evaluate_prototypes
 from revenginstr.type_layout_evaluation import evaluate_type_layouts, main
 
 ROOT = Path(__file__).resolve().parents[1]
 PREDICTIONS = ROOT / "tests/fixtures/type-layout-hypothesis/synthetic.jsonl"
 GOLD_FIXTURE = ROOT / "tests/fixtures/type-layout-gold/synthetic.jsonl"
+PROTOTYPE_HYPOTHESES = ROOT / "tests/fixtures/function-prototype-hypothesis/synthetic.jsonl"
+PROTOTYPE_GOLD = ROOT / "tests/fixtures/function-prototype-gold/synthetic.jsonl"
 
 
 def write_jsonl(path: Path, rows: list[dict]) -> None:
@@ -71,6 +74,8 @@ def test_evaluation_scores_only_explicitly_audited_offsets_and_reports_type_metr
     assert result["reviewed_field_acceptance"] == 1
     assert result["high_confidence_reviewer_acceptance"] is None
     assert result["prototype_compatibility"] is None
+    assert result["prototype_compatibility_status"] == "not_evaluated_no_prototype_evaluation_input"
+    assert result["prototype_evaluation_sha256"] is None
     schema = json.loads((ROOT / "schemas/type-layout-evaluation-v1.schema.json").read_text())
     Draft202012Validator.check_schema(schema)
     Draft202012Validator(schema).validate(result)
@@ -93,6 +98,32 @@ def test_synthetic_exact_layout_gold_fixture_is_independent_and_scores_offsets()
     assert result["field_offset_recall"] == 1
     assert result["field_offset_f1"] == 1
     assert result["compatible_type_accuracy"] is None
+
+
+def test_layout_evaluation_accepts_matching_prototype_evaluation_report(tmp_path: Path) -> None:
+    prototype_report = evaluate_prototypes(PROTOTYPE_HYPOTHESES, PROTOTYPE_GOLD)
+    report_path = tmp_path / "prototype-evaluation.json"
+    report_path.write_text(json.dumps(prototype_report) + "\n", encoding="utf-8")
+
+    result = evaluate_type_layouts(
+        PREDICTIONS, GOLD_FIXTURE, prototype_evaluation_path=report_path,
+    )
+
+    assert result["prototype_compatibility"] == 1
+    assert result["prototype_compatibility_status"] == "evaluated"
+    assert result["prototype_evaluation_sha256"] == hashlib.sha256(report_path.read_bytes()).hexdigest()
+
+
+def test_layout_evaluation_rejects_prototype_report_from_another_split(tmp_path: Path) -> None:
+    prototype_report = evaluate_prototypes(PROTOTYPE_HYPOTHESES, PROTOTYPE_GOLD)
+    prototype_report["split_id"] = "other-split"
+    report_path = tmp_path / "prototype-evaluation.json"
+    report_path.write_text(json.dumps(prototype_report) + "\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="dataset/split does not match"):
+        evaluate_type_layouts(
+            PREDICTIONS, GOLD_FIXTURE, prototype_evaluation_path=report_path,
+        )
 
 
 def test_evaluation_rejects_positive_field_outside_audited_offsets(tmp_path: Path) -> None:
