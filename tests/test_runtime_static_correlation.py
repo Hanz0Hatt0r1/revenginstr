@@ -25,6 +25,7 @@ REPLAY_DIR = ROOT / "docs/evidence/runtime-static-correlation-v1/nevergone-synth
 DEVICE_ARTIFACT_IDENTITY_PATH = (
     ROOT / "docs/evidence/runtime-static-correlation-v1/nevergone-device-artifact-20261019/artifact-identity.json"
 )
+DEVICE_RUNTIME_REPLAY_DIR = ROOT / "docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019"
 SCHEMAS = {
     name: json.loads((ROOT / "schemas" / name).read_text(encoding="utf-8"))
     for name in (
@@ -40,12 +41,38 @@ def test_installed_nevergone_library_matches_pinned_graph_binary() -> None:
     evidence = json.loads(DEVICE_ARTIFACT_IDENTITY_PATH.read_text(encoding="utf-8"))
     graphs, _ = _read_jsonl(GRAPH_PATH)
     program_manifest = json.loads(PROGRAM_MANIFEST_PATH.read_text(encoding="utf-8"))
+    address_domain = evidence["address_domain"]
+    static_image_base = int(address_domain["static_image_base"], 16)
+    graph_function_entries = {
+        node["entry"] for node in graphs[0]["nodes"] if node.get("kind") == "function"
+    }
+    graph_callsites = {
+        node["operation_address"]: node.get("target_entries", [])
+        for node in graphs[0]["nodes"]
+        if node.get("kind") == "operation" and node.get("opcode") == "CALL"
+    }
 
     assert evidence["format"] == "REVENGINSTR.InstalledAndroidNativeArtifactIdentity/1"
     assert evidence["package"]["name"] == "com.hippiegame.nevergone"
     assert evidence["native_library"]["sha256"] == program_manifest["program_sha256"]
     assert evidence["static_graph"]["program_sha256"] == program_manifest["program_sha256"]
     assert evidence["static_graph"]["program_id"] == graphs[0]["program_id"]
+    assert address_domain["static_image_base"] == "0x10000"
+    for entry in address_domain["symbol_entries"]:
+        symbol_value = int(entry["elf_symbol_value"], 16)
+        elf_entry = int(entry["elf_code_entry"], 16)
+        graph_entry = int(entry["graph_entry"], 16)
+        assert elf_entry == symbol_value & ~1
+        assert graph_entry - elf_entry == static_image_base
+        assert f"{graph_entry:08x}" in graph_function_entries
+    for call in address_domain["direct_calls"]:
+        elf_callsite = int(call["elf_callsite"], 16)
+        elf_target = int(call["elf_target"], 16)
+        graph_callsite = int(call["graph_callsite"], 16)
+        graph_target = int(call["graph_target"], 16)
+        assert graph_callsite - elf_callsite == static_image_base
+        assert graph_target - elf_target == static_image_base
+        assert f"{graph_target:08x}" in graph_callsites[f"{graph_callsite:08x}"]
 
 
 def _inputs():
@@ -56,31 +83,32 @@ def _inputs():
         "program_id": graphs[0]["program_id"],
         "program_sha256": program_manifest["program_sha256"],
         "semantic_graph_sha256": graph_sha,
+        "static_image_base": "0x10000",
     }
     identity_bytes = (json.dumps(identity, sort_keys=True) + "\n").encode()
     capture = {
         "format": CAPTURE_FORMAT,
-        "capture_id": "synthetic-nevergone-load-bias-replay",
+        "capture_id": "synthetic-nevergone-module-base-replay",
         "program_id": identity["program_id"],
         "program_sha256": identity["program_sha256"],
         "static_identity_sha256": hashlib.sha256(identity_bytes).hexdigest(),
-        "load_bias": "0x70000000",
+        "runtime_module_base": "0x70000000",
         "sampling_status": "sampled",
         "sampling_gaps": [{"first_sequence": 5, "last_sequence": 5, "reason": "synthetic dropped event"}],
     }
     observations = [
         {"format": OBSERVATION_FORMAT, "capture_id": capture["capture_id"], "sequence": 0,
-         "event_kind": "instruction", "runtime_address": "0x7032de44"},
+         "event_kind": "instruction", "runtime_address": "0x7031de44"},
         {"format": OBSERVATION_FORMAT, "capture_id": capture["capture_id"], "sequence": 1,
-         "event_kind": "function_entry", "runtime_address": "0x7032ddee"},
+         "event_kind": "function_entry", "runtime_address": "0x7031ddee"},
         {"format": OBSERVATION_FORMAT, "capture_id": capture["capture_id"], "sequence": 2,
-         "event_kind": "call_target", "runtime_address": "0x70549756"},
+         "event_kind": "call_target", "runtime_address": "0x70539756"},
         {"format": OBSERVATION_FORMAT, "capture_id": capture["capture_id"], "sequence": 3,
          "event_kind": "instruction", "runtime_address": "0x70100000"},
         {"format": OBSERVATION_FORMAT, "capture_id": capture["capture_id"], "sequence": 4,
          "event_kind": "instruction", "runtime_address": "0x1"},
         {"format": OBSERVATION_FORMAT, "capture_id": capture["capture_id"], "sequence": 6,
-         "event_kind": "instruction", "runtime_address": "0x7032de60"},
+         "event_kind": "instruction", "runtime_address": "0x7031de60"},
     ]
     return graphs[0], graph_sha, identity, identity_bytes, capture, observations
 
@@ -118,7 +146,12 @@ def test_runtime_address_correlation_normalizes_aslr_and_keeps_sampling_gaps() -
     assert capture == original_capture
     Draft202012Validator.check_schema(SCHEMAS["runtime-static-correlation-v1.schema.json"])
     Draft202012Validator(SCHEMAS["runtime-static-correlation-v1.schema.json"]).validate(report)
-    assert report["address_mapping"] == {"method": "runtime_address_minus_load_bias", "load_bias": "0x70000000"}
+    assert report["address_mapping"] == {
+        "method": "runtime_address_minus_module_delta",
+        "runtime_module_base": "0x70000000",
+        "static_image_base": "0x10000",
+        "module_delta": "0x6fff0000",
+    }
     assert report["sampling"]["gaps"] == [{
         "first_sequence": 5, "last_sequence": 5, "reason": "synthetic dropped event",
     }]
@@ -167,11 +200,13 @@ def test_runtime_static_identity_mismatches_fail_closed() -> None:
         )
 
 
-def test_load_bias_address_overflow_remains_explicit() -> None:
-    _, _, _, _, capture, _ = _inputs()
+def test_module_mapping_address_overflow_remains_explicit() -> None:
+    _, _, _, _, capture, observations = _inputs()
     capture = copy.deepcopy(capture)
-    capture["load_bias"] = "-0xffffffffffffffff"
-    report = _correlate(capture=capture)
+    capture["runtime_module_base"] = "0x0"
+    observations = copy.deepcopy(observations)
+    observations[0]["runtime_address"] = "0xffffffffffffffff"
+    report = _correlate(capture=capture, observations=observations)
     Draft202012Validator(SCHEMAS["runtime-static-correlation-v1.schema.json"]).validate(report)
     assert report["events"][0]["match_state"] == "mapping_overflow"
     assert report["events"][0]["normalized_address"] is None
@@ -241,7 +276,8 @@ def test_runtime_correlation_cli_writes_schema_valid_report(tmp_path: Path, caps
 
 def test_pinned_runtime_correlation_replay_and_benchmark(tmp_path: Path) -> None:
     replay = json.loads((REPLAY_DIR / "replay-manifest.json").read_text(encoding="utf-8"))
-    assert replay["input_origin"].startswith("real Nevergone static graph; synthetic runtime")
+    assert replay["input_origin"].startswith("real installed Nevergone binary and static graph; synthetic runtime")
+    assert "no game runtime PC events" in replay["input_origin"]
     for artifact in replay["artifacts"]:
         raw = (REPLAY_DIR / artifact["path"]).resolve().read_bytes()
         assert len(raw) == artifact["bytes"]
@@ -265,3 +301,41 @@ def test_pinned_runtime_correlation_replay_and_benchmark(tmp_path: Path) -> None
     generated = tmp_path / "correlation.generated.json"
     assert generated.read_bytes() == (REPLAY_DIR / "correlation.json").read_bytes()
     assert [metric["value"] for metric in summary["metrics"]] == [6, 4, 1]
+
+
+def test_pinned_device_runtime_capture_replay_preserves_unknown_sampling(tmp_path: Path) -> None:
+    replay = json.loads((DEVICE_RUNTIME_REPLAY_DIR / "replay-manifest.json").read_text(encoding="utf-8"))
+    for artifact in replay["artifacts"]:
+        raw = (DEVICE_RUNTIME_REPLAY_DIR / artifact["path"]).resolve().read_bytes()
+        assert len(raw) == artifact["bytes"]
+        assert hashlib.sha256(raw).hexdigest() == artifact["sha256"]
+
+    capture = json.loads((DEVICE_RUNTIME_REPLAY_DIR / "capture-manifest.json").read_text(encoding="utf-8"))
+    assert capture["sampling_status"] == "unknown"
+    assert capture["sampling_gaps"] == []
+    observations_path = DEVICE_RUNTIME_REPLAY_DIR / "observations.jsonl"
+    observations, _ = _read_jsonl(observations_path)
+    assert len(observations) == 88
+    assert all(row["event_kind"] == "function_entry" for row in observations)
+
+    output = tmp_path / "device-correlation.json"
+    assert main([
+        str(GRAPH_PATH),
+        str(REPLAY_DIR / "static-identity.json"),
+        str(DEVICE_RUNTIME_REPLAY_DIR / "capture-manifest.json"),
+        str(observations_path),
+        "--output", str(output),
+    ]) == 0
+    generated = json.loads(output.read_text(encoding="utf-8"))
+    expected = json.loads((DEVICE_RUNTIME_REPLAY_DIR / "correlation.json").read_text(encoding="utf-8"))
+    Draft202012Validator(SCHEMAS["runtime-static-correlation-v1.schema.json"]).validate(generated)
+    assert generated == expected
+    assert generated["summary"] == {
+        "event_count": 88,
+        "matched_count": 0,
+        "ambiguous_count": 0,
+        "unmatched_count": 88,
+        "mapping_underflow_count": 0,
+        "mapping_overflow_count": 0,
+    }
+    assert {row["normalized_address"] for row in generated["events"]} == {"0x544a60", "0x2d2f1c"}

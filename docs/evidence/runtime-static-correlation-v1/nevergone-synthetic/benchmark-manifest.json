@@ -7,7 +7,7 @@
       "path": "capture-manifest.json",
       "role": "input",
       "schema": "capture",
-      "sha256": "4bafe0c2fb235a59f151257fc311f4ec97edf66121670217bc1c21f77d0c8b85"
+      "sha256": "ab86c8a323189d9f5250b4d26e6053be9f8aa97ea5d0fbd186c7a7cdb8cdcc08"
     },
     "correlation": {
       "content": "json",
@@ -33,7 +33,7 @@
       "path": "static-identity.json",
       "role": "input",
       "schema": "identity",
-      "sha256": "f7aa266927302148e412d529a447dd8e7d7d490316eaa64b102d2322ecaf9558"
+      "sha256": "3cc89c41b5f5a55f2143ad74c1c03ae453878b5d8c68d2f6b80161227b03a96e"
     },
     "observations": {
       "content": "jsonl",
@@ -42,7 +42,7 @@
       "path": "observations.jsonl",
       "role": "input",
       "schema": "observation",
-      "sha256": "835efc3c03592dc3fb44baf51259887844366875579a1befea9a275cba6acfe7"
+      "sha256": "8fc3bb42fd1ee4443edf6b39667f487d3082e1efd5047cbe8c8188b6c7bdce73"
     }
   },
   "benchmark": {
@@ -50,7 +50,7 @@
     "dataset_id": "nevergone-ccjoystick-synthetic-runtime-addresses",
     "family_set_id": null,
     "id": "nevergone-synthetic-runtime-address-correlation-v1",
-    "split_id": "synthetic-load-bias-replay"
+    "split_id": "synthetic-module-base-replay"
   },
   "configs": {
     "scope": "exact function-entry and P-code operation address joins only"
@@ -79,12 +79,12 @@
   "schemas": {
     "capture": {
       "path": "../../../../schemas/runtime-capture-manifest-v1.schema.json",
-      "sha256": "814049eef7b80a2c307c23edebf416f29561a1df26ea9f7b819ab523afed31a8",
+      "sha256": "9f0241b179eba926af6c258a9db01107d8378ab08341aab0c5a3b4aa2e6f24cf",
       "version": "REVENGINSTR.RuntimeCaptureManifest/1"
     },
     "correlation": {
       "path": "../../../../schemas/runtime-static-correlation-v1.schema.json",
-      "sha256": "429a06bed83e5f830f39a160053b2a440a0b82fb44abff84f6076af482f7b1f8",
+      "sha256": "2d3dcbde6525bd7762b4c35ffd858c6d69eaad46c9e87f340836db8cbb4fd9d7",
       "version": "REVENGINSTR.RuntimeStaticCorrelation/1"
     },
     "graph": {
@@ -94,7 +94,7 @@
     },
     "identity": {
       "path": "../../../../schemas/runtime-static-identity-v1.schema.json",
-      "sha256": "7652547d5ac9ed466b2ac6a28352e0b7c90268cfcbd82c3dcf6b2f49a99e7551",
+      "sha256": "5ba6baf789fea540541ff38c95276b7ca949e4eca96469ffab24b1af668c4606",
       "version": "REVENGINSTR.RuntimeStaticIdentity/1"
     },
     "observation": {

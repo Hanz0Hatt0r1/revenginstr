@@ -1,9 +1,13 @@
 # Synthetic runtime address correlation replay
 
 This replay uses the real Nevergone `CCJoyStick` SemanticProgramGraph/3 and
-its pinned executable SHA-256. The runtime addresses, load bias, six events,
+its pinned executable SHA-256. The runtime addresses, module base, six events,
 and dropped-event gap are synthetic. They verify address normalization and
 report behavior; they are not observations from the game or a phone capture.
+The graph uses Ghidra static image base `0x10000`, independently checked
+against the installed ELF's Thumb symbols and two direct-call sites. The replay
+therefore maps `runtime_module_base - static_image_base` before joining graph
+addresses.
 
 Reproduce the pinned output directly:
 

@@ -35,11 +35,14 @@
     },
     "addressMapping": {
       "type": "object",
+      "description": "Maps runtime addresses to the static analyzer address space using runtime_module_base - static_image_base.",
       "additionalProperties": false,
-      "required": ["method", "load_bias"],
+      "required": ["method", "runtime_module_base", "static_image_base", "module_delta"],
       "properties": {
-        "method": {"const": "runtime_address_minus_load_bias"},
-        "load_bias": {"type": "string", "pattern": "^-?0x[0-9a-fA-F]{1,16}$"}
+        "method": {"const": "runtime_address_minus_module_delta"},
+        "runtime_module_base": {"$ref": "#/$defs/address"},
+        "static_image_base": {"$ref": "#/$defs/address"},
+        "module_delta": {"type": "string", "pattern": "^-?0x[0-9a-fA-F]{1,16}$"}
       }
     },
     "sampling": {

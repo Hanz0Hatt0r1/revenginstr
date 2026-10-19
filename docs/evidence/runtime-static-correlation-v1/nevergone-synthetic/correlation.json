@@ -1,13 +1,15 @@
 {
   "address_mapping": {
-    "load_bias": "0x70000000",
-    "method": "runtime_address_minus_load_bias"
+    "method": "runtime_address_minus_module_delta",
+    "module_delta": "0x6fff0000",
+    "runtime_module_base": "0x70000000",
+    "static_image_base": "0x10000"
   },
-  "capture_id": "synthetic-nevergone-load-bias-replay",
-  "capture_manifest_sha256": "4bafe0c2fb235a59f151257fc311f4ec97edf66121670217bc1c21f77d0c8b85",
+  "capture_id": "synthetic-nevergone-module-base-replay",
+  "capture_manifest_sha256": "ab86c8a323189d9f5250b4d26e6053be9f8aa97ea5d0fbd186c7a7cdb8cdcc08",
   "events": [
     {
-      "capture_id": "synthetic-nevergone-load-bias-replay",
+      "capture_id": "synthetic-nevergone-module-base-replay",
       "event_kind": "instruction",
       "function_entries": [
         "0032ddee"
@@ -17,11 +19,11 @@
         "operation:10dcf6425c7a97c7a1cdafa5d386092ab9d325bae2a6479e97f6341d3a72d331"
       ],
       "normalized_address": "0x32de44",
-      "runtime_address": "0x7032de44",
+      "runtime_address": "0x7031de44",
       "sequence": 0
     },
     {
-      "capture_id": "synthetic-nevergone-load-bias-replay",
+      "capture_id": "synthetic-nevergone-module-base-replay",
       "event_kind": "function_entry",
       "function_entries": [
         "0032ddee"
@@ -31,11 +33,11 @@
         "function:a5cac72cc70e1b4bcd84e33da7292adab57a305d721b84e859f9d2ffedb56dca"
       ],
       "normalized_address": "0x32ddee",
-      "runtime_address": "0x7032ddee",
+      "runtime_address": "0x7031ddee",
       "sequence": 1
     },
     {
-      "capture_id": "synthetic-nevergone-load-bias-replay",
+      "capture_id": "synthetic-nevergone-module-base-replay",
       "event_kind": "call_target",
       "function_entries": [
         "00549756"
@@ -45,21 +47,21 @@
         "function:6cd3c19c8db2cbed2983ec90a7b29110f705ac80744c25dbc056679283dc8eb1"
       ],
       "normalized_address": "0x549756",
-      "runtime_address": "0x70549756",
+      "runtime_address": "0x70539756",
       "sequence": 2
     },
     {
-      "capture_id": "synthetic-nevergone-load-bias-replay",
+      "capture_id": "synthetic-nevergone-module-base-replay",
       "event_kind": "instruction",
       "function_entries": [],
       "match_state": "unmatched",
       "matched_node_ids": [],
-      "normalized_address": "0x100000",
+      "normalized_address": "0x110000",
       "runtime_address": "0x70100000",
       "sequence": 3
     },
     {
-      "capture_id": "synthetic-nevergone-load-bias-replay",
+      "capture_id": "synthetic-nevergone-module-base-replay",
       "event_kind": "instruction",
       "function_entries": [],
       "match_state": "mapping_underflow",
@@ -69,7 +71,7 @@
       "sequence": 4
     },
     {
-      "capture_id": "synthetic-nevergone-load-bias-replay",
+      "capture_id": "synthetic-nevergone-module-base-replay",
       "event_kind": "instruction",
       "function_entries": [
         "0032ddee"
@@ -79,12 +81,12 @@
         "operation:9b7729fb703901e9fde14e70e9a516b35a5216f7a9100d7c85bc64f907694374"
       ],
       "normalized_address": "0x32de60",
-      "runtime_address": "0x7032de60",
+      "runtime_address": "0x7031de60",
       "sequence": 6
     }
   ],
   "format": "REVENGINSTR.RuntimeStaticCorrelation/1",
-  "observations_sha256": "835efc3c03592dc3fb44baf51259887844366875579a1befea9a275cba6acfe7",
+  "observations_sha256": "8fc3bb42fd1ee4443edf6b39667f487d3082e1efd5047cbe8c8188b6c7bdce73",
   "program_id": "nevergone-1.0.9-armv7-libcocos2dcpp",
   "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
   "sampling": {
@@ -98,7 +100,7 @@
     "status": "sampled"
   },
   "semantic_graph_sha256": "83093ddcab1e2a39abae5a53174ab1e835f501a92394ca09cc328682454186e3",
-  "static_identity_sha256": "f7aa266927302148e412d529a447dd8e7d7d490316eaa64b102d2322ecaf9558",
+  "static_identity_sha256": "3cc89c41b5f5a55f2143ad74c1c03ae453878b5d8c68d2f6b80161227b03a96e",
   "summary": {
     "ambiguous_count": 0,
     "event_count": 6,

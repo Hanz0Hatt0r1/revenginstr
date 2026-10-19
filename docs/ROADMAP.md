@@ -1255,22 +1255,28 @@ core. Runtime capture, identity correlation, and evaluation remain open.
 
 ### M9.2 Static/runtime correlation
 
-Join runtime events to static function, instruction, object, field and callgraph identities using exact program/build hashes and normalized addresses. ASLR/load-bias mapping, sampling gaps and unmatched events are explicit metadata rather than guessed joins.
+Join runtime events to static function, instruction, object, field and callgraph identities using exact program/build hashes and normalized addresses. ASLR mapping between ELF and analyzer image bases, sampling gaps and unmatched events are explicit metadata rather than guessed joins.
 
 **Address-only correlation v1 implemented:** a caller-pinned
 `RuntimeStaticIdentity/1` binds the exact SemanticProgramGraph/3 bytes and
 program SHA-256. `RuntimeCaptureManifest/1` repeats the exact build identity,
-pins the static identity, records load bias and sampling gaps, and
-`RuntimeAddressObservation/1` rows normalize into exact function-entry or
-P-code operation matches. Unmatched, ambiguous, and out-of-range addresses
-remain distinct; build/graph hash mismatches fail closed. An REA pull of the
+pins the static identity, records the runtime module base and sampling gaps;
+the identity pins the static analyzer image base, so the address delta is
+derived instead of assumed. The installed Nevergone ELF's lowest `PT_LOAD`
+virtual address is zero, confirming the runtime-base definition. A bounded
+startup capture from the installed game now produces real function-entry
+observations, but its two resource functions are outside the current pinned
+graph and remain explicitly unmatched. `RuntimeAddressObservation/1` rows normalize into
+exact function-entry or P-code operation matches. Unmatched, ambiguous, and
+out-of-range addresses remain distinct; build/graph hash mismatches fail
+closed. An REA pull of the
 installed Nevergone 1.0.9 APK confirmed that its
 `lib/armeabi-v7a/libcocos2dcpp.so` SHA-256 matches the program pinned by the
 graph. The package-artifact identity record is retained under
 `docs/evidence/runtime-static-correlation-v1/`. This verifies static artifact
-provenance only; no runtime PC capture is present yet because the host Frida
-binding was unavailable during inspection. Object-instance, field, call-edge,
-and sampled-value joins remain open.
+provenance, establishes that this graph's Ghidra image base is `0x10000`, and
+includes a bounded startup capture. Object-instance, field, call-edge, and
+sampled-value joins remain open.
 
 ### M9.3 Differential and interventional analysis
 

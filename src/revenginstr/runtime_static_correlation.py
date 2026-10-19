@@ -22,7 +22,6 @@ MAX_SEQUENCE = 1_000_000_000
 MAX_ADDRESS = (1 << 64) - 1
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _ADDRESS = re.compile(r"^(?:0x)?([0-9a-fA-F]{1,16})$")
-_SIGNED_HEX = re.compile(r"^(-?)0x([0-9a-fA-F]{1,16})$")
 
 
 def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -60,14 +59,8 @@ def _address(value: Any, where: str) -> int:
     return int(match.group(1), 16)
 
 
-def _load_bias(value: Any) -> int:
-    if not isinstance(value, str):
-        raise ValueError("load_bias: expected a signed hexadecimal string")
-    match = _SIGNED_HEX.fullmatch(value)
-    if match is None:
-        raise ValueError("load_bias: expected 0x-prefixed hexadecimal")
-    magnitude = int(match.group(2), 16)
-    return -magnitude if match.group(1) else magnitude
+def _signed_hex(value: int) -> str:
+    return f"-0x{-value:x}" if value < 0 else f"0x{value:x}"
 
 
 def _manifest_fields(value: dict[str, Any], expected: set[str], where: str) -> None:
@@ -76,7 +69,7 @@ def _manifest_fields(value: dict[str, Any], expected: set[str], where: str) -> N
 
 
 def _read_static_identity(value: dict[str, Any]) -> dict[str, Any]:
-    fields = {"format", "program_id", "program_sha256", "semantic_graph_sha256"}
+    fields = {"format", "program_id", "program_sha256", "semantic_graph_sha256", "static_image_base"}
     _manifest_fields(value, fields, "static identity")
     if value["format"] != STATIC_IDENTITY_FORMAT:
         raise ValueError("unsupported static identity format")
@@ -84,13 +77,15 @@ def _read_static_identity(value: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("static identity: invalid program_id")
     _digest(value["program_sha256"], "static identity program_sha256")
     _digest(value["semantic_graph_sha256"], "static identity semantic_graph_sha256")
-    return value
+    identity = dict(value)
+    identity["_static_image_base"] = _address(value["static_image_base"], "static identity static_image_base")
+    return identity
 
 
 def _read_capture(value: dict[str, Any]) -> dict[str, Any]:
     fields = {
         "format", "capture_id", "program_id", "program_sha256",
-        "static_identity_sha256", "load_bias", "sampling_status", "sampling_gaps",
+        "static_identity_sha256", "runtime_module_base", "sampling_status", "sampling_gaps",
     }
     _manifest_fields(value, fields, "capture manifest")
     if value["format"] != CAPTURE_FORMAT:
@@ -101,7 +96,7 @@ def _read_capture(value: dict[str, Any]) -> dict[str, Any]:
             raise ValueError(f"capture manifest: invalid {key}")
     _digest(capture["program_sha256"], "capture program_sha256")
     _digest(capture["static_identity_sha256"], "capture static_identity_sha256")
-    capture["_load_bias"] = _load_bias(capture["load_bias"])
+    capture["_runtime_module_base"] = _address(capture["runtime_module_base"], "capture runtime_module_base")
     status = capture["sampling_status"]
     gaps = capture["sampling_gaps"]
     if not isinstance(status, str) or status not in {"complete", "sampled", "unknown"}:
@@ -214,7 +209,7 @@ def correlate_runtime_addresses(
         if capture[key] != identity[key]:
             raise ValueError(f"runtime/static {key} mismatch")
 
-    load_bias = capture["_load_bias"]
+    address_delta = capture["_runtime_module_base"] - identity["_static_image_base"]
     functions: dict[int, list[dict[str, Any]]] = {}
     operations: dict[int, list[dict[str, Any]]] = {}
     for node in graph["nodes"]:
@@ -232,7 +227,7 @@ def correlate_runtime_addresses(
     )
     for row in ordered_observations:
         runtime_address = _address(row["runtime_address"], "runtime_address")
-        normalized = runtime_address - load_bias
+        normalized = runtime_address - address_delta
         if normalized < 0:
             state = "mapping_underflow"
             matched_nodes: list[dict[str, Any]] = []
@@ -276,7 +271,12 @@ def correlate_runtime_addresses(
         "semantic_graph_sha256": graph_sha256,
         "capture_manifest_sha256": capture_sha256,
         "observations_sha256": observations_sha256,
-        "address_mapping": {"method": "runtime_address_minus_load_bias", "load_bias": capture["load_bias"]},
+        "address_mapping": {
+            "method": "runtime_address_minus_module_delta",
+            "runtime_module_base": capture["runtime_module_base"],
+            "static_image_base": identity["static_image_base"],
+            "module_delta": _signed_hex(address_delta),
+        },
         "sampling": {"status": capture["sampling_status"], "gaps": capture["sampling_gaps"]},
         "summary": {
             "event_count": len(events),
