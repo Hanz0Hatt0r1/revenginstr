@@ -44,6 +44,21 @@ def test_pcode_and_callgraph_contract_schemas() -> None:
         })
 
 
+def test_type_layout_hypothesis_fixture_and_fail_closed_conflicts() -> None:
+    schema = validator("type-layout-hypothesis-v1.schema.json")
+    fixture = ROOT / "tests/fixtures/type-layout-hypothesis/synthetic.jsonl"
+    row = json.loads(fixture.read_text(encoding="utf-8").splitlines()[0])
+    schema.validate(row)
+
+    conflicted = {**row, "status": "conflicted"}
+    with pytest.raises(ValidationError):
+        schema.validate(conflicted)
+
+    malformed_field = {**row, "fields": [{**row["fields"][0], "offset_bytes": "0x20"}]}
+    with pytest.raises(ValidationError):
+        schema.validate(malformed_field)
+
+
 def test_pcode_c_function_lowering_coverage_schema() -> None:
     schema = validator("pcode-c-function-lowering-coverage-v1.schema.json")
     schema.validate({

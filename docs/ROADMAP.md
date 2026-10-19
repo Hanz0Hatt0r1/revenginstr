@@ -1125,6 +1125,12 @@ Recover candidates from repeated comparisons, masks, shifts, strides, size/capac
 
 Create synthetic exact-layout fixtures plus consumer-owned frozen objects with independently verified fields and prototypes. Report field-offset precision/recall, compatible-type accuracy, layout conflict rate, prototype compatibility and high-confidence reviewer acceptance.
 
+**Hypothesis contract v1 implemented:** `TypeLayoutHypothesis/1` stores
+program-pinned candidate size bounds, field access/type observations, vtable
+anchors, candidate relationships, and evidence-backed conflicts. Its synthetic
+fixture validates the wire contract and fail-closed conflict requirement. No
+layout inference builder or consumer accuracy claim is included yet.
+
 ## Exit criteria
 
 - a stable versioned whole-program type/layout hypothesis schema;
@@ -1546,7 +1552,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 ## P3 — whole-program recovery and active evidence
 
 28. Function prototype hypothesis schema and compatibility evaluator.
-29. Object/type layout hypothesis schema and synthetic fixtures.
+29. ✅ Object/type layout hypothesis schema and synthetic fixtures; deterministic evidence builder and consumer validation remain open.
 30. Allocation/lifetime/ownership evidence projection.
 31. Bounded runtime probe-request and correlation contracts.
 32. Static/runtime differential replay and information-gain metrics.
