@@ -162,6 +162,13 @@ writes vtable `00af0628` there. The exact getter instructions are retained in
 [`field20-63030-selector-disassembly.md`](field20-63030-selector-disassembly.md);
 they do not prove selector 3 is supplied at runtime.
 
+The bounded constructor replay also shows `006634a0` storing zero to its own
+`this + 0x74` at `006634cd` (P-code flow rows 13–14 in
+[`field20-base-subobject-init-pcode-flow.tsv`](field20-base-subobject-init-pcode-flow.tsv)).
+That is a null initialization in this constructor, not a vtable for the
+selector-1 results of `00676040` or `006770b0`; later writers and those results
+remain unresolved.
+
 The constructor helpers write vtables `00af6b38` at `+0x128`, `00af7050` at
 `+0x4c0`, and `00af723c` at `+0x550`. The getter conditions above therefore
 bound the following partial candidates from the pinned executable's raw slot

@@ -2416,8 +2416,8 @@
     },
     {
       "path": "scan37/replay-0041dd40/manual-static-vtable-review.md",
-      "bytes": 16822,
-      "sha256": "7135e7333e1047569a3cf406ad10f081ab59e7e9256a15605906b0e2ec12b0a9"
+      "bytes": 17221,
+      "sha256": "3294323d7ef08aab79b048ac6187ac14884b2f8c8c325a6fb65dcc2b16e977df"
     },
     {
       "path": "scan37/replay-0041dd40/memory-store-access-full-closure-scope.jsonl",
