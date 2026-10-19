@@ -30,9 +30,12 @@ Supported actions are `function_slice`, `callers_callees`,
 `field_store_recovery`, `constructor_vtable_anchor`,
 `consumer_native_probe`, `family_example`, and `human_review`. Each action has
 required explicit bounds. Native probes require both `max_steps` and
-`timeout_ms`; they identify a consumer-provided bounded probe and cannot carry
-executable code or arbitrary command arguments. Human review is limited to
-one item per request.
+`timeout_ms`; an optional `probe_kind` identifies function entry/exit,
+field-watch read/write, argument/return sampling, call/dispatch tracing,
+allocation/lifetime, state snapshots, or a consumer-defined differential
+intervention. Older generic native-probe requests remain valid. Probe requests
+cannot carry executable code or arbitrary command arguments. Human review is
+limited to one item per request.
 
 Create a plan with a fixed integer cost budget and maximum request count:
 

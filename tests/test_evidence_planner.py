@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from jsonschema import Draft202012Validator
 
-from revenginstr.evidence_planner import ACTION_TYPES, CANDIDATES_FORMAT, PLAN_FORMAT, build_evidence_request_plan, main
+from revenginstr.evidence_planner import ACTION_TYPES, CANDIDATES_FORMAT, PLAN_FORMAT, PROBE_KINDS, build_evidence_request_plan, main
 
 ROOT = Path(__file__).resolve().parents[1]
 CANDIDATES_SCHEMA = json.loads((ROOT / "schemas/evidence-request-candidates-v1.schema.json").read_text(encoding="utf-8"))
@@ -22,6 +22,7 @@ def candidate(
     cost: int = 1,
     uncertainty: float = 0.5,
     leverage: float = 1.0,
+    probe_kind: str | None = None,
 ) -> dict:
     bounds = {"max_items": 20}
     if action == "callers_callees":
@@ -30,7 +31,7 @@ def candidate(
         bounds = {"max_steps": 100, "timeout_ms": 5000}
     elif action == "human_review":
         bounds = {"max_items": 1}
-    return {
+    row = {
         "request_id": request_id,
         "subject_id": subject_id,
         "subject_kind": "function",
@@ -43,6 +44,9 @@ def candidate(
         "approval_status": "approved",
         "approval_sha256": "a" * 64,
     }
+    if probe_kind is not None:
+        row["probe_kind"] = probe_kind
+    return row
 
 
 def fixture() -> dict:
@@ -117,6 +121,44 @@ def test_all_reviewed_action_types_have_closed_bounded_shapes() -> None:
     )
     Draft202012Validator(PLAN_SCHEMA).validate(report)
     assert {row["action_type"] for row in report["selected_requests"]} == ACTION_TYPES
+
+
+def test_typed_native_probes_are_explicit_bounded_and_preserved() -> None:
+    candidates = {
+        "format": CANDIDATES_FORMAT,
+        "candidates": [
+            candidate(f"probe-{kind}", f"subject-{kind}", action="consumer_native_probe", probe_kind=kind)
+            for kind in sorted(PROBE_KINDS)
+        ],
+    }
+
+    Draft202012Validator(CANDIDATES_SCHEMA).validate(candidates)
+    report = build_evidence_request_plan(
+        candidates,
+        candidates_sha256="f" * 64,
+        budget_units=len(PROBE_KINDS),
+        max_requests=len(PROBE_KINDS),
+    )
+    Draft202012Validator(PLAN_SCHEMA).validate(report)
+    assert {row["probe_kind"] for row in report["selected_requests"]} == PROBE_KINDS
+    assert all(row["bounds"] == {"max_steps": 100, "timeout_ms": 5000} for row in report["selected_requests"])
+
+
+def test_legacy_generic_probe_remains_valid_and_typed_probes_are_scoped() -> None:
+    generic = {"format": CANDIDATES_FORMAT, "candidates": [candidate("generic", "subject", action="consumer_native_probe")]}
+    Draft202012Validator(CANDIDATES_SCHEMA).validate(generic)
+    result = build_evidence_request_plan(generic, candidates_sha256="1" * 64, budget_units=1, max_requests=1)
+    assert "probe_kind" not in result["selected_requests"][0]
+
+    invalid = {"format": CANDIDATES_FORMAT, "candidates": [candidate("bad", "subject")]}
+    invalid["candidates"][0]["probe_kind"] = "function_entry_exit"
+    with pytest.raises(ValueError, match="invalid probe_kind"):
+        build_evidence_request_plan(invalid, candidates_sha256="2" * 64, budget_units=1, max_requests=1)
+
+    with_probe_code = {"format": CANDIDATES_FORMAT, "candidates": [candidate("code", "subject", action="consumer_native_probe")]}
+    with_probe_code["candidates"][0]["probe_code"] = "instrumentation"
+    with pytest.raises(ValueError, match="unexpected fields"):
+        build_evidence_request_plan(with_probe_code, candidates_sha256="3" * 64, budget_units=1, max_requests=1)
 
 
 @pytest.mark.parametrize("mutation, message", [

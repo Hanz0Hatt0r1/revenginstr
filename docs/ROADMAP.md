@@ -1244,6 +1244,15 @@ Extend the M6 evidence planner with versioned requests for caller-approved bound
 
 `revenginstr` plans and validates requests; consumers decide whether and how executable probes are implemented and run. The core must never synthesize arbitrary executable instrumentation and run it without an explicit consumer boundary.
 
+**Typed native probe requests implemented:** `EvidenceRequestCandidates/1`
+and `EvidenceRequestPlan/1` can distinguish function entry/exit, field
+read/write watches, argument/return samples, call/dispatch traces,
+allocation/lifetime observations, state snapshots, and consumer-defined
+differential interventions. Every native request remains explicitly approved
+and bounded by steps and timeout; the legacy generic probe form remains
+accepted. Plans carry no executable probe code and are never executed by the
+core. Runtime capture, identity correlation, and evaluation remain open.
+
 ### M9.2 Static/runtime correlation
 
 Join runtime events to static function, instruction, object, field and callgraph identities using exact program/build hashes and normalized addresses. ASLR/load-bias mapping, sampling gaps and unmatched events are explicit metadata rather than guessed joins.
