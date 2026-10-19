@@ -58,6 +58,27 @@ def member_row(*, function: str = "fn1", root: int = 0, type_id: str = "opaque-1
     }
 
 
+def field_type_review_row(*, offset: int = 0x20, kind: str = "data_pointer",
+                          width: int | None = 8, target: str | None = "node") -> dict:
+    return {
+        "format": "REVENGINSTR.TypeLayoutFieldTypeReview/1",
+        "program_id": "sample.exe",
+        "program_sha256": PROGRAM_SHA256,
+        "type_id": "opaque-1",
+        "offset_bytes": offset,
+        "kind": kind,
+        "width_bytes": width,
+        "target_type_id": target,
+        "evidence": {
+            "source_format": "sample.TypeEvidence/1",
+            "source_sha256": "b" * 64,
+            "record_key": f"offset={offset};kind={kind}",
+            "source_pointer": f"evidence.jsonl#offset={offset}",
+            "evidence_class": "exact_static",
+        },
+    }
+
+
 def write_loads(path: Path, rows: list[list[str]]) -> None:
     path.write_text(
         "\t".join(LOAD_HEADER) + "\n" + "".join("\t".join(row) + "\n" for row in rows),
@@ -151,6 +172,107 @@ def test_builder_rejects_duplicate_member_keys_and_program_mismatch(tmp_path: Pa
     write_jsonl(members, [{**member_row(), "program_sha256": "b" * 64}])
     with pytest.raises(ValueError, match="program_sha256 does not match"):
         build(stores, members)
+
+
+def test_builder_attaches_reviewed_field_types_only_to_observed_fields(tmp_path: Path) -> None:
+    stores = tmp_path / "stores.jsonl"
+    members = tmp_path / "members.jsonl"
+    reviews = tmp_path / "field-types.jsonl"
+    write_jsonl(stores, [
+        store_row(function="fn1", address="401000", time=2, offset=0x20, width=8),
+        store_row(function="fn1", address="401004", time=4, offset=0x24, width=1),
+    ])
+    write_jsonl(members, [member_row()])
+    write_jsonl(reviews, [field_type_review_row(), field_type_review_row(
+        offset=0x24, kind="boolean", width=1, target=None,
+    )])
+
+    rows = build_type_layout_hypotheses(
+        [stores], [members], field_type_review_paths=[reviews],
+        program_id="sample.exe", program_sha256=PROGRAM_SHA256,
+        language_id="x86:LE:64:default", pointer_width_bytes=8,
+        addressable_unit_bytes=1, endianness="little",
+    )
+    row = rows[0]
+    fields = {field["offset_bytes"]: field for field in row["fields"]}
+    assert fields[0x20]["status"] == "review"
+    assert fields[0x20]["type_candidates"] == [{
+            "kind": "data_pointer", "width_bytes": 8, "target_type_id": "node",
+            "evidence": [
+                {
+                    "source_format": "REVENGINSTR.TypeLayoutFieldTypeReview/1",
+                    "source_sha256": hashlib.sha256(reviews.read_bytes()).hexdigest(),
+                    "record_key": "type_id=opaque-1;offset_bytes=32;kind=data_pointer;"
+                    "width_bytes=8;target_type_id=node",
+                    "source_pointer": "field-types.jsonl#line=1", "evidence_class": "human_review",
+                },
+                {
+                    "source_format": "sample.TypeEvidence/1", "source_sha256": "b" * 64,
+                    "record_key": "offset=32;kind=data_pointer",
+                    "source_pointer": "evidence.jsonl#offset=32", "evidence_class": "exact_static",
+                },
+        ],
+    }]
+    assert fields[0x24]["status"] == "review"
+    assert fields[0x24]["type_candidates"][0]["kind"] == "boolean"
+    assert fields[0x24]["type_candidates"][0]["width_bytes"] == 1
+    review_schema = json.loads((ROOT / "schemas/type-layout-field-type-review-v1.schema.json").read_text())
+    output_schema = json.loads((ROOT / "schemas/type-layout-hypothesis-v1.schema.json").read_text())
+    Draft202012Validator.check_schema(review_schema)
+    Draft202012Validator(review_schema).validate(field_type_review_row())
+    Draft202012Validator(output_schema).validate(row)
+
+
+def test_builder_preserves_conflicting_field_type_reviews(tmp_path: Path) -> None:
+    stores = tmp_path / "stores.jsonl"
+    members = tmp_path / "members.jsonl"
+    reviews = tmp_path / "field-types.jsonl"
+    write_jsonl(stores, [store_row(function="fn1", address="401000", time=2, offset=0x20)])
+    write_jsonl(members, [member_row()])
+    write_jsonl(reviews, [
+        field_type_review_row(),
+        field_type_review_row(kind="integer", width=4, target=None),
+    ])
+
+    row = build_type_layout_hypotheses(
+        [stores], [members], field_type_review_paths=[reviews],
+        program_id="sample.exe", program_sha256=PROGRAM_SHA256,
+        language_id="x86:LE:64:default", pointer_width_bytes=8,
+        addressable_unit_bytes=1, endianness="little",
+    )[0]
+    field = row["fields"][0]
+    assert row["status"] == field["status"] == "conflicted"
+    assert {candidate["kind"] for candidate in field["type_candidates"]} == {"data_pointer", "integer"}
+    assert field["conflicts"][0]["reason"] == "evidence_conflict"
+    assert row["conflicts"][0]["reason"] == "evidence_conflict"
+    schema = json.loads((ROOT / "schemas/type-layout-hypothesis-v1.schema.json").read_text())
+    Draft202012Validator(schema).validate(row)
+
+
+def test_builder_rejects_unobserved_field_and_pointer_width_mismatch(tmp_path: Path) -> None:
+    stores = tmp_path / "stores.jsonl"
+    members = tmp_path / "members.jsonl"
+    reviews = tmp_path / "field-types.jsonl"
+    write_jsonl(stores, [store_row(function="fn1", address="401000", time=2, offset=0x20)])
+    write_jsonl(members, [member_row()])
+
+    write_jsonl(reviews, [field_type_review_row(offset=0x24)])
+    with pytest.raises(ValueError, match="do not match an observed mapped field"):
+        build_type_layout_hypotheses(
+            [stores], [members], field_type_review_paths=[reviews],
+            program_id="sample.exe", program_sha256=PROGRAM_SHA256,
+            language_id="x86:LE:64:default", pointer_width_bytes=8,
+            addressable_unit_bytes=1, endianness="little",
+        )
+
+    write_jsonl(reviews, [field_type_review_row(width=4)])
+    with pytest.raises(ValueError, match="pointer width does not match"):
+        build_type_layout_hypotheses(
+            [stores], [members], field_type_review_paths=[reviews],
+            program_id="sample.exe", program_sha256=PROGRAM_SHA256,
+            language_id="x86:LE:64:default", pointer_width_bytes=8,
+            addressable_unit_bytes=1, endianness="little",
+        )
 
 
 def test_nfs_shift_reviewed_member_map_replays_exact_field_evidence() -> None:
