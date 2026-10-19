@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/runtime-probe-evaluation-v1.schema.json",
+  "title": "REVENGINSTR.RuntimeProbeEvaluation/1",
+  "description": "Frozen-set probe evaluation metrics; caller-supplied predictions and outcome labels are not independently authenticated.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "evaluation_id", "plan_sha256", "manifest_sha256", "outcomes_sha256", "source_unresolved_set_sha256", "metrics", "results", "scope_note"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.RuntimeProbeEvaluation/1"},
+    "evaluation_id": {"type": "string", "minLength": 1},
+    "plan_sha256": {"$ref": "#/$defs/sha256"},
+    "manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "outcomes_sha256": {"$ref": "#/$defs/sha256"},
+    "source_unresolved_set_sha256": {"$ref": "#/$defs/sha256"},
+    "metrics": {"$ref": "#/$defs/metrics"},
+    "results": {"type": "array", "minItems": 1, "maxItems": 10000, "items": {"$ref": "#/$defs/result"}},
+    "scope_note": {"type": "string", "minLength": 1}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nullableRate": {"oneOf": [{"type": "integer", "minimum": 0, "maximum": 1000000}, {"type": "null"}]},
+    "metrics": {
+      "type": "object", "additionalProperties": false,
+      "required": ["planned_request_count", "completed_count", "incomplete_count", "completion_rate_ppm", "requested_cost_units_total", "requested_cost_units_per_decisive_result_milli", "actual_steps_total", "elapsed_ms_total", "decisive_count", "decisive_rate_of_completed_ppm", "uncertainty_reduction_total_milli", "uncertainty_reduction_mean_milli", "unlocked_decision_count", "unlocked_decision_ids", "disagreement_comparable_count", "static_disagreement_count", "static_disagreement_rate_ppm"],
+      "properties": {
+        "planned_request_count": {"type": "integer", "minimum": 1, "maximum": 10000},
+        "completed_count": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "incomplete_count": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "completion_rate_ppm": {"$ref": "#/$defs/nullableRate"},
+        "requested_cost_units_total": {"type": "integer", "minimum": 1},
+        "requested_cost_units_per_decisive_result_milli": {"oneOf": [{"type": "integer", "minimum": 0}, {"type": "null"}]},
+        "actual_steps_total": {"type": "integer", "minimum": 0},
+        "elapsed_ms_total": {"type": "integer", "minimum": 0},
+        "decisive_count": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "decisive_rate_of_completed_ppm": {"$ref": "#/$defs/nullableRate"},
+        "uncertainty_reduction_total_milli": {"type": "integer"},
+        "uncertainty_reduction_mean_milli": {"oneOf": [{"type": "integer"}, {"type": "null"}]},
+        "unlocked_decision_count": {"type": "integer", "minimum": 0},
+        "unlocked_decision_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "disagreement_comparable_count": {"type": "integer", "minimum": 0},
+        "static_disagreement_count": {"type": "integer", "minimum": 0},
+        "static_disagreement_rate_ppm": {"$ref": "#/$defs/nullableRate"}
+      }
+    },
+    "result": {
+      "type": "object", "additionalProperties": false,
+      "required": ["request_id", "subject_id", "requested_cost_units", "status", "actual_steps", "elapsed_ms", "uncertainty_before_milli", "uncertainty_after_milli", "uncertainty_reduction_milli", "decision", "decisive_reason", "static_prediction", "static_disagreement", "unlocked_decision_ids"],
+      "properties": {
+        "request_id": {"type": "string", "minLength": 1},
+        "subject_id": {"type": "string", "minLength": 1},
+        "requested_cost_units": {"type": "integer", "minimum": 1},
+        "status": {"enum": ["completed", "incomplete"]},
+        "actual_steps": {"type": "integer", "minimum": 0},
+        "elapsed_ms": {"type": "integer", "minimum": 0},
+        "uncertainty_before_milli": {"type": "integer", "minimum": 1, "maximum": 1000},
+        "uncertainty_after_milli": {"oneOf": [{"type": "integer", "minimum": 0, "maximum": 1000}, {"type": "null"}]},
+        "uncertainty_reduction_milli": {"oneOf": [{"type": "integer"}, {"type": "null"}]},
+        "decision": {"oneOf": [{"enum": ["accept", "reject", "unresolved"]}, {"type": "null"}]},
+        "decisive_reason": {"enum": ["incomplete", "accept", "reject", "material_uncertainty_reduction", "not_decisive"]},
+        "static_prediction": {"enum": ["accept", "reject", "unresolved"]},
+        "static_disagreement": {"oneOf": [{"type": "boolean"}, {"type": "null"}]},
+        "unlocked_decision_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    }
+  }
+}

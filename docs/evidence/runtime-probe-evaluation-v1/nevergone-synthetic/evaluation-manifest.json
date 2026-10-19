@@ -1,0 +1,32 @@
+{
+  "candidates": [
+    {
+      "minimum_narrowing_milli": 100,
+      "request_id": "request-1",
+      "static_prediction": "accept",
+      "uncertainty_before_milli": 800
+    },
+    {
+      "minimum_narrowing_milli": 100,
+      "request_id": "request-2",
+      "static_prediction": "accept",
+      "uncertainty_before_milli": 600
+    },
+    {
+      "minimum_narrowing_milli": 100,
+      "request_id": "request-3",
+      "static_prediction": "reject",
+      "uncertainty_before_milli": 500
+    },
+    {
+      "minimum_narrowing_milli": 100,
+      "request_id": "request-4",
+      "static_prediction": "unresolved",
+      "uncertainty_before_milli": 900
+    }
+  ],
+  "evaluation_id": "synthetic-frozen-probe-set",
+  "format": "REVENGINSTR.RuntimeProbeEvaluationManifest/1",
+  "plan_sha256": "4ec859aa60ac0c7eacf3d237ba997ab676ba11f4bf5b68e7ea2ef8edd14020f5",
+  "source_unresolved_set_sha256": "c83e408230dd2adae81160b9dc2123d112ca043b4f0bb417638f7c95406992d3"
+}

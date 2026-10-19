@@ -1,0 +1,98 @@
+{
+  "budget_units": 10,
+  "deferred_counts": {
+    "over_budget": 0,
+    "request_limit": 0,
+    "subject_already_selected": 0
+  },
+  "format": "REVENGINSTR.EvidenceRequestPlan/1",
+  "max_requests": 4,
+  "remaining_units": 0,
+  "selected_requests": [
+    {
+      "action_type": "consumer_native_probe",
+      "approval_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "approval_status": "approved",
+      "bounds": {
+        "max_steps": 100,
+        "timeout_ms": 5000
+      },
+      "cost_units": 1,
+      "downstream_leverage": 1.0,
+      "expected_uncertainty_reduction": 0.5,
+      "priority_score": 0.5,
+      "probe_kind": "function_entry_exit",
+      "rationale_codes": [
+        "unresolved_dispatch"
+      ],
+      "request_id": "request-2",
+      "subject_id": "subject-2",
+      "subject_kind": "function"
+    },
+    {
+      "action_type": "consumer_native_probe",
+      "approval_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "approval_status": "approved",
+      "bounds": {
+        "max_steps": 100,
+        "timeout_ms": 5000
+      },
+      "cost_units": 2,
+      "downstream_leverage": 1.0,
+      "expected_uncertainty_reduction": 0.5,
+      "priority_score": 0.25,
+      "probe_kind": "function_entry_exit",
+      "rationale_codes": [
+        "unresolved_dispatch"
+      ],
+      "request_id": "request-4",
+      "subject_id": "subject-4",
+      "subject_kind": "function"
+    },
+    {
+      "action_type": "consumer_native_probe",
+      "approval_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "approval_status": "approved",
+      "bounds": {
+        "max_steps": 100,
+        "timeout_ms": 5000
+      },
+      "cost_units": 3,
+      "downstream_leverage": 1.0,
+      "expected_uncertainty_reduction": 0.5,
+      "priority_score": 0.16666666666666666,
+      "probe_kind": "function_entry_exit",
+      "rationale_codes": [
+        "unresolved_dispatch"
+      ],
+      "request_id": "request-3",
+      "subject_id": "subject-3",
+      "subject_kind": "function"
+    },
+    {
+      "action_type": "consumer_native_probe",
+      "approval_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "approval_status": "approved",
+      "bounds": {
+        "max_steps": 100,
+        "timeout_ms": 5000
+      },
+      "cost_units": 4,
+      "downstream_leverage": 1.0,
+      "expected_uncertainty_reduction": 0.5,
+      "priority_score": 0.125,
+      "probe_kind": "function_entry_exit",
+      "rationale_codes": [
+        "unresolved_dispatch"
+      ],
+      "request_id": "request-1",
+      "subject_id": "subject-1",
+      "subject_kind": "function"
+    }
+  ],
+  "source": {
+    "candidate_count": 4,
+    "candidates_sha256": "c83e408230dd2adae81160b9dc2123d112ca043b4f0bb417638f7c95406992d3"
+  },
+  "spent_units": 10
+}
