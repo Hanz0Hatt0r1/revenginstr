@@ -1309,7 +1309,11 @@ or `inconclusive`. Token authenticity is not verified, no raw values enter the
 report, and no pair upgrades a static path to `confirmed_exact`. The pinned
 Nevergone example is synthetic; obtaining in-game value observations remains
 open because the current device capture contains only startup function entries.
-See [`runtime value-flow replay`](RUNTIME_VALUE_FLOW.md).
+`revenginstr-runtime-ledger` deterministically turns pair results into
+`AnalysisDecisionLedgerEvent/1` records; a witness remains `review_required`,
+a mismatch becomes `escalated_conflict`, and missing evidence remains
+`review_required`. No runtime replay automatically accepts a claim. See
+[`runtime value-flow replay`](RUNTIME_VALUE_FLOW.md).
 
 ### M9.5 Information-gain evaluation
 
