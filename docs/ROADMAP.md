@@ -1131,13 +1131,16 @@ access/type observations, vtable anchors, candidate relationships, and
 evidence-backed conflicts. `revenginstr-type-layout-hypothesis` joins exact
 STORE rows and optional parameter-rooted LOAD TSV rows only through
 reviewer-supplied `TypeLayoutMemberMap/1` keys and retains both source hashes.
-Its NFS SHIFT replay reproduces reviewed write offsets and a 56-byte lower
-bound while leaving field types, vtable anchors, and exact size unresolved. A
-second smoke on consumer-owned Nevergone `CCJoyStick::init` evidence projects
-12 writes and 9 reads at 13 offsets, with a 337-byte lower bound; the exact
-class layout remains unverified. Synthetic fixtures validate the wire
-contract and fail-closed conflicts. Gold layouts and consumer accuracy claims
-remain open.
+Optional `TypeLayoutSizeReview/1` input adds exact size only with independently
+hash-pinned source evidence; disagreements with the observed extent or other
+size reviews become explicit conflicts. Its NFS SHIFT replay reproduces
+reviewed write offsets and a 56-byte lower bound while leaving field types,
+vtable anchors, and exact size unresolved. The Nevergone `CCJoyStick::init`
+projection has a 337-byte observed lower bound; symbolized factory code
+independently requests a 340-byte allocation and calls the exact constructor,
+so the retained reviewer output includes that exact size. Field types, vtable
+anchors, relationships, and broader consumer accuracy remain open. Synthetic
+fixtures validate the wire contract and fail-closed conflicts.
 
 ## Exit criteria
 
@@ -1560,7 +1563,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 ## P3 — whole-program recovery and active evidence
 
 28. Function prototype hypothesis schema and compatibility evaluator.
-29. 🟡 Object/type layout hypothesis schema, synthetic fixtures, deterministic reviewer-keyed read/write builder, and NFS SHIFT plus Nevergone projections implemented; independent gold validation remains open.
+29. 🟡 Object/type layout hypothesis schema, exact-size review input, synthetic fixtures, deterministic reviewer-keyed read/write builder, and NFS SHIFT plus Nevergone projections implemented; broader field/type gold validation remains open.
 30. Allocation/lifetime/ownership evidence projection.
 31. Bounded runtime probe-request and correlation contracts.
 32. Static/runtime differential replay and information-gain metrics.

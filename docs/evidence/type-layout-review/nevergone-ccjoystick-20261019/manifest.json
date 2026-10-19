@@ -1,0 +1,27 @@
+{
+  "artifacts": [
+    {
+      "path": "allocation-sequence.txt",
+      "bytes": 1912,
+      "sha256": "17de813126c4d159dc1e47da7bb74739b90ecfac228e8b941653945fd4086b05"
+    },
+    {
+      "path": "member-map.jsonl",
+      "bytes": 271,
+      "sha256": "c9b12fff3ffb7fbdc0160bc2c557853269ffeef61ac3034f91e261313ab5d959",
+      "rows": 1
+    },
+    {
+      "path": "size-review.jsonl",
+      "bytes": 621,
+      "sha256": "be17fddac5f7a62ba37f7b47ca69840e9a5afcec5857e6f699acf954a46cbbe6",
+      "rows": 1
+    },
+    {
+      "path": "type-layout-hypothesis.jsonl",
+      "bytes": 13352,
+      "sha256": "381c604d0374cb8a4dabb8fea8741bf9771250aa699704f2ec382c1f97cea01e",
+      "rows": 1
+    }
+  ]
+}

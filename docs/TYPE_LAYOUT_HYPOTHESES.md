@@ -13,6 +13,13 @@ the conflicting evidence and report `size_bound_conflict` instead of silently
 choosing one value. Each field retains individual read, write, or address observations;
 each candidate field type and vtable anchor also carries its own evidence.
 
+The builder accepts optional reviewer-supplied
+[`TypeLayoutSizeReview/1`](../schemas/type-layout-size-review-v1.schema.json)
+rows through `--size-review-jsonl`. Each row pins the type and program, exact
+size, source hash, source record, and evidence class. The builder attaches that
+evidence without deriving a size from the observed extent; a size below the
+extent or conflicting exact-size reviews makes the hypothesis `conflicted`.
+
 `candidate`, `review`, and `conflicted` are triage states, not confidence
 scores. A conflicted record, field, or relationship must retain at least one
 reason-coded conflict. The schema does not rank competing types, infer field
@@ -27,10 +34,11 @@ It joins `GhidraMemoryStoreAccess/1` rows and optional
 keys `(function_entry, root_parameter_index)`. The map pins `program_id`, the
 binary SHA-256, and an opaque reviewer-chosen `type_id`; the caller supplies the
 architecture. The builder emits separate read and write observations, leaves
-type candidates, vtable anchors, relationships, and exact object size empty,
-and derives a minimum observed extent only from non-negative offsets with
-known access widths. Every emitted field and size bound retains its exact
-access row and the reviewer map row. Unmatched roots, unresolved store
+type candidates, vtable anchors, and relationships empty, and derives a minimum
+observed extent only from non-negative offsets with known access widths. Exact
+size remains null unless a matching size-review row is supplied. Every emitted
+field and size bound retains its exact access row and the reviewer map row.
+Unmatched roots, unresolved store
 locations, and negative offsets do not contribute. Parameter loads can be the
 only access input when a consumer has no store capture for the selected
 members.
@@ -62,13 +70,20 @@ revenginstr-type-layout-hypothesis \
 The builder was also exercised on the consumer-owned Nevergone
 [`CCJoyStick::init` memory evidence](https://github.com/Hanz0Hatt0r1/nevergone-recomp/tree/main/docs/evidence/field-store-load-cfg-ccjoystick-init)
 with one explicit mapping for function `002a6584`, root parameter 0, and opaque
-id `nevergone:opaque-object-002a6584`. The layout output had 13 observed field
-offsets from 12 STORE and 9 LOAD sites, with a 337-byte minimum extent. The
-binary hash was pinned to
+id `nevergone:opaque-object-002a6584`. The layout output has 13 observed field
+offsets from 12 STORE and 9 LOAD sites, with a 337-byte minimum extent. A
+separate reviewer size record captures the exact `0x154` allocation request
+in the symbolized `CCJoyStick::create` function and its subsequent constructor
+call. The reviewed output reports a 340-byte exact size, supported by the
+hash-pinned instruction excerpt in
+[`allocation-sequence.txt`](evidence/type-layout-review/nevergone-ccjoystick-20261019/allocation-sequence.txt).
+The binary hash is
 `94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e`.
-This is a second-consumer projection smoke, not a verified class layout: exact
-size, field types, and class identity remain unknown, and raw Nevergone rows
-stay in that consumer repository.
+The output keeps the type ID opaque and leaves field types, vtable anchors,
+relationships, and class identity promotion unresolved; raw Nevergone
+store/load rows stay in that consumer repository. The complete review bundle
+is retained in
+[`nevergone-ccjoystick-20261019`](evidence/type-layout-review/nevergone-ccjoystick-20261019/README.md).
 The reviewer-map row used for this smoke was:
 
 ```json
