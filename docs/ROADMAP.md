@@ -1428,6 +1428,19 @@ to the program graph; a query selects `+0x104` and returns the owner type as
 context. This is a projection of consumer-reviewed hypotheses, not independent
 layout accuracy evidence or a semantic class-identity claim.
 
+A second replay for the same hash-pinned Nevergone ELF captures
+`CCJoyStick::init` parameter stores/loads and CFG/3 memory effects, then runs
+the CFG audit, FunctionEffectIR/1, SemanticProgramGraph/1, and field queries.
+The query returns function-scoped access facts for `+0x119` and `+0x11a`; a
+separate query of the reviewed layout graph returns the corresponding
+review-status, one-byte boolean candidates with read/write provenance. Both
+graphs validate and the audit reproduces its two frozen rows, but the replay
+keeps their different opaque `program_id` values separate despite the shared
+binary SHA. It adds no cross-graph edge, independent semantic gold, accepted
+edge, or accepted-edge accuracy measurement. The audit still reports possible
+intervening memory effects and makes no alias or runtime value-flow claim. See
+[`CCJoyStick::init field access replay`](evidence/receiver-field-access/nevergone-ccjoystick-init-20261019/README.md).
+
 The graph families are still structural slices of M10.1–M10.3. Dispatch
 recovery, object identity across functions, roles, states, resources,
 callbacks, execution contexts, broadly scoped semantic gold graphs, and M10
