@@ -1,0 +1,3 @@
+function_entry	reason
+006642a0	entry_block_not_found (CFG/4 skip-missing-entry-blocks)
+0090e864	multiple_entry_blocks (excluded after batch export error)

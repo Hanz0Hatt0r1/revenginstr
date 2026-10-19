@@ -1811,7 +1811,7 @@
       "at least one explicit param_n formal",
       "body address_count between 40 and 800 inclusive",
       "present as a direct-call caller in pinned call-edge export",
-      "not selected by scans25\u201328"
+      "not selected by scans25–28"
     ],
     "sampling": "256 address-ordered midpoint quantiles from the 1,457 remaining eligible functions",
     "selected_functions": 256
@@ -1822,11 +1822,11 @@
       "sha256": "68d06720c8c0cbd370338c6b4d322d84ef0c15f4474c1a3e522f3e3ea2b2d2fe"
     },
     "executable": {
-      "path": "/home/pes/ghidra_projects/shift/SHIFT.exe",
+      "path": "SHIFT.exe",
       "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
     },
     "function_inventory": {
-      "path": "/home/pes/work/nfs-shift-mass-recovery-20261017-artifacts/p1b-full-program-index/shift.functions.tsv.gz",
+      "path": "shift.functions.tsv.gz",
       "sha256": "8b8b00d8493dba459edf186869ddf492dc26002af3b65d08b6988dc91a87fa24"
     }
   }

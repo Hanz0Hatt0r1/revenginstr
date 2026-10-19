@@ -1,0 +1,8 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+00900f77	00900f83	11	CALL	-	-	009074c6	FUN_009074c6
+00900f77	00900f8f	34	CALL	def:00900f8f:34:4	def:00900f8f:155:4	00900e8f	FUN_00900e8f
+00900f77	00900f8f	155	CAST	def:00900f8f:155:4	input:Stack[0x4]:4	-	-
+00900f77	00900f8f	156	CAST	def:00900f8f:156:4	def:00900f8f:34:4	-	-
+00900f77	00900f9f	47	CALL	-	-	00900fad	FUN_00900fad
+00900f77	00900fa4	50	COPY	def:00900fa4:50:4	def:00900f8f:156:4	-	-
+00900f77	00900fac	56	RETURN	-	const:0x0:4;def:00900fa4:50:4	-	-

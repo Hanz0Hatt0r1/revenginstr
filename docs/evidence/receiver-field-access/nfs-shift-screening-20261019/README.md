@@ -32,6 +32,14 @@ label was consumed.
 | [scan27](scan27/) | 305 | 64 | 1,302 | 1,180 | 16 | 5 possible effects; 11 non-dominating stores |
 | [scan28](scan28/) | 256 | 6 | 583 | 848 | 1 | 1 non-dominating store |
 | [scan29](scan29/) | 256 | 8 | 689 | 991 | 5 | 1 unique candidate after focused call-effect replay; 3 possible effects; 1 non-dominating store |
+| [scan30](scan30/) | 256 | 12 | 543 | 1,040 | 4 | 4 non-dominating stores |
+| [scan31](scan31/) | 256 | 7 | 598 | 572 | 7 | 7 non-dominating stores |
+| [scan32](scan32/) | 256 | 12 | 566 | 770 | 3 | 1 possible effect; 2 non-dominating stores |
+| [scan33](scan33/) | 256 | 12 | 617 | 688 | 4 | 1 possible effect; 3 non-dominating stores |
+| [scan34](scan34/) | 177 | 2 | 551 | 494 | 1 | 1 non-dominating store |
+| [scan35](scan35/) | 4 | 0 | 0 | 0 | 0 | No pairs; `/6` not run |
+| [scan36](scan36/) | 295 | 77 | 1,907 | 1,748 | 14 | 14 non-dominating stores |
+| [scan37](scan37/) | 161 | 26 | 2,869 | 4,152 | 39 | 33 non-dominating stores; 5 possible effects before focused replay; 1 unique candidate |
 
 Scan28 sampled 256 midpoint quantiles from the 1,713 previously unselected
 functions with at least one explicit parameter and a 40–800-byte body. Its
@@ -52,6 +60,84 @@ callee's complete three-operation flow contains only `COPY`, `CAST`, and
 other three pairs in `00458170` remain possible because unresolved memory
 writes and calls still lie on their paths. This is structural evidence only;
 it does not establish feasible execution or runtime value flow.
+
+Scans30–34 exhausted the remaining 1,201 functions in the same one-or-more-
+`param_n` population: four midpoint-quantile batches of 256 and a final batch
+of 177. They produced nineteen exact pairs. Seventeen stores do not dominate
+their paired loads. The other two remain possible because a direct call's
+memory effect could not be resolved; the focused replays are retained under
+[`scan32/replay-004f8fe0`](scan32/replay-004f8fe0/) and
+[`scan33/replay-0046f8d0`](scan33/replay-0046f8d0/). No new unique candidate
+was established, so scan29 remains the only unique structural candidate in
+scans25–34.
+
+In scan32, the remaining pair in `004f8fe0` crosses a call at `004f9010` to
+`0062e1a0`. The bounded callee closure reaches an indirect call and an unknown
+effect; the pair therefore stays `possible_intervening_memory_effect`. In
+scan33, the pair in `0046f8d0` crosses a call at `0046f909` to `0063ad50`.
+Only one exact caller argument root is recovered, while the callee contains
+an unresolved STORE destination. The interprocedural call remains
+`unknown_effect`, and the pair remains possible. Neither replay promotes an
+aliasing or safe-to-filter claim.
+
+Scan35 exhaustively screened the four remaining direct-call callers whose
+signature has `this` but no explicit `param_n`, with 40–800-byte bodies. The
+High-P-code exporter processed all four functions and emitted no
+parameter-rooted field stores, parameter-rooted field loads, or STORE facts;
+there are no pairs to audit. This is a bounded negative result for this
+population, not a claim about other access forms or runtime behavior.
+
+Scan36 exhaustively screened the 295 functions with at least one explicit
+`param_n`, 40–800-byte bodies, and no direct-call caller row in the pinned
+call-edge index. It produced 77 field stores, 1,907 field loads, 1,748
+general STORE facts, and fourteen exact pairs across seven functions. All
+fourteen stores fail to dominate their paired loads; no `/5` replay is
+eligible. The index labels these as non-direct-call callers, but that does not
+prove they are called only indirectly.
+
+Scan37 exhaustively screened all 161 explicit-parameter functions with bodies
+larger than 800 bytes: 159 have outgoing direct-call rows and two do not. It
+produced 39 exact pairs in `0041dd40` and `004e0f20`. Thirty-three stores do
+not dominate their loads. In `004e0f20`, store `004e15c2` and load `004e15d4`
+at offset `0x6c` form one unique structural candidate. Five pairs in
+`0041dd40` entered focused replay; one became unique and four remain possible
+because indirect calls, missing CFG, and an unavailable direct target remain
+barriers.
+
+The focused replay in
+[`scan37/replay-0041dd40`](scan37/replay-0041dd40/) follows the direct-call
+closure from `0041dd40`. It supplies all 97 P-code flows reachable from exact
+CALL operations and CFG/4 for 95 of those functions. CFG export skips
+`006642a0` because no entry block exists and excludes `0090e864` because its
+decompiler graph has multiple entry blocks; both gaps are listed in
+`closure-cfg-skipped-functions.tsv`. Three function-index edges are not
+reachable from the captured P-code calls and are excluded. The expanded CFG/4
+removes source-linked `INDIRECT` markers, but 22 reachable `CALLIND` operations
+across 13 functions still block four pairs. The closure also reaches a direct
+CALL target `006642a5` absent from the pinned function inventory. The full
+closure replay keeps the same four pairs possible and the fifth pair unique;
+it does not promote any alias or runtime value-flow claim.
+
+`closure-pointer-provenance.jsonl` applies `PointerProvenance/1` to the same
+98 flows, 22 exact `CALLIND` rows, and retained v2 parameter-root mappings.
+Among the 22 target records, six stop at memory-read anchors, thirteen at
+call barriers, and three are ambiguous. None resolves to an exact function
+entry, so this analysis does not reduce the call-effect barriers.
+
+The read-only receiver-type export also matched all 22 sites across 13
+functions, with no failed functions or count mismatches. Five sites have no
+receiver operand; the remaining type labels are generic `int`, `undefined4`,
+or `size_t`, and the sole recovered pointee is `undefined4`. This adds no
+class or target identity evidence and does not narrow the call-effect set.
+
+Scans25–34 exhaust the pinned 2,374-function direct-call-caller population
+with at least one explicit `param_n` and a 40–800-byte body. Scan36 covers the
+complementary 295 functions in that size range with no outgoing direct-call
+row, and scan37 covers all 161 explicit-parameter functions above 800 bytes.
+The inventory and call-edge files select targets only; all memory facts
+continue to come from the read-only High-P-code exporter. Across scans25–37,
+102 exact pairs include three unique structural candidates, 20 possible
+pairs, and 79 pairs with non-dominating stores.
 
 Scan26's eight exact same-function pairs occur in four functions. None is a
 unique CFG store candidate. Scan27's sixteen pairs occur in ten functions;

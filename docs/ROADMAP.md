@@ -1906,7 +1906,7 @@ monotone fixed point for cycles. Missing argument links, incomplete callee
 facts, unresolved stores, indirect calls, unknown operations and exhausted
 budgets remain barriers. `/1`–`/4` stay unchanged.
 
-Three fresh Ghidra screens (`scan25`–`scan27`) exercised the bounded batch
+Ghidra screens (`scan25`–`scan27`) exercised the bounded batch
 parameter-field exporter on the retail x86-32 SHIFT executable. The function
 and call indexes only selected targets; the exporter determined all field and
 STORE facts from High P-code. Scan25 sampled 100 of 2,374 eligible functions
@@ -1965,11 +1965,49 @@ nested flows keep the effect unknown. The complete retained selections,
 exports, roots, effects, and audits are in the
 [scan25–27 evidence bundle](evidence/receiver-field-access/nfs-shift-screening-20261019/README.md).
 
-**Next:** screen the remaining 1,201 functions in the broader one-or-more-
-parameter population in bounded batches. Use `/6` to eliminate pairs whose
-stores do not dominate their loads; only then collect full direct-call
-closures, exact caller roots, and complete memory facts for `/5`/`/6` replay.
-The 561-function higher-parameter population used by scan26 and scan27 is
-exhausted. Keep missing callees, indirect calls, unknown roots, and possible
-aliases as barriers; do not infer alias facts from decompiler text or
-instruction-level corpus labels.
+Scans30–34 exhausted the remaining 1,201 functions in the broad one-or-more-
+parameter population: four 256-function midpoint-quantile batches followed by
+the final 177 functions. Across these screens, seventeen of nineteen exact
+pairs have non-dominating stores. The two remaining pairs stay possible after
+focused call-effect replay: scan32's call closure reaches an indirect call and
+unknown effect, while scan33's callee has an unresolved STORE destination and
+only one exact caller-argument root. Neither case is promoted. Scan35 also
+screened the four remaining `this`-only direct-call callers with 40–800-byte
+bodies; the read-only exporter found no parameter-rooted field loads or
+stores and no P-code STORE facts. See the
+[scan25–37 evidence bundle](evidence/receiver-field-access/nfs-shift-screening-20261019/README.md).
+
+Scan36 screened all 295 remaining explicit-parameter functions with
+40–800-byte bodies which do not appear as direct-call callers in the pinned
+call-edge export. It produced fourteen exact pairs across seven functions;
+all stores are non-dominating, so no interprocedural replay is eligible. The
+index establishes only that these functions have no outgoing direct-call row
+in the selected call-edge export; it does not establish that they are invoked
+only indirectly. Scans25–35 and scan36 therefore cover both call-edge
+populations within the explicit-parameter, 40–800-byte filter.
+
+Scan37 screened all 161 explicit-parameter functions whose bodies exceed 800
+bytes (159 have outgoing direct-call rows and two do not). It produced 39
+exact pairs across two functions. `/6` found 33 non-dominating stores, five
+possible effects, and one unique candidate; a focused replay made one of the
+five possible pairs unique. The replay follows 97 reachable P-code flows and
+has CFG/4 for 95 of them. Two CFG boundaries remain (`006642a0` has no entry
+block; `0090e864` has multiple entry blocks), as does direct target `006642a5`
+outside the pinned function inventory. CFG/4 removed source-linked
+`INDIRECT` markers, but 22 reachable `CALLIND` operations in 13 functions
+leave four pairs possible. `PointerProvenance/1` classifies the 22 target
+expressions as six memory-read anchors, thirteen call barriers, and three
+ambiguous results; none resolves to an exact function entry. The receiver-
+type exporter matched all 22 sites but recovered only generic primitive
+labels, so it adds no target identity evidence. Across scans25–37, three
+unique candidates, 20 possible pairs, and 79 non-dominating pairs have been
+recorded. See the
+[scan25–37 evidence bundle](evidence/receiver-field-access/nfs-shift-screening-20261019/README.md).
+
+**Next:** inspect the six memory-read anchors against exact data references,
+starting with sites on paths to the four possible pairs. Check whether the
+two CFG gaps or missing target `006642a5` can be recovered without changing
+the fail-closed contract. Keep unresolved targets and roots as barriers.
+Assess bodies smaller than 40 bytes if this unresolved set or new pair
+evidence gives a concrete reason to extend the population screen; do not
+infer alias facts from decompiler text or instruction-level corpus labels.

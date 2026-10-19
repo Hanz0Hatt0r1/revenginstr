@@ -1,0 +1,3 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+0091c3ba	0091c3bc	5	CALL	-	const:0x4:4	0090e6ef	FUN_0090e6ef
+0091c3ba	0091c3c2	12	RETURN	-	const:0x0:4	-	-

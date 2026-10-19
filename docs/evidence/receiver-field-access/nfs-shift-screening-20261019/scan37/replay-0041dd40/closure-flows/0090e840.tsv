@@ -1,0 +1,11 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+0090e840	0090e84b	4	INT_MULT	def:0090e84b:4:4	address:00ce8000:4;const:0x14:4	-	-
+0090e840	0090e84e	12	INT_ADD	def:0090e84e:12:4	def:0090e84b:4:4;def:0090e84e:40:4	-	-
+0090e840	0090e84e	40	CAST	def:0090e84e:40:4	address:00ce8004:4	-	-
+0090e840	0090e84e	41	CAST	def:0090e84e:41:4	def:0090e84e:12:4	-	-
+0090e840	0090e850	19	CALL	-	def:0090e84e:41:4;input:Stack[0x4]:4	0090e864	FUN_0090e864
+0090e840	0090e850	20	RETURN	-	const:0x0:8	-	-
+0090e840	0090e850	35	INDIRECT	def:0090e850:35:4	address:00ce8000:4;const:0x13:4	-	-
+0090e840	0090e850	36	COPY	def:0090e850:36:4	def:0090e850:35:4	-	-
+0090e840	0090e850	37	INDIRECT	def:0090e850:37:4	address:00ce8004:4;const:0x13:4	-	-
+0090e840	0090e850	38	COPY	def:0090e850:38:4	def:0090e850:37:4	-	-

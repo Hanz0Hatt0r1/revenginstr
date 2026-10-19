@@ -1826,7 +1826,7 @@
       "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
     },
     "function_inventory": {
-      "path": "/home/pes/work/nfs-shift-mass-recovery-20261017-artifacts/p1b-full-program-index/shift.functions.tsv.gz",
+      "path": "shift.functions.tsv.gz",
       "sha256": "8b8b00d8493dba459edf186869ddf492dc26002af3b65d08b6988dc91a87fa24"
     }
   }

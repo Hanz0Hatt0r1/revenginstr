@@ -1,0 +1,8 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+00906e09	00906e09	1	LOAD	def:00906e09:1:4	const:0x1a1:4;def:00906e09:42:4	-	-
+00906e09	00906e09	42	PTRADD	def:00906e09:42:4	register:register:00000014:4;const:0xfffffffc:4;const:0x4:4	-	-
+00906e09	00906e09	43	CAST	def:00906e09:43:4	def:00906e09:1:4	-	-
+00906e09	00906e1b	33	STORE	-	const:0x1a1:4;register:register:00000014:4;input:Stack[0x0]:4	-	-
+00906e09	00906e1b	41	INDIRECT	def:00906e1b:41:4	def:00906e09:43:4;const:0x21:4	-	-
+00906e09	00906e1c	36	RETURN	-	const:0x0:4	-	-
+00906e09	00906e1c	40	COPY	def:00906e1c:40:4	def:00906e1b:41:4	-	-

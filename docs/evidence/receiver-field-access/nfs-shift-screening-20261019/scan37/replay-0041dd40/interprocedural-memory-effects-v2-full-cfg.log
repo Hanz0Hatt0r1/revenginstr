@@ -1,0 +1,4 @@
+field-call effects: 670
+no-alias: 5
+possible writes: 5
+output: docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/interprocedural-memory-effects-v2-full-cfg.jsonl
