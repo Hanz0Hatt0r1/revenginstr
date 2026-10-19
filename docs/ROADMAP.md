@@ -2004,10 +2004,13 @@ unique candidates, 20 possible pairs, and 79 non-dominating pairs have been
 recorded. See the
 [scan25–37 evidence bundle](evidence/receiver-field-access/nfs-shift-screening-20261019/README.md).
 
-**Next:** inspect the six memory-read anchors against exact data references,
-starting with sites on paths to the four possible pairs. Check whether the
-two CFG gaps or missing target `006642a5` can be recovered without changing
-the fail-closed contract. Keep unresolved targets and roots as barriers.
-Assess bodies smaller than 40 bytes if this unresolved set or new pair
-evidence gives a concrete reason to extend the population screen; do not
-infer alias facts from decompiler text or instruction-level corpus labels.
+**Next:** inspect the four remaining memory-read anchors against exact data
+references, starting with sites on paths to the four possible pairs. Manual
+static-data review resolved the `0064a0ce` and `0064a10e` targets to
+`00664a10`; the four anchors in `006657e0` and `00665820` still depend on
+returned runtime objects. A bounded instruction slice recovered the tail at
+`006642a5`, but not a complete function flow or CFG. Continue checking the two
+CFG gaps and keep unresolved targets and roots as barriers. Assess bodies
+smaller than 40 bytes if this unresolved set or new pair evidence gives a
+concrete reason to extend the population screen; do not infer alias facts
+from decompiler text or instruction-level corpus labels.

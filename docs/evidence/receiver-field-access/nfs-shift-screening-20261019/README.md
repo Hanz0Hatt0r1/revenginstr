@@ -122,13 +122,43 @@ it does not promote any alias or runtime value-flow claim.
 98 flows, 22 exact `CALLIND` rows, and retained v2 parameter-root mappings.
 Among the 22 target records, six stop at memory-read anchors, thirteen at
 call barriers, and three are ambiguous. None resolves to an exact function
-entry, so this analysis does not reduce the call-effect barriers.
+entry through `PointerProvenance/1` alone, so its output does not reduce the
+call-effect barriers.
 
 The read-only receiver-type export also matched all 22 sites across 13
 functions, with no failed functions or count mismatches. Five sites have no
 receiver operand; the remaining type labels are generic `int`, `undefined4`,
 or `size_t`, and the sole recovered pointee is `undefined4`. This adds no
 class or target identity evidence and does not narrow the call-effect set.
+
+A separate read-only static-data review resolves two of those six memory-read
+anchors. The `0064a0c0` and `0064a100` wrappers receive the result of
+`0064a010` at all four direct call sites in `0088d1d0`. `0064a010` returns
+`0x00bfa9b0` on both initialization paths. Its constructor stores the result
+of the `006642a0` helper in that object's first field; the helper's jump into
+the bounded instruction slice at `006642a5` returns `0x00bfc728`. Constructor
+`00664140` sets that singleton's vtable pointer to `0x00af08a0`, whose slot at
+`+0x30` (`0x00af08d0`) contains `0x00664a10`. This makes `00664a10` the
+evidence-backed static target for `CALLIND` at `0064a0ce` and `0064a10e`.
+The caller and return evidence is in
+[`caller-arguments-closure.tsv`](scan37/replay-0041dd40/caller-arguments-closure.tsv),
+[`closure-pcode-flow.tsv`](scan37/replay-0041dd40/closure-pcode-flow.tsv),
+[`closure-static-return-address-refs.jsonl`](scan37/replay-0041dd40/closure-static-return-address-refs.jsonl),
+and [`closure-static-return-address-metadata.jsonl`](scan37/replay-0041dd40/closure-static-return-address-metadata.jsonl).
+The implementation exports are
+[`closure-static-return-function-instructions.jsonl`](scan37/replay-0041dd40/closure-static-return-function-instructions.jsonl),
+[`closure-static-object-constructor-instructions.jsonl`](scan37/replay-0041dd40/closure-static-object-constructor-instructions.jsonl),
+[`closure-static-interface-factory-instructions.jsonl`](scan37/replay-0041dd40/closure-static-interface-factory-instructions.jsonl),
+[`closure-interface-factory-tail-slice.jsonl`](scan37/replay-0041dd40/closure-interface-factory-tail-slice.jsonl),
+[`closure-secondary-singleton-constructor-instructions.jsonl`](scan37/replay-0041dd40/closure-secondary-singleton-constructor-instructions.jsonl),
+[`closure-secondary-singleton-vtable-metadata.jsonl`](scan37/replay-0041dd40/closure-secondary-singleton-vtable-metadata.jsonl),
+[`closure-secondary-singleton-references.jsonl`](scan37/replay-0041dd40/closure-secondary-singleton-references.jsonl),
+and [`closure-first-pair-target-instructions.jsonl`](scan37/replay-0041dd40/closure-first-pair-target-instructions.jsonl).
+The bounded slice recovers instructions at `006642a5`, but not a complete
+function flow or CFG. The four later anchors in `006657e0` and `00665820`
+depend on returned runtime objects and remain unresolved. This manual result
+does not change the `/6` statuses or establish that runtime memory cannot be
+overwritten.
 
 Scans25–34 exhaust the pinned 2,374-function direct-call-caller population
 with at least one explicit `param_n` and a 40–800-byte body. Scan36 covers the

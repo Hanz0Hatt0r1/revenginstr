@@ -1430,6 +1430,12 @@
       "rows": 100
     },
     {
+      "path": "scan37/replay-0041dd40/closure-first-pair-target-instructions.jsonl",
+      "bytes": 172726,
+      "sha256": "9037970646feddb19ec40798567dc74efb63ffef3189b541069532f4b8d752ae",
+      "rows": 2
+    },
+    {
       "path": "scan37/replay-0041dd40/closure-flow-acquisition.jsonl",
       "bytes": 17494,
       "sha256": "4965e32104931d63ea8b00287f3194bc3498aa2704a9d2e2d41849dcfe1f1051",
@@ -2081,6 +2087,12 @@
       "rows": 22
     },
     {
+      "path": "scan37/replay-0041dd40/closure-interface-factory-tail-slice.jsonl",
+      "bytes": 27386,
+      "sha256": "adac72f3e8e55c5d06ca49fc820151a0acf447f56295d257ae6778e3498c8cc0",
+      "rows": 1
+    },
+    {
       "path": "scan37/replay-0041dd40/closure-memory-cfg-v4-export.log",
       "bytes": 4469,
       "sha256": "62818b6713f511b98ee4e38616b5c188c7e7b9a3f2db7d317d40ede225308de2"
@@ -2135,6 +2147,54 @@
       "path": "scan37/replay-0041dd40/closure-pointer-provenance.log",
       "bytes": 355,
       "sha256": "1586144d4cf43e270806907e2d19819d8305433d6fab86c0eba14e8cb2362e7a"
+    },
+    {
+      "path": "scan37/replay-0041dd40/closure-secondary-singleton-constructor-instructions.jsonl",
+      "bytes": 43687,
+      "sha256": "8bb04f2374451e8666c4b838d34e10819266ee0a9490c59d9590ca4d14749a38",
+      "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/closure-secondary-singleton-references.jsonl",
+      "bytes": 2502,
+      "sha256": "b273e43270a6d844466b8c8caec8d3e7b82f78a762988e8a23a73372ab5c8eff",
+      "rows": 4
+    },
+    {
+      "path": "scan37/replay-0041dd40/closure-secondary-singleton-vtable-metadata.jsonl",
+      "bytes": 2958,
+      "sha256": "190e799da0f2b8d7ec20c8764851650ec34562f5acf74b029a9567f4bfe24388",
+      "rows": 8
+    },
+    {
+      "path": "scan37/replay-0041dd40/closure-static-interface-factory-instructions.jsonl",
+      "bytes": 2031,
+      "sha256": "5a5735b32472f3c22ffd6ce1d648376741e9d3dc5e48d3c375c515e2c936eed8",
+      "rows": 2
+    },
+    {
+      "path": "scan37/replay-0041dd40/closure-static-object-constructor-instructions.jsonl",
+      "bytes": 29431,
+      "sha256": "4517e8f39ef09b04dc2465fbbcea69befe8646fea72a03f801e5c8188599edf4",
+      "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/closure-static-return-address-metadata.jsonl",
+      "bytes": 1108,
+      "sha256": "60cd7738ce77354289a365b2f1746a22cc6da6f4117b2b7bf6ad9d3b86d2e655",
+      "rows": 3
+    },
+    {
+      "path": "scan37/replay-0041dd40/closure-static-return-address-refs.jsonl",
+      "bytes": 2189,
+      "sha256": "68cae84515cbb7c9ce60c4b2ef22af5195ffb2d31c0ac5020a7e1d3bdf40f7ab",
+      "rows": 3
+    },
+    {
+      "path": "scan37/replay-0041dd40/closure-static-return-function-instructions.jsonl",
+      "bytes": 24460,
+      "sha256": "3851b1145199f6ef8c564c82f6f8ad443d73b19a472b11e3de1497be9c7cd39e",
+      "rows": 1
     },
     {
       "path": "scan37/replay-0041dd40/field-access-pairs.jsonl",
