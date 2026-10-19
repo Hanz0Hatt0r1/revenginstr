@@ -21,6 +21,9 @@ VIEWS = ("exact-only", "accepted-high-confidence", "exploratory")
 NODE_KINDS = ("program", "function", "operation", "field", "receiver_observation", "type", "layout_field")
 RELATIONS = ("contains", "calls", "reads", "writes", "observes_receiver", "has_field")
 CALL_STATES = ("not_applicable", "resolved", "unresolved", "indirect", "conflicted")
+CALL_ARGUMENT_DEFINITION_STATES = (
+    "exact_definition", "definition_not_found", "ambiguous_definition", "non_definition_token",
+)
 
 
 def _in_view(row: dict[str, Any], view: str, minimum_confidence: float) -> bool:
@@ -80,6 +83,14 @@ def _matches_node(row: dict[str, Any], filters: dict[str, Any]) -> bool:
             for argument in arguments
         ):
             return False
+    if filters.get("call_argument_definition_states"):
+        arguments = row.get("call_arguments")
+        if not isinstance(arguments, list) or not any(
+            isinstance(argument, dict)
+            and argument.get("definition_resolution_state") in filters["call_argument_definition_states"]
+            for argument in arguments
+        ):
+            return False
     return _supports(row, filters["support_id"])
 
 
@@ -106,6 +117,7 @@ def query_graphs(
     field_offsets: list[str] | None = None,
     type_ids: list[str] | None = None,
     call_argument_tokens: list[str] | None = None,
+    call_argument_definition_states: list[str] | None = None,
     support_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """Return matching graph facts and endpoint context with source provenance."""
@@ -125,6 +137,8 @@ def query_graphs(
         raise ValueError("unsupported call target state filter")
     if any(not isinstance(token, str) or not token for token in call_argument_tokens or []):
         raise ValueError("call argument tokens must be non-empty strings")
+    if set(call_argument_definition_states or []) - set(CALL_ARGUMENT_DEFINITION_STATES):
+        raise ValueError("unsupported call argument definition state filter")
     if not graphs:
         raise ValueError("Semantic Program Graph input is empty")
     filters = {
@@ -140,10 +154,13 @@ def query_graphs(
     }
     if call_argument_tokens:
         filters["call_argument_tokens"] = sorted(set(call_argument_tokens))
+    if call_argument_definition_states:
+        filters["call_argument_definition_states"] = sorted(set(call_argument_definition_states))
     node_filters_active = any((
         filters["kinds"], filters["call_target_states"],
         filters["function_entries"], filters["operation_addresses"],
         filters["field_offsets"], filters["type_ids"], filters.get("call_argument_tokens", []),
+        filters.get("call_argument_definition_states", []),
         filters["support_id"],
     ))
 
@@ -238,6 +255,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--field-offset", action="append", default=[])
     parser.add_argument("--type-id", action="append", default=[])
     parser.add_argument("--call-argument-token", action="append", default=[])
+    parser.add_argument(
+        "--call-argument-definition-state", action="append",
+        choices=CALL_ARGUMENT_DEFINITION_STATES, default=[],
+    )
     parser.add_argument("--support-id")
     args = parser.parse_args(argv)
     try:
@@ -256,6 +277,7 @@ def main(argv: list[str] | None = None) -> int:
             field_offsets=args.field_offset,
             type_ids=args.type_id,
             call_argument_tokens=args.call_argument_token,
+            call_argument_definition_states=args.call_argument_definition_state,
             support_id=args.support_id,
         )
     except ValueError as error:
