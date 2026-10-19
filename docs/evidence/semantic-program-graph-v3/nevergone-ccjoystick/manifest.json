@@ -22,6 +22,11 @@
       "path": "docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick/field-104-query.jsonl",
       "bytes": 6262,
       "sha256": "477254c295215e1159635079ec02776b758a841ef98b9b2b940d90d8fea4f58b"
+    },
+    {
+      "path": "docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick/benchmark-manifest.json",
+      "bytes": 3798,
+      "sha256": "ecd319b50e9c58eb6ada96cfd61304a2840989d56c62a9eaa62b6b8989242026"
     }
   ]
 }
