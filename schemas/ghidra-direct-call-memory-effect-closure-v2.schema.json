@@ -78,7 +78,7 @@
         "properties": {
           "provenance": {
             "required": [
-              "static_indirect_target_observations"
+              "indirect_target_observations"
             ]
           }
         },
@@ -431,22 +431,23 @@
           "type": "integer",
           "minimum": 0
         },
-        "static_indirect_target_observations": {
+        "indirect_target_observations": {
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
           "items": {
-            "$ref": "#/$defs/static_indirect_target_observation"
+            "$ref": "#/$defs/indirect_target_observation"
           }
         }
       }
     },
-    "static_indirect_target_observation": {
+    "indirect_target_observation": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "target_address",
         "resolution_scope",
+        "evidence_state",
         "program_sha256",
         "source"
       ],
@@ -456,7 +457,11 @@
           "pattern": "^0x[0-9a-f]{8}$"
         },
         "resolution_scope": {
-          "const": "observed_global_singleton_initializer"
+          "enum": [
+            "observed_global_singleton_initializer",
+            "observed_cached_field_constructor_variants",
+            "observed_returned_subobject_constructor_variants"
+          ]
         },
         "program_sha256": {
           "type": "string",
@@ -485,11 +490,111 @@
               "minimum": 1
             },
             "source_format": {
-              "const": "REVENGINSTR.GhidraStaticIndirectCallTarget/1"
+              "enum": [
+                "REVENGINSTR.GhidraStaticIndirectCallTarget/1",
+                "REVENGINSTR.GhidraIndirectCallVtableCandidates/1"
+              ]
+            },
+            "target_candidate_index": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "evidence_state": {
+          "enum": [
+            "observed_global_singleton_target",
+            "bounded_static_target_candidates",
+            "partial_static_target_candidates"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "resolution_scope": {
+                "const": "observed_global_singleton_initializer"
+              }
+            },
+            "required": [
+              "resolution_scope"
+            ]
+          },
+          "then": {
+            "properties": {
+              "evidence_state": {
+                "const": "observed_global_singleton_target"
+              },
+              "source": {
+                "properties": {
+                  "source_format": {
+                    "const": "REVENGINSTR.GhidraStaticIndirectCallTarget/1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "resolution_scope": {
+                "const": "observed_cached_field_constructor_variants"
+              }
+            },
+            "required": [
+              "resolution_scope"
+            ]
+          },
+          "then": {
+            "properties": {
+              "evidence_state": {
+                "const": "bounded_static_target_candidates"
+              },
+              "source": {
+                "required": [
+                  "target_candidate_index"
+                ],
+                "properties": {
+                  "source_format": {
+                    "const": "REVENGINSTR.GhidraIndirectCallVtableCandidates/1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "resolution_scope": {
+                "const": "observed_returned_subobject_constructor_variants"
+              }
+            },
+            "required": [
+              "resolution_scope"
+            ]
+          },
+          "then": {
+            "properties": {
+              "evidence_state": {
+                "const": "partial_static_target_candidates"
+              },
+              "source": {
+                "required": [
+                  "target_candidate_index"
+                ],
+                "properties": {
+                  "source_format": {
+                    "const": "REVENGINSTR.GhidraIndirectCallVtableCandidates/1"
+                  }
+                }
+              }
             }
           }
         }
-      }
+      ]
     }
   }
 }

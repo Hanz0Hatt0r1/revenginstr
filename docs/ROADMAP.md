@@ -2259,12 +2259,14 @@ the [seeded-callee descendant replay](evidence/receiver-field-access/nfs-shift-s
 for the pinned inputs and reproduction command.
 
 The `/2` direct-call effect closure now accepts reviewed
-`GhidraStaticIndirectCallTarget/1` evidence. It joins exact function/address/
-time identities, requires a matching program id and binary SHA-256, and pins
-the source artifact row in its output. The two singleton wrapper sites are
-therefore visible to closure consumers with their declared
-`observed_global_singleton_initializer` scope, while their `CALLIND` statuses
-remain barriers and no target flow is treated as part of the closed graph.
+`GhidraStaticIndirectCallTarget/1` and
+`GhidraIndirectCallVtableCandidates/1` evidence. It joins exact
+function/address/time identities, requires a matching program id and binary
+SHA-256, and pins each source artifact row in its output. The singleton
+wrapper sites are visible with their initializer scope; the four field-20
+dispatch sites can carry bounded or partial constructor-derived candidates.
+All six `CALLIND` statuses remain barriers and none of their target flows is
+treated as part of the closed graph.
 See the [closure replay](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/static-call-target-closure-replay.md).
 
 **Next:** continue target recovery across the 22 focused `CALLIND` effect

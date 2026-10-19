@@ -15,10 +15,11 @@ disabled for all evidence exports. The `006642a5` replay seeded the missing
 function only in a disposable project copy; its CFG export then opened that
 copy read-only.
 
-The two singleton wrapper targets are joined into the `/2` direct-call effect
-closure with an exact function/address/time match and the pinned executable
-hash. The resulting rows retain `indirect_call` barriers; the static records
-remain scoped to their observed initializer path. See the
+The singleton wrapper targets and the field-20 vtable candidate sets are
+joined into the `/2` direct-call effect closure with exact function/address/
+time matches and the pinned executable hash. The resulting rows retain
+`indirect_call` barriers; each observation keeps its bounded or partial source
+scope. See the
 [closure replay](scan37/replay-0041dd40/static-call-target-closure-replay.md).
 
 ## Screens

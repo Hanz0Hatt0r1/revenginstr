@@ -2867,20 +2867,32 @@
     },
     {
       "path": "scan37/replay-0041dd40/static-call-target-closure-0064a0c0.jsonl",
-      "bytes": 2549,
-      "sha256": "0d538c26b4d34c41405477071b42b83d2554cd76799ee7e67202b9650ea71f11",
+      "bytes": 2596,
+      "sha256": "e00da7b6e02748bfa7cf8287d9f522365d539dbf6f3995ef4ba5c1f93550fd0a",
       "rows": 3
     },
     {
       "path": "scan37/replay-0041dd40/static-call-target-closure-0064a100.jsonl",
-      "bytes": 3295,
-      "sha256": "185cff0569db49dfd1f392adc32336225680bd8f88b67dd970965f7fa28cf2a8",
+      "bytes": 3342,
+      "sha256": "62e828d27718feb2bb7cc2a403b5effc9bb5e303426fab10936c2620115729ff",
       "rows": 4
     },
     {
+      "path": "scan37/replay-0041dd40/static-call-target-closure-006657e0.jsonl",
+      "bytes": 4228,
+      "sha256": "385d50555136928f899d5e54e1c211e35cfa287302edd25953f779d108965553",
+      "rows": 2
+    },
+    {
+      "path": "scan37/replay-0041dd40/static-call-target-closure-00665820.jsonl",
+      "bytes": 4946,
+      "sha256": "a488b045cc14eb9b17b53a20493b70314d10f07c76bc4d6b0ce0a5dc688eea48",
+      "rows": 3
+    },
+    {
       "path": "scan37/replay-0041dd40/static-call-target-closure-replay.md",
-      "bytes": 2928,
-      "sha256": "6954bee67076f96f4eb498437994a54abcb171bac913efaf1f0f7a814fe10d53"
+      "bytes": 4648,
+      "sha256": "389676f8f4a16bc421530397188bc42a701c0f8780f409cacd916c022292539e"
     },
     {
       "path": "scan37/replay-0041dd40/target-function-00664a10-callind-evidence.jsonl",

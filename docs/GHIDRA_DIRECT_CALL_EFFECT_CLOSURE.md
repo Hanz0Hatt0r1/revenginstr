@@ -30,8 +30,9 @@ direct target reuse the computed summary.
 
 ## Join reviewed indirect-target observations
 
-For reviewed `GhidraStaticIndirectCallTarget/1` evidence, pass the evidence
-JSONL and the analyzed binary SHA-256:
+For reviewed `GhidraStaticIndirectCallTarget/1` or
+`GhidraIndirectCallVtableCandidates/1` evidence, pass the relevant JSONL file
+and the analyzed binary SHA-256:
 
 ```sh
 revenginstr-direct-call-memory-effect-closure caller.tsv \
@@ -41,13 +42,17 @@ revenginstr-direct-call-memory-effect-closure caller.tsv \
   --output call-effect-closure.jsonl
 ```
 
+Pass `--indirect-call-vtable-candidates vtable-candidates.jsonl` for bounded or
+partial constructor-derived target sets. Both evidence files can be supplied
+to the same invocation.
+
 The join requires an exact `function_entry`, call address, and P-code time, and
 rejects evidence for another program identity or binary hash. Matching rows
-add a source-pinned `static_indirect_target_observations` list under
-`provenance` in a `/2` output. These rows describe the evidence's declared resolution scope;
-they do not resolve the `CALLIND`, add a function to its transitive closure,
-or remove the `indirect_call` effect barrier. A runtime-mutated pointer can
-still select a different target.
+add source-pinned `indirect_target_observations` under `provenance` in a `/2`
+output. Each observation retains its evidence state and scope. These rows
+describe the evidence's declared limits; they do not resolve the `CALLIND`,
+add a function to its transitive closure, or remove the `indirect_call` effect
+barrier. A runtime-mutated pointer can still select a different target.
 
 ## Fail-closed statuses
 

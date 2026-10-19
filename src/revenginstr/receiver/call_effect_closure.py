@@ -26,7 +26,7 @@ _ADDRESS = re.compile(r"(?:0x)?([0-9a-fA-F]{8})\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 MAX_FUNCTIONS = 10_000
 MAX_CLOSURE_VISITS = 1_000_000
-MAX_STATIC_TARGET_BYTES = 16 * 1024 * 1024
+MAX_TARGET_EVIDENCE_BYTES = 16 * 1024 * 1024
 
 
 def _closure_summary(
@@ -91,11 +91,9 @@ def _address_value(value: Any, *, where: str) -> int:
     return int(match.group(1), 16)
 
 
-def _read_static_targets(
-    path: Path, *, program_id: str, program_sha256: str,
-) -> tuple[str, dict[tuple[int, int, int], list[dict[str, Any]]]]:
-    if path.stat().st_size > MAX_STATIC_TARGET_BYTES:
-        raise ValueError(f"{path}: static target evidence byte budget exceeded: {MAX_STATIC_TARGET_BYTES}")
+def _read_jsonl_records(path: Path) -> tuple[str, list[dict[str, Any]]]:
+    if path.stat().st_size > MAX_TARGET_EVIDENCE_BYTES:
+        raise ValueError(f"{path}: target evidence byte budget exceeded: {MAX_TARGET_EVIDENCE_BYTES}")
     raw = path.read_bytes()
     try:
         text = raw.decode("utf-8")
@@ -103,7 +101,7 @@ def _read_static_targets(
         raise ValueError(f"{path}: input must be UTF-8") from error
     lines = text.splitlines()
     if not lines:
-        raise ValueError(f"{path}: static target evidence is empty")
+        raise ValueError(f"{path}: target evidence is empty")
 
     def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
         result: dict[str, Any] = {}
@@ -113,16 +111,7 @@ def _read_static_targets(
             result[key] = value
         return result
 
-    by_site: dict[tuple[int, int, int], list[dict[str, Any]]] = {}
-    seen: set[tuple[int, int, int, int]] = set()
-    required = {
-        "format", "program_id", "program_sha256", "binary_program",
-        "function_entry", "call_address", "call_time", "resolution_scope",
-        "receiver", "slot", "target_address", "callind_evidence",
-        "pointer_slot_projection", "initialization_evidence", "observed_callers",
-        "limitations",
-    }
-    artifact_sha256 = hashlib.sha256(raw).hexdigest()
+    rows = []
     for record_index, line in enumerate(lines, 1):
         if not line.strip():
             raise ValueError(f"{path}: blank JSONL record at line {record_index}")
@@ -132,17 +121,49 @@ def _read_static_targets(
             raise ValueError(f"{path}: invalid JSON at line {record_index}: {error.msg}") from error
         except ValueError as error:
             raise ValueError(f"{path}: invalid JSON at line {record_index}: {error}") from error
+        if not isinstance(row, dict):
+            raise ValueError(f"{path}: JSONL record {record_index} must be an object")
+        rows.append(row)
+    return hashlib.sha256(raw).hexdigest(), rows
+
+
+def _validate_target_program(
+    row: dict[str, Any], *, where: str, program_id: str, program_sha256: str,
+) -> None:
+    if row.get("program_id") != program_id:
+        raise ValueError(f"{where}: program_id does not match --program-id")
+    if row.get("program_sha256") != program_sha256:
+        raise ValueError(f"{where}: program_sha256 does not match --program-sha256")
+    if not isinstance(row.get("binary_program"), str) or not row["binary_program"]:
+        raise ValueError(f"{where}: binary_program must be non-empty")
+
+
+def _target_observation_key(row: dict[str, Any]) -> tuple[Any, ...]:
+    source = row["source"]
+    return (
+        row["target_address"], row["resolution_scope"], source["source_format"],
+        source["record_index"], source.get("target_candidate_index", 0),
+    )
+
+
+def _read_static_targets(
+    path: Path, *, program_id: str, program_sha256: str,
+) -> tuple[str, dict[tuple[int, int, int], list[dict[str, Any]]]]:
+    artifact_sha256, rows = _read_jsonl_records(path)
+    by_site: dict[tuple[int, int, int], list[dict[str, Any]]] = {}
+    seen: set[tuple[int, int, int, int]] = set()
+    required = {
+        "format", "program_id", "program_sha256", "binary_program",
+        "function_entry", "call_address", "call_time", "resolution_scope",
+        "receiver", "slot", "target_address", "callind_evidence",
+        "pointer_slot_projection", "initialization_evidence", "observed_callers",
+        "limitations",
+    }
+    for record_index, row in enumerate(rows, 1):
         where = f"{path}: record {record_index}"
-        if not isinstance(row, dict) or set(row) != required:
+        if set(row) != required or row["format"] != STATIC_TARGET_FORMAT:
             raise ValueError(f"{where}: malformed GhidraStaticIndirectCallTarget/1 fields")
-        if row["format"] != STATIC_TARGET_FORMAT:
-            raise ValueError(f"{where}: unsupported static target format")
-        if row["program_id"] != program_id:
-            raise ValueError(f"{where}: program_id does not match --program-id")
-        if row["program_sha256"] != program_sha256:
-            raise ValueError(f"{where}: program_sha256 does not match --program-sha256")
-        if not isinstance(row["binary_program"], str) or not row["binary_program"]:
-            raise ValueError(f"{where}: binary_program must be non-empty")
+        _validate_target_program(row, where=where, program_id=program_id, program_sha256=program_sha256)
         if row["resolution_scope"] != STATIC_TARGET_SCOPE:
             raise ValueError(f"{where}: unsupported resolution_scope")
         entry = _address_value(row["function_entry"], where=f"{where}.function_entry")
@@ -158,6 +179,7 @@ def _read_static_targets(
         by_site.setdefault((entry, address, call_time), []).append({
             "target_address": f"0x{target:08x}",
             "resolution_scope": STATIC_TARGET_SCOPE,
+            "evidence_state": "observed_global_singleton_target",
             "program_sha256": program_sha256,
             "source": {
                 "artifact_path": path.as_posix(),
@@ -167,9 +189,74 @@ def _read_static_targets(
             },
         })
     for observations in by_site.values():
-        observations.sort(key=lambda row: (
-            row["target_address"], row["source"]["record_index"],
-        ))
+        observations.sort(key=_target_observation_key)
+    return artifact_sha256, by_site
+
+
+def _read_vtable_candidates(
+    path: Path, *, program_id: str, program_sha256: str,
+) -> tuple[str, dict[tuple[int, int, int], list[dict[str, Any]]]]:
+    artifact_sha256, rows = _read_jsonl_records(path)
+    by_site: dict[tuple[int, int, int], list[dict[str, Any]]] = {}
+    seen: set[tuple[int, int, int, int]] = set()
+    required = {
+        "format", "program_id", "program_sha256", "binary_program",
+        "function_entry", "call_address", "call_time", "slot_offset_bytes",
+        "status", "receiver", "candidate_targets", "callind_evidence",
+        "pointer_slot_projection", "limitations",
+    }
+    scope_by_status = {
+        "bounded_static_target_candidates": "observed_cached_field_constructor_variants",
+        "partial_static_target_candidates": "observed_returned_subobject_constructor_variants",
+        "unresolved_return_object_vtable": None,
+    }
+    for record_index, row in enumerate(rows, 1):
+        where = f"{path}: record {record_index}"
+        if set(row) != required or row["format"] != "REVENGINSTR.GhidraIndirectCallVtableCandidates/1":
+            raise ValueError(f"{where}: malformed GhidraIndirectCallVtableCandidates/1 fields")
+        _validate_target_program(row, where=where, program_id=program_id, program_sha256=program_sha256)
+        status = row["status"]
+        if not isinstance(status, str) or status not in scope_by_status:
+            raise ValueError(f"{where}: unsupported candidate status")
+        candidates = row["candidate_targets"]
+        if not isinstance(candidates, list):
+            raise ValueError(f"{where}: candidate_targets must be an array")
+        if (status == "unresolved_return_object_vtable") != (not candidates):
+            raise ValueError(f"{where}: candidate status disagrees with candidate_targets")
+        entry = _address_value(row["function_entry"], where=f"{where}.function_entry")
+        address = _address_value(row["call_address"], where=f"{where}.call_address")
+        call_time = row["call_time"]
+        if type(call_time) is not int or call_time < 0:
+            raise ValueError(f"{where}: call_time must be a non-negative integer")
+        site = (entry, address, call_time)
+        for candidate_index, candidate in enumerate(candidates, 1):
+            if (
+                not isinstance(candidate, dict)
+                or set(candidate) != {"target_address", "vtable_origins"}
+                or not isinstance(candidate["vtable_origins"], list)
+                or not candidate["vtable_origins"]
+            ):
+                raise ValueError(f"{where}: malformed vtable candidate {candidate_index}")
+            target = _address_value(candidate["target_address"], where=f"{where}.candidate[{candidate_index}]")
+            identity = (*site, target)
+            if identity in seen:
+                raise ValueError(f"{where}: duplicate vtable target for one CALLIND site")
+            seen.add(identity)
+            by_site.setdefault(site, []).append({
+                "target_address": f"0x{target:08x}",
+                "resolution_scope": scope_by_status[status],
+                "evidence_state": status,
+                "program_sha256": program_sha256,
+                "source": {
+                    "artifact_path": path.as_posix(),
+                    "artifact_sha256": artifact_sha256,
+                    "record_index": record_index,
+                    "target_candidate_index": candidate_index,
+                    "source_format": "REVENGINSTR.GhidraIndirectCallVtableCandidates/1",
+                },
+            })
+    for observations in by_site.values():
+        observations.sort(key=_target_observation_key)
     return artifact_sha256, by_site
 
 
@@ -184,6 +271,7 @@ def build_direct_call_memory_effect_closure(
     max_functions: int = MAX_FUNCTIONS,
     max_closure_visits: int = MAX_CLOSURE_VISITS,
     static_indirect_call_targets: Path | None = None,
+    indirect_call_vtable_candidates: list[Path] | None = None,
     program_sha256: str | None = None,
 ) -> list[dict[str, Any]]:
     """Summarize each caller call using a closed, cycle-safe direct-call graph.
@@ -192,7 +280,7 @@ def build_direct_call_memory_effect_closure(
     contains no STORE or unknown operation, and every nested direct call is
     resolved by the supplied flow set. Cycles terminate through the visited-set
     walk; indirect calls and missing nested flows remain barriers. Optional
-    static-target evidence annotates exact CALLIND sites without resolving them.
+    target evidence annotates exact CALLIND sites without resolving them.
     """
     if not program_id:
         raise ValueError("program_id must be non-empty")
@@ -200,19 +288,44 @@ def build_direct_call_memory_effect_closure(
         raise ValueError("max_calls must be positive")
     if min(max_flow_bytes, max_flow_operations, max_functions, max_closure_visits) < 1:
         raise ValueError("P-code flow budgets must be positive")
-    if static_indirect_call_targets is None:
+    target_evidence_paths = [
+        *([static_indirect_call_targets] if static_indirect_call_targets is not None else []),
+        *(indirect_call_vtable_candidates or []),
+    ]
+    if len({path.resolve() for path in target_evidence_paths}) != len(target_evidence_paths):
+        raise ValueError("duplicate indirect target evidence input")
+    if sum(path.stat().st_size for path in target_evidence_paths) > MAX_TARGET_EVIDENCE_BYTES:
+        raise ValueError(f"target evidence byte budget exceeded: {MAX_TARGET_EVIDENCE_BYTES}")
+    if not target_evidence_paths:
         if program_sha256 is not None:
-            raise ValueError("--program-sha256 requires static indirect-call target evidence")
-        static_target_sha256 = None
-        static_targets = {}
+            raise ValueError("--program-sha256 requires indirect target evidence")
+        target_evidence_hashes = []
+        target_observations_by_site = {}
     else:
         if program_sha256 is None or _SHA256.fullmatch(program_sha256) is None:
-            raise ValueError("static target evidence requires a lowercase --program-sha256")
-        static_target_sha256, static_targets = _read_static_targets(
-            static_indirect_call_targets,
-            program_id=program_id,
-            program_sha256=program_sha256,
-        )
+            raise ValueError("indirect target evidence requires a lowercase --program-sha256")
+        target_evidence_hashes = []
+        target_observations_by_site = {}
+        if static_indirect_call_targets is not None:
+            evidence_sha256, targets = _read_static_targets(
+                static_indirect_call_targets,
+                program_id=program_id,
+                program_sha256=program_sha256,
+            )
+            target_evidence_hashes.append(evidence_sha256)
+            for site, observations in targets.items():
+                target_observations_by_site.setdefault(site, []).extend(observations)
+        for candidate_path in indirect_call_vtable_candidates or []:
+            evidence_sha256, targets = _read_vtable_candidates(
+                candidate_path,
+                program_id=program_id,
+                program_sha256=program_sha256,
+            )
+            target_evidence_hashes.append(evidence_sha256)
+            for site, observations in targets.items():
+                target_observations_by_site.setdefault(site, []).extend(observations)
+        for observations in target_observations_by_site.values():
+            observations.sort(key=_target_observation_key)
 
     callee_flows = callee_flows or []
     paths = [caller_flow_tsv, *(path for _, path in callee_flows)]
@@ -279,8 +392,8 @@ def build_direct_call_memory_effect_closure(
         raise ValueError(f"callee flows are not reachable from caller P-code: {sorted(unused)}")
 
     result = []
-    output_format = FORMAT_V2 if static_target_sha256 is not None else FORMAT_V1
-    matched_static_targets = 0
+    output_format = FORMAT_V2 if target_evidence_hashes else FORMAT_V1
+    matched_target_observations = 0
     for record_index, row in caller_calls:
         opcode = row["opcode"]
         callee_entry = row.get("callee_entry") if opcode == "CALL" and row.get("callee_entry") != "-" else None
@@ -322,10 +435,10 @@ def build_direct_call_memory_effect_closure(
                 _address_value(row["op_address"], where="P-code call address"),
                 int(row["op_time"]),
             )
-            observations = static_targets.get(site, [])
+            observations = target_observations_by_site.get(site, [])
             if observations:
-                provenance["static_indirect_target_observations"] = observations
-                matched_static_targets += len(observations)
+                provenance["indirect_target_observations"] = observations
+                matched_target_observations += len(observations)
         result.append({
             "format": output_format,
             "program_id": program_id,
@@ -338,8 +451,8 @@ def build_direct_call_memory_effect_closure(
             "effect_opcodes": effect_opcodes,
             "provenance": provenance,
         })
-    if static_target_sha256 is not None and matched_static_targets == 0:
-        raise ValueError("static target evidence has no exact CALLIND site in caller P-code flow")
+    if target_evidence_hashes and matched_target_observations == 0:
+        raise ValueError("indirect target evidence has no exact CALLIND site in caller P-code flow")
     return result
 
 
@@ -361,8 +474,12 @@ def main(argv: list[str] | None = None) -> int:
         help="optional GhidraStaticIndirectCallTarget/1 JSONL; joins exact CALLIND sites but preserves the indirect-call barrier",
     )
     parser.add_argument(
+        "--indirect-call-vtable-candidates", type=Path, action="append", default=[],
+        help="GhidraIndirectCallVtableCandidates/1 JSONL; repeat to join multiple candidate artifacts at exact CALLIND sites",
+    )
+    parser.add_argument(
         "--program-sha256",
-        help="required with --static-indirect-call-targets; SHA-256 of the analyzed binary",
+        help="required with indirect target evidence; SHA-256 of the analyzed binary",
     )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
@@ -376,6 +493,7 @@ def main(argv: list[str] | None = None) -> int:
         max_functions=args.max_functions,
         max_closure_visits=args.max_closure_visits,
         static_indirect_call_targets=args.static_indirect_call_targets,
+        indirect_call_vtable_candidates=args.indirect_call_vtable_candidates,
         program_sha256=args.program_sha256,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -387,13 +505,15 @@ def main(argv: list[str] | None = None) -> int:
         counts[row["status"]] = counts.get(row["status"], 0) + 1
     print("call sites:", len(rows))
     print("status counts:", json.dumps(counts, sort_keys=True))
-    if args.static_indirect_call_targets is not None:
+    if args.static_indirect_call_targets is not None or args.indirect_call_vtable_candidates:
         observations = [
             observation
             for row in rows
-            for observation in row["provenance"].get("static_indirect_target_observations", [])
+            for observation in row["provenance"].get("indirect_target_observations", [])
         ]
-        print("static target observations:", len(observations))
-        print("static target evidence SHA-256:", observations[0]["source"]["artifact_sha256"])
+        print("indirect target observations:", len(observations))
+        print("target evidence SHA-256:", json.dumps(sorted({
+            observation["source"]["artifact_sha256"] for observation in observations
+        })))
     print("output:", args.output)
     return 0
