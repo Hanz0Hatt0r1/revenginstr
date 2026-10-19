@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -7,11 +8,14 @@ import pytest
 from jsonschema import Draft202012Validator
 
 from revenginstr.prototype_callsite_observations import observe_call_arguments
+from revenginstr.prototype_evaluation import evaluate_prototypes
 from revenginstr.prototype_inference import infer_prototypes
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests/fixtures/ghidra-decompiler-parameters"
 HYPOTHESIS_SCHEMA = json.loads((ROOT / "schemas/function-prototype-hypothesis-v1.schema.json").read_text())
+GOLD_SCHEMA = json.loads((ROOT / "schemas/function-prototype-gold-v1.schema.json").read_text())
+EVALUATION_SCHEMA = json.loads((ROOT / "schemas/function-prototype-evaluation-v2.schema.json").read_text())
 
 
 def test_prototype_inference_joins_formals_and_call_arity_as_review_evidence() -> None:
@@ -134,6 +138,41 @@ def test_return_shape_inference_does_not_override_user_defined_void(tmp_path: Pa
     caller = next(row for row in rows if row["function_entry"] == "00010017")
     assert len(caller["candidates"]) == 1
     assert caller["candidates"][0]["return_value"] == {"kind": "void", "width_bytes": None}
+
+
+def test_tail_return_replay_is_scored_against_independent_source_gold() -> None:
+    fixture = ROOT / "tests/fixtures/ghidra-tail-call-return"
+    gold = [json.loads(line) for line in (fixture / "gold.jsonl").read_text().splitlines()]
+    source_sha = hashlib.sha256((fixture / "return-flow.c").read_bytes()).hexdigest()
+    decompiler_sha = hashlib.sha256((fixture / "decompiler-parameters.jsonl").read_bytes()).hexdigest()
+    source_lines = (fixture / "return-flow.c").read_text().splitlines()
+    decompiler_rows = [
+        json.loads(line) for line in (fixture / "decompiler-parameters.jsonl").read_text().splitlines()
+    ]
+    source_identity = {"00010000": ("source", 2), "00010017": ("forward", 6)}
+    for row in gold:
+        Draft202012Validator(GOLD_SCHEMA).validate(row)
+        source_ref = next(ref for ref in row["evidence_refs"] if ref["source_format"] == "C11 function definition/1")
+        decompiler_ref = next(ref for ref in row["evidence_refs"] if ref["source_format"] == "REVENGINSTR.GhidraDecompilerParameters/1")
+        assert source_ref["artifact_sha256"] == source_sha
+        assert decompiler_ref["artifact_sha256"] == decompiler_sha
+        name, source_line = source_identity[row["function_entry"]]
+        assert source_ref["record_index"] == source_line
+        assert name in source_lines[source_line - 1]
+        assert decompiler_ref["record_index"] in {1, 2}
+        assert decompiler_rows[decompiler_ref["record_index"] - 1]["function_entry"] == row["function_entry"]
+
+    evaluation = evaluate_prototypes(
+        fixture / "hypotheses.jsonl", fixture / "gold.jsonl", format_version=2,
+    )
+    Draft202012Validator(EVALUATION_SCHEMA).validate(evaluation)
+    assert evaluation == json.loads((fixture / "evaluation.json").read_text())
+    assert evaluation["candidate_count"] == 3
+    assert evaluation["high_confidence_candidate_count"] == 0
+    assert evaluation["per_property"]["return_value"] == {
+        "accuracy": 2 / 3, "compatible": 2, "coverage": 2 / 3,
+        "known_accuracy": 1.0, "scored": 3, "unknown": 1,
+    }
 
 
 def test_call_arity_conflict_is_preserved_instead_of_unified(tmp_path: Path) -> None:

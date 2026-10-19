@@ -120,7 +120,10 @@ candidate and add a separately evidenced alternative; they do not change
 imported or user-defined signatures. Propagation stops at casts, loads, and
 other operations, and confidence is a triage score rather than a probability.
 The real Ghidra replay in `tests/fixtures/ghidra-tail-call-return/` exercises
-this ambiguity with a source-backed pointer return.
+this ambiguity with a source-backed pointer return. Across its three emitted
+candidates, return-shape coverage is 2/3 with 100% accuracy among known
+predictions; none reaches the 0.95 acceptance threshold. This two-function
+fixture exercises evidence and abstention behavior, not confidence calibration.
 
 `tests/fixtures/nevergone-android-jni-prototype/` replays the original
 Nevergone 1.0.9 ARMv7 library against native method declarations from its DEX.
