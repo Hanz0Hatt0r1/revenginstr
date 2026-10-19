@@ -24,6 +24,12 @@ PROJECT_DIR=$1
 PROJECT_NAME=$2
 PROGRAM_NAME=$3
 FUNCTION=$4
+FUNCTION=${FUNCTION#0x}
+FUNCTION=${FUNCTION#0X}
+if [[ ! "$FUNCTION" =~ ^[[:xdigit:]]+$ ]]; then
+  echo "error: function address must be hexadecimal: $4" >&2
+  exit 2
+fi
 OUTPUT=$5
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 ANALYZE="$GHIDRA_HOME/support/analyzeHeadless"
@@ -47,12 +53,16 @@ if ! "$ANALYZE" \
   exit 1
 fi
 
-if ! grep -Fq "GHIDRA_SEEDED_FUNCTION_ENTRY=$FUNCTION" "$RUN_LOG"; then
+if ! grep -Eiq "GHIDRA_SEEDED_FUNCTION_ENTRY=0*${FUNCTION}([[:space:]]|$)" "$RUN_LOG"; then
   echo "error: Ghidra did not confirm the exact function entry" >&2
   exit 1
 fi
 if ! grep -Fq "GHIDRA_FUNCTION_PCODE_FLOW_FORMAT=REVENGINSTR.GhidraFunctionPcodeFlow/1" "$RUN_LOG"; then
   echo "error: Ghidra did not report successful P-code flow export completion" >&2
+  exit 1
+fi
+if ! grep -Eiq "GHIDRA_FUNCTION_PCODE_FLOW_FUNCTION=0*${FUNCTION}([[:space:]]|$)" "$RUN_LOG"; then
+  echo "error: Ghidra exported P-code for a different function entry" >&2
   exit 1
 fi
 if [[ ! -s "$OUTPUT" ]] || [[ "$(head -n 1 "$OUTPUT")" != $'function_entry\top_address\top_time\topcode\toutput\tinputs\tcallee_entry\tcallee_name' ]]; then
