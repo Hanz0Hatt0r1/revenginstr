@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-pcode-flow-acquisition-v1.schema.json",
+  "title": "REVENGINSTR.GhidraPcodeFlowAcquisition/1 JSONL row",
+  "description": "Per-function result from the bounded read-only program P-code batch exporter.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program", "function_entry", "state", "operation_count", "callind_count", "error"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraPcodeFlowAcquisition/1"},
+    "program": {"type": "string", "minLength": 1},
+    "function_entry": {"$ref": "#/$defs/address"},
+    "state": {"enum": ["complete", "no_pcode", "decompile_failed"]},
+    "operation_count": {"type": "integer", "minimum": 0},
+    "callind_count": {"type": "integer", "minimum": 0},
+    "error": {"type": ["string", "null"]}
+  },
+  "$defs": {
+    "address": {"type": "string", "pattern": "^(?:0x)?[0-9a-fA-F]+$"}
+  }
+}

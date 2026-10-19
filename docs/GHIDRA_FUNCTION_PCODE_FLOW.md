@@ -46,6 +46,26 @@ The runner also requires the exporter's `GhidraFunctionPcodeFlow/1` completion
 marker. Ghidra can return a zero process status after a post-script exception;
 the missing marker makes that run fail closed.
 
+For a bounded list of exact function entries, the batch runner reuses the same
+flow TSV and indirect-call JSONL contracts while decompiling each requested
+function once:
+
+```bash
+GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_pcode_flow_batch.sh \
+  /path/to/projects project-name program-name function-entries.txt \
+  /tmp/pcode-flow.tsv /tmp/callind.jsonl /tmp/acquisition.jsonl 1000 3600
+```
+
+The list is exact-entry only, ignores blank lines and `#` comments, rejects
+duplicate requests, and is capped by `max-functions` and `max-total-seconds`
+(plus at most one in-flight decompilation timeout). The runner opens the
+analyzed project read-only with analysis disabled. Its acquisition JSONL emits
+one `GhidraPcodeFlowAcquisition/1` row for every request, including
+`decompile_failed` and `no_pcode`; a script interruption or export error omits
+the completion marker and makes the runner fail. A function with no P-code has
+no flow rows, so callers use the acquisition sidecar rather than interpreting
+an empty file as a successful function export.
+
 `ExportBoundedCallGraphPcodeFlow.java` and
 `ExportBoundedReverseCallGraphPcodeFlow.java` emit the same TSV row contract
 while following bounded direct callees or direct callers. Optional

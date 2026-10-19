@@ -1,0 +1,5 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+00401000	00401008	5	CALLIND	-	register:0010:4	-	-
+00401000	00401008	6	RETURN	-	-	-	-
+00402000	00402004	2	RETURN	-	-	-	-
+00403000	00403008	9	CALLIND	-	register:0008:4	-	-
