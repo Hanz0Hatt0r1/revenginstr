@@ -13,9 +13,11 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_indirect_call_evidence_contract() -> None:
     source = (ROOT / "ghidra/ExportGhidraIndirectCallEvidence.java").read_text(encoding="utf-8")
     for required in (
-        '"REVENGINSTR.GhidraIndirectCallEvidence/2"',
+        '"REVENGINSTR.GhidraIndirectCallEvidence/3"',
         "getExecutableSHA256()",
         "architectureJson()",
+        "resolveFunctionPointer",
+        "resolved_static_function_pointer",
         "PcodeOp.CALLIND",
         "target_expression",
         "MAX_DEPTH = 6",
@@ -64,6 +66,30 @@ def test_indirect_call_evidence_contract() -> None:
         "arg_count": 1,
     })
 
+    schema_v3 = json.loads(
+        (ROOT / "schemas/ghidra-indirect-call-evidence-v3.schema.json").read_text(encoding="utf-8")
+    )
+    Draft202012Validator.check_schema(schema_v3)
+    Draft202012Validator(schema_v3).validate({
+        "format": "REVENGINSTR.GhidraIndirectCallEvidence/3",
+        "program": "sample",
+        "program_sha256": "a" * 64,
+        "architecture": {
+            "language_id": "x86:LE:32:default", "pointer_width_bytes": 4, "endianness": "little",
+        },
+        "requested": "00401000",
+        "function_entry": "0x00401000",
+        "call_address": "0x00401008",
+        "call_time": 12,
+        "target": "def:CAST@00401008:4:4",
+        "target_expression": "CAST(address:00402000:4)",
+        "target_resolution": {
+            "status": "resolved_static_function_pointer",
+            "slot_address": "0x00402000", "function_entry": "0x00401000",
+        },
+        "arg_count": 1,
+    })
+
 
 def test_indirect_call_runner_is_read_only_and_isolated() -> None:
     runner = (ROOT / "scripts/run_ghidra_indirect_call_evidence.sh").read_text(encoding="utf-8")
@@ -73,12 +99,12 @@ def test_indirect_call_runner_is_read_only_and_isolated() -> None:
     assert "ExportGhidraIndirectCallEvidence.java" in runner
 
 
-def test_real_ghidra_v2_replay_pins_callind_to_binary_and_flow() -> None:
-    fixture = ROOT / "tests/fixtures/ghidra-indirect-call-v2"
+def test_real_ghidra_v3_replay_pins_callind_and_resolves_static_function_pointer() -> None:
+    fixture = ROOT / "tests/fixtures/ghidra-indirect-call-v3"
     binary = fixture / "callind.elf"
     call_rows = [json.loads(line) for line in (fixture / "callind.jsonl").read_text().splitlines()]
     acquisition_rows = [json.loads(line) for line in (fixture / "acquisition.jsonl").read_text().splitlines()]
-    schema = json.loads((ROOT / "schemas/ghidra-indirect-call-evidence-v2.schema.json").read_text())
+    schema = json.loads((ROOT / "schemas/ghidra-indirect-call-evidence-v3.schema.json").read_text())
     validator = Draft202012Validator(schema)
     binary_sha256 = hashlib.sha256(binary.read_bytes()).hexdigest()
 
@@ -88,6 +114,10 @@ def test_real_ghidra_v2_replay_pins_callind_to_binary_and_flow() -> None:
         assert row["program_sha256"] == binary_sha256
         assert row["architecture"] == {
             "language_id": "x86:LE:64:default", "pointer_width_bytes": 8, "endianness": "little",
+        }
+        assert row["target_resolution"] == {
+            "status": "resolved_static_function_pointer",
+            "slot_address": "0x00403000", "function_entry": "0x00401000",
         }
     for row in acquisition_rows:
         assert row["state"] == "complete"

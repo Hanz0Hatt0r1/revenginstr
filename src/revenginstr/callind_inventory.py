@@ -11,7 +11,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable, Iterator
 
-from .ghidra_indirect_call_evidence import FORMAT_V2, validate_row
+from .ghidra_indirect_call_evidence import FORMAT_V2, FORMAT_V3, validate_row
 
 POPULATION_FORMAT = "REVENGINSTR.CallindPopulation/1"
 INVENTORY_FORMAT = "REVENGINSTR.CallindInventory/1"
@@ -231,7 +231,7 @@ def read_call_evidence(paths: Iterable[Path]) -> tuple[dict[tuple[str, str, str,
             where = f"{path}:{record_index}"
             source_format = validate_row(row, where)
             program_id = row.get("program")
-            if source_format == FORMAT_V2:
+            if source_format in {FORMAT_V2, FORMAT_V3}:
                 identity = (row["program_sha256"], row["architecture"])
                 if program_id in program_identities and program_identities[program_id] != identity:
                     raise ValueError(f"{where}: mixed binary identities for program {program_id!r}")

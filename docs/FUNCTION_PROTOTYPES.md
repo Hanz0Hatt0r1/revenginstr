@@ -85,6 +85,11 @@ The selected call set is not treated as complete, and hypotheses stay `review`
 unless arity or type conflicts force `conflicted`. Confidence remains a bounded
 triage heuristic, not a calibrated probability; independent audited gold is
 still needed before high-confidence use.
+Optionally pass `--indirect-call-evidence indirect-call-evidence.jsonl` to add
+arity constraints only for `/3` CALLIND records whose static function-pointer
+slot resolves to one exact function entry in the same Ghidra program. Dynamic,
+unreadable, and ambiguous expressions add no target constraint. These indirect
+observations do not propagate argument types.
 Because hypothesis schema `/1` has no variadic marker, variadic observations
 retain their fixed parameter prefix but emit `parameter_count: null` instead
 of presenting the prefix as the total argument count.

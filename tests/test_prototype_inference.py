@@ -48,6 +48,89 @@ def test_call_arity_conflict_is_preserved_instead_of_unified(tmp_path: Path) -> 
     assert len(add["conflicts"][0]["evidence_refs"]) == 2
 
 
+def test_resolved_indirect_target_constrains_prototype_arity(tmp_path: Path) -> None:
+    decompiler_path = FIXTURES / "decompiler-parameters.jsonl"
+    decompiler = json.loads(decompiler_path.read_text().splitlines()[0])
+    evidence = {
+        "format": "REVENGINSTR.GhidraIndirectCallEvidence/3",
+        "program": decompiler["program_id"],
+        "program_sha256": decompiler["program_sha256"],
+        "architecture": decompiler["architecture"],
+        "requested": "00010017",
+        "function_entry": "0x00010017",
+        "call_address": "0x0001002b",
+        "call_time": 99,
+        "target": "def:CAST@0001002b:22:4",
+        "target_expression": "CAST(address:00011000:4)",
+        "target_resolution": {
+            "status": "resolved_static_function_pointer",
+            "slot_address": "0x00011000", "function_entry": "0x00010000",
+        },
+        "arg_count": 1,
+    }
+    evidence_path = tmp_path / "indirect.jsonl"
+    evidence_path.write_text(json.dumps(evidence) + "\n", encoding="utf-8")
+
+    rows = infer_prototypes(
+        decompiler_path, FIXTURES / "call-observations.jsonl",
+        indirect_call_evidence_path=evidence_path,
+    )
+    target = next(row for row in rows if row["function_entry"] == "00010000")
+    Draft202012Validator(HYPOTHESIS_SCHEMA).validate(target)
+    assert target["status"] == "conflicted"
+    conflict = next(row for row in target["conflicts"] if row["reason"] == "incompatible_parameter_counts")
+    assert any(ref["source_format"] == evidence["format"] for ref in conflict["evidence_refs"])
+
+
+def test_unresolved_indirect_target_does_not_constrain_prototype(tmp_path: Path) -> None:
+    decompiler_path = FIXTURES / "decompiler-parameters.jsonl"
+    decompiler = json.loads(decompiler_path.read_text().splitlines()[0])
+    evidence = {
+        "format": "REVENGINSTR.GhidraIndirectCallEvidence/3",
+        "program": decompiler["program_id"],
+        "program_sha256": decompiler["program_sha256"],
+        "architecture": decompiler["architecture"],
+        "requested": "00010017",
+        "function_entry": "0x00010017",
+        "call_address": "0x0001002b",
+        "call_time": 99,
+        "target": "register:EBX:4",
+        "target_expression": "register:EBX:4",
+        "target_resolution": {
+            "status": "unsupported_target_expression", "slot_address": None, "function_entry": None,
+        },
+        "arg_count": 99,
+    }
+    evidence_path = tmp_path / "indirect.jsonl"
+    evidence_path.write_text(json.dumps(evidence) + "\n", encoding="utf-8")
+    rows = infer_prototypes(
+        decompiler_path, FIXTURES / "call-observations.jsonl",
+        indirect_call_evidence_path=evidence_path,
+    )
+    target = next(row for row in rows if row["function_entry"] == "00010000")
+    assert target["status"] == "review"
+    assert all(conflict["reason"] != "incompatible_parameter_counts" for conflict in target["conflicts"])
+
+
+def test_real_ghidra_static_target_constrains_the_matching_prototype(tmp_path: Path) -> None:
+    fixture = ROOT / "tests/fixtures/ghidra-indirect-call-v3"
+    direct_calls = tmp_path / "direct-calls.jsonl"
+    direct_calls.write_text("", encoding="utf-8")
+    rows = infer_prototypes(
+        fixture / "decompiler-parameters.jsonl", direct_calls,
+        indirect_call_evidence_path=fixture / "callind.jsonl",
+    )
+    target = next(row for row in rows if row["function_entry"] == "00401000")
+    Draft202012Validator(HYPOTHESIS_SCHEMA).validate(target)
+    assert target["candidates"][0]["parameter_count"] == 1
+    assert target["status"] == "review"
+    assert target["conflicts"] == []
+    assert any(
+        ref["source_format"] == "REVENGINSTR.GhidraIndirectCallEvidence/3"
+        for ref in target["candidates"][0]["evidence_refs"]
+    )
+
+
 def test_variadic_call_keeps_fixed_prefix_without_claiming_total_arity(tmp_path: Path) -> None:
     functions = [
         json.loads(line)

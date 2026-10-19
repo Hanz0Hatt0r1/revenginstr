@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .ghidra_indirect_call_evidence import FORMAT_V2, validate_row
+from .ghidra_indirect_call_evidence import FORMAT_V2, FORMAT_V3, validate_row
 
 FORMAT = "REVENGINSTR.PointerProvenance/1"
 FLOW_FORMAT = "REVENGINSTR.GhidraFunctionPcodeFlow/1"
@@ -227,7 +227,7 @@ def read_callind_targets(
                     raise ValueError(f"{path}:{line_no}: invalid JSON: {error}") from error
                 where = f"{path}:{line_no}"
                 source_format = validate_row(row, where)
-                if source_format == FORMAT_V2:
+                if source_format in {FORMAT_V2, FORMAT_V3}:
                     identity = (row["program"], row["program_sha256"], row["architecture"])
                     if program_identity is not None and program_identity != identity:
                         raise ValueError(f"{where}: mixed binary identities in indirect-call evidence")
