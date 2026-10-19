@@ -172,6 +172,10 @@ recorded in
 not identify the receiver used by later calls in `006657e0` and `00665820`;
 their four anchors remain unresolved. This manual review does not change the
 `/6` statuses or establish that runtime memory cannot be overwritten.
+The replay also includes the 32-row, read-only generic Ghidra pointer-table
+export at [`ghidra-pointer-table-slots.jsonl`](scan37/replay-0041dd40/ghidra-pointer-table-slots.jsonl);
+its schema and invocation are documented in
+[`Ghidra pointer-table slots`](../../../../GHIDRA_POINTER_TABLE_SLOTS.md).
 
 Scans25–34 exhaust the pinned 2,374-function direct-call-caller population
 with at least one explicit `param_n` and a 40–800-byte body. Scan36 covers the

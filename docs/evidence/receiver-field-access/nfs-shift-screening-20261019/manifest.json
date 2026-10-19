@@ -2273,9 +2273,15 @@
       "rows": 670
     },
     {
+      "path": "scan37/replay-0041dd40/ghidra-pointer-table-slots.jsonl",
+      "bytes": 18690,
+      "sha256": "966e61a56f0c6f41224006324430b1aa51c650c0e2a7d2c843be8e84c6caf3f0",
+      "rows": 32
+    },
+    {
       "path": "scan37/replay-0041dd40/manual-static-vtable-review.md",
-      "bytes": 4193,
-      "sha256": "e8c44949ec401706c58112b6b88c0022b2d3f199d23c8a376d8c0168fdff4aad"
+      "bytes": 4562,
+      "sha256": "40ae51e0200c05a929e0b562bc1a84875c52534a2b5e603d2b197b0120965f25"
     },
     {
       "path": "scan37/replay-0041dd40/memory-store-access-full-closure-scope.jsonl",

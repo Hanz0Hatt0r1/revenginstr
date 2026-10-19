@@ -78,6 +78,13 @@ objdump -d -Mintel --start-address=0x009d1880 --stop-address=0x009d1884 SHIFT.ex
 The entry at table offset `0` is at raw offset `0x006ef260`; the entry at
 table offset `0x34` is at raw offset `0x006ef294`.
 
+The read-only generic Ghidra exporter also captured 16 slots from each table
+in [`ghidra-pointer-table-slots.jsonl`](ghidra-pointer-table-slots.jsonl).
+Its rows for `0x00af08a0 + 0x30`, `0x00af0860 + 0`, and
+`0x00af0860 + 0x34` report the same targets and raw values. This is slot
+inventory evidence; it does not associate arbitrary receiver values with
+either table.
+
 The containing controller's slot `+0x30` is reproducible with:
 
 ```sh

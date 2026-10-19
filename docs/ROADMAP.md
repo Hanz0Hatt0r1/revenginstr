@@ -448,6 +448,13 @@ Every unresolved receiver query receives one stable primary reason, including:
 
 **Graph contract v1 and receiver-anchor projection implemented:** [`ReceiverProvenanceGraph/1`](../schemas/receiver-provenance-graph-v1.schema.json) defines graph-local ids, the generic receiver-flow node/relation vocabulary, evidence classes, and source-record provenance. The generic validator rejects duplicate ids and dangling endpoints. `revenginstr-receiver-graph` projects typed receiver TSV rows with an observed receiver operand into receiver-to-call graphs, retaining source-record provenance and rejecting invalid joins/formats. The schema and synthetic contract test contain no consumer labels, addresses, or catalogs.
 
+`GhidraPointerTableSlots/1` now exports bounded caller-selected pointer tables
+without assuming an ABI or vtable role. Each slot records raw bytes, decoded
+pointer value, mapped target address, exact function-entry metadata when
+available, and an explicit unmapped/unreadable/null state. A SHIFT replay
+captures two tables and confirms the manually reviewed slots; it does not bind
+either table to arbitrary receiver values or a call site.
+
 `revenginstr-receiver-argument-store-flow` now joins bounded caller roots to
 parameter-store rows only on exact callee/function entry and formal parameter
 index. Both source rows remain explicit on their respective edges. The

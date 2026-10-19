@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-pointer-table-slots-v1.schema.json",
+  "title": "REVENGINSTR.GhidraPointerTableSlots/1 row",
+  "type": "object",
+  "required": [
+    "format", "program_id", "language_id", "image_base", "pointer_size_bytes",
+    "table_index", "table_address", "requested_slot_count", "slot_index",
+    "slot_offset_bytes", "slot_address", "raw_bytes", "pointer_value",
+    "target_address", "target_function", "status"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraPointerTableSlots/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "language_id": {"type": "string", "minLength": 1},
+    "image_base": {"$ref": "#/$defs/address"},
+    "pointer_size_bytes": {"enum": [4, 8]},
+    "table_index": {"type": "integer", "minimum": 0, "maximum": 63},
+    "table_address": {"$ref": "#/$defs/address"},
+    "requested_slot_count": {"type": "integer", "minimum": 1, "maximum": 4096},
+    "slot_index": {"type": "integer", "minimum": 0, "maximum": 4095},
+    "slot_offset_bytes": {"type": "integer", "minimum": 0},
+    "slot_address": {"oneOf": [{"$ref": "#/$defs/address"}, {"type": "null"}]},
+    "raw_bytes": {"oneOf": [{"type": "string", "pattern": "^(?:[0-9a-f]{2}){4,8}$"}, {"type": "null"}]},
+    "pointer_value": {"oneOf": [{"$ref": "#/$defs/address"}, {"type": "null"}]},
+    "target_address": {"oneOf": [{"$ref": "#/$defs/address"}, {"type": "null"}]},
+    "target_function": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["entry", "name", "signature"],
+          "properties": {
+            "entry": {"$ref": "#/$defs/address"},
+            "name": {"type": "string", "minLength": 1},
+            "signature": {"type": "string"}
+          },
+          "additionalProperties": false
+        },
+        {"type": "null"}
+      ]
+    },
+    "status": {
+      "enum": [
+        "unmapped_slot", "unreadable_slot", "null_pointer", "invalid_target_address",
+        "unmapped_target", "mapped_non_function", "function_entry"
+      ]
+    }
+  },
+  "$defs": {
+    "address": {"type": "string", "pattern": "^0x[0-9a-f]+$"}
+  },
+  "additionalProperties": false
+}
