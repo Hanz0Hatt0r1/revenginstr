@@ -36,3 +36,20 @@ PYTHONPATH=src python -m revenginstr.semantic_program_query \
 
 The checked-in graph and query outputs are deterministic replay snapshots. The
 manifest pins the input and output artifact hashes.
+
+## Run through the benchmark orchestrator
+
+Install the benchmark extra and run the pinned two-stage manifest:
+
+```sh
+python -m pip install -e '.[benchmark]'
+PYTHONPATH=src python -m revenginstr.benchmark \
+  docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick/benchmark-manifest.json \
+  --mode smoke \
+  --output /tmp/nevergone-ccjoystick-benchmark-summary.json
+```
+
+The smoke run validates the Effect IR, layout input, graph, and query schemas.
+It reproduces the checked-in graph and query bytes exactly. Remove the two
+`benchmark-*.generated.jsonl` files before rerunning because benchmark outputs
+must not exist at the start of a run.

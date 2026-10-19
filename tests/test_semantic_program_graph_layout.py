@@ -25,6 +25,14 @@ def _schema(name: str) -> Draft202012Validator:
 
 
 def test_nevergone_layout_joins_graph_and_remains_queryable(tmp_path: Path) -> None:
+    replay_manifest = ROOT / (
+        "docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick/manifest.json"
+    )
+    for artifact in json.loads(replay_manifest.read_text(encoding="utf-8"))["artifacts"]:
+        raw = (ROOT / artifact["path"]).read_bytes()
+        assert len(raw) == artifact["bytes"]
+        assert hashlib.sha256(raw).hexdigest() == artifact["sha256"]
+
     effects_path = ROOT / (
         "docs/evidence/semantic-program-graph-evaluation/"
         "nevergone-player-horizontal-facing/nevergone-facing-effects.jsonl"

@@ -1,0 +1,120 @@
+{
+  "format": "REVENGINSTR.BenchmarkManifest/1",
+  "benchmark": {
+    "id": "nevergone-ccjoystick-layout-graph-v3",
+    "dataset_id": "nevergone-ccjoystick-reviewed-layout",
+    "dataset_artifact": "effect_ir",
+    "split_id": "consumer-reviewed-2026-10",
+    "family_set_id": null,
+    "description": "End-to-end smoke replay from Function Effect IR and a reviewed TypeLayoutHypothesis through SemanticProgramGraph/3 and a field query. This validates orchestration and schemas, not layout accuracy."
+  },
+  "toolchain": {
+    "revenginstr_version": "0.5.2",
+    "source_revision": "78cd56c"
+  },
+  "schemas": {
+    "function_effect_ir_v1": {
+      "path": "../../../../schemas/function-effect-ir-v1.schema.json",
+      "version": "FunctionEffectIR/1",
+      "sha256": "d7e92fd6504c758fa4bc25f9a74c017f52aed9e4e61f11d0367a64db48cc721e"
+    },
+    "type_layout_hypothesis_v1": {
+      "path": "../../../../schemas/type-layout-hypothesis-v1.schema.json",
+      "version": "TypeLayoutHypothesis/1",
+      "sha256": "9ffbb68840291c7029627904d773ba8eeec5675c8474bd245d0aaeedf0c2fb91"
+    },
+    "semantic_program_graph_v3": {
+      "path": "../../../../schemas/semantic-program-graph-v3.schema.json",
+      "version": "SemanticProgramGraph/3",
+      "sha256": "2310a0fca32c5c29301ac596df0925cbf4a7de5177742c1142f5256894afd067"
+    },
+    "semantic_program_query_result_v1": {
+      "path": "../../../../schemas/semantic-program-query-result-v1.schema.json",
+      "version": "SemanticProgramQueryResult/1",
+      "sha256": "a20603565188d83b08936f87288e156aeb49480cfed1b7c718ad433d38978058"
+    }
+  },
+  "artifacts": {
+    "effect_ir": {
+      "path": "../../semantic-program-graph-evaluation/nevergone-player-horizontal-facing/nevergone-facing-effects.jsonl",
+      "role": "input",
+      "kind": "file",
+      "content": "jsonl",
+      "format": "REVENGINSTR.FunctionEffectIR/1",
+      "sha256": "5d6c089cbbae5e07ea50b06a84481e3af1f45a176986fa481aed9edc82d0158e",
+      "schema": "function_effect_ir_v1"
+    },
+    "layout_hypotheses": {
+      "path": "type-layout-hypothesis.jsonl",
+      "role": "input",
+      "kind": "file",
+      "content": "jsonl",
+      "format": "REVENGINSTR.TypeLayoutHypothesis/1",
+      "sha256": "db9c2d161456ac73a931e0e1d08e8dc2fd71bbc3d7c3559b94e1b5b543f0e35b",
+      "schema": "type_layout_hypothesis_v1"
+    },
+    "graphs": {
+      "path": "benchmark-graph.generated.jsonl",
+      "role": "output",
+      "kind": "file",
+      "content": "jsonl",
+      "format": "REVENGINSTR.SemanticProgramGraph/3",
+      "schema": "semantic_program_graph_v3"
+    },
+    "field_query": {
+      "path": "benchmark-field-query.generated.jsonl",
+      "role": "output",
+      "kind": "file",
+      "content": "jsonl",
+      "format": "REVENGINSTR.SemanticProgramQueryResult/1",
+      "schema": "semantic_program_query_result_v1"
+    }
+  },
+  "configs": {},
+  "stages": [
+    {
+      "id": "build_graph",
+      "tool": "semantic-program-graph",
+      "args": [
+        "${artifact:effect_ir}",
+        "--type-layout-hypotheses",
+        "${artifact:layout_hypotheses}",
+        "--output",
+        "${artifact:graphs}"
+      ],
+      "inputs": [
+        "effect_ir",
+        "layout_hypotheses"
+      ],
+      "outputs": [
+        "graphs"
+      ]
+    },
+    {
+      "id": "query_field",
+      "tool": "semantic-program-query",
+      "args": [
+        "${artifact:graphs}",
+        "--view",
+        "exploratory",
+        "--kind",
+        "layout_field",
+        "--type-id",
+        "nevergone:opaque-object-002a6584",
+        "--field-offset",
+        "0x104",
+        "--output",
+        "${artifact:field_query}"
+      ],
+      "inputs": [
+        "graphs"
+      ],
+      "outputs": [
+        "field_query"
+      ],
+      "depends_on": [
+        "build_graph"
+      ]
+    }
+  ]
+}
