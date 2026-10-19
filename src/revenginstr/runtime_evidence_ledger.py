@@ -13,6 +13,10 @@ from revenginstr.runtime_indirect_call_correlation import (
     MAX_EVENTS as MAX_INDIRECT_EVENTS,
     REPORT_FORMAT as INDIRECT_CALL_FORMAT,
 )
+from revenginstr.runtime_static_correlation import (
+    MAX_EVENTS as MAX_STATIC_EVENTS,
+    REPORT_FORMAT as STATIC_CORRELATION_FORMAT,
+)
 
 INPUT_FORMAT = "REVENGINSTR.RuntimeValueFlowReplay/1"
 EVENT_FORMAT = "REVENGINSTR.AnalysisDecisionLedgerEvent/1"
@@ -24,6 +28,11 @@ _RESULT_FIELDS = {
     "compared_token_slots", "intervening_coverage",
 }
 _INDIRECT_REPORT_FIELDS = {
+    "format", "capture_id", "program_id", "program_sha256", "static_identity_sha256",
+    "semantic_graph_sha256", "capture_manifest_sha256", "observations_sha256",
+    "address_mapping", "sampling", "summary", "events",
+}
+_STATIC_REPORT_FIELDS = {
     "format", "capture_id", "program_id", "program_sha256", "static_identity_sha256",
     "semantic_graph_sha256", "capture_manifest_sha256", "observations_sha256",
     "address_mapping", "sampling", "summary", "events",
@@ -71,6 +80,8 @@ def _read_json(path: Path) -> tuple[dict[str, Any], bytes]:
 def build_ledger_events(report: dict[str, Any], report_raw: bytes) -> list[dict[str, Any]]:
     if report.get("format") == INDIRECT_CALL_FORMAT:
         return _build_indirect_call_ledger_events(report, report_raw)
+    if report.get("format") == STATIC_CORRELATION_FORMAT:
+        return _build_static_correlation_ledger_events(report, report_raw)
     report_fields = {
         "format", "capture_id", "program_id", "program_sha256", "semantic_graph_sha256",
         "correlation_report_sha256", "observations_sha256", "sampling", "claim_scope",
@@ -245,16 +256,124 @@ def _build_indirect_call_ledger_events(
     report: dict[str, Any], report_raw: bytes,
 ) -> list[dict[str, Any]]:
     events = _validate_indirect_call_report(report)
+    return _build_observation_ledger_events(
+        report, report_raw, events, source_format=INDIRECT_CALL_FORMAT, label="indirect-call",
+    )
+
+
+def _validate_static_correlation_report(report: dict[str, Any]) -> list[dict[str, Any]]:
+    if set(report) != _STATIC_REPORT_FIELDS or report.get("format") != STATIC_CORRELATION_FORMAT:
+        raise RuntimeLedgerError("expected a RuntimeStaticCorrelation/1 report")
+    for field in ("capture_id", "program_id"):
+        if not isinstance(report[field], str) or not report[field].strip():
+            raise RuntimeLedgerError(f"runtime report has invalid {field}")
+    for field in (
+        "program_sha256", "static_identity_sha256", "semantic_graph_sha256",
+        "capture_manifest_sha256", "observations_sha256",
+    ):
+        if not isinstance(report[field], str) or _SHA256.fullmatch(report[field]) is None:
+            raise RuntimeLedgerError(f"runtime report has invalid {field}")
+    events = report.get("events")
+    if not isinstance(events, list) or not 1 <= len(events) <= MAX_STATIC_EVENTS:
+        raise RuntimeLedgerError(f"runtime report must contain 1 to {MAX_STATIC_EVENTS} events")
+    summary = report.get("summary")
+    summary_fields = {
+        "event_count", "matched_count", "ambiguous_count", "unmatched_count",
+        "mapping_underflow_count", "mapping_overflow_count",
+    }
+    if not isinstance(summary, dict) or set(summary) != summary_fields:
+        raise RuntimeLedgerError("runtime report has invalid summary")
+    if any(
+        not isinstance(count, int) or isinstance(count, bool) or count < 0
+        for count in summary.values()
+    ) or summary["event_count"] != len(events):
+        raise RuntimeLedgerError("runtime report summary does not match events")
+
+    counts: Counter[str] = Counter()
+    previous_sequence = -1
+    for index, event in enumerate(events, 1):
+        if not isinstance(event, dict) or set(event) != {
+            "capture_id", "sequence", "event_kind", "runtime_address", "normalized_address",
+            "match_state", "matched_node_ids", "function_entries",
+        }:
+            raise RuntimeLedgerError(f"runtime event {index}: unexpected fields")
+        if event["capture_id"] != report["capture_id"]:
+            raise RuntimeLedgerError(f"runtime event {index}: capture_id mismatch")
+        sequence = event["sequence"]
+        if (
+            not isinstance(sequence, int) or isinstance(sequence, bool)
+            or not 0 <= sequence <= 1_000_000_000 or sequence <= previous_sequence
+        ):
+            raise RuntimeLedgerError(f"runtime event {index}: sequence must be unique and increasing")
+        previous_sequence = sequence
+        if event["event_kind"] not in {"function_entry", "function_exit", "call_target", "instruction"}:
+            raise RuntimeLedgerError(f"runtime event {index}: unsupported event_kind")
+        if not isinstance(event["runtime_address"], str) or not event["runtime_address"]:
+            raise RuntimeLedgerError(f"runtime event {index}: invalid runtime_address")
+        match_state = event["match_state"]
+        if not isinstance(match_state, str) or match_state not in _MATCH_COMPONENT_STATES:
+            raise RuntimeLedgerError(f"runtime event {index}: invalid match_state")
+        node_ids = event["matched_node_ids"]
+        entries = event["function_entries"]
+        if (
+            not isinstance(node_ids, list)
+            or any(not isinstance(node_id, str) or not node_id for node_id in node_ids)
+            or len(node_ids) != len(set(node_ids))
+            or not isinstance(entries, list)
+            or any(not isinstance(entry, str) or not entry for entry in entries)
+            or len(entries) != len(set(entries))
+        ):
+            raise RuntimeLedgerError(f"runtime event {index}: invalid node identities")
+        expected_count = {"matched": 1, "unmatched": 0, "ambiguous": "many"}.get(match_state, 0)
+        if expected_count == "many":
+            if len(node_ids) < 2:
+                raise RuntimeLedgerError(f"runtime event {index}: ambiguous match needs multiple nodes")
+        elif len(node_ids) != expected_count:
+            raise RuntimeLedgerError(f"runtime event {index}: node ids disagree with match_state")
+        normalized = event["normalized_address"]
+        if match_state in {"mapping_underflow", "mapping_overflow"}:
+            if normalized is not None:
+                raise RuntimeLedgerError(f"runtime event {index}: unmapped address must be null")
+        elif not isinstance(normalized, str) or not normalized:
+            raise RuntimeLedgerError(f"runtime event {index}: invalid normalized_address")
+        counts[match_state] += 1
+
+    expected_summary = {
+        "event_count": len(events),
+        "matched_count": counts["matched"],
+        "ambiguous_count": counts["ambiguous"],
+        "unmatched_count": counts["unmatched"],
+        "mapping_underflow_count": counts["mapping_underflow"],
+        "mapping_overflow_count": counts["mapping_overflow"],
+    }
+    if summary != expected_summary:
+        raise RuntimeLedgerError("runtime report summary counts do not match events")
+    return events
+
+
+def _build_static_correlation_ledger_events(
+    report: dict[str, Any], report_raw: bytes,
+) -> list[dict[str, Any]]:
+    events = _validate_static_correlation_report(report)
+    return _build_observation_ledger_events(
+        report, report_raw, events, source_format=STATIC_CORRELATION_FORMAT, label="static-correlation",
+    )
+
+
+def _build_observation_ledger_events(
+    report: dict[str, Any], report_raw: bytes, observations: list[dict[str, Any]], *,
+    source_format: str, label: str,
+) -> list[dict[str, Any]]:
     report_sha = hashlib.sha256(report_raw).hexdigest()
-    analysis_id = f"runtime-indirect-call-{report_sha[:24]}"
+    analysis_id = f"runtime-{label}-{report_sha[:24]}"
     ledger_events = []
-    for index, result in enumerate(events, 1):
+    for index, result in enumerate(observations, 1):
         subject_seed = "\0".join((report["program_id"], report["capture_id"], str(result["sequence"])))
         subject_hash = hashlib.sha256(subject_seed.encode("utf-8")).hexdigest()
         reason = "human_review" if result["match_state"] == "matched" else "missing_evidence"
         event_hash = hashlib.sha256(f"{report_sha}\0{index}".encode("utf-8")).hexdigest()
         evidence = {
-            "source_format": INDIRECT_CALL_FORMAT,
+            "source_format": source_format,
             "artifact_sha256": report_sha,
             "record_index": index,
             "evidence_class": "runtime_native",
@@ -262,11 +381,11 @@ def _build_indirect_call_ledger_events(
         ledger_events.append({
             "format": EVENT_FORMAT,
             "analysis_id": analysis_id,
-            "event_id": f"runtime-indirect-call-{event_hash}",
-            "subject_id": f"runtime-indirect-call-observation-{subject_hash}",
+            "event_id": f"runtime-{label}-{event_hash}",
+            "subject_id": f"runtime-{label}-observation-{subject_hash}",
             "subject_kind": "claim",
             "subject_provenance": {
-                "source_format": INDIRECT_CALL_FORMAT,
+                "source_format": source_format,
                 "artifact_sha256": report_sha,
                 "record_index": index,
             },
@@ -274,7 +393,7 @@ def _build_indirect_call_ledger_events(
             "previous_state": None,
             "state": "review_required",
             "reason_codes": [reason],
-            "responsible": {"kind": "orchestrator", "id": "revenginstr-runtime-indirect-call"},
+            "responsible": {"kind": "orchestrator", "id": f"revenginstr-runtime-{label}"},
             "confidence_delta": None,
             "evidence_added": [evidence],
         })

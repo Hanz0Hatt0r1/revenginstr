@@ -1297,15 +1297,18 @@ consumer-collected runtime dispatch events; no NFS Shift runtime capture has
 been collected yet, and static barriers remain open until such observations
 are supplied. See [runtime indirect-call correlation](RUNTIME_INDIRECT_CALL_CORRELATION.md).
 
-`revenginstr-runtime-ledger` now also replays
-`RuntimeIndirectCallCorrelation/1` reports into one deterministic
-`AnalysisDecisionLedgerEvent/1` per observed call. Exact caller/site/target
-joins remain `review_required` pending human review; unmatched, ambiguous, or
-unmapped joins remain `review_required` with `missing_evidence`. The replay
-does not turn an observed target into an exhaustive set or auto-accept a static
-claim. This closes the generic ledger path for correlated indirect-call
-observations; consumer-collected NFS runtime observations and frozen probe
-outcome measurements remain open.
+`revenginstr-runtime-ledger` now replays both
+`RuntimeStaticCorrelation/1` and `RuntimeIndirectCallCorrelation/1` reports
+into one deterministic `AnalysisDecisionLedgerEvent/1` per observed event.
+Exact joins remain `review_required` pending human review; unmatched,
+ambiguous, or unmapped joins remain `review_required` with
+`missing_evidence`. A real Nevergone device capture of 88 startup function
+entries replays to 88 `missing_evidence` events because both resource
+functions fall outside the pinned CCJoyStick graph; no event is auto-accepted.
+The replay does not treat an observed target as exhaustive. The retained
+decision-ledger replay is documented with the [device capture evidence](evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/README.md).
+Consumer-collected NFS dispatch observations and frozen probe outcome
+measurements remain open.
 
 ### M9.3 Differential and interventional analysis
 

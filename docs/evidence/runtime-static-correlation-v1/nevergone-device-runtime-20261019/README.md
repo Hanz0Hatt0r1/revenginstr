@@ -16,3 +16,26 @@ PYTHONPATH=src python -m revenginstr.runtime_static_correlation \
   docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/observations.jsonl \
   --output /tmp/nevergone-device-runtime-correlation.json
 ```
+
+## Decision-ledger replay
+
+The retained correlation report also replays through the generic decision
+ledger. The 88 unmatched observations become 88 `review_required` events with
+`missing_evidence`; the audit has zero accepted claims. This records that the
+runtime events are real while their functions remain outside the pinned graph.
+
+Reproduce from the repository root:
+
+```sh
+PYTHONPATH=src revenginstr-runtime-ledger \
+  docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/correlation.json \
+  --output docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/decision-ledger-events.jsonl
+revenginstr-decision-ledger-audit \
+  docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/decision-ledger-events.jsonl \
+  --output docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/decision-ledger-audit.json
+```
+
+The decision events hash is
+`0bee53edcadb51349e51e77e41f57feabd5a37090fb5ea6eaaf358940549aab4`; the
+aggregate audit hash is
+`a5b7ba0825e8270eb5dcfb2d1b7fc2562b602cbf081536ebdc1dbb4c1097808c`.

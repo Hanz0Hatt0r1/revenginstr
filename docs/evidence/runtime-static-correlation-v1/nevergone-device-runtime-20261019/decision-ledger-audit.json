@@ -1,0 +1,32 @@
+{
+  "analyses": 1,
+  "events": 88,
+  "format": "REVENGINSTR.AnalysisDecisionLedgerAudit/1",
+  "reason_counts": {
+    "budget_exhausted": 0,
+    "evidence_conflict": 0,
+    "exact_evidence": 0,
+    "high_confidence": 0,
+    "human_review": 0,
+    "missing_evidence": 88,
+    "out_of_distribution": 0,
+    "unsupported_pattern": 0
+  },
+  "source_sha256": "0bee53edcadb51349e51e77e41f57feabd5a37090fb5ea6eaaf358940549aab4",
+  "subjects": 88,
+  "terminal_state_counts": {
+    "accepted_exact": 0,
+    "accepted_high_confidence": 0,
+    "budget_exhausted": 0,
+    "escalated_conflict": 0,
+    "review_required": 88,
+    "unsupported": 0
+  },
+  "transition_counts": [
+    {
+      "count": 88,
+      "previous_state": null,
+      "state": "review_required"
+    }
+  ]
+}
