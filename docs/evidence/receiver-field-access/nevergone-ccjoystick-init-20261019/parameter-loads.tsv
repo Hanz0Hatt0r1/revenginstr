@@ -1,0 +1,10 @@
+format	function_entry	function_name	load_address	load_time	base_parameter_index	field_offset	address_pattern	value_size	value_token	status
+REVENGINSTR.GhidraParameterLoadField/1	002a6584	CCJoyStick::init	002a661c	128	0	0x0	direct	4	def:LOAD@002a661c:128:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a6584	CCJoyStick::init	002a662c	142	0	0x0	direct	4	def:LOAD@002a662c:142:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a6584	CCJoyStick::init	002a6630	145	0	0x108	ptradd	4	def:LOAD@002a6630:145:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a6584	CCJoyStick::init	002a663a	155	0	0x0	direct	4	def:LOAD@002a663a:155:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a6584	CCJoyStick::init	002a663c	157	0	0x104	ptradd	4	def:LOAD@002a663c:157:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a6584	CCJoyStick::init	002a6648	168	0	0x119	ptradd	1	def:LOAD@002a6648:168:1	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a6584	CCJoyStick::init	002a664e	173	0	0x0	direct	4	def:LOAD@002a664e:173:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a6584	CCJoyStick::init	002a6658	209	0	0x11a	ptradd	1	def:LOAD@002a6658:209:1	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a6584	CCJoyStick::init	002a665e	214	0	0x0	direct	4	def:LOAD@002a665e:214:4	parameter_field_load
