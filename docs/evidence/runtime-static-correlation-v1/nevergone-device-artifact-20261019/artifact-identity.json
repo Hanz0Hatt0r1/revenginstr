@@ -1,0 +1,28 @@
+{
+  "format": "REVENGINSTR.InstalledAndroidNativeArtifactIdentity/1",
+  "observed_date": "2026-10-19",
+  "source": {
+    "operation": "REA pull_adb_package",
+    "evidence_id": "ev_47574a40780b86ddf6505cfe9e97a2a4def219184e5ad9a06707d1757b54980e"
+  },
+  "package": {
+    "name": "com.hippiegame.nevergone",
+    "version_name": "1.0.9",
+    "version_code": "9"
+  },
+  "apk": {
+    "bytes": 42601950,
+    "sha256": "97296efc9d32fdd46bdf2dba475aeb13adb4cc6d2957ddf02da7a5d9c56e9508"
+  },
+  "native_library": {
+    "abi": "armeabi-v7a",
+    "path": "lib/armeabi-v7a/libcocos2dcpp.so",
+    "elf_class": 32,
+    "machine": "ARM",
+    "sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e"
+  },
+  "static_graph": {
+    "program_id": "nevergone-1.0.9-armv7-libcocos2dcpp",
+    "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e"
+  }
+}

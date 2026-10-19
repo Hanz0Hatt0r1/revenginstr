@@ -1263,9 +1263,14 @@ program SHA-256. `RuntimeCaptureManifest/1` repeats the exact build identity,
 pins the static identity, records load bias and sampling gaps, and
 `RuntimeAddressObservation/1` rows normalize into exact function-entry or
 P-code operation matches. Unmatched, ambiguous, and out-of-range addresses
-remain distinct; build/graph hash mismatches fail closed. No Nevergone runtime
-capture is present yet, and object-instance, field, call-edge, and sampled
-value joins remain open.
+remain distinct; build/graph hash mismatches fail closed. An REA pull of the
+installed Nevergone 1.0.9 APK confirmed that its
+`lib/armeabi-v7a/libcocos2dcpp.so` SHA-256 matches the program pinned by the
+graph. The package-artifact identity record is retained under
+`docs/evidence/runtime-static-correlation-v1/`. This verifies static artifact
+provenance only; no runtime PC capture is present yet because the host Frida
+binding was unavailable during inspection. Object-instance, field, call-edge,
+and sampled-value joins remain open.
 
 ### M9.3 Differential and interventional analysis
 

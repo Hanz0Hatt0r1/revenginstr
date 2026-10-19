@@ -22,6 +22,9 @@ ROOT = Path(__file__).resolve().parents[1]
 GRAPH_PATH = ROOT / "docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick/semantic-program-graph.jsonl"
 PROGRAM_MANIFEST_PATH = ROOT / "docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick/manifest.json"
 REPLAY_DIR = ROOT / "docs/evidence/runtime-static-correlation-v1/nevergone-synthetic"
+DEVICE_ARTIFACT_IDENTITY_PATH = (
+    ROOT / "docs/evidence/runtime-static-correlation-v1/nevergone-device-artifact-20261019/artifact-identity.json"
+)
 SCHEMAS = {
     name: json.loads((ROOT / "schemas" / name).read_text(encoding="utf-8"))
     for name in (
@@ -31,6 +34,18 @@ SCHEMAS = {
         "runtime-static-correlation-v1.schema.json",
     )
 }
+
+
+def test_installed_nevergone_library_matches_pinned_graph_binary() -> None:
+    evidence = json.loads(DEVICE_ARTIFACT_IDENTITY_PATH.read_text(encoding="utf-8"))
+    graphs, _ = _read_jsonl(GRAPH_PATH)
+    program_manifest = json.loads(PROGRAM_MANIFEST_PATH.read_text(encoding="utf-8"))
+
+    assert evidence["format"] == "REVENGINSTR.InstalledAndroidNativeArtifactIdentity/1"
+    assert evidence["package"]["name"] == "com.hippiegame.nevergone"
+    assert evidence["native_library"]["sha256"] == program_manifest["program_sha256"]
+    assert evidence["static_graph"]["program_sha256"] == program_manifest["program_sha256"]
+    assert evidence["static_graph"]["program_id"] == graphs[0]["program_id"]
 
 
 def _inputs():
