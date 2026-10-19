@@ -1,6 +1,6 @@
 # Runtime to static address correlation
 
-`revenginstr-runtime-correlate` accepts one `SemanticProgramGraph/3`, a
+`revenginstr-runtime-static-correlate` accepts one `SemanticProgramGraph/3`, a
 caller-pinned `RuntimeStaticIdentity/1`, one `RuntimeCaptureManifest/1`, and
 bounded `RuntimeAddressObservation/1` JSONL rows. The identity records the
 static analyzer image base; the capture records the runtime module address
@@ -24,7 +24,7 @@ probes. A function/instruction join is only a location correlation, not
 runtime value-flow confirmation.
 
 ```sh
-revenginstr-runtime-correlate semantic-program-graph.jsonl static-identity.json \
+revenginstr-runtime-static-correlate semantic-program-graph.jsonl static-identity.json \
   capture-manifest.json runtime-address-observations.jsonl \
   --output runtime-static-correlation.json
 ```
@@ -34,3 +34,5 @@ normalization and sampling-gap handling. A separate bounded startup capture
 from the installed game records function entries for two resource functions;
 they remain unmatched because the pinned graph does not contain them. See
 [`the device replay`](evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/).
+For exact caller/`CALLIND`/target triples, see
+[`runtime indirect-call correlation`](RUNTIME_INDIRECT_CALL_CORRELATION.md).

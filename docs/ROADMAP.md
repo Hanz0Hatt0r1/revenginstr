@@ -1285,6 +1285,18 @@ provenance, establishes that this graph's Ghidra image base is `0x10000`, and
 includes a bounded startup capture. Object-instance, field, call-edge, and
 sampled-value joins remain open.
 
+**Indirect-call triple correlation v1 implemented:**
+`RuntimeIndirectCallObservation/1` binds a runtime caller entry, `CALLIND`
+machine address, and observed target entry. The
+`revenginstr-runtime-indirect-call-correlate` command maps each address through
+the same pinned module delta, then independently joins the caller function,
+exact `CALLIND` operation, and target function in `SemanticProgramGraph/3`.
+Unmatched targets, ambiguous graph identities, mapping failures, sampling gaps,
+and input hashes remain explicit. This provides a project-neutral way to bind
+consumer-collected runtime dispatch events; no NFS Shift runtime capture has
+been collected yet, and static barriers remain open until such observations
+are supplied. See [runtime indirect-call correlation](RUNTIME_INDIRECT_CALL_CORRELATION.md).
+
 ### M9.3 Differential and interventional analysis
 
 Compare bounded runs where one caller-controlled input/state/action differs. Rank candidate causal relationships by reproducible observation while retaining `correlation`, `intervention_support` and `confirmed_exact` as distinct evidence classes.
