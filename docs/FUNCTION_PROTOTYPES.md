@@ -98,8 +98,12 @@ indirect call-site counts against supplied flow artifacts.
 stripped x86 object with no DWARF. It demonstrates default Ghidra analysis
 recovering a pointer formal in one function and an exact caller-parameter root
 carrying that pointer shape into a second function whose original type is
-`undefined4`. The fixture includes a full population coverage report; it is a
-pipeline regression, not independently adjudicated gold.
+`undefined4`. Its source-backed `FunctionPrototypeGold/1` covers two functions:
+parameter count and parameter shapes are both 2/2 correct, while return shape
+is 1/2 because `mystery_caller` still has an unknown return. At the default
+0.95 threshold neither candidate is accepted. This is a small source-adjudicated
+replay, not an audited consumer corpus or confidence-calibration set. The
+fixture also includes a full program capture-coverage report.
 
 ```sh
 revenginstr-prototype-coverage functions.tsv.gz acquisition.jsonl \
@@ -140,6 +144,6 @@ compatible for the top-candidate metric.
 
 `tests/fixtures/function-prototype-{hypothesis,gold}/synthetic.jsonl` is an exact
 synthetic replay whose gold cites a separate hash-pinned source observation.
-It validates coverage and scoring behavior, not consumer accuracy. No
-prototype inference engine or independently adjudicated consumer corpus is
-implemented yet; those remain roadmap work.
+It validates evaluator behavior, not consumer accuracy. The inference engine
+and source-backed micro-gold replay exist; a broader audited consumer corpus and
+confidence calibration remain roadmap work.

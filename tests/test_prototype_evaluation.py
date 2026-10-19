@@ -58,6 +58,20 @@ def test_prototype_gold_rejects_evidence_that_cites_evaluated_hypothesis(tmp_pat
         evaluate_prototypes(hypotheses, gold)
 
 
+def test_parameter_evidence_rejects_reference_to_gold_artifact(tmp_path: Path) -> None:
+    hypotheses = tmp_path / "hypotheses.jsonl"
+    rows = read_jsonl(HYPOTHESES)
+    rows[0]["candidates"][0]["parameters"][0]["evidence_refs"] = [{
+        "artifact_sha256": hashlib.sha256(GOLD.read_bytes()).hexdigest(),
+        "record_index": 1,
+        "source_format": "REVENGINSTR.FunctionPrototypeGold/1",
+    }]
+    hypotheses.write_text(json.dumps(rows[0]) + "\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="non-independent"):
+        evaluate_prototypes(hypotheses, GOLD)
+
+
 def test_prototype_evaluation_rejects_architecture_mismatch(tmp_path: Path) -> None:
     hypotheses = tmp_path / "hypotheses.jsonl"
     rows = read_jsonl(HYPOTHESES)

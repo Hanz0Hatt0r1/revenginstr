@@ -115,7 +115,10 @@ def _validate_shape(
     seen_indices = set()
     for index, parameter in enumerate(parameters, 1):
         param_where = f"{where}: parameter {index}"
-        if not isinstance(parameter, dict) or set(parameter) - {"index", "kind", "width_bytes", "target_type_id"}:
+        allowed_parameter_fields = {"index", "kind", "width_bytes", "target_type_id"}
+        if not gold:
+            allowed_parameter_fields.add("evidence_refs")
+        if not isinstance(parameter, dict) or set(parameter) - allowed_parameter_fields:
             raise ValueError(f"{param_where}: invalid fields")
         if not {"index", "kind", "width_bytes"} <= set(parameter):
             raise ValueError(f"{param_where}: missing index/kind/width")
@@ -131,6 +134,10 @@ def _validate_shape(
             _text(parameter["target_type_id"], param_where)
             if parameter["kind"] not in {"pointer", "reference"}:
                 raise ValueError(f"{param_where}: target_type_id requires pointer or reference")
+        if not gold and "evidence_refs" in parameter:
+            _validate_evidence_refs(
+                parameter["evidence_refs"], param_where, forbidden_evidence_hashes or set(),
+            )
     if parameter_count is not None and seen_indices != set(range(parameter_count)):
         raise ValueError(f"{where}: parameter indices do not match parameter_count")
     return_value = row["return_value"]

@@ -20,3 +20,11 @@ caller-argument root proves that this formal reaches `mystery_mutate` parameter
 
 `coverage.json` reports full evidence capture for the two-function Ghidra
 index. That is a capture-coverage result, not independent prototype gold.
+
+`gold.jsonl` is source-adjudicated against the C function definitions at lines
+5 and 10 and the matching Ghidra function-index rows. `evaluation.json` records
+the current result at the default 0.95 acceptance threshold: no candidate
+reaches that threshold, parameter counts and parameter shapes are both 2/2
+correct, and return shapes are 1/2 correct because `mystery_caller` still has
+an unknown return type. This fixture measures the inference boundary; it does
+not imply that the project is ready for broad automatic prototype recovery.
