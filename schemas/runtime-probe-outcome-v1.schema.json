@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/runtime-probe-outcome-v1.schema.json",
+  "title": "REVENGINSTR.RuntimeProbeOutcome/1",
+  "description": "Consumer-recorded result and bounded resource use for one selected native probe.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "evaluation_id", "request_id", "status", "actual_steps", "elapsed_ms", "decision", "uncertainty_after_milli", "unlocked_decision_ids"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.RuntimeProbeOutcome/1"},
+    "evaluation_id": {"type": "string", "minLength": 1},
+    "request_id": {"type": "string", "minLength": 1},
+    "status": {"enum": ["completed", "incomplete"]},
+    "actual_steps": {"type": "integer", "minimum": 0, "maximum": 1000000},
+    "elapsed_ms": {"type": "integer", "minimum": 0, "maximum": 600000},
+    "decision": {"oneOf": [{"enum": ["accept", "reject", "unresolved"]}, {"type": "null"}]},
+    "uncertainty_after_milli": {"oneOf": [{"type": "integer", "minimum": 0, "maximum": 1000}, {"type": "null"}]},
+    "unlocked_decision_ids": {"type": "array", "maxItems": 10000, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+  },
+  "allOf": [
+    {"if": {"properties": {"status": {"const": "completed"}}, "required": ["status"]}, "then": {"properties": {"decision": {"enum": ["accept", "reject", "unresolved"]}, "uncertainty_after_milli": {"type": "integer"}}}},
+    {"if": {"properties": {"status": {"const": "incomplete"}}, "required": ["status"]}, "then": {"properties": {"decision": {"type": "null"}, "uncertainty_after_milli": {"type": "null"}, "unlocked_decision_ids": {"maxItems": 0}}}}
+  ]
+}

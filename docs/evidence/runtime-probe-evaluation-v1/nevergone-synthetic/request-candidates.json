@@ -1,0 +1,81 @@
+{
+  "candidates": [
+    {
+      "action_type": "consumer_native_probe",
+      "approval_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "approval_status": "approved",
+      "bounds": {
+        "max_steps": 100,
+        "timeout_ms": 5000
+      },
+      "cost_units": 4,
+      "downstream_leverage": 1.0,
+      "expected_uncertainty_reduction": 0.5,
+      "probe_kind": "function_entry_exit",
+      "rationale_codes": [
+        "unresolved_dispatch"
+      ],
+      "request_id": "request-1",
+      "subject_id": "subject-1",
+      "subject_kind": "function"
+    },
+    {
+      "action_type": "consumer_native_probe",
+      "approval_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "approval_status": "approved",
+      "bounds": {
+        "max_steps": 100,
+        "timeout_ms": 5000
+      },
+      "cost_units": 1,
+      "downstream_leverage": 1.0,
+      "expected_uncertainty_reduction": 0.5,
+      "probe_kind": "function_entry_exit",
+      "rationale_codes": [
+        "unresolved_dispatch"
+      ],
+      "request_id": "request-2",
+      "subject_id": "subject-2",
+      "subject_kind": "function"
+    },
+    {
+      "action_type": "consumer_native_probe",
+      "approval_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "approval_status": "approved",
+      "bounds": {
+        "max_steps": 100,
+        "timeout_ms": 5000
+      },
+      "cost_units": 3,
+      "downstream_leverage": 1.0,
+      "expected_uncertainty_reduction": 0.5,
+      "probe_kind": "function_entry_exit",
+      "rationale_codes": [
+        "unresolved_dispatch"
+      ],
+      "request_id": "request-3",
+      "subject_id": "subject-3",
+      "subject_kind": "function"
+    },
+    {
+      "action_type": "consumer_native_probe",
+      "approval_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "approval_status": "approved",
+      "bounds": {
+        "max_steps": 100,
+        "timeout_ms": 5000
+      },
+      "cost_units": 2,
+      "downstream_leverage": 1.0,
+      "expected_uncertainty_reduction": 0.5,
+      "probe_kind": "function_entry_exit",
+      "rationale_codes": [
+        "unresolved_dispatch"
+      ],
+      "request_id": "request-4",
+      "subject_id": "subject-4",
+      "subject_kind": "function"
+    }
+  ],
+  "format": "REVENGINSTR.EvidenceRequestCandidates/1"
+}
