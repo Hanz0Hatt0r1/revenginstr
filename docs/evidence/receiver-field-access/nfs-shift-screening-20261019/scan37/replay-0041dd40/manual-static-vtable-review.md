@@ -54,6 +54,22 @@ and `00665820` therefore remain unresolved. The existing `/6` pair statuses
 are unchanged because this review did not rerun the complete interprocedural
 memory-effect audit.
 
+The new generic [`IndirectCallPointerSlot/1` replay](indirect-call-pointer-slots.jsonl)
+joins all 22 closure targets to their exact `PointerProvenance/1` rows. It
+reports six aligned constant-offset pointer-slot candidates. For the four
+downstream sites it records `006657ed` at `+0x30`, `00665801` at `+0x8`,
+`0066582d` at `+0x34`, and `00665841` at `+0xc`. These are slot-access
+shapes rooted at runtime memory-read anchors; none identifies a table or
+target function.
+
+The read-only xref export is retained in
+[`anchor-address-references.jsonl`](anchor-address-references.jsonl). It
+records direct callers of the two wrappers and every reference to the
+`0x00af0860` and `0x00af08a0` table addresses. `0043c792` is entered by the
+cleanup path `0066efc0`; it is a vtable reset in that path, not an additional
+factory. These xrefs still do not recover the runtime value stored at object
+offset `+0x20`.
+
 ## Reproduction
 
 With the pinned executable available as `SHIFT.exe`, the two direct append
@@ -97,3 +113,24 @@ relationships had SHA-256
 `512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9`; it is
 not copied into this evidence bundle. Target bytes and slot values above are
 reproducible directly from the pinned executable.
+
+Rebuild the bounded pointer-slot projection from the retained target and
+provenance inputs with:
+
+```sh
+revenginstr-indirect-call-pointer-slots \
+  --program-id 'nfs-shift:SHIFT.exe' \
+  --pointer-provenance closure-pointer-provenance.jsonl \
+  --indirect-call-evidence closure-callind.jsonl \
+  --output /tmp/indirect-call-pointer-slots.jsonl
+```
+
+The raw address-reference rows were exported read-only from the existing
+analyzed Ghidra project with:
+
+```sh
+GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_address_references.sh \
+  /path/to/ghidra-projects shift SHIFT.exe /tmp/anchor-address-references.jsonl \
+  0x006657e0 0x00665820 0x00665880 0x0066ee90 0x00663f50 \
+  0x009d1880 0x00af0860 0x00af08a0 0x0043c792 0x0066efc0 0x0066efcd
+```

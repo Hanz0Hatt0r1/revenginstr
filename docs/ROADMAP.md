@@ -455,6 +455,13 @@ available, and an explicit unmapped/unreadable/null state. A SHIFT replay
 captures two tables and confirms the manually reviewed slots; it does not bind
 either table to arbitrary receiver values or a call site.
 
+`IndirectCallPointerSlot/1` joins exact `CALLIND` evidence to the matching
+`PointerProvenance/1` load definition and reports a pointer-slot candidate only
+when one resolved anchor, constant byte offset, and matching pointer width are
+present. It exposes a reusable boundary for caller-selected table scans while
+leaving vtable identity, receiver binding, and target resolution to additional
+evidence.
+
 `revenginstr-receiver-argument-store-flow` now joins bounded caller roots to
 parameter-store rows only on exact callee/function entry and formal parameter
 index. Both source rows remain explicit on their respective edges. The
@@ -2011,17 +2018,22 @@ unique candidates, 20 possible pairs, and 79 non-dominating pairs have been
 recorded. See the
 [scan25–37 evidence bundle](evidence/receiver-field-access/nfs-shift-screening-20261019/README.md).
 
-**Next:** inspect the four remaining memory-read anchors against exact data
-references, starting with sites on paths to the four possible pairs. Manual
-static review resolved the `0064a0ce` and `0064a10e` targets to `00664a10`,
-then resolved its internal `CALLIND`s at `00664a4f` and `00664a83` through
-vtable `0x00af0860` to `0x009ec700` and `0x009d1880` for the observed
-collection construction path. The latter returns a runtime field value, so
-the four anchors in `006657e0` and `00665820` remain unresolved. The `/6`
-statuses remain unchanged pending a complete memory-effect replay. A bounded
-instruction slice recovered the tail at `006642a5`, but not a complete
-function flow or CFG. Continue checking the two CFG gaps and keep unresolved
-targets and roots as barriers. Assess bodies smaller than 40 bytes if this
-unresolved set or new pair evidence gives a concrete reason to extend the
-population screen; do not infer alias facts from decompiler text or
-instruction-level corpus labels.
+The four downstream memory-read anchors now have a generic structural
+projection: `IndirectCallPointerSlot/1` identifies aligned pointer-slot access
+shapes at `006657ed` (`+0x30`), `00665801` (`+0x8`), `0066582d` (`+0x34`), and
+`00665841` (`+0xc`). The exact target addresses remain unknown. A read-only
+Ghidra reference export confirms that `006657e0` and `00665820` are reached
+from the two wrapper functions, while their receiver comes from the runtime
+field at `AptCIH + 0x20`. The field is initialized to zero in `0066ee90` and
+copied by `00663f50`; an additional vtable write in `0043c792` is reached from
+the cleanup path `0066efc0`, not a new factory. These facts narrow the observed
+static construction path but do not bind the runtime field value to a table.
+
+**Next:** trace all exact writes and copy sources for the runtime `+0x20`
+field, or acquire bounded runtime evidence for those four receivers. Keep
+unknown targets and roots as barriers. The `/6` statuses still need a complete
+memory-effect replay, and the CFG gaps at `006642a0` and `0090e864` remain open;
+the bounded slice at `006642a5` is not a complete function flow or CFG. Assess
+bodies smaller than 40 bytes only if this unresolved set or new pair evidence
+gives a concrete reason to extend the population screen. Do not infer alias
+facts from decompiler text or instruction-level corpus labels.

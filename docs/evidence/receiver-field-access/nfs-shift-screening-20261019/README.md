@@ -172,6 +172,25 @@ recorded in
 not identify the receiver used by later calls in `006657e0` and `00665820`;
 their four anchors remain unresolved. This manual review does not change the
 `/6` statuses or establish that runtime memory cannot be overwritten.
+The generic [`IndirectCallPointerSlot/1` replay](scan37/replay-0041dd40/indirect-call-pointer-slots.jsonl)
+joins all 22 closure `CALLIND` sites to the exact pointer-provenance rows. Six
+have a single aligned constant-offset pointer-slot shape. The four downstream
+sites are `006657ed` (`+0x30`), `00665801` (`+0x8`), `0066582d` (`+0x34`), and
+`00665841` (`+0xc`). These offsets describe loads through runtime-derived
+pointer anchors; they do not associate those anchors with a specific table or
+resolve a function entry. The other 16 sites are not a single resolved
+constant-offset target load.
+
+The read-only Ghidra xrefs in
+[`anchor-address-references.jsonl`](scan37/replay-0041dd40/anchor-address-references.jsonl)
+show that `006657e0` and `00665820` are called directly from wrappers
+`0064a0c0` and `0064a100`; those wrappers first call the collection lookup,
+which returns the runtime field at `+0x20`. The xrefs to table `0x00af0860`
+include its writes in `0066ee90` and `00663f50`, plus `0043c792`. The latter is
+reached from the cleanup path `0066efc0` and is not another factory. This
+narrows static population evidence but does not identify the runtime value
+stored in `+0x20`. No downstream function target is promoted, and the `/6`
+results remain unchanged.
 The replay also includes the 32-row, read-only generic Ghidra pointer-table
 export at [`ghidra-pointer-table-slots.jsonl`](scan37/replay-0041dd40/ghidra-pointer-table-slots.jsonl);
 its schema and invocation are documented in

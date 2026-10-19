@@ -1262,6 +1262,12 @@
       "rows": 26
     },
     {
+      "path": "scan37/replay-0041dd40/anchor-address-references.jsonl",
+      "bytes": 33403,
+      "sha256": "2f3a76faad80686ef87e0a18c2e3d12e3ddd2dc4c7924f4e9465215adf58de26",
+      "rows": 11
+    },
+    {
       "path": "scan37/replay-0041dd40/call-closure-source.json",
       "bytes": 3547,
       "sha256": "ba1fa2ef927884f370c975633c86528ba452ebbbe7f7303576ed7d5ba7557aff"
@@ -2238,10 +2244,22 @@
       "rows": 43
     },
     {
+      "path": "scan37/replay-0041dd40/ghidra-pointer-table-slots.jsonl",
+      "bytes": 18690,
+      "sha256": "966e61a56f0c6f41224006324430b1aa51c650c0e2a7d2c843be8e84c6caf3f0",
+      "rows": 32
+    },
+    {
       "path": "scan37/replay-0041dd40/index-only-unreached-entries.txt",
       "bytes": 27,
       "sha256": "0a412712218df2e5dbb0a7cade1876d3bd178041811e2b78e2419a0c3aedd6d0",
       "rows": 3
+    },
+    {
+      "path": "scan37/replay-0041dd40/indirect-call-pointer-slots.jsonl",
+      "bytes": 36343,
+      "sha256": "e7a2dfae3bf80663727e503f161d56557e646fd3cc82f3ff53cc2516438e6e1e",
+      "rows": 22
     },
     {
       "path": "scan37/replay-0041dd40/interprocedural-flow-input-entries.txt",
@@ -2273,15 +2291,9 @@
       "rows": 670
     },
     {
-      "path": "scan37/replay-0041dd40/ghidra-pointer-table-slots.jsonl",
-      "bytes": 18690,
-      "sha256": "966e61a56f0c6f41224006324430b1aa51c650c0e2a7d2c843be8e84c6caf3f0",
-      "rows": 32
-    },
-    {
       "path": "scan37/replay-0041dd40/manual-static-vtable-review.md",
-      "bytes": 4562,
-      "sha256": "40ae51e0200c05a929e0b562bc1a84875c52534a2b5e603d2b197b0120965f25"
+      "bytes": 6206,
+      "sha256": "43cdb03fac5bb9492ba8dfabc6498f31504c730b27e26d6bef2442c44cfe3f3f"
     },
     {
       "path": "scan37/replay-0041dd40/memory-store-access-full-closure-scope.jsonl",
