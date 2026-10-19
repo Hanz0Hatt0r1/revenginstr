@@ -378,7 +378,7 @@ holdout, all 500 flow exports completed and all 203 observed `CALLIND` sites
 matched the canonical P-code counts. The 24 canonical model text truncations
 remain marked separately; 140 target expressions are depth-limited. All 203
 sites remain `unknown` because this unlabeled holdout does not support accuracy
-or recall claims for virtual dispatch. See the [hash-pinned consumer replay](https://github.com/Hanz0Hatt0r1/nevergone-recomp/tree/main/docs/evidence/frozen-unseen500-v10-callind-inventory).
+or recall claims for virtual dispatch. See the [hash-pinned consumer replay PR](https://github.com/Hanz0Hatt0r1/nevergone-recomp/pull/735).
 
 ### M2.1 Residual failure taxonomy
 
