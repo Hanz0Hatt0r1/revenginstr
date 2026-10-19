@@ -6,6 +6,7 @@ usage() {
 Usage:
   GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_parameter_store_field.sh \
     <project-dir> <project-name> <program-name> <function-address-or-name> <stores.tsv> \
+    [--function-entry <entry> ...] \
     [--load-output <loads.tsv>] \
     [--memory-access-output <stores.jsonl> --program-id <opaque-id>]
 
@@ -28,9 +29,9 @@ POST_SCRIPT_ARGS=("$FUNCTION" "$OUTPUT")
 shift 5
 while (($#)); do
   case "$1" in
-    --load-output|--memory-access-output|--program-id)
+    --function-entry|--load-output|--memory-access-output|--program-id)
       [[ $# -ge 2 ]] || { usage >&2; exit 2; }
-      if [[ "$1" != "--program-id" ]]; then
+      if [[ "$1" == "--load-output" || "$1" == "--memory-access-output" ]]; then
         mkdir -p "$(dirname -- "$2")"
       fi
       POST_SCRIPT_ARGS+=("$1" "$2")
