@@ -1523,12 +1523,14 @@ all 3 documented calls (see the
 [replay](evidence/semantic-program-graph-evaluation/nevergone-player-horizontal-facing/README.md)).
 The NFS M2.3 consumer-owned slice matches 7 calls, 2 reads, and 1 write (see
 its [replay](evidence/semantic-program-graph-evaluation/nfs-m23-00a45520/README.md)).
-All twenty-two edges have complete provenance fields. Both consumer golds are
-narrow structural interpretations, without independent runtime
-corroboration; the NFS gold does not assign field meaning or prove memory
-flow. Calibrated accepted edges and reconstruction/query of two broader
-semantic subsystems remain open, so M10.5 and its exit criteria are not
-complete.
+A new Nevergone runtime resource-loader subgraph cross-checks 36 direct calls
+against Ghidra instruction-level references; all 36 match with full
+provenance. Runtime evidence corroborates only the two function entries, not
+the call edges. All fifty-eight evaluated edges have complete provenance
+fields. The three consumer golds are narrow structural interpretations; the
+NFS gold does not assign field meaning or prove memory flow. Calibrated
+accepted edges and reconstruction/query of two broader semantic subsystems
+remain open, so M10.5 and its exit criteria are not complete.
 
 ---
 

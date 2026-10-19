@@ -1,0 +1,88 @@
+{
+  "artifacts": [
+    {
+      "bytes": 211701,
+      "id": "semantic_graph",
+      "path": "../../semantic-program-graph-v3/nevergone-runtime-correlation-20261020/semantic-program-graph.jsonl",
+      "sha256": "021065470f8da973921b701323807b60033cb0870e2cdd2f15831665b9cffaab"
+    },
+    {
+      "bytes": 4007,
+      "id": "LoadGameLevels_pcode",
+      "path": "../../runtime-static-correlation-v1/nevergone-device-runtime-20261019/LoadGameLevels.pcode-flow.tsv",
+      "sha256": "930d7acd70c8f92df3d1b191efb04ce9ace78b22a701ea4d663eec68b0c5e592"
+    },
+    {
+      "bytes": 53542,
+      "id": "CCFileUtils_getFileData_pcode",
+      "path": "../../runtime-static-correlation-v1/nevergone-device-runtime-20261019/CCFileUtilsAndroid-getFileData.pcode-flow.tsv",
+      "sha256": "a15289511ed196ce41591c196d3c76c1f8cdb48f1c6dec7285aef3b3f0218dfd"
+    },
+    {
+      "bytes": 1715,
+      "id": "crosscheck_schema",
+      "path": "../../../../schemas/semantic-program-graph-call-reference-crosscheck-v1.schema.json",
+      "sha256": "b4faba9464e9a25dfa67aec221fd35b6558f1d3903d0720d2b52511f23ecbec4"
+    },
+    {
+      "bytes": 4207,
+      "id": "gold_schema",
+      "path": "../../../../schemas/semantic-program-graph-gold-v1.schema.json",
+      "sha256": "29b066a9d6b7692712c36ab5870175c1fdf46582242c52cd7b7200bb538ddf8b"
+    },
+    {
+      "bytes": 2931,
+      "id": "evaluation_schema",
+      "path": "../../../../schemas/semantic-program-graph-evaluation-v1.schema.json",
+      "sha256": "528e719a14c522a382ccb257101060096a8795708685a10f1b8c2d770e70e847"
+    },
+    {
+      "bytes": 8930,
+      "id": "gold_generator",
+      "path": "rebuild_gold.py",
+      "sha256": "9cbf48ecc7027827e19559fe0ea6a1f1e6219bc96e07d9d0073793d15b10781e"
+    },
+    {
+      "bytes": 25912,
+      "id": "direct_call_crosscheck",
+      "path": "direct-call-crosscheck.jsonl",
+      "sha256": "dd99ed1e298c56279d269bdc46c63eeb395c2e701c294e7c55d6c8384c89d2d4"
+    },
+    {
+      "bytes": 19341,
+      "id": "gold_subgraph",
+      "path": "gold-subgraphs.jsonl",
+      "sha256": "aa14ad64a541c20d0015a4c742ffb02d2c939318f628a7928d7adf5cad9c72d5"
+    },
+    {
+      "bytes": 830,
+      "id": "evaluation",
+      "path": "evaluation.json",
+      "sha256": "0107d4339370072a3424c70918edae7ae22234270999233f8c41d6cadc39d04d"
+    }
+  ],
+  "crosscheck_counts": {
+    "exact_matches": 36,
+    "functions": 2,
+    "instruction_call_references": 36,
+    "mismatches": 0,
+    "pcode_calls": 36
+  },
+  "evaluation_summary": {
+    "accepted_edges": 0,
+    "candidate_edge_precision": 1.0,
+    "provenance_completeness": 1.0,
+    "recall": 1.0,
+    "unsupported_edges": 0
+  },
+  "format": "REVENGINSTR.SemanticProgramGraphCallReferenceReplay/1",
+  "instruction_export_source": {
+    "bytes": 300355,
+    "format": "REVENGINSTR.GhidraFunctionInstructions/1",
+    "function_rows": 2,
+    "retained_in_repository": false,
+    "sha256": "ef62038bd9f2d65b2cff244c00f3d99bbdf3a764d1fc63aff8daf1286ee48a62"
+  },
+  "program_id": "nevergone-1.0.9-armv7-libcocos2dcpp",
+  "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e"
+}

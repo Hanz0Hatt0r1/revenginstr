@@ -135,3 +135,64 @@ def test_nevergone_layout_joins_graph_and_remains_queryable(tmp_path: Path) -> N
             type_layout_rows=[duplicate_field],
             type_layout_sha256=layout_sha256,
         )
+
+
+def test_nevergone_runtime_resource_calls_match_independent_instruction_references() -> None:
+    replay_dir = ROOT / (
+        "docs/evidence/semantic-program-graph-evaluation/"
+        "nevergone-runtime-resource-loader-20261020"
+    )
+    replay = json.loads((replay_dir / "replay-manifest.json").read_text(encoding="utf-8"))
+    for artifact in replay["artifacts"]:
+        raw = (replay_dir / artifact["path"]).resolve().read_bytes()
+        assert len(raw) == artifact["bytes"]
+        assert hashlib.sha256(raw).hexdigest() == artifact["sha256"]
+
+    crosscheck_path = replay_dir / "direct-call-crosscheck.jsonl"
+    crosscheck_rows = [
+        json.loads(line) for line in crosscheck_path.read_text(encoding="utf-8").splitlines()
+    ]
+    crosscheck_validator = _schema(
+        "semantic-program-graph-call-reference-crosscheck-v1.schema.json"
+    )
+    artifact_hashes = {artifact["id"]: artifact["sha256"] for artifact in replay["artifacts"]}
+    for row in crosscheck_rows:
+        crosscheck_validator.validate(row)
+        assert row["status"] == "exact_match"
+        assert row["program_sha256"] == replay["program_sha256"]
+        assert row["instruction_export_sha256"] == replay["instruction_export_source"]["sha256"]
+        assert row["graph_sha256"] == artifact_hashes["semantic_graph"]
+        pcode_artifact = (
+            "LoadGameLevels_pcode"
+            if row["function_entry"] == "002d2f1c"
+            else "CCFileUtils_getFileData_pcode"
+        )
+        assert row["pcode_flow_sha256"] == artifact_hashes[pcode_artifact]
+
+    gold_path = replay_dir / "gold-subgraphs.jsonl"
+    gold = json.loads(gold_path.read_text(encoding="utf-8"))
+    _schema("semantic-program-graph-gold-v1.schema.json").validate(gold)
+    assert len(crosscheck_rows) == len(gold["edges"]) == 36
+    crosscheck_sha256 = hashlib.sha256(crosscheck_path.read_bytes()).hexdigest()
+    assert all(
+        reference["artifact_sha256"] == crosscheck_sha256
+        for edge in gold["edges"] for reference in edge["evidence_refs"]
+    )
+    assert {row["function_entry"] for row in crosscheck_rows} == {"002d2f1c", "00544a60"}
+    assert [sum(row["function_entry"] == entry for row in crosscheck_rows)
+            for entry in ("002d2f1c", "00544a60")] == [9, 27]
+
+    graph_path = ROOT / (
+        "docs/evidence/semantic-program-graph-v3/nevergone-runtime-correlation-20261020/"
+        "semantic-program-graph.jsonl"
+    )
+    evaluation = evaluate_semantic_program_graph(graph_path, gold_path, view="exact-only")
+    checked_in = json.loads((replay_dir / "evaluation.json").read_text(encoding="utf-8"))
+    assert evaluation == checked_in
+    _schema("semantic-program-graph-evaluation-v1.schema.json").validate(evaluation)
+    calls = evaluation["per_relation"]["calls"]
+    assert calls["candidate_edges"] == calls["gold_edges"] == calls["true_positives"] == 36
+    assert calls["candidate_edge_precision"] == calls["recall"] == 1.0
+    assert evaluation["unsupported_edge_count"] == 0
+    assert evaluation["provenance_completeness"] == 1.0
+    assert evaluation["accepted_edge_count"] == 0
