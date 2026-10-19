@@ -1144,7 +1144,14 @@ three `cocos2d::CCSprite*` fields, two integers, and four booleans. The other
 four fields, containing-object vtable, ownership, and audit-acceptance metrics
 remain open. Both consumers exercise layout recovery, while broader
 independent field/type gold validation remains open. Synthetic fixtures
-validate the wire contract and fail-closed conflicts.
+validate the wire contract and fail-closed conflicts. `TypeLayoutGold/1` and
+`revenginstr-type-layout-evaluate` now score field offsets only inside explicit
+audited coverage, and report compatible reviewed-type accuracy, coverage,
+conflict rates, and review acceptance. Synthetic tests exercise partial-gold
+handling. The consumer gold sets, prototype compatibility input, and an
+independent confidence signal are still absent; prototype and high-confidence
+acceptance metrics are returned as not evaluated. M8.5 is therefore partial,
+not complete.
 
 ## Exit criteria
 

@@ -108,3 +108,24 @@ continues to exercise richer candidate fields, a vtable anchor, and an
 unresolved composition relationship. These are contract and builder checks,
 not a consumer accuracy result; independently reviewed layouts from more than
 one consumer remain open.
+
+## Coverage-aware evaluation
+
+`TypeLayoutGold/1` records are keyed by the exact program hash and opaque type
+id. `audited_field_offsets` is the explicit set of offsets where the reviewer
+checked both field presence and absence. Gold `fields` are positive offsets
+within that set; a prediction outside the set is reported as unscored and does
+not affect precision or recall. This lets partial consumer audits remain
+useful without treating unreviewed offsets as negatives.
+Gold `compatible_types` can list multiple acceptable type descriptions; an
+unknown width or omitted pointer target leaves that part unconstrained.
+
+Run `revenginstr-type-layout-evaluate predictions.jsonl gold.jsonl --output
+evaluation.json`. The report includes field-offset precision/recall, compatible
+type accuracy and coverage, observed conflict rates, and acceptance among
+fields in `review` state. The current hypothesis contract has neither a
+confidence score nor prototype records, so high-confidence reviewer acceptance
+and prototype compatibility are explicitly reported as not evaluated. Synthetic
+replays validate metric behavior and coverage handling; they are not consumer
+accuracy results. Independent frozen consumer gold is still needed before M8.5
+or the layout exit criteria can be considered complete.
