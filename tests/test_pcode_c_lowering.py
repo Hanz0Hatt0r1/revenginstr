@@ -475,29 +475,46 @@ int main(void) {{
     subprocess.run([str(executable)], check=True)
 
 
-def test_codegen_rejects_unnormal_binary80_encodings(tmp_path: Path) -> None:
+def test_codegen_classifies_unnormal_binary80_as_nan(tmp_path: Path) -> None:
     row = _function_row()
+    unnormal = _varnode("const", "0x40000000000000000000", 10, constant=True)
+    zero = _varnode("const", "0x0", 10, constant=True)
     row["instructions"] = [
-        {"address": "0x00401000", "mnemonic": "FNAN", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
-            "opcode": "FLOAT_NAN", "output": _varnode("register", "0x10", 1),
-            "inputs": [_varnode("const", "0x40000000000000000000", 10, constant=True)],
-        }]},
-        {"address": "0x00401001", "mnemonic": "RET", "flow_type": "TERMINATOR", "flows": [], "pcode": [{
-            "opcode": "RETURN", "output": None, "inputs": [_varnode("register", "0x20", 4)],
-        }]},
+        {"address": "0x00401000", "mnemonic": "FNAN", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [
+            {"opcode": "FLOAT_NAN", "output": _varnode("register", "0x10", 1), "inputs": [unnormal]},
+            {"opcode": "FLOAT_NOTEQUAL", "output": _varnode("register", "0x11", 1), "inputs": [unnormal, zero]},
+            {"opcode": "FLOAT_EQUAL", "output": _varnode("register", "0x12", 1), "inputs": [unnormal, zero]},
+            {"opcode": "FLOAT_LESS", "output": _varnode("register", "0x13", 1), "inputs": [unnormal, zero]},
+        ]},
     ]
     row["instruction_count"] = len(row["instructions"])
     source, operation_count = compile_function(row, _address_spaces())
-    assert operation_count == 2
+    assert operation_count == 4
 
     compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
     if compiler is None:
         pytest.skip("C compiler not available")
     harness = r'''
+typedef struct { uint8_t registers[128]; } TestState;
+static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(out, state->registers + offset, size);
+    return 0;
+}
+static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t size, const uint8_t *in) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(state->registers + offset, in, size);
+    return 0;
+}
 int rvi_00401000(RviPcodeContext *ctx);
 int main(void) {
-    RviPcodeContext context = {0};
-    return rvi_00401000(&context) == -1 ? 0 : 1;
+    TestState state = {{0}};
+    RviPcodeContext context = {&state, read_bytes, write_bytes, NULL, NULL};
+    if (rvi_00401000(&context) != 0) return 1;
+    return state.registers[0x10] == 1 && state.registers[0x11] == 1 &&
+           state.registers[0x12] == 0 && state.registers[0x13] == 0 ? 0 : 2;
 }
 '''
     c_path = tmp_path / "binary80-unnormal.c"
