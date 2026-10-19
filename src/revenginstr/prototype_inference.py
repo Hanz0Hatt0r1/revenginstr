@@ -11,6 +11,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from .ghidra_indirect_call_evidence import FORMAT_V3 as INDIRECT_CALL_EVIDENCE_FORMAT, validate_row
+
 DECOMPILER_FORMAT = "REVENGINSTR.GhidraDecompilerParameters/1"
 CALL_FORMAT = "REVENGINSTR.DirectCallArgumentObservation/1"
 CALLER_PARAMETER_ROOT_FORMAT = "REVENGINSTR.GhidraCallerArgumentParameterRoot/3"
@@ -215,6 +217,55 @@ def _read_calls(path: Path, program_id: str, program_sha: str) -> tuple[list[dic
     return calls, digest
 
 
+def _read_indirect_calls(
+    path: Path,
+    program_id: str,
+    program_sha: str,
+    architecture: dict[str, Any],
+    functions: dict[str, dict[str, Any]],
+) -> tuple[list[dict[str, Any]], str]:
+    rows, digest = _read_jsonl(path)
+    functions_by_key = {}
+    for entry in functions:
+        key = _address_key(entry)
+        if key in functions_by_key:
+            raise ValueError(f"{path}: duplicate normalized decompiler function entry {entry!r}")
+        functions_by_key[key] = entry
+    calls = []
+    seen = set()
+    for line_no, row in rows:
+        where = f"{path}:{line_no}"
+        source_format = validate_row(
+            row, where, program_id=program_id, program_sha256=program_sha,
+            expected_architecture=architecture,
+        )
+        if source_format != INDIRECT_CALL_EVIDENCE_FORMAT:
+            raise ValueError(f"{where}: indirect-call prototype constraints require {INDIRECT_CALL_EVIDENCE_FORMAT}")
+        site = (
+            _address_key(row["function_entry"]),
+            _address_key(row["call_address"]),
+            row["call_time"],
+        )
+        if site in seen:
+            raise ValueError(f"{where}: duplicate indirect call site {site}")
+        seen.add(site)
+        callee_address = row["target_resolution"]["function_entry"]
+        if callee_address is None:
+            continue
+        callee = functions_by_key.get(_address_key(callee_address))
+        if callee is None:
+            raise ValueError(f"{where}: resolved indirect target is absent from the decompiler snapshot")
+        calls.append({
+            "caller_entry": row["function_entry"],
+            "callee_entry": callee,
+            "call_address": row["call_address"],
+            "call_time": row["call_time"],
+            "argument_count": row["arg_count"],
+            "_evidence_ref": _evidence(digest, line_no, source_format),
+        })
+    return calls, digest
+
+
 def _read_caller_parameter_roots(
     path: Path,
     calls: list[dict[str, Any]],
@@ -388,10 +439,16 @@ def infer_prototypes(
     decompiler_path: Path,
     calls_path: Path,
     caller_parameter_roots_path: Path | None = None,
+    indirect_call_evidence_path: Path | None = None,
 ) -> list[dict[str, Any]]:
-    """Create review hypotheses from formal types and exact direct-parameter roots."""
+    """Create review hypotheses from formal types and exact call constraints."""
     functions, program_id, program_sha, decompiler_sha, architecture = _read_decompiler(decompiler_path)
     calls, calls_sha = _read_calls(calls_path, program_id, program_sha)
+    indirect_calls = []
+    if indirect_call_evidence_path is not None:
+        indirect_calls, _ = _read_indirect_calls(
+            indirect_call_evidence_path, program_id, program_sha, architecture, functions,
+        )
     missing_callees = sorted({call["callee_entry"] for call in calls} - set(functions))
     if missing_callees:
         preview = ", ".join(missing_callees[:5])
@@ -407,16 +464,17 @@ def infer_prototypes(
     )
 
     calls_by_callee: dict[str, list[dict[str, Any]]] = {}
-    for call in calls:
+    all_calls = [
+        {**call, "_evidence_ref": _evidence(calls_sha, call["_record_index"], CALL_FORMAT)}
+        for call in calls
+    ] + indirect_calls
+    for call in all_calls:
         calls_by_callee.setdefault(call["callee_entry"], []).append(call)
     results = []
     for entry, function in functions.items():
         source_ref = _evidence(decompiler_sha, function["_record_index"], DECOMPILER_FORMAT)
         observations = calls_by_callee.get(entry, [])
-        call_refs = [
-            _evidence(calls_sha, call["_record_index"], CALL_FORMAT)
-            for call in observations
-        ]
+        call_refs = [call["_evidence_ref"] for call in observations]
         if function["status"] != "complete":
             candidate = {
                 "candidate_id": "decompiler-unavailable",
@@ -458,7 +516,10 @@ def infer_prototypes(
         ]
         # Scores are deliberately bounded below evaluator high-confidence thresholds.
         # Call-site arity adds at most modest support and never supplies types.
-        corroborating_callers = len({call["caller_entry"] for call in observations if call not in call_mismatches})
+        corroborating_callers = len({
+            _address_key(call["caller_entry"])
+            for call in observations if call not in call_mismatches
+        })
         confidence = min(0.7, 0.5 + 0.05 * min(corroborating_callers, 4))
         refs = _dedupe_refs([
             source_ref, *call_refs,
@@ -482,7 +543,7 @@ def infer_prototypes(
             conflicts.append({"reason": "receiver_identity_conflict", "evidence_refs": [source_ref]})
         if call_mismatches:
             mismatch_refs = [
-                _evidence(calls_sha, call["_record_index"], CALL_FORMAT)
+                call["_evidence_ref"]
                 for call in call_mismatches
             ]
             conflicts.append({
@@ -508,17 +569,24 @@ def main(argv: list[str] | None = None) -> int:
         "--caller-parameter-roots", type=Path,
         help="optional program-pinned GhidraCallerArgumentParameterRoot/3 TSV for exact type propagation",
     )
+    parser.add_argument(
+        "--indirect-call-evidence", type=Path,
+        help="optional GhidraIndirectCallEvidence/3 JSONL; only exact static function targets constrain arity",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     inputs = {args.decompiler_parameters.resolve(), args.call_observations.resolve()}
     if args.caller_parameter_roots is not None:
         inputs.add(args.caller_parameter_roots.resolve())
+    if args.indirect_call_evidence is not None:
+        inputs.add(args.indirect_call_evidence.resolve())
     if args.output.resolve() in inputs:
         print("error: output path must differ from every input path", file=sys.stderr)
         return 2
     try:
         rows = infer_prototypes(
             args.decompiler_parameters, args.call_observations, args.caller_parameter_roots,
+            args.indirect_call_evidence,
         )
     except (OSError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)

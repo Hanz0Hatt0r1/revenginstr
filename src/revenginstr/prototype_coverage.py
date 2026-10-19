@@ -315,7 +315,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("acquisition", type=Path, help="GhidraPcodeFlowAcquisition/1 JSONL")
     parser.add_argument("decompiler_parameters", type=Path, help="GhidraDecompilerParameters/1 JSONL")
     parser.add_argument("call_observations", type=Path, help="DirectCallArgumentObservation/1 JSONL")
-    parser.add_argument("indirect_call_evidence", type=Path, help="GhidraIndirectCallEvidence/1 or /2 JSONL")
+    parser.add_argument("indirect_call_evidence", type=Path, help="GhidraIndirectCallEvidence/1, /2, or /3 JSONL")
     parser.add_argument("flows", nargs="+", type=Path, help="GhidraFunctionPcodeFlow/1 TSV files")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)

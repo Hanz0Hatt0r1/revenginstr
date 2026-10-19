@@ -9,7 +9,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Iterator
 
-from .ghidra_indirect_call_evidence import FORMAT_V1, FORMAT_V2, validate_row
+from .ghidra_indirect_call_evidence import FORMAT_V1, FORMAT_V2, FORMAT_V3, validate_row
 
 FORMAT = "REVENGINSTR.IndirectCallPointerSlot/1"
 CALL_EVIDENCE_FORMAT = FORMAT_V1
@@ -125,7 +125,7 @@ def _read_callind_evidence(
                 raise ValueError(f"combined indirect-call evidence row budget exceeded: {max_rows}")
             where = f"{path}:{line_no}"
             source_format = validate_row(row, where)
-            if source_format == FORMAT_V2:
+            if source_format in {FORMAT_V2, FORMAT_V3}:
                 identity = (row["program"], row["program_sha256"], row["architecture"])
                 if program_identity is not None and program_identity != identity:
                     raise ValueError(f"{where}: mixed binary identities in indirect-call evidence")

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-indirect-call-evidence-v3.schema.json",
+  "title": "REVENGINSTR.GhidraIndirectCallEvidence/3 JSONL row",
+  "description": "Executable- and ABI-pinned High-P-code indirect-call evidence with conservative exact static function-pointer resolution.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program", "program_sha256", "architecture", "requested", "function_entry", "call_address", "call_time", "target", "target_expression", "target_resolution", "arg_count"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraIndirectCallEvidence/3"},
+    "program": {"type": "string", "minLength": 1},
+    "program_sha256": {"$ref": "#/$defs/sha256"},
+    "architecture": {"$ref": "#/$defs/architecture"},
+    "requested": {"type": "string", "minLength": 1},
+    "function_entry": {"$ref": "#/$defs/address"},
+    "call_address": {"$ref": "#/$defs/address"},
+    "call_time": {"type": "integer", "minimum": 0},
+    "target": {"type": "string", "minLength": 1},
+    "target_expression": {"type": "string", "minLength": 1},
+    "target_resolution": {"$ref": "#/$defs/target_resolution"},
+    "arg_count": {"type": "integer", "minimum": 0}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "address": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"},
+    "architecture": {
+      "type": "object", "additionalProperties": false,
+      "required": ["language_id", "pointer_width_bytes", "endianness"],
+      "properties": {
+        "language_id": {"type": "string", "minLength": 1},
+        "pointer_width_bytes": {"type": "integer", "minimum": 1},
+        "endianness": {"enum": ["little", "big"]}
+      }
+    },
+    "target_resolution": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["status", "slot_address", "function_entry"],
+          "properties": {
+            "status": {"const": "resolved_static_function_pointer"},
+            "slot_address": {"$ref": "#/$defs/address"},
+            "function_entry": {"$ref": "#/$defs/address"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["status", "slot_address", "function_entry"],
+          "properties": {
+            "status": {"const": "resolved_constant_function"},
+            "slot_address": {"type": "null"},
+            "function_entry": {"$ref": "#/$defs/address"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["status", "slot_address", "function_entry"],
+          "properties": {
+            "status": {"enum": ["non_function_target", "unreadable_pointer", "unsupported_target_expression"]},
+            "slot_address": {"oneOf": [{"$ref": "#/$defs/address"}, {"type": "null"}]},
+            "function_entry": {"type": "null"}
+          }
+        }
+      ]
+    }
+  }
+}

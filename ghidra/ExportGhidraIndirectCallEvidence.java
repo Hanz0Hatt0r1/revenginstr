@@ -9,20 +9,35 @@ import ghidra.program.model.pcode.PcodeOp;
 import ghidra.program.model.pcode.PcodeOpAST;
 import ghidra.program.model.pcode.SequenceNumber;
 import ghidra.program.model.pcode.Varnode;
+import ghidra.program.model.address.AddressSpace;
+import ghidra.program.model.mem.Memory;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
 /** Export bounded High-P-code target expressions for indirect calls in one function. */
 public class ExportGhidraIndirectCallEvidence extends GhidraScript {
-    private static final String FORMAT = "REVENGINSTR.GhidraIndirectCallEvidence/2";
+    private static final String FORMAT = "REVENGINSTR.GhidraIndirectCallEvidence/3";
     private static final int MAX_DEPTH = 6;
+
+    private static final class TargetResolution {
+        final String status;
+        final Address slot;
+        final Address functionEntry;
+
+        TargetResolution(String status, Address slot, Address functionEntry) {
+            this.status = status;
+            this.slot = slot;
+            this.functionEntry = functionEntry;
+        }
+    }
 
     @Override
     protected void run() throws Exception {
@@ -123,7 +138,95 @@ public class ExportGhidraIndirectCallEvidence extends GhidraScript {
             ",\"call_time\":" + seq.getTime() +
             ",\"target\":" + q(nodeToken(target)) +
             ",\"target_expression\":" + q(expression(target, 0, new HashSet<String>())) +
+            ",\"target_resolution\":" + targetResolutionJson(resolveTarget(target, 0)) +
             ",\"arg_count\":" + Math.max(0, inputCount - 1) + "}";
+    }
+
+    private String targetResolutionJson(TargetResolution resolution) {
+        return "{\"status\":" + q(resolution.status) +
+            ",\"slot_address\":" + q(resolution.slot == null ? null : addr(resolution.slot)) +
+            ",\"function_entry\":" + q(resolution.functionEntry == null ? null : addr(resolution.functionEntry)) + "}";
+    }
+
+    private TargetResolution resolveTarget(Varnode value, int depth) {
+        if (value == null || depth > MAX_DEPTH) return unresolved("unsupported_target_expression", null);
+        if (value.isAddress()) {
+            return depth == 0
+                ? unresolved("unsupported_target_expression", null)
+                : resolveFunctionPointer(value.getAddress());
+        }
+        if (value.isConstant()) {
+            Address target = addressFromOffset(value.getOffset());
+            return resolveFunctionAt(target, "resolved_constant_function", null);
+        }
+        PcodeOp definition = value.getDef();
+        if (definition == null) return unresolved("unsupported_target_expression", null);
+        int opcode = definition.getOpcode();
+        if ((opcode == PcodeOp.CAST || opcode == PcodeOp.COPY) && definition.getNumInputs() == 1) {
+            return resolveTarget(definition.getInput(0), depth + 1);
+        }
+        Address slot = null;
+        if (opcode == PcodeOp.INDIRECT && definition.getNumInputs() >= 1) {
+            slot = staticAddress(definition.getInput(0));
+        } else if (opcode == PcodeOp.LOAD && definition.getNumInputs() >= 2) {
+            slot = staticAddress(definition.getInput(1));
+        }
+        if (slot == null) return unresolved("unsupported_target_expression", null);
+        return resolveFunctionPointer(slot);
+    }
+
+    private TargetResolution resolveFunctionPointer(Address slot) {
+        int width = currentProgram.getDefaultPointerSize();
+        if (width != 4 && width != 8) return unresolved("unreadable_pointer", slot);
+        Memory memory = currentProgram.getMemory();
+        byte[] bytes = new byte[width];
+        try {
+            if (!memory.contains(slot) || memory.getBytes(slot, bytes) != width) {
+                return unresolved("unreadable_pointer", slot);
+            }
+        } catch (Exception ignored) {
+            return unresolved("unreadable_pointer", slot);
+        }
+        BigInteger pointer = BigInteger.ZERO;
+        if (currentProgram.getLanguage().isBigEndian()) {
+            for (byte b : bytes) pointer = pointer.shiftLeft(8).or(BigInteger.valueOf(b & 0xff));
+        } else {
+            for (int i = bytes.length - 1; i >= 0; i--) {
+                pointer = pointer.shiftLeft(8).or(BigInteger.valueOf(bytes[i] & 0xff));
+            }
+        }
+        if (pointer.signum() == 0 || pointer.bitLength() > 64) {
+            return unresolved("non_function_target", slot);
+        }
+        Address target = addressFromOffset(pointer.longValue());
+        return resolveFunctionAt(target, "resolved_static_function_pointer", slot);
+    }
+
+    private Address staticAddress(Varnode value) {
+        if (value == null) return null;
+        if (value.isAddress()) return value.getAddress();
+        if (value.isConstant()) return addressFromOffset(value.getOffset());
+        return null;
+    }
+
+    private Address addressFromOffset(long offset) {
+        try {
+            AddressSpace space = currentProgram.getAddressFactory().getDefaultAddressSpace();
+            return space.getAddress(offset);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private TargetResolution resolveFunctionAt(Address target, String status, Address slot) {
+        if (target == null) return unresolved("non_function_target", slot);
+        Function function = currentProgram.getFunctionManager().getFunctionAt(target);
+        if (function == null) return unresolved("non_function_target", slot);
+        return new TargetResolution(status, slot, function.getEntryPoint());
+    }
+
+    private TargetResolution unresolved(String status, Address slot) {
+        return new TargetResolution(status, slot, null);
     }
 
     private String architectureJson() {

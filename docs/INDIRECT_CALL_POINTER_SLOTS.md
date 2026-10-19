@@ -1,7 +1,7 @@
 # Indirect call pointer-slot candidates
 
 `IndirectCallPointerSlot/1` joins exact
-`GhidraIndirectCallEvidence/1` or `/2` targets to their
+`GhidraIndirectCallEvidence/1`, `/2`, or `/3` targets to their
 `PointerProvenance/1` load definitions. It emits a `slot_access_candidate`
 only when the target is loaded from one resolved memory/address anchor plus a
 constant byte offset, and the offset is aligned to the pointer width. Signed

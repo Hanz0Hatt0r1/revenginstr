@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_batch_pcode_exporter_keeps_existing_contracts_and_fails_closed() -> None:
     source = (ROOT / "ghidra/ExportProgramPcodeFlowBatch.java").read_text(encoding="utf-8")
     for required in (
-        '"REVENGINSTR.GhidraIndirectCallEvidence/2"',
+        '"REVENGINSTR.GhidraIndirectCallEvidence/3"',
         "getExecutableSHA256()",
         '"REVENGINSTR.GhidraPcodeFlowAcquisition/1"',
         '"function_entry\\top_address\\top_time\\topcode\\toutput\\tinputs\\tcallee_entry\\tcallee_name"',

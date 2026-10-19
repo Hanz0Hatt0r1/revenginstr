@@ -8,6 +8,8 @@ import ghidra.program.model.pcode.PcodeOp;
 import ghidra.program.model.pcode.PcodeOpAST;
 import ghidra.program.model.pcode.SequenceNumber;
 import ghidra.program.model.pcode.Varnode;
+import ghidra.program.model.address.AddressSpace;
+import ghidra.program.model.mem.Memory;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -15,6 +17,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -25,12 +28,24 @@ import java.util.Set;
 public class ExportProgramPcodeFlowBatch extends GhidraScript {
     private static final String FLOW_HEADER =
         "function_entry\top_address\top_time\topcode\toutput\tinputs\tcallee_entry\tcallee_name";
-    private static final String EVIDENCE_FORMAT = "REVENGINSTR.GhidraIndirectCallEvidence/2";
+    private static final String EVIDENCE_FORMAT = "REVENGINSTR.GhidraIndirectCallEvidence/3";
     private static final String ACQUISITION_FORMAT = "REVENGINSTR.GhidraPcodeFlowAcquisition/1";
     private static final int DEFAULT_MAX_FUNCTIONS = 1000;
     private static final int DEFAULT_MAX_TOTAL_SECONDS = 3600;
     private static final int DECOMPILE_TIMEOUT_SECONDS = 60;
     private static final int MAX_EXPRESSION_DEPTH = 6;
+
+    private static final class TargetResolution {
+        final String status;
+        final Address slot;
+        final Address functionEntry;
+
+        TargetResolution(String status, Address slot, Address functionEntry) {
+            this.status = status;
+            this.slot = slot;
+            this.functionEntry = functionEntry;
+        }
+    }
 
     private String cell(Object value) {
         return String.valueOf(value).replace('\t', ' ').replace('\n', ' ').replace('\r', ' ');
@@ -193,6 +208,7 @@ public class ExportProgramPcodeFlowBatch extends GhidraScript {
     private void writeEvidence(BufferedWriter out, String requested, Function function, PcodeOpAST op) throws Exception {
         SequenceNumber sequence = op.getSeqnum();
         Varnode target = op.getNumInputs() > 0 ? op.getInput(0) : null;
+        TargetResolution resolution = resolveTarget(target, 0);
         out.write("{\"format\":" + json(EVIDENCE_FORMAT) +
             ",\"program\":" + json(currentProgram.getName()) +
             ",\"program_sha256\":" + json(currentProgram.getExecutableSHA256()) +
@@ -205,8 +221,94 @@ public class ExportProgramPcodeFlowBatch extends GhidraScript {
             ",\"call_time\":" + sequence.getTime() +
             ",\"target\":" + json(nodeToken(target)) +
             ",\"target_expression\":" + json(expression(target, 0, new HashSet<String>())) +
+            ",\"target_resolution\":" + targetResolutionJson(resolution) +
             ",\"arg_count\":" + Math.max(0, op.getNumInputs() - 1) + "}");
         out.newLine();
+    }
+
+    private String targetResolutionJson(TargetResolution resolution) {
+        return "{\"status\":" + json(resolution.status) +
+            ",\"slot_address\":" + json(resolution.slot == null ? null : address(resolution.slot)) +
+            ",\"function_entry\":" + json(resolution.functionEntry == null ? null : address(resolution.functionEntry)) + "}";
+    }
+
+    private TargetResolution resolveTarget(Varnode value, int depth) {
+        if (value == null || depth > MAX_EXPRESSION_DEPTH) return unresolved("unsupported_target_expression", null);
+        if (value.isAddress()) {
+            return depth == 0
+                ? unresolved("unsupported_target_expression", null)
+                : resolveFunctionPointer(value.getAddress());
+        }
+        if (value.isConstant()) {
+            return resolveFunctionAt(addressFromOffset(value.getOffset()), "resolved_constant_function", null);
+        }
+        PcodeOp definition = value.getDef();
+        if (definition == null) return unresolved("unsupported_target_expression", null);
+        int opcode = definition.getOpcode();
+        if ((opcode == PcodeOp.CAST || opcode == PcodeOp.COPY) && definition.getNumInputs() == 1) {
+            return resolveTarget(definition.getInput(0), depth + 1);
+        }
+        Address slot = null;
+        if (opcode == PcodeOp.INDIRECT && definition.getNumInputs() >= 1) {
+            slot = staticAddress(definition.getInput(0));
+        } else if (opcode == PcodeOp.LOAD && definition.getNumInputs() >= 2) {
+            slot = staticAddress(definition.getInput(1));
+        }
+        if (slot == null) return unresolved("unsupported_target_expression", null);
+        return resolveFunctionPointer(slot);
+    }
+
+    private TargetResolution resolveFunctionPointer(Address slot) {
+        int width = currentProgram.getDefaultPointerSize();
+        if (width != 4 && width != 8) return unresolved("unreadable_pointer", slot);
+        Memory memory = currentProgram.getMemory();
+        byte[] bytes = new byte[width];
+        try {
+            if (!memory.contains(slot) || memory.getBytes(slot, bytes) != width) {
+                return unresolved("unreadable_pointer", slot);
+            }
+        } catch (Exception ignored) {
+            return unresolved("unreadable_pointer", slot);
+        }
+        BigInteger pointer = BigInteger.ZERO;
+        if (currentProgram.getLanguage().isBigEndian()) {
+            for (byte b : bytes) pointer = pointer.shiftLeft(8).or(BigInteger.valueOf(b & 0xff));
+        } else {
+            for (int i = bytes.length - 1; i >= 0; i--) {
+                pointer = pointer.shiftLeft(8).or(BigInteger.valueOf(bytes[i] & 0xff));
+            }
+        }
+        if (pointer.signum() == 0 || pointer.bitLength() > 64) {
+            return unresolved("non_function_target", slot);
+        }
+        return resolveFunctionAt(addressFromOffset(pointer.longValue()), "resolved_static_function_pointer", slot);
+    }
+
+    private Address staticAddress(Varnode value) {
+        if (value == null) return null;
+        if (value.isAddress()) return value.getAddress();
+        if (value.isConstant()) return addressFromOffset(value.getOffset());
+        return null;
+    }
+
+    private Address addressFromOffset(long offset) {
+        try {
+            AddressSpace space = currentProgram.getAddressFactory().getDefaultAddressSpace();
+            return space.getAddress(offset);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private TargetResolution resolveFunctionAt(Address target, String status, Address slot) {
+        if (target == null) return unresolved("non_function_target", slot);
+        Function function = currentProgram.getFunctionManager().getFunctionAt(target);
+        if (function == null) return unresolved("non_function_target", slot);
+        return new TargetResolution(status, slot, function.getEntryPoint());
+    }
+
+    private TargetResolution unresolved(String status, Address slot) {
+        return new TargetResolution(status, slot, null);
     }
 
     private void writeAcquisition(BufferedWriter out, Function function, String state,
