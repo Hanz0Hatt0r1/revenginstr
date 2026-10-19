@@ -155,10 +155,16 @@ The implementation exports are
 [`closure-secondary-singleton-references.jsonl`](scan37/replay-0041dd40/closure-secondary-singleton-references.jsonl),
 and [`closure-first-pair-target-instructions.jsonl`](scan37/replay-0041dd40/closure-first-pair-target-instructions.jsonl).
 The bounded slice recovers instructions at `006642a5`, but not a complete
-function flow or CFG. The four later anchors in `006657e0` and `00665820`
-depend on returned runtime objects and remain unresolved. This manual result
-does not change the `/6` statuses or establish that runtime memory cannot be
-overwritten.
+function flow or CFG. Following the recovered target `00664a10` adds its two
+internal `CALLIND` sites, `00664a4f` and `00664a83`. The targeted
+[`P-code flow`](scan37/replay-0041dd40/target-function-00664a10-flow.tsv),
+[`CALLIND evidence`](scan37/replay-0041dd40/target-function-00664a10-callind-evidence.jsonl),
+and [`PointerProvenance/1` output](scan37/replay-0041dd40/target-function-00664a10-pointer-provenance.jsonl)
+show both targets still stop at memory-read anchors. `00664a10` returns the
+result of the second indirect call, so its output does not statically identify
+the receiver used by the later calls in `006657e0` and `00665820`; their four
+anchors also remain unresolved. This manual result does not change the `/6`
+statuses or establish that runtime memory cannot be overwritten.
 
 Scans25–34 exhaust the pinned 2,374-function direct-call-caller population
 with at least one explicit `param_n` and a 40–800-byte body. Scan36 covers the
