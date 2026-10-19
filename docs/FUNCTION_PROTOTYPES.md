@@ -43,6 +43,23 @@ revenginstr-direct-call-arguments caller-flow-*.tsv --program-id program-name \
   --output direct-call-arguments.jsonl
 ```
 
+`revenginstr-direct-call-argument-definitions` checks whether each `def:`
+input token identifies an exact output row in the same caller's pinned P-code
+TSV:
+
+```sh
+revenginstr-direct-call-argument-definitions direct-call-arguments.jsonl \
+  caller-one.pcode-flow.tsv caller-two.pcode-flow.tsv \
+  --output direct-call-argument-definitions.jsonl
+```
+
+Each `DirectCallArgumentDefinition/1` row retains the call-observation and
+call-site P-code references plus zero, one, or multiple matching definition
+references. Constants/register tokens, missing definitions, and ambiguous
+rows remain explicit. An exact definition is a static source-row match; it
+does not establish the operand's type, semantic role, runtime value, or
+transitive data flow.
+
 `revenginstr-prototype-callsite-check` compares those observations with
 `GhidraFunctionPrototype/1` snapshots by exact callee entry. It checks arity
 only: fixed signatures require an exact argument count, while variadic

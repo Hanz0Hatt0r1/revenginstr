@@ -59,6 +59,18 @@
       "path": "../../../../schemas/semantic-program-path-query-result-v1.schema.json",
       "bytes": 7305,
       "sha256": "080bcae87edd4861555cf8547d2cb0944a625a6a784df3885cffd6a855bfa680"
+    },
+    {
+      "id": "argument_definitions",
+      "path": "argument-definitions.jsonl",
+      "bytes": 69377,
+      "sha256": "2c2ba0822ec38212401599a5819e5e8182f77037c0f37128a66833ece46a340a"
+    },
+    {
+      "id": "argument_definition_schema",
+      "path": "../../../../schemas/direct-call-argument-definition-v1.schema.json",
+      "bytes": 3400,
+      "sha256": "335ac0a989ded1e48090440874b6bfad8231907ced4eb5e2fd507d0f75b41679"
     }
   ],
   "format": "REVENGINSTR.SemanticProgramGraphCallArgumentReplay/1",
@@ -69,6 +81,8 @@
     "call_argument_observations": 36,
     "constant_arguments": 10,
     "graph_edges": 128,
-    "graph_nodes": 90
+    "graph_nodes": 90,
+    "exact_argument_definitions": 56,
+    "non_definition_arguments": 14
   }
 }

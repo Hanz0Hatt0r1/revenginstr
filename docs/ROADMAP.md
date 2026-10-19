@@ -1554,6 +1554,15 @@ This extends graph access to static call arguments but does not close M10.5,
 whose broad subsystem reconstruction and accepted derived-relation evaluation
 remain open.
 
+`revenginstr-direct-call-argument-definitions` now resolves a `def:` operand
+only when one output row in the same caller, same P-code artifact, and exact
+address/time produces the same token and width. The Nevergone replay matches
+56/56 definition tokens and leaves all 14 constant/register tokens as
+non-definition observations. It retains call and definition record references;
+it does not chase transitive dependencies or infer types, semantic roles, or
+runtime values. This supplies a precise first link for later data-flow
+reconstruction, not a value-flow conclusion.
+
 ---
 
 # 16. M11 — Active learning and reviewer-feedback loop

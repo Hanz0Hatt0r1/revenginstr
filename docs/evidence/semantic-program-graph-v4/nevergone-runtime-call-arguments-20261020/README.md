@@ -21,6 +21,12 @@ PYTHONPATH=src python -m revenginstr.semantic_program_graph \
   --type-layout-hypotheses docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick/type-layout-hypothesis.jsonl \
   --call-arguments docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/call-arguments.jsonl \
   --output docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/semantic-program-graph.jsonl
+
+PYTHONPATH=src python -m revenginstr.direct_call_argument_definitions \
+  docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/call-arguments.jsonl \
+  docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/LoadGameLevels.pcode-flow.tsv \
+  docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/CCFileUtilsAndroid-getFileData.pcode-flow.tsv \
+  --output docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/argument-definitions.jsonl
 ```
 
 Query the observations while keeping the exact call-site provenance:
@@ -37,11 +43,15 @@ PYTHONPATH=src python -m revenginstr.semantic_program_query \
 
 The frozen graph has 90 nodes and 128 edges. It attaches observations to 36
 exact resolved call sites, preserving 70 ordered argument tokens; 10 tokens
-are constants. Rebuilding the graph is deterministic and the output validates
-against `SemanticProgramGraph/4`. The pinned replay manifest records byte
-lengths and SHA-256 values for all source, output, and schema artifacts.
+are constants. The exact-definition pass matches all 56 `def:` tokens to one
+output row in the same caller's source P-code artifact; the other 14 tokens
+remain non-definition tokens. Rebuilding both outputs is deterministic, and
+the graph validates against `SemanticProgramGraph/4`. The pinned replay
+manifest records byte lengths and SHA-256 values for all source, output, and
+schema artifacts.
 
 This records P-code operands at statically resolved calls. It does not resolve
-`def:` tokens, infer resource names or prototypes, or claim runtime argument
-values or complete call-site coverage. The observations cover only two
-functions, and the existing runtime capture corroborates function entries.
+`def:` chains beyond one exact source row, infer resource names or prototypes,
+or claim runtime argument values or complete call-site coverage. The
+observations cover only two functions, and the existing runtime capture
+corroborates function entries.
