@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from .android_jni_prototypes import FORMAT as ANDROID_JNI_FORMAT, validate_row as validate_android_jni_row
 from .ghidra_indirect_call_evidence import FORMAT_V3, FORMAT_V4, validate_row
 
 DECOMPILER_FORMAT = "REVENGINSTR.GhidraDecompilerParameters/1"
@@ -289,6 +290,32 @@ def _read_indirect_calls(
     return calls, root_edges, digest
 
 
+def _read_android_jni_prototypes(
+    path: Path,
+    program_id: str,
+    program_sha: str,
+    architecture: dict[str, Any],
+    functions: dict[str, dict[str, Any]],
+) -> tuple[dict[str, dict[str, Any]], str]:
+    rows, digest = _read_jsonl(path)
+    functions_by_key = {_address_key(entry): entry for entry in functions}
+    prototypes = {}
+    for line_no, row in rows:
+        where = f"{path}:{line_no}"
+        validate_android_jni_row(row, where)
+        if row["program_id"] != program_id or row["program_sha256"] != program_sha:
+            raise ValueError(f"{where}: Android JNI evidence does not match the decompiler program")
+        if row["architecture"] != architecture:
+            raise ValueError(f"{where}: Android JNI evidence architecture does not match the decompiler program")
+        entry = functions_by_key.get(_address_key(row["function_entry"]))
+        if entry is None:
+            raise ValueError(f"{where}: JNI function is absent from the decompiler snapshot")
+        if entry in prototypes:
+            raise ValueError(f"{where}: duplicate Android JNI prototype for {entry}")
+        prototypes[entry] = {**row, "function_entry": entry, "_record_index": line_no}
+    return prototypes, digest
+
+
 def _read_caller_parameter_roots(
     path: Path,
     calls: list[dict[str, Any]],
@@ -391,6 +418,25 @@ def _shape_kind(type_row: dict[str, Any], *, return_value: bool = False) -> str:
     return kind if kind in {"pointer", "aggregate", "scalar"} else "unknown"
 
 
+def _trusted_signature_disagrees(function: dict[str, Any], jni: dict[str, Any]) -> bool:
+    if function["status"] != "complete" or function["parameter_count"] != jni["parameter_count"]:
+        return True
+    for observed, exact in zip(function["parameters"], jni["parameters"], strict=True):
+        kind = _shape_kind(observed["type"])
+        width = observed["type"]["width_bytes"]
+        if kind != "unknown" and kind != exact["kind"]:
+            return True
+        if width is not None and width != exact["width_bytes"]:
+            return True
+    observed_return = function["return_type"]
+    exact_return = jni["return_value"]
+    kind = _shape_kind(observed_return, return_value=True)
+    if kind != "unknown" and kind != exact_return["kind"]:
+        return True
+    width = observed_return["width_bytes"]
+    return width is not None and width != exact_return["width_bytes"]
+
+
 def _propagate_parameter_kinds(
     functions: dict[str, dict[str, Any]], decompiler_sha: str, edges: list[dict[str, Any]],
 ) -> tuple[dict[str, dict[int, dict[str, Any]]], dict[str, list[dict[str, Any]]]]:
@@ -463,10 +509,17 @@ def infer_prototypes(
     calls_path: Path,
     caller_parameter_roots_path: Path | None = None,
     indirect_call_evidence_path: Path | None = None,
+    android_jni_evidence_path: Path | None = None,
 ) -> list[dict[str, Any]]:
-    """Create review hypotheses from formal types and exact call constraints."""
+    """Create hypotheses from formal types, source prototypes and exact call constraints."""
     functions, program_id, program_sha, decompiler_sha, architecture = _read_decompiler(decompiler_path)
     calls, calls_sha = _read_calls(calls_path, program_id, program_sha)
+    android_jni = {}
+    android_jni_sha = None
+    if android_jni_evidence_path is not None:
+        android_jni, android_jni_sha = _read_android_jni_prototypes(
+            android_jni_evidence_path, program_id, program_sha, architecture, functions,
+        )
     indirect_calls = []
     indirect_root_edges = []
     if indirect_call_evidence_path is not None:
@@ -483,6 +536,13 @@ def infer_prototypes(
         root_edges.extend(_read_caller_parameter_roots(
             caller_parameter_roots_path, calls, calls_sha, functions, program_id, program_sha,
         ))
+    if android_jni:
+        # Ghidra High-P-code formal indices can omit JNI's implicit environment
+        # and class/receiver parameters. Do not reinterpret those roots as DEX ABI indices.
+        root_edges = [
+            edge for edge in root_edges
+            if edge["source"][0] not in android_jni and edge["target"][0] not in android_jni
+        ]
     parameter_states, parameter_conflicts = _propagate_parameter_kinds(
         functions, decompiler_sha, root_edges,
     )
@@ -499,6 +559,45 @@ def infer_prototypes(
         source_ref = _evidence(decompiler_sha, function["_record_index"], DECOMPILER_FORMAT)
         observations = calls_by_callee.get(entry, [])
         call_refs = [call["_evidence_ref"] for call in observations]
+        jni = android_jni.get(entry)
+        if jni is not None:
+            assert android_jni_sha is not None
+            jni_ref = _evidence(android_jni_sha, jni["_record_index"], ANDROID_JNI_FORMAT)
+            count = jni["parameter_count"]
+            parameter_shapes = [
+                {
+                    "index": parameter["index"], "kind": parameter["kind"],
+                    "width_bytes": parameter["width_bytes"], "evidence_refs": [jni_ref],
+                }
+                for parameter in jni["parameters"]
+            ]
+            call_mismatches = [call for call in observations if call["argument_count"] != count]
+            conflicts = []
+            trusted_source = function["signature_source"].strip().upper()
+            if trusted_source in {"IMPORTED", "USER_DEFINED"} and _trusted_signature_disagrees(function, jni):
+                conflicts.append({"reason": "evidence_conflict", "evidence_refs": [source_ref, jni_ref]})
+            if call_mismatches:
+                conflicts.append({
+                    "reason": "incompatible_parameter_counts",
+                    "evidence_refs": [jni_ref, *(call["_evidence_ref"] for call in call_mismatches)],
+                })
+            candidate = {
+                "candidate_id": "android-dex-jni-prototype",
+                "parameter_count": count,
+                "calling_convention": None,
+                "parameters": parameter_shapes,
+                "return_value": jni["return_value"],
+                "receiver_parameter_index": jni["receiver_parameter_index"],
+                "confidence": 1.0,
+                "evidence_refs": _dedupe_refs([source_ref, jni_ref, *call_refs]),
+            }
+            results.append({
+                "format": FORMAT, "program_id": program_id, "program_sha256": program_sha,
+                "architecture": architecture, "function_entry": entry,
+                "status": "conflicted" if conflicts else "candidate",
+                "candidates": [candidate], "conflicts": conflicts,
+            })
+            continue
         if function["status"] != "complete":
             candidate = {
                 "candidate_id": "decompiler-unavailable",
@@ -597,6 +696,10 @@ def main(argv: list[str] | None = None) -> int:
         "--indirect-call-evidence", type=Path,
         help="optional GhidraIndirectCallEvidence/3 or /4; exact targets constrain arity, /4 roots also propagate shape",
     )
+    parser.add_argument(
+        "--android-jni-evidence", type=Path,
+        help="optional executable-matched AndroidJniPrototypeEvidence/1 exact native prototypes",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     inputs = {args.decompiler_parameters.resolve(), args.call_observations.resolve()}
@@ -604,13 +707,15 @@ def main(argv: list[str] | None = None) -> int:
         inputs.add(args.caller_parameter_roots.resolve())
     if args.indirect_call_evidence is not None:
         inputs.add(args.indirect_call_evidence.resolve())
+    if args.android_jni_evidence is not None:
+        inputs.add(args.android_jni_evidence.resolve())
     if args.output.resolve() in inputs:
         print("error: output path must differ from every input path", file=sys.stderr)
         return 2
     try:
         rows = infer_prototypes(
             args.decompiler_parameters, args.call_observations, args.caller_parameter_roots,
-            args.indirect_call_evidence,
+            args.indirect_call_evidence, args.android_jni_evidence,
         )
     except (OSError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)

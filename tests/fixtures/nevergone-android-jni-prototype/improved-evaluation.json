@@ -1,0 +1,46 @@
+{
+  "candidate_count": 21,
+  "conflicted_hypotheses": 0,
+  "dataset_id": "nevergone-android-jni-1.0.9",
+  "format": "REVENGINSTR.FunctionPrototypeEvaluation/2",
+  "function_prototype_hypotheses_sha256": "be4b397a19ad6b8877507bd3d0b0985a43e8dc88701b083395c24c2087185d93",
+  "functions_evaluated": 21,
+  "gold_artifact_sha256": "0a9f1f4858c8a12d49eae9d4d4ecc91f2991733e23ef6a47f2bec2862a1199cd",
+  "high_confidence_candidate_compatibility": 1.0,
+  "high_confidence_candidate_count": 21,
+  "high_confidence_compatible_candidates": 21,
+  "high_confidence_function_count": 21,
+  "high_confidence_function_coverage": 1.0,
+  "hypotheses_missing": 0,
+  "hypotheses_present": 21,
+  "hypothesis_conflict_rate": 0.0,
+  "minimum_confidence": 0.95,
+  "per_property": {
+    "parameter_count": {
+      "accuracy": 1.0,
+      "compatible": 21,
+      "coverage": 1.0,
+      "known_accuracy": 1.0,
+      "scored": 21,
+      "unknown": 0
+    },
+    "parameters": {
+      "accuracy": 1.0,
+      "compatible": 21,
+      "coverage": 1.0,
+      "known_accuracy": 1.0,
+      "scored": 21,
+      "unknown": 0
+    },
+    "return_value": {
+      "accuracy": 1.0,
+      "compatible": 21,
+      "coverage": 1.0,
+      "known_accuracy": 1.0,
+      "scored": 21,
+      "unknown": 0
+    }
+  },
+  "split_id": "armeabi-v7a-exported-jni-v1",
+  "top_candidate_compatibility": 1.0
+}

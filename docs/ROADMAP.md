@@ -1125,9 +1125,15 @@ sample and stripped, no-DWARF x86 objects. Indirect-call evidence v3 now
 resolves only exact static function-pointer targets; v4 adds exact
 caller-formal roots for untransformed arguments and uses those links for arity
 and shape constraints. Dynamic or multi-target dispatch and return-shape
-propagation remain unresolved. The generic inference and coverage paths exist,
-but independent consumer gold and calibrated confidence remain required before
-M8.1 is complete. The stripped fixture now also has source-backed
+propagation remain unresolved. An Android source-backed replay adds 21
+exported Nevergone JNI prototypes from DEX declarations: the High-P-code
+baseline gets 11/21 parameter counts right and has no fully known parameter
+lists, while exact APK-to-library matches recover all 21 JNI interfaces. Six
+DEX native declarations lack a matching exported JNI symbol. This validates an
+exact-source adapter, not confidence calibration or internal game-function
+accuracy. The generic inference and coverage paths exist, but a broader
+multi-program consumer corpus and calibrated confidence remain required
+before M8.1 is complete. The stripped fixture now also has source-backed
 `FunctionPrototypeGold/1` for two
 functions: parameter counts and shapes score 2/2, returns score 1/2, and neither
 hypothesis reaches the default 0.95 acceptance threshold. This isolates return

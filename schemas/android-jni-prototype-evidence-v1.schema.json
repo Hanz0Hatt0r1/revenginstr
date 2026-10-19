@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/android-jni-prototype-evidence-v1.schema.json",
+  "title": "REVENGINSTR.AndroidJniPrototypeEvidence/1 JSONL row",
+  "description": "Executable-pinned native prototypes joined to exact Android DEX declarations and exported JNI symbols.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program_id", "program_sha256", "architecture", "function_entry", "jni_symbol", "apk_sha256", "library_entry", "library_sha256", "dex_entry", "dex_sha256", "dex_method_index", "class_descriptor", "method_name", "method_descriptor", "is_static", "parameter_count", "parameters", "return_value", "receiver_parameter_index", "evidence_refs"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.AndroidJniPrototypeEvidence/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "program_sha256": {"$ref": "#/$defs/sha256"},
+    "architecture": {"$ref": "#/$defs/architecture"},
+    "function_entry": {"$ref": "#/$defs/address"},
+    "jni_symbol": {"type": "string", "minLength": 1},
+    "apk_sha256": {"$ref": "#/$defs/sha256"},
+    "library_entry": {"type": "string", "minLength": 1},
+    "library_sha256": {"$ref": "#/$defs/sha256"},
+    "dex_entry": {"type": "string", "minLength": 1},
+    "dex_sha256": {"$ref": "#/$defs/sha256"},
+    "dex_method_index": {"type": "integer", "minimum": 0},
+    "class_descriptor": {"type": "string", "pattern": "^L[^;]+;$"},
+    "method_name": {"type": "string", "minLength": 1},
+    "method_descriptor": {"type": "string", "pattern": "^\\([^)]*\\).+$"},
+    "is_static": {"type": "boolean"},
+    "parameter_count": {"type": "integer", "minimum": 2},
+    "parameters": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/parameter"}
+    },
+    "return_value": {"$ref": "#/$defs/shape"},
+    "receiver_parameter_index": {"type": ["integer", "null"], "minimum": 0},
+    "evidence_refs": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "items": {"$ref": "#/$defs/evidence_ref"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "address": {"type": "string", "pattern": "^(0x)?[0-9a-fA-F]+$"},
+    "architecture": {
+      "type": "object", "additionalProperties": false,
+      "required": ["language_id", "pointer_width_bytes", "endianness"],
+      "properties": {
+        "language_id": {"type": "string", "minLength": 1},
+        "pointer_width_bytes": {"type": "integer", "minimum": 1},
+        "endianness": {"enum": ["little", "big"]}
+      }
+    },
+    "shape": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "width_bytes"],
+      "properties": {
+        "kind": {"enum": ["void", "pointer", "scalar"]},
+        "width_bytes": {"type": ["integer", "null"], "minimum": 1}
+      }
+    },
+    "parameter": {
+      "type": "object", "additionalProperties": false,
+      "required": ["index", "role", "java_parameter_index", "kind", "width_bytes"],
+      "properties": {
+        "index": {"type": "integer", "minimum": 0},
+        "role": {"enum": ["jni_environment", "jni_class", "jni_receiver", "java_argument"]},
+        "java_parameter_index": {"type": ["integer", "null"], "minimum": 0},
+        "kind": {"enum": ["pointer", "scalar"]},
+        "width_bytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "evidence_ref": {
+      "type": "object", "additionalProperties": false,
+      "required": ["artifact_sha256", "record_index", "source_format"],
+      "properties": {
+        "artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "record_index": {"type": "integer", "minimum": 1},
+        "source_format": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
