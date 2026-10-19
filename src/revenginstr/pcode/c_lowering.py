@@ -1618,6 +1618,9 @@ def compile_function(
             raise PcodeLoweringError(f"{address}: fall-through instruction ends in a control transfer")
 
     function_value = _hex(function_address, "function address")
+    if function_value not in instruction_addresses:
+        raise PcodeLoweringError(
+            f"function entry 0x{function_value:x} is missing from the instruction list")
     function_symbol = f"rvi_{function_value:08x}"
     lines = [
         f"/* Generated from raw P-code for {function.get('name', function_address)} ({function_address}). */",
@@ -1626,6 +1629,8 @@ def compile_function(
         f"    uint8_t _unique[{max(unique_size, 1)}] = {{0}};",
         f"    const size_t _unique_size = {unique_size};",
         "    if (!ctx) return -1;",
+        *([f"    goto {labels_by_address[function_value]};"]
+          if instruction_addresses[0] != function_value else []),
         *body,
         "    return 0;",
         "}",

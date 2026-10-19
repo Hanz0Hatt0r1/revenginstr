@@ -922,6 +922,72 @@ int main(void) {
     subprocess.run([str(executable)], check=True)
 
 
+def test_codegen_enters_function_address_when_body_starts_at_lower_address(tmp_path: Path) -> None:
+    row = _function_row()
+    row["requested"] = row["resolved_address"] = "0x00401010"
+    row["function"] = {
+        "address": "0x00401010", "name": "entry_after_thunk", "size": 21,
+        "calling_convention": None,
+    }
+    row["instruction_count"] = 3
+    row["instructions"] = [
+        {"address": "0x00401000", "mnemonic": "RET", "flow_type": "TERMINATOR",
+         "flows": [], "pcode": [{
+             "opcode": "RETURN", "output": None,
+             "inputs": [_varnode("register", "0x284", 4)],
+         }]},
+        {"address": "0x00401010", "mnemonic": "MOV", "flow_type": "FALL_THROUGH",
+         "flows": [], "pcode": [{
+             "opcode": "COPY", "output": _varnode("register", "0x4", 4),
+             "inputs": [_varnode("const", "0x1234", 4, constant=True)],
+         }]},
+        {"address": "0x00401015", "mnemonic": "JMP", "flow_type": "UNCONDITIONAL_JUMP",
+         "flows": ["0x00401000"], "pcode": [{
+             "opcode": "BRANCH", "output": None,
+             "inputs": [_varnode("ram", "0x401000", 4)],
+         }]},
+    ]
+    source, operation_count = compile_function(row, _address_spaces())
+    assert operation_count == 3
+    entry_goto = "goto rvi_label_0000000000401010;"
+    assert entry_goto in source
+    assert source.index(entry_goto) < source.index("rvi_label_0000000000401000:")
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    harness = r'''
+typedef struct { uint8_t registers[0x300]; } TestState;
+static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(out, state->registers + offset, size);
+    return 0;
+}
+static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t size, const uint8_t *in) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(state->registers + offset, in, size);
+    return 0;
+}
+int rvi_00401010(RviPcodeContext *ctx);
+int main(void) {
+    TestState state = {{0}};
+    RviPcodeContext context = {&state, read_bytes, write_bytes};
+    if (rvi_00401010(&context) != 0) return 1;
+    uint32_t ecx = 0;
+    memcpy(&ecx, state.registers + 4, sizeof(ecx));
+    return ecx == UINT32_C(0x1234) ? 0 : 2;
+}
+'''
+    c_path = tmp_path / "entry-after-thunk.c"
+    executable = tmp_path / "entry-after-thunk"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", str(c_path), "-lm", "-o", str(executable)],
+                   check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
 def test_codegen_lowers_repeat_instruction_pcode_loop(tmp_path: Path) -> None:
     row = _function_row()
     row["instruction_count"] = 2
