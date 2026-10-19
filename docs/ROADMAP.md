@@ -1286,8 +1286,14 @@ Compare bounded runs where one caller-controlled input/state/action differs. Ran
 can be compared under a caller-declared one-factor change and fixed-context
 hash. It ranks changed normalized event frequencies as `correlation` evidence
 only. It does not infer event ordering or promote a single pair to causal
-support. Repeated-run `intervention_support` and stronger `confirmed_exact`
-evidence remain open.
+support. Stronger `confirmed_exact` evidence remains open.
+
+**Repeated intervention support v1 implemented:** at least three distinct
+pairwise reports are required, with unique capture IDs and source-report
+hashes. A candidate receives `intervention_support` only when every pair is
+fully sampled and its nonzero change has the same direction in every pair.
+Mixed, unchanged, or incomplete comparisons remain `correlation`; this is not
+`confirmed_exact` evidence.
 
 ### M9.4 Runtime value-flow confirmation
 
