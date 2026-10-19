@@ -2208,10 +2208,16 @@ retained closure-flow selection. It records the empty root set for `006642a0`
 and both entry blocks `[0, 1]` for `0090e864`, with no skipped rows. This closes the two CFG
 acquisition gaps and removes `MISSING_CFG` from 40 interprocedural effect rows.
 The remaining `CALLIND` and `STORE` effects preserve the four possible `/6`
-statuses and one unique candidate. The
+statuses and one unique candidate. The direct target `006642a5` has now been
+seeded in a disposable Ghidra project copy and exported as its exact 43-byte
+function: all 18 High-P-code rows and CFG/5's three blocks are retained, with
+no `CALLIND` in this function. This closes that function-flow and CFG
+acquisition gap without resolving the other indirect-call targets or changing
+the memory-effect classifications. The
 [CFG/5 replay](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/cfg-v5-entry-block-replay.md)
-records the input and output hashes. The bounded instruction slice at
-`006642a5` and the unresolved CALLIND targets remain open.
+records the closure input and output hashes. The exact-function capture is at
+[`field20-006642a5-replay.md`](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-006642a5-replay.md).
+The unresolved `CALLIND` targets remain open.
 
 The four downstream memory-read anchors now have a generic structural
 projection: `IndirectCallPointerSlot/1` identifies aligned pointer-slot access
@@ -2241,9 +2247,11 @@ The field writer/copy inventory and replay chains are documented in the
 **Next:** trace the nested receiver at parent `+0x74` and capture bounded
 runtime selector/receiver values. Keep
 unresolved targets and roots as barriers. The five focused candidate pairs
-still have a fresh CFG/5 memory-effect replay: four remain possible and one
+still need a fresh CFG/5 memory-effect replay: four remain possible and one
 remains unique because `CALLIND` and `STORE` effects are unresolved. The
-bounded slice at `006642a5` is not a complete function flow or CFG. Assess
-bodies smaller than 40 bytes only if this unresolved set or new pair evidence
-gives a concrete reason to extend the population screen. Do not infer alias
-facts from decompiler text or instruction-level corpus labels.
+`006642a5` function-flow and CFG acquisition gap is closed; focus the next
+replay on the remaining indirect-call targets and the runtime receiver at
+parent `+0x74`. Assess bodies smaller than 40 bytes only if this unresolved
+set or new pair evidence gives a concrete reason to extend the population
+screen. Do not infer alias facts from decompiler text or instruction-level
+corpus labels.

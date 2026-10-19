@@ -10,8 +10,10 @@ each `selection-source.json`; the executable's High-P-code supplies all
 memory facts. The [manifest](manifest.json) pins every retained artifact by
 byte count, row count where applicable, and SHA-256.
 The local executable path in the retained selection manifests is normalized
-to `SHIFT.exe`; the executable hash is unchanged. Ghidra ran read-only with
-analysis disabled for all evidence exports.
+to `SHIFT.exe`; the executable hash is unchanged. Ghidra ran with analysis
+disabled for all evidence exports. The `006642a5` replay seeded the missing
+function only in a disposable project copy; its CFG export then opened that
+copy read-only.
 
 ## Screens
 
@@ -128,7 +130,9 @@ removes source-linked `INDIRECT` markers, but 22 reachable `CALLIND` operations
 across 13 functions still block four pairs. The closure also reaches a direct
 CALL target `006642a5` absent from the pinned function inventory. The full
 closure replay keeps the same four pairs possible and the fifth pair unique;
-it does not promote any alias or runtime value-flow claim.
+it does not promote any alias or runtime value-flow claim. A follow-up seeded
+replay now captures the exact function body and CFG for that target; see
+[`field20-006642a5-replay.md`](scan37/replay-0041dd40/field20-006642a5-replay.md).
 
 A follow-up CFG/5 export now retains the caller and all 100 functions from the
 captured closure flow selection, including the empty-root graph at `006642a0` and both
@@ -158,7 +162,7 @@ anchors. The `0064a0c0` and `0064a100` wrappers receive the result of
 `0064a010` at all four direct call sites in `0088d1d0`. `0064a010` returns
 `0x00bfa9b0` on both initialization paths. Its constructor stores the result
 of the `006642a0` helper in that object's first field; the helper's jump into
-the bounded instruction slice at `006642a5` returns `0x00bfc728`. Constructor
+the now fully exported function `006642a5` returns `0x00bfc728`. Constructor
 `00664140` sets that singleton's vtable pointer to `0x00af08a0`, whose slot at
 `+0x30` (`0x00af08d0`) contains `0x00664a10`. This makes `00664a10` the
 evidence-backed static target for `CALLIND` at `0064a0ce` and `0064a10e`.
@@ -176,8 +180,9 @@ The implementation exports are
 [`closure-secondary-singleton-vtable-metadata.jsonl`](scan37/replay-0041dd40/closure-secondary-singleton-vtable-metadata.jsonl),
 [`closure-secondary-singleton-references.jsonl`](scan37/replay-0041dd40/closure-secondary-singleton-references.jsonl),
 and [`closure-first-pair-target-instructions.jsonl`](scan37/replay-0041dd40/closure-first-pair-target-instructions.jsonl).
-The bounded slice recovers instructions at `006642a5`, but not a complete
-function flow or CFG. Following the recovered target `00664a10` adds its two
+The seeded 43-byte function `006642a5` now has a complete 18-row P-code flow
+and CFG/5 export; see [`field20-006642a5-replay.md`](scan37/replay-0041dd40/field20-006642a5-replay.md).
+Following the recovered target `00664a10` adds its two
 internal `CALLIND` sites, `00664a4f` and `00664a83`. The targeted
 [`P-code flow`](scan37/replay-0041dd40/target-function-00664a10-flow.tsv),
 [`CALLIND evidence`](scan37/replay-0041dd40/target-function-00664a10-callind-evidence.jsonl),

@@ -2416,8 +2416,8 @@
     },
     {
       "path": "scan37/replay-0041dd40/manual-static-vtable-review.md",
-      "bytes": 17221,
-      "sha256": "3294323d7ef08aab79b048ac6187ac14884b2f8c8c325a6fb65dcc2b16e977df"
+      "bytes": 18435,
+      "sha256": "4f494179b680ea366352346bc9786081888646b6469005154b8980c2cbfd0aab"
     },
     {
       "path": "scan37/replay-0041dd40/memory-store-access-full-closure-scope.jsonl",
@@ -2621,6 +2621,41 @@
       "bytes": 351,
       "sha256": "21231e2b362df75dbd22883f7fbd59c6dffbed94bbe10b1f41a9af7f2c623a5e",
       "rows": 2
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-006642a5-functions.txt",
+      "bytes": 9,
+      "sha256": "eb42b1b25f332ac69e40bb534627fc6b04661daa2380c85c1f3203c796e5c685",
+      "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-006642a5-pcode-flow.tsv",
+      "bytes": 1480,
+      "sha256": "e5d413fd05e231ccd95be31a2bb50bae02629884a830a79218997c1442f219b8",
+      "rows": 18
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-006642a5-callind.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "rows": 0
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-006642a5-acquisition.jsonl",
+      "bytes": 175,
+      "sha256": "b1d680d8aafc9af5d9d8a03a5e7b681c4c7df4a0e785863ae67b9a580107d50e",
+      "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-006642a5-pcode-cfg-v5.jsonl",
+      "bytes": 4020,
+      "sha256": "64d6e8ad20b569f81aff608e3b75301a9b7d6ca606065a624539e2294a9a2a88",
+      "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-006642a5-replay.md",
+      "bytes": 3209,
+      "sha256": "a0357c61c3397e4e9d609157810b876e9921c5df5e3b5732c67b59e89293b0ae"
     }
   ]
 }

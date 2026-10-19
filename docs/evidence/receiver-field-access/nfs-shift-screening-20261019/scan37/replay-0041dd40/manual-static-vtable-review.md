@@ -18,6 +18,26 @@ vtable byte offset `0x30` is at `0x00af08d0`; its raw value is
 collection lookup for the initialized global object, rather than resolving
 arbitrary runtime receiver values.
 
+## Exact initializer body at `006642a5`
+
+The target is the tail-jump destination of thunk `006642a0` (which sets `EAX`
+to `1` at `004183cd`). It was missing from the pinned function inventory, so
+the retained Ghidra project was copied and this entry was seeded only in that
+disposable copy. The exact 43-byte function now has a full 18-operation
+High-P-code flow and a CFG/5 export with three blocks and one entry block. See
+[`field20-006642a5-replay.md`](field20-006642a5-replay.md),
+[`field20-006642a5-pcode-flow.tsv`](field20-006642a5-pcode-flow.tsv), and
+[`field20-006642a5-pcode-cfg-v5.jsonl`](field20-006642a5-pcode-cfg-v5.jsonl).
+
+The function checks global initialization guard `0x00bfc818`; its branch
+skips the constructor path when the selected bit is already set. Otherwise it
+updates the guard, calls `00664140` to initialize global `0x00bfc728`, and
+registers callback `0x00a9e620` through `_atexit` (`00900fb3`). Both paths
+return the pointer to `0x00bfc728`. The flow contains two direct `CALL`s and
+no `CALLIND`; the CFG's two `INDIRECT` P-code markers are linked to those
+direct calls. This closes the missing function-flow and CFG acquisition gap,
+without identifying the runtime branch taken.
+
 ## Receiver population
 
 `00664a10` walks the object collection at `this + 8`. Constructor `00664140`
