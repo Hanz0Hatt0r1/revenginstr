@@ -85,3 +85,28 @@ def test_unresolved_indirect_target_does_not_propagate_return_shape(tmp_path: Pa
     )
     caller = next(row for row in rows if row["function_entry"] == "0040100f")
     assert all(candidate["candidate_id"] != "possible-indirect-call-return" for candidate in caller["candidates"])
+
+
+def test_exact_indirect_call_result_copy_to_return_is_a_separate_candidate(tmp_path: Path) -> None:
+    flow = tmp_path / "indirect-copy-return.tsv"
+    flow.write_text(
+        "function_entry\top_address\top_time\topcode\toutput\tinputs\tcallee_entry\tcallee_name\n"
+        "0040100f\t00401026\t26\tCALLIND\tdef:00401026:26:4\tregister:register:00000038:4\t-\t-\n"
+        "0040100f\t00401029\t32\tRETURN\t-\tconst:0x0:8;def:00401029:61:4\t-\t-\n"
+        "0040100f\t00401029\t61\tCOPY\tdef:00401029:61:4\tdef:00401026:26:4\t-\t-\n",
+        encoding="utf-8",
+    )
+    rows = infer_prototypes(
+        FIXTURE / "decompiler-parameters.jsonl",
+        FIXTURE / "direct-call-observations.jsonl",
+        indirect_call_evidence_path=FIXTURE / "callind.jsonl",
+        function_pcode_flow_paths=[flow],
+    )
+    caller = next(row for row in rows if row["function_entry"] == "0040100f")
+    Draft202012Validator(HYPOTHESIS_SCHEMA).validate(caller)
+    candidate = next(
+        row for row in caller["candidates"]
+        if row["candidate_id"] == "resolved-indirect-call-return-shape"
+    )
+    assert candidate["return_value"] == {"kind": "scalar", "width_bytes": 4}
+    assert candidate["confidence"] == 0.3
