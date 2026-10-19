@@ -606,7 +606,7 @@ Remaining propagation work:
 
 1. consumer-validated factory hypotheses linked to call-result-to-return paths; the NFS replay validates structural paths only, so factory semantics and returned object identity remain open;
 2. consumer-validated getter/accessor hypotheses from load-to-return evidence; the NFS replay covers three structural paths, but does not label getter/accessor semantics or returned identity;
-3. validate `/5` with complete caller-root, callee-CFG, and callee-memory-access evidence; then extend alias-aware reaching definitions only if richer consumer evidence demonstrates a concrete gap, before treating paired field stores and loads as value flow;
+3. scan29 now validates `/5` with the exact caller root, complete three-operation callee flow/CFG, and hash-pinned memory-access input; it produces one unique structural candidate and leaves three pairs possible. Extend alias-aware reaching definitions only if richer consumer evidence demonstrates a concrete gap, before treating paired field stores and loads as value flow;
 4. constructor/vtable anchors.
 
 ### M2.4 Ambiguity handling
