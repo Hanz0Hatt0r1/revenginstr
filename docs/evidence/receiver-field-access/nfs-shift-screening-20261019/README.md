@@ -130,6 +130,16 @@ CALL target `006642a5` absent from the pinned function inventory. The full
 closure replay keeps the same four pairs possible and the fifth pair unique;
 it does not promote any alias or runtime value-flow claim.
 
+A follow-up CFG/5 export now retains the caller and all 100 functions from the
+captured closure flow selection, including the empty-root graph at `006642a0` and both
+entry roots `[0, 1]` at `0090e864`. It skips no functions. The raw export and
+replay details are in
+[`cfg-v5-entry-block-replay.md`](scan37/replay-0041dd40/cfg-v5-entry-block-replay.md).
+The rebuilt interprocedural sidecar removes `MISSING_CFG` from 40 effect rows,
+but their `CALLIND` and `STORE` barriers remain. The `/6` results stay at four
+possible effects and one unique candidate, matching the earlier CFG/4 statuses.
+The two boundary functions are not field-pair candidates in this replay.
+
 `closure-pointer-provenance.jsonl` applies `PointerProvenance/1` to the same
 98 flows, 22 exact `CALLIND` rows, and retained v2 parameter-root mappings.
 Among the 22 target records, six stop at memory-read anchors, thirteen at

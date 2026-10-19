@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [[ $# -lt 6 ]]; then
-  echo "Usage: GHIDRA_HOME=/opt/ghidra $0 <project-dir> <project-name> <program-name> <output.jsonl> <program-id> <function-entry> [entry ...] [--memory-metadata|--physical-memory-metadata|--indirect-effect-links] [--skip-missing-entry-blocks]" >&2
+  echo "Usage: GHIDRA_HOME=/opt/ghidra $0 <project-dir> <project-name> <program-name> <output.jsonl> <program-id> <function-entry> [entry ...] [--memory-metadata|--physical-memory-metadata|--indirect-effect-links|--entry-block-indices] [--skip-missing-entry-blocks]" >&2
   exit 2
 fi
 
@@ -34,7 +34,7 @@ if ! "$ANALYZE" \
   2>&1 | tee "$RUN_LOG"; then
   exit 1
 fi
-if ! grep -Eq 'GHIDRA_FUNCTION_PCODE_CFG_FORMAT=REVENGINSTR\.GhidraFunctionPcodeCFG/[1234]([^0-9]|$)' "$RUN_LOG"; then
+if ! grep -Eq 'GHIDRA_FUNCTION_PCODE_CFG_FORMAT=REVENGINSTR\.GhidraFunctionPcodeCFG/[12345]([^0-9]|$)' "$RUN_LOG"; then
   echo "error: Ghidra did not report successful function CFG export completion" >&2
   exit 1
 fi

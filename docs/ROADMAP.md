@@ -2190,7 +2190,7 @@ bytes (159 have outgoing direct-call rows and two do not). It produced 39
 exact pairs across two functions. `/6` found 33 non-dominating stores, five
 possible effects, and one unique candidate; a focused replay made one of the
 five possible pairs unique. The replay follows 97 reachable P-code flows and
-has CFG/4 for 95 of them. Two CFG boundaries remain (`006642a0` has no entry
+has CFG/4 for 95 of them. The original CFG/4 export left two boundaries (`006642a0` has no entry
 block; `0090e864` has multiple entry blocks), as does direct target `006642a5`
 outside the pinned function inventory. CFG/4 removed source-linked
 `INDIRECT` markers, but 22 reachable `CALLIND` operations in 13 functions
@@ -2202,6 +2202,16 @@ labels, so it adds no target identity evidence. Across scans25–37, three
 unique candidates, 20 possible pairs, and 79 non-dominating pairs have been
 recorded. See the
 [scan25–37 evidence bundle](evidence/receiver-field-access/nfs-shift-screening-20261019/README.md).
+
+A follow-up CFG/5 replay exports the caller and all 100 functions in the
+retained closure-flow selection. It records the empty root set for `006642a0`
+and both entry blocks `[0, 1]` for `0090e864`, with no skipped rows. This closes the two CFG
+acquisition gaps and removes `MISSING_CFG` from 40 interprocedural effect rows.
+The remaining `CALLIND` and `STORE` effects preserve the four possible `/6`
+statuses and one unique candidate. The
+[CFG/5 replay](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/cfg-v5-entry-block-replay.md)
+records the input and output hashes. The bounded instruction slice at
+`006642a5` and the unresolved CALLIND targets remain open.
 
 The four downstream memory-read anchors now have a generic structural
 projection: `IndirectCallPointerSlot/1` identifies aligned pointer-slot access
@@ -2216,9 +2226,10 @@ static construction path but do not bind the runtime field value to a table.
 
 **Next:** trace all exact writes and copy sources for the runtime `+0x20`
 field, or acquire bounded runtime evidence for those four receivers. Keep
-unknown targets and roots as barriers. The `/6` statuses still need a complete
-memory-effect replay, and the CFG gaps at `006642a0` and `0090e864` remain open;
-the bounded slice at `006642a5` is not a complete function flow or CFG. Assess
-bodies smaller than 40 bytes only if this unresolved set or new pair evidence
-gives a concrete reason to extend the population screen. Do not infer alias
-facts from decompiler text or instruction-level corpus labels.
+unknown targets and roots as barriers. The five focused candidate pairs now
+have a fresh CFG/5 memory-effect replay: four remain possible and one remains
+unique because `CALLIND` and `STORE` effects are unresolved. The bounded slice
+at `006642a5` is not a complete function flow or CFG. Assess bodies smaller
+than 40 bytes only if this unresolved set or new pair evidence gives a concrete
+reason to extend the population screen. Do not infer alias facts from
+decompiler text or instruction-level corpus labels.

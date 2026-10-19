@@ -14,6 +14,7 @@ from revenginstr.pcode.opcodes import NO_EXPLICIT_MEMORY_WRITE_OPCODES
 from .call_effects import MAX_FLOW_BYTES, MAX_FLOW_OPERATIONS, _read_callee_flows
 from .field_flow import (
     CFG_FORMAT_V4,
+    CFG_FORMAT_V5,
     _index_cfg,
     _index_memory_store_accesses,
     _memory_store_non_alias_reason,
@@ -143,9 +144,9 @@ def _resolved_indirect_source(
     function_rows_by_site: dict[tuple[str, int], dict[str, str]],
     cfg_by_function: dict[tuple[str, str], tuple[int, dict[str, Any]]],
 ) -> bool:
-    """Return true when a CFG/4 INDIRECT link points at an operation classified in this loop."""
+    """Return true when a CFG/4 or CFG/5 link identifies this INDIRECT source."""
     cfg_item = cfg_by_function.get((program_id, function_entry))
-    if cfg_item is None or cfg_item[1]["format"] != CFG_FORMAT_V4:
+    if cfg_item is None or cfg_item[1]["format"] not in {CFG_FORMAT_V4, CFG_FORMAT_V5}:
         return False
     site = (operation["op_address"], int(operation["op_time"]))
     detail = cfg_item[1]["operation_details"].get(site)
@@ -221,7 +222,8 @@ def build_interprocedural_memory_effects(
     root_sha, root_mappings = _read_parameter_roots(caller_parameter_roots_path, flows)
     cfg_by_function = _index_cfg(cfg_rows)
     indirect_links_enabled = any(
-        cfg["format"] == CFG_FORMAT_V4 for (candidate_program, _), (_, cfg) in cfg_by_function.items()
+        cfg["format"] in {CFG_FORMAT_V4, CFG_FORMAT_V5}
+        for (candidate_program, _), (_, cfg) in cfg_by_function.items()
         if candidate_program == program_id
     )
     memory_by_operation, _, memory_record_indices = _index_memory_store_accesses(
@@ -497,7 +499,7 @@ def build_interprocedural_memory_effects(
                 cfg_by_function[(program_id, entry)][0]
                 for entry in [caller_entry, *closure_entries]
                 if (program_id, entry) in cfg_by_function
-                and cfg_by_function[(program_id, entry)][1]["format"] == CFG_FORMAT_V4
+                and cfg_by_function[(program_id, entry)][1]["format"] in {CFG_FORMAT_V4, CFG_FORMAT_V5}
             }) if indirect_links_enabled else []
             closure_sha = None
             if closure_entries:
