@@ -1,0 +1,73 @@
+# Manual static vtable review: `00664a10`
+
+This review uses the pinned retail input `SHIFT.exe` (SHA-256
+`eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1`) and the
+retained High-P-code flow and `CALLIND` rows beside this file. It records a
+manual static resolution; it does not change the original
+`PointerProvenance/1` output.
+
+## Receiver population
+
+`00664a10` walks the object collection at `this + 8`. Constructor `00664140`
+sets the enclosing object's vtable to `0x00af08a0` and initializes that
+collection at `this + 8`. Both direct call sites of the collection append
+helper `006641e0` are immediately preceded by factory `0066ee90`:
+
+| Append call | Factory call | Collection argument | Result |
+| --- | --- | --- | --- |
+| `00665226` | `00665219` | `this + 8` | `0066ee90` instance |
+| `006656a8` | `0066569f` | `this + 8` | `0066ee90` instance |
+
+The binary-wide direct-call scan finds these two `CALL` sites for `006641e0`.
+Factory `0066ee90` writes vtable address `0x00af0860` to each new object's
+first field. Copy helper `00663f50` writes the same vtable address while
+copying an existing object. This establishes one observed vtable for the
+statically constructed collection members; it does not rule out later runtime
+mutation or unobserved insertion paths.
+
+## Slot targets
+
+The PE `.rdata` section maps virtual address `0x00af0860` to file offset
+`0x006ef260`. Its 32-bit entries give:
+
+| CALLIND | Vtable slot | Slot address | Slot bytes | Target | Target bytes | Observed operation |
+| --- | ---: | --- | --- | --- | --- | --- |
+| `00664a4f` (`time=122`) | `0x0` | `0x00af0860` | `00 c7 9e 00` | `0x009ec700` | `8b 41 04 c3` | reads `[this + 4]`, returns |
+| `00664a83` (`time=233`) | `0x34` | `0x00af0894` | `80 18 9d 00` | `0x009d1880` | `8b 41 20 c3` | reads `[this + 0x20]`, returns |
+
+Thus both indirect-call target identities are resolved for the observed
+collection construction path. The second function returns a field value; its
+runtime contents remain unknown. The four downstream anchors in `006657e0`
+and `00665820` therefore remain unresolved. The existing `/6` pair statuses
+are unchanged because this review did not rerun the complete interprocedural
+memory-effect audit.
+
+## Reproduction
+
+With the pinned executable available as `SHIFT.exe`, the two direct append
+calls are reproduced with:
+
+```sh
+objdump -d -Mintel SHIFT.exe | rg 'call\s+0x6641e0\b'
+```
+
+It prints call sites `0x00665226` and `0x006656a8`. For the vtable bytes,
+`.rdata` has virtual base `0x00aa6000` and raw offset `0x006a4a00`, so
+`0x00af0860` maps to file offset
+`0x006a4a00 + (0x00af0860 - 0x00aa6000) = 0x006ef260`. Inspect the two
+entries and their leaf targets with:
+
+```sh
+xxd -g1 -s 0x6ef260 -l 0x38 SHIFT.exe
+objdump -d -Mintel --start-address=0x009ec700 --stop-address=0x009ec704 SHIFT.exe
+objdump -d -Mintel --start-address=0x009d1880 --stop-address=0x009d1884 SHIFT.exe
+```
+
+The entry at table offset `0` is at raw offset `0x006ef260`; the entry at
+table offset `0x34` is at raw offset `0x006ef294`.
+
+The existing local Ghidra C export used to cross-check constructor and method
+relationships had SHA-256
+`512753a5f91898885263c91664a3d3fa3e07bfd58b72d3a5f89c402a00760ee9`; it is
+not copied into this evidence bundle. Target bytes and slot values above are
+reproducible directly from the pinned executable.

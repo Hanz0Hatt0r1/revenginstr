@@ -2006,13 +2006,15 @@ recorded. See the
 
 **Next:** inspect the four remaining memory-read anchors against exact data
 references, starting with sites on paths to the four possible pairs. Manual
-static-data review resolved the `0064a0ce` and `0064a10e` targets to
-`00664a10`. Following that target adds `CALLIND` sites `00664a4f` and
-`00664a83`; both still stop at memory-read anchors, and `00664a10` returns the
-second call's runtime result. The four anchors in `006657e0` and `00665820`
-therefore remain unresolved. A bounded instruction slice recovered the tail
-at `006642a5`, but not a complete function flow or CFG. Continue checking the
-two CFG gaps and keep unresolved targets and roots as barriers. Assess bodies
-smaller than 40 bytes if this unresolved set or new pair evidence gives a
-concrete reason to extend the population screen; do not infer alias facts
-from decompiler text or instruction-level corpus labels.
+static review resolved the `0064a0ce` and `0064a10e` targets to `00664a10`,
+then resolved its internal `CALLIND`s at `00664a4f` and `00664a83` through
+vtable `0x00af0860` to `0x009ec700` and `0x009d1880` for the observed
+collection construction path. The latter returns a runtime field value, so
+the four anchors in `006657e0` and `00665820` remain unresolved. The `/6`
+statuses remain unchanged pending a complete memory-effect replay. A bounded
+instruction slice recovered the tail at `006642a5`, but not a complete
+function flow or CFG. Continue checking the two CFG gaps and keep unresolved
+targets and roots as barriers. Assess bodies smaller than 40 bytes if this
+unresolved set or new pair evidence gives a concrete reason to extend the
+population screen; do not infer alias facts from decompiler text or
+instruction-level corpus labels.

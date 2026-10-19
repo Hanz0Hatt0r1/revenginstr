@@ -160,11 +160,18 @@ internal `CALLIND` sites, `00664a4f` and `00664a83`. The targeted
 [`P-code flow`](scan37/replay-0041dd40/target-function-00664a10-flow.tsv),
 [`CALLIND evidence`](scan37/replay-0041dd40/target-function-00664a10-callind-evidence.jsonl),
 and [`PointerProvenance/1` output](scan37/replay-0041dd40/target-function-00664a10-pointer-provenance.jsonl)
-show both targets still stop at memory-read anchors. `00664a10` returns the
-result of the second indirect call, so its output does not statically identify
-the receiver used by the later calls in `006657e0` and `00665820`; their four
-anchors also remain unresolved. This manual result does not change the `/6`
-statuses or establish that runtime memory cannot be overwritten.
+show the two targets as memory-read anchors when considered by provenance
+alone. A separate review of the same pinned executable resolves those two
+sites through the `0x00af0860` vtable: `00664a4f` calls `0x009ec700` at slot
+`0`, and `00664a83` calls `0x009d1880` at slot `0x34`. Both are leaf field
+readers for the observed collection construction path. The exact raw table
+entries, constructor/append chain, target instruction bytes, and limits are
+recorded in
+[`manual-static-vtable-review.md`](scan37/replay-0041dd40/manual-static-vtable-review.md).
+`00664a10` returns the second reader's runtime field value, so it still does
+not identify the receiver used by later calls in `006657e0` and `00665820`;
+their four anchors remain unresolved. This manual review does not change the
+`/6` statuses or establish that runtime memory cannot be overwritten.
 
 Scans25–34 exhaust the pinned 2,374-function direct-call-caller population
 with at least one explicit `param_n` and a 40–800-byte body. Scan36 covers the

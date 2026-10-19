@@ -2273,6 +2273,11 @@
       "rows": 670
     },
     {
+      "path": "scan37/replay-0041dd40/manual-static-vtable-review.md",
+      "bytes": 3343,
+      "sha256": "e6083b52673534987e2c01aecc23720f9e7d6be8616f4d4752a20d69fa597fba"
+    },
+    {
       "path": "scan37/replay-0041dd40/memory-store-access-full-closure-scope.jsonl",
       "bytes": 260473,
       "sha256": "3da7b4a9d56c9d2a32a62a32f8a91403bd7931d2f924e967bdd4e1b3f00663b8",
