@@ -59,6 +59,30 @@ revenginstr-prototype-callsite-check direct-call-arguments.jsonl \
   function-prototypes.jsonl --output callsite-compatibility.jsonl
 ```
 
+`GhidraDecompilerParameters/1` captures the High-P-code formal symbols and
+return type for selected functions. Its status records decompilation failures;
+parameter rows include Ghidra's type lock and storage metadata so consumers can
+separate stored information from decompiler evidence. Run it with a function
+identity plan:
+
+```sh
+GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_decompiler_parameters.sh \
+  /path/to/projects project-name program-name plan.tsv decompiler-parameters.jsonl
+```
+
+`revenginstr-prototype-infer decompiler-parameters.jsonl call-observations.jsonl
+--output hypotheses.jsonl` produces `FunctionPrototypeHypothesis/1` rows. It
+uses High-P-code parameter types as provisional shapes and direct-call arity
+only as a compatibility constraint. It does not infer pointer/scalar types
+from argument widths, does not treat the selected call set as complete, and
+marks every hypothesis `review` unless observed arity conflicts force
+`conflicted`. The current confidence score is a bounded triage heuristic, not
+a calibrated probability; independent audited gold and whole-program coverage
+are still needed before high-confidence use.
+Because hypothesis schema `/1` has no variadic marker, variadic observations
+retain their fixed parameter prefix but emit `parameter_count: null` instead
+of presenting the prefix as the total argument count.
+
 `FunctionPrototypeGold/1` describes one independently adjudicated function.
 `complete_properties` names the top-level signature properties the reviewer
 verified; `complete_parameter_indices` names parameter positions verified

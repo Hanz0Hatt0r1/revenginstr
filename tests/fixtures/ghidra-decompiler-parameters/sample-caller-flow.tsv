@@ -1,0 +1,6 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+00010017	0001001f	14	CALL	def:0001001f:14:4	input:Stack[0x4]:4;const:0x3:4	00010000	sample_add
+00010017	00010027	24	LOAD	def:00010027:24:4	const:0x1a1:4;def:00010027:54:4	-	-
+00010017	00010027	25	COPY	def:00010027:25:4	def:00010027:24:4	-	-
+00010017	00010027	54	PTRSUB	def:00010027:54:4	def:0001001f:14:4;const:0x0:4	-	-
+00010017	0001002a	31	RETURN	-	const:0x0:4;def:00010027:25:4	-	-

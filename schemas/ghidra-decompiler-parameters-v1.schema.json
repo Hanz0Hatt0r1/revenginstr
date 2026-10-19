@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-decompiler-parameters-v1.schema.json",
+  "title": "REVENGINSTR.GhidraDecompilerParameters/1 JSONL record",
+  "description": "Read-only High P-code formal-parameter observation for a hash-pinned function; Ghidra decompiler output is evidence, not adjudicated truth.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "plan_id", "program_id", "program_sha256", "architecture", "requested_entry", "function_entry", "name", "is_external", "status", "signature_source", "calling_convention", "has_varargs", "parameter_count", "parameters", "return_type", "return_storage", "error"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraDecompilerParameters/1"},
+    "plan_id": {"type": "string", "minLength": 1},
+    "program_id": {"type": "string", "minLength": 1},
+    "program_sha256": {"$ref": "#/$defs/sha256"},
+    "architecture": {"$ref": "#/$defs/architecture"},
+    "requested_entry": {"type": "string", "minLength": 1},
+    "function_entry": {"type": "string", "minLength": 1},
+    "name": {"type": "string", "minLength": 1},
+    "is_external": {"type": "boolean"},
+    "status": {"enum": ["complete", "external", "decompile_failed", "no_high_function", "prototype_unavailable"]},
+    "signature_source": {"type": "string", "minLength": 1},
+    "calling_convention": {"type": ["string", "null"]},
+    "has_varargs": {"type": "boolean"},
+    "parameter_count": {"type": ["integer", "null"], "minimum": 0},
+    "parameters": {"type": "array", "items": {"$ref": "#/$defs/parameter"}},
+    "return_type": {"oneOf": [{"$ref": "#/$defs/type"}, {"type": "null"}]},
+    "return_storage": {"type": ["string", "null"]},
+    "error": {"type": ["string", "null"]}
+  },
+  "allOf": [
+    {"if": {"properties": {"status": {"const": "complete"}}, "required": ["status"]}, "then": {"properties": {"parameter_count": {"type": "integer"}, "return_type": {"$ref": "#/$defs/type"}, "error": {"type": "null"}}}},
+    {"if": {"properties": {"status": {"enum": ["external", "decompile_failed", "no_high_function", "prototype_unavailable"]}}, "required": ["status"]}, "then": {"properties": {"parameter_count": {"type": "null"}, "parameters": {"maxItems": 0}, "return_type": {"type": "null"}}}}
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "architecture": {
+      "type": "object", "additionalProperties": false,
+      "required": ["language_id", "pointer_width_bytes", "endianness"],
+      "properties": {"language_id": {"type": "string", "minLength": 1}, "pointer_width_bytes": {"type": "integer", "minimum": 1}, "endianness": {"enum": ["little", "big"]}}
+    },
+    "type": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "name", "path", "width_bytes"],
+      "properties": {"kind": {"enum": ["void", "pointer", "aggregate", "scalar", "unknown"]}, "name": {"type": "string", "minLength": 1}, "path": {"type": "string", "minLength": 1}, "width_bytes": {"type": ["integer", "null"], "minimum": 1}}
+    },
+    "parameter": {
+      "type": "object", "additionalProperties": false,
+      "required": ["index", "name", "type", "storage", "is_this_pointer", "is_hidden_return", "is_type_locked"],
+      "properties": {"index": {"type": "integer", "minimum": 0}, "name": {"type": ["string", "null"]}, "type": {"$ref": "#/$defs/type"}, "storage": {"type": ["string", "null"]}, "is_this_pointer": {"type": "boolean"}, "is_hidden_return": {"type": "boolean"}, "is_type_locked": {"type": "boolean"}}
+    }
+  }
+}

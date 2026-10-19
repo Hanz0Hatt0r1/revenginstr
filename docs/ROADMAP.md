@@ -1100,18 +1100,30 @@ Infer evidence-backed candidates for:
 Exact debug/import/type information always outranks inferred prototypes. Conflicting call sites fail toward review rather than being silently unified.
 
 `FunctionPrototypeHypothesis/1`, `FunctionPrototypeGold/1`, and a scoped
-compatibility evaluator now exist with synthetic exact fixtures. They are
-contracts and scoring infrastructure only: no prototype inference engine or
-independent consumer gold corpus exists yet, so M8.1 remains partial.
+compatibility evaluator exist with synthetic exact fixtures. The first
+conservative inference path now emits hash-linked review hypotheses, but
+independent consumer gold and full program coverage accounting are still
+absent, so M8.1 remains partial.
 `GhidraFunctionPrototype/1` now supplies a structured, hash-pinned snapshot of
 the signatures already stored in Ghidra, including declaration source and ABI.
 `DirectCallArgumentObservation/1` now records observed argument counts and
 varnode widths at resolved direct P-code call sites with exact source links.
-Both are evidence acquisition paths, not a prototype inference engine; the
-call observations do not claim that all callers were exported or recover
-pointer/scalar types. `FunctionPrototypeCallsiteCompatibility/1` now compares
+The call observations do not claim that all callers were exported or recover
+pointer/scalar types. `FunctionPrototypeCallsiteCompatibility/1` compares
 observed direct-call arity with stored fixed or variadic signatures, but its
 per-call results do not establish whole-program compatibility.
+
+`GhidraDecompilerParameters/1` now records High-P-code formal parameter
+symbols, type widths/kinds, storage, `this`/hidden-return markers and return
+shape with per-function decompilation status. `revenginstr-prototype-infer`
+joins these rows to hash-pinned direct-call argument observations and emits
+`FunctionPrototypeHypothesis/1` review records. It treats call arity as a
+constraint, never as a type label; conflicting call sites are marked
+`conflicted`, and emitted confidence scores stay below the evaluator's
+high-confidence threshold. A real Ghidra replay covers the two-function sample
+fixture. The generic inference path exists, but independent consumer gold, full
+program coverage accounting, calibrated confidence and indirect-call
+constraints remain required before M8.1 is complete.
 
 ### M8.2 Struct/class layout recovery
 
