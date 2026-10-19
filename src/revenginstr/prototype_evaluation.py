@@ -10,7 +10,8 @@ from typing import Any
 
 HYPOTHESIS_FORMAT = "REVENGINSTR.FunctionPrototypeHypothesis/1"
 GOLD_FORMAT = "REVENGINSTR.FunctionPrototypeGold/1"
-EVALUATION_FORMAT = "REVENGINSTR.FunctionPrototypeEvaluation/1"
+EVALUATION_FORMAT_V1 = "REVENGINSTR.FunctionPrototypeEvaluation/1"
+EVALUATION_FORMAT_V2 = "REVENGINSTR.FunctionPrototypeEvaluation/2"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _PARAMETER_KINDS = {"pointer", "reference", "scalar", "aggregate", "unknown"}
 _RETURN_KINDS = _PARAMETER_KINDS | {"void"}
@@ -254,12 +255,49 @@ def _shape_matches(
     )
 
 
+def _property_unknown(
+    candidate: dict[str, Any], property_name: str, gold_prototypes: list[dict[str, Any]],
+    parameter_indices: set[int],
+) -> bool:
+    def has_known_values(prediction: Any, expected: Any) -> bool:
+        if not isinstance(prediction, dict) or not isinstance(expected, dict):
+            return prediction is not None
+        return all(
+            key in prediction and prediction[key] is not None
+            and not (key == "kind" and prediction[key] == "unknown")
+            for key, value in expected.items() if value is not None
+        )
+
+    if property_name == "parameters":
+        predictions = {row["index"]: row for row in candidate["parameters"]}
+        for index in parameter_indices:
+            prediction = predictions.get(index)
+            if prediction is None or not any(
+                has_known_values(
+                    prediction,
+                    next(row for row in prototype["parameters"] if row["index"] == index),
+                )
+                for prototype in gold_prototypes
+            ):
+                return True
+        return False
+    if any(
+        has_known_values(candidate[property_name], prototype[property_name])
+        for prototype in gold_prototypes
+    ):
+        return False
+    return True
+
+
 def evaluate_prototypes(
     hypotheses_path: Path, gold_path: Path, *, minimum_confidence: float = 0.95,
+    format_version: int = 1,
 ) -> dict[str, Any]:
     """Score compatible candidates only on properties explicitly complete in gold."""
     if isinstance(minimum_confidence, bool) or not isinstance(minimum_confidence, (int, float)) or not 0 <= minimum_confidence <= 1:
         raise ValueError("minimum_confidence must be between 0 and 1")
+    if type(format_version) is not int or format_version not in {1, 2}:
+        raise ValueError("format_version must be 1 or 2")
     hypotheses, hypotheses_sha256 = _read_jsonl(hypotheses_path)
     gold_rows, gold_sha256 = _read_jsonl(gold_path)
     hypothesis_by_key = {}
@@ -317,7 +355,7 @@ def evaluate_prototypes(
     high_confidence_functions = high_confidence_correct_functions = 0
     conflict_count = 0
     property_counts = {
-        name: {"scored": 0, "compatible": 0}
+        name: {"scored": 0, "compatible": 0, "unknown": 0}
         for name in sorted(_GOLD_PROPERTIES | {"parameters"})
     }
     for index, raw in enumerate(gold_rows, 1):
@@ -363,6 +401,9 @@ def evaluate_prototypes(
                     _value_matches(candidate[property_name], proto[property_name])
                     for proto in gold["compatible_prototypes"]
                 )
+                property_counts[property_name]["unknown"] += _property_unknown(
+                    candidate, property_name, gold["compatible_prototypes"], complete_parameters,
+                )
             if complete_parameters:
                 params_match = any(
                     _shape_matches(candidate, proto, set(), complete_parameters)
@@ -370,6 +411,9 @@ def evaluate_prototypes(
                 )
                 property_counts["parameters"]["scored"] += 1
                 property_counts["parameters"]["compatible"] += params_match
+                property_counts["parameters"]["unknown"] += _property_unknown(
+                    candidate, "parameters", gold["compatible_prototypes"], complete_parameters,
+                )
         if function_high_confidence:
             high_confidence_functions += 1
             best_confidence = max(item[0]["confidence"] for item in function_high_confidence)
@@ -379,16 +423,22 @@ def evaluate_prototypes(
 
     if metadata is None:
         raise ValueError("gold input is empty")
-    per_property = {
-        name: {
-            **counts,
-            "accuracy": counts["compatible"] / counts["scored"] if counts["scored"] else None,
+    per_property = {}
+    for name, counts in sorted(property_counts.items()):
+        if not counts["scored"]:
+            continue
+        metrics = {
+            key: value for key, value in counts.items()
+            if format_version == 2 or key != "unknown"
         }
-        for name, counts in sorted(property_counts.items())
-        if counts["scored"]
-    }
+        metrics["accuracy"] = counts["compatible"] / counts["scored"]
+        if format_version == 2:
+            known = counts["scored"] - counts["unknown"]
+            metrics["coverage"] = known / counts["scored"]
+            metrics["known_accuracy"] = counts["compatible"] / known if known else None
+        per_property[name] = metrics
     return {
-        "format": EVALUATION_FORMAT,
+        "format": EVALUATION_FORMAT_V1 if format_version == 1 else EVALUATION_FORMAT_V2,
         "dataset_id": metadata[0],
         "split_id": metadata[1],
         "function_prototype_hypotheses_sha256": hypotheses_sha256,
@@ -415,12 +465,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("prototype_hypotheses", type=Path)
     parser.add_argument("gold_prototypes", type=Path)
     parser.add_argument("--minimum-confidence", type=float, default=0.95)
+    parser.add_argument("--format-version", type=int, choices=(1, 2), default=1)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
         result = evaluate_prototypes(
             args.prototype_hypotheses, args.gold_prototypes,
-            minimum_confidence=args.minimum_confidence,
+            minimum_confidence=args.minimum_confidence, format_version=args.format_version,
         )
     except ValueError as error:
         parser.error(str(error))

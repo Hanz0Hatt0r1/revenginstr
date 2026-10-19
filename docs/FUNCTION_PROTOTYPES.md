@@ -101,7 +101,9 @@ carrying that pointer shape into a second function whose original type is
 `undefined4`. Its source-backed `FunctionPrototypeGold/1` covers two functions:
 parameter count and parameter shapes are both 2/2 correct, while return shape
 is 1/2 because `mystery_caller` still has an unknown return. At the default
-0.95 threshold neither candidate is accepted. This is a small source-adjudicated
+0.95 threshold neither candidate is accepted. Evaluation v2 reports this as
+50% return-shape coverage and 100% accuracy among the one known return; it keeps
+the unknown return visible as an abstention. This is a small source-adjudicated
 replay, not an audited consumer corpus or confidence-calibration set. The
 fixture also includes a full program capture-coverage report.
 
@@ -131,6 +133,7 @@ Evaluate JSONL inputs with:
 
 ```sh
 revenginstr-function-prototype-evaluate hypotheses.jsonl gold.jsonl \
+  --format-version 2 \
   --minimum-confidence 0.95 \
   --output prototype-evaluation.json
 ```
@@ -139,8 +142,10 @@ The report includes high-confidence candidate compatibility, per-function
 coverage, top-candidate compatibility, per-property accuracy, and conflict
 rate. Property metrics use all candidates; acceptance metrics apply the stated
 confidence threshold, and a conflicted function is not accepted at any
-confidence. A tied top-confidence choice is conservatively counted as not
-compatible for the top-candidate metric.
+confidence. Evaluation v2 also reports per-property unknown predictions,
+coverage, and accuracy among known predictions. The default v1 report remains
+available for existing consumers. A tied top-confidence choice is
+conservatively counted as not compatible for the top-candidate metric.
 
 `tests/fixtures/function-prototype-{hypothesis,gold}/synthetic.jsonl` is an exact
 synthetic replay whose gold cites a separate hash-pinned source observation.
