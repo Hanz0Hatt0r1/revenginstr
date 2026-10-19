@@ -33,12 +33,15 @@ for program `nevergone-1.0.9-armv7-libcocos2dcpp`.
 | Semantic Program Graph | `b2c64e397bd1e95d5f195b10dfaa2d3254a455377fdac53db9d2c2a6c08f37e5` |
 | Evaluation result | `fa480bc65b9188a9e4a1730995187abc30015cf1a15eab70821a6ee5b68c8ce0` |
 | Consumer gold subgraph | `ee5cb2c3a3880d3a3da9098c47a5e589d52e0d6137c6297cfff2f8197100d5ec` |
+| Query result | `2fa88182b5d951f9745c670f06d56f24cbddf121a59b4d6fbc4e22df4624613c` |
 
 The retained [Function Effect IR](nevergone-facing-effects.jsonl),
-[Semantic Program Graph](nevergone-facing-graph.jsonl), and
-[evaluation result](nevergone-facing-evaluation.json) preserve the replay
-outputs. Rebuild from the RevEngInstr repository root with local checkouts of
-both repositories:
+[Semantic Program Graph](nevergone-facing-graph.jsonl),
+[evaluation result](nevergone-facing-evaluation.json), and
+[query result](query-result.jsonl) preserve the replay outputs. The exact-only
+query returns all three documented call edges and both target functions as
+related context. Rebuild from the RevEngInstr repository root with local
+checkouts of both repositories:
 
 ```sh
 uv run --project . revenginstr-effect-ir \

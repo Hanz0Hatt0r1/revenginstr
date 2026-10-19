@@ -12,6 +12,7 @@ from revenginstr.semantic_program_graph import (
     FORMAT_V1,
     FORMAT_V2,
     _read_jsonl,
+    _valid_edge_endpoints,
     validate_graph_references,
 )
 from revenginstr.semantic_program_query import RELATIONS, VIEWS, _in_view
@@ -51,6 +52,7 @@ def _validate_gold_row(
     *,
     record_index: int,
     graph_sha256: str,
+    graph_format: str | None,
 ) -> tuple[str, str, str, str, set[str], set[str], set[tuple[str, str, str]]]:
     where = f"gold record {record_index}"
     fields = {
@@ -84,6 +86,7 @@ def _validate_gold_row(
 
     scope = set(scope_rows)
     complete_relations = set(relation_rows)
+    valid_endpoints = _valid_edge_endpoints(graph_format or FORMAT_V2)
     gold_edges: set[tuple[str, str, str]] = set()
     if not isinstance(row["edges"], list):
         raise ValueError(f"{where}: edges must be an array")
@@ -100,6 +103,9 @@ def _validate_gold_row(
             raise ValueError(f"{edge_where}: target is outside the audited scope")
         if not isinstance(relation, str) or relation not in complete_relations:
             raise ValueError(f"{edge_where}: relation is not declared complete")
+        endpoint_kinds = (source.split(":", 1)[0], target.split(":", 1)[0])
+        if endpoint_kinds not in valid_endpoints.get(relation, set()):
+            raise ValueError(f"{edge_where}: invalid endpoint kinds for relation {relation!r}")
         key = (relation, source, target)
         if key in gold_edges:
             raise ValueError(f"{edge_where}: duplicate gold edge")
@@ -179,7 +185,14 @@ def evaluate_semantic_program_graph(
     provenance_complete_count = 0
 
     for index, row in enumerate(gold_rows, 1):
-        parsed = _validate_gold_row(row, record_index=index, graph_sha256=graph_sha256)
+        raw_graph_id = row.get("graph_id") if isinstance(row, dict) else None
+        graph_hint = graph_by_id.get(raw_graph_id) if isinstance(raw_graph_id, str) else None
+        parsed = _validate_gold_row(
+            row,
+            record_index=index,
+            graph_sha256=graph_sha256,
+            graph_format=graph_hint.get("format") if graph_hint else None,
+        )
         subgraph_id, dataset_id, split_id, graph_id, scope, complete, gold_edges = parsed
         if subgraph_id in seen_subgraphs:
             raise ValueError(f"gold record {index}: duplicate subgraph_id")

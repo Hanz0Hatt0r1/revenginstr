@@ -55,15 +55,17 @@ The `semantic-program-graph` stage can be chained in a pinned benchmark
 manifest after `function-effect-ir`, with the receiver TSV declared as an
 additional input when used. The schemas cover structural facts and observed
 receiver metadata. Receiver dispatch, recovered layouts, roles, states,
-resources, callbacks, execution contexts, CFG-feasible path/reachability
-queries, audited consumer gold subgraphs, and M10 exit criteria remain open
-work. The basic
-deterministic graph selector and its three evidence views are documented in
+resources, callbacks, execution contexts, and CFG-feasible path/reachability
+queries remain open. Two narrow consumer-owned structural gold replays now
+exist for Nevergone and NFS SHIFT; broadly scoped semantic subsystem gold and
+M10 exit criteria remain open. See [graph evaluation replays](evidence/semantic-program-graph-evaluation/README.md).
+The deterministic graph selector and its three evidence views are documented in
 [Semantic program queries](SEMANTIC_PROGRAM_QUERIES.md), including the bounded
 direct-call path query. These call-graph paths do not establish CFG-feasible
 execution reachability.
 
 Consumer-owned subgraphs can be scored with the scoped
 [`SemanticProgramGraphGold/1` evaluator](SEMANTIC_PROGRAM_GRAPH_EVALUATION.md).
-The retained GT5 and NFS SHIFT replays are raw P-code projection audits, not
-independent subsystem gold sets or accepted-edge precision results.
+GT5 and the NFS call-path replay remain raw P-code projection audits.
+Nevergone and NFS M2.3 now provide narrow consumer-owned structural gold; they
+do not yet establish broad subsystem semantics or accepted-edge precision.

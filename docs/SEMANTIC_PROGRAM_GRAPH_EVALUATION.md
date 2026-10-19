@@ -4,10 +4,12 @@ Consumers keep adjudicated subgraphs in their own repositories. A
 [`SemanticProgramGraphGold/1`](../schemas/semantic-program-graph-gold-v1.schema.json)
 JSONL row pins one graph and declares a node scope plus the relations that are
 complete in that scope. Each expected edge cites the source records used to
-adjudicate it; the evaluator rejects references to the graph being scored.
+adjudicate it; the evaluator rejects references to the graph being scored and
+rejects edge endpoint kinds that do not match the relation.
 The `record_index` meaning is defined by `source_format` (for example, a
 one-based TSV data row or a Markdown line); consumer evidence documentation
-must state that indexing convention. Reviewers must assess those records
+must state that indexing convention. Gold edge endpoint kinds must be valid
+for their relation and graph version. Reviewers must assess source records
 independently of the graph projection.
 Unknown or incomplete relations are excluded from recall and edge precision.
 

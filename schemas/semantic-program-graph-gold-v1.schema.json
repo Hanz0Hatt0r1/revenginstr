@@ -47,6 +47,7 @@
     "gold_edge": {
       "type": "object",
       "additionalProperties": false,
+      "description": "An adjudicated edge whose source and target node kinds must be valid for its relation.",
       "required": ["from", "to", "relation", "evidence_refs"],
       "properties": {
         "from": {"$ref": "#/$defs/node_id"},
@@ -57,7 +58,51 @@
           "minItems": 1,
           "items": {"$ref": "#/$defs/evidence_ref"}
         }
-      }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "relation": {"const": "contains"},
+            "from": {"pattern": "^program:"},
+            "to": {"pattern": "^function:"}
+          }
+        },
+        {
+          "properties": {
+            "relation": {"const": "contains"},
+            "from": {"pattern": "^function:"},
+            "to": {"pattern": "^(operation|receiver_observation):"}
+          }
+        },
+        {
+          "properties": {
+            "relation": {"const": "calls"},
+            "from": {"pattern": "^operation:"},
+            "to": {"pattern": "^function:"}
+          }
+        },
+        {
+          "properties": {
+            "relation": {"const": "reads"},
+            "from": {"pattern": "^operation:"},
+            "to": {"pattern": "^field:"}
+          }
+        },
+        {
+          "properties": {
+            "relation": {"const": "writes"},
+            "from": {"pattern": "^operation:"},
+            "to": {"pattern": "^field:"}
+          }
+        },
+        {
+          "properties": {
+            "relation": {"const": "observes_receiver"},
+            "from": {"pattern": "^operation:"},
+            "to": {"pattern": "^receiver_observation:"}
+          }
+        }
+      ]
     }
   }
 }

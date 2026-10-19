@@ -1205,7 +1205,8 @@ one `CALLIND` join from exported data; see
 
 The graph families are still structural slices of M10.1–M10.3. Dispatch
 recovery, recovered layouts, roles, states, resources, callbacks, execution
-contexts, audited gold graphs, and M10 exit criteria remain open.
+contexts, broadly scoped semantic gold graphs, and M10 exit criteria remain
+open.
 
 `revenginstr-semantic-program-query` now selects nodes and edges by kind,
 relation, indirect-call state, conflict state, function entry, operation
@@ -1216,8 +1217,8 @@ Ghidra graph returns its `CALLIND` and exact receiver observation; the same
 query runner also returns endpoint context and preserves source support. This
 is the first generic selector layer for M10.4. Queries that require CFG
 feasibility, field meaning, layout equivalence, resource/state/callback paths,
-audited subsystem gold data, and all M10 exit criteria remain open. A separate
-bounded path query now enumerates simple routes over exact direct-call edges,
+broadly scoped semantic subsystem gold data, and all M10 exit criteria remain
+open. A separate bounded path query now enumerates simple routes over exact direct-call edges,
 retaining caller/callee function context and call-operation,
 membership-edge, and call-edge provenance. It also surfaces unresolved,
 indirect, and conflicted call sites in the source's direct-call reachable
@@ -1238,15 +1239,20 @@ feasibility or runtime execution.
 `SemanticProgramGraphEvaluation/1` now define scoped consumer gold and report
 relation-specific recall only where labels declare completeness. The evaluator
 also reports unsupported candidate-edge rate and provenance-field coverage.
+The gold validator and schema reject relation/node-kind mismatches, so malformed
+labels cannot silently lower recall.
 Reviewer-curated raw P-code projection audits match 2/2 GT5 and 7/7 NFS SHIFT
 direct-call edges; the Nevergone consumer-owned player-facing subgraph matches
 all 3 documented calls (see the
 [replay](evidence/semantic-program-graph-evaluation/nevergone-player-horizontal-facing/README.md)).
-All twelve edges have complete provenance fields. The
-Nevergone note and P-code export describe the same binary, so this is a
-consumer-adjudicated interpretation, not independent binary or runtime
-corroboration. A second consumer-owned subsystem gold set and calibrated
-accepted edges remain open; M10.5 and its exit criteria are not complete.
+The NFS M2.3 consumer-owned slice matches 7 calls, 2 reads, and 1 write (see
+its [replay](evidence/semantic-program-graph-evaluation/nfs-m23-00a45520/README.md)).
+All twenty-two edges have complete provenance fields. Both consumer golds are
+narrow structural interpretations, without independent runtime
+corroboration; the NFS gold does not assign field meaning or prove memory
+flow. Calibrated accepted edges and reconstruction/query of two broader
+semantic subsystems remain open, so M10.5 and its exit criteria are not
+complete.
 
 ---
 
@@ -1484,7 +1490,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 31. Bounded runtime probe-request and correlation contracts.
 32. Static/runtime differential replay and information-gain metrics.
 33. Semantic Program Graph schema and deterministic builder.
-34. 🟡 Scoped graph-gold schema/evaluator, two raw P-code projection audits, and the first narrow Nevergone consumer-owned gold subgraph implemented; a second consumer subsystem and the accepted-edge precision gate remain open.
+34. 🟡 Scoped graph-gold schema/evaluator, two raw P-code projection audits, and narrow Nevergone/NFS consumer-owned structural golds implemented; accepted-edge precision and end-to-end semantic subsystem gates remain open.
 35. Feedback quarantine, adjudication and leakage-gated training promotion.
 
 ## P4 — architecture and integration

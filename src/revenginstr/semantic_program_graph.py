@@ -27,6 +27,25 @@ EFFECT_FORMATS = {
     "REVENGINSTR.FunctionEffectIR/1",
     "REVENGINSTR.FunctionEffectIR/2",
 }
+_EDGE_ENDPOINTS = {
+    "contains": {
+        ("program", "function"),
+        ("function", "operation"),
+        ("function", "receiver_observation"),
+    },
+    "calls": {("operation", "function")},
+    "reads": {("operation", "field")},
+    "writes": {("operation", "field")},
+    "observes_receiver": {("operation", "receiver_observation")},
+}
+
+
+def _valid_edge_endpoints(graph_format: str) -> dict[str, set[tuple[str, str]]]:
+    endpoints = {relation: set(pairs) for relation, pairs in _EDGE_ENDPOINTS.items()}
+    if graph_format == FORMAT_V1:
+        endpoints["contains"].discard(("function", "receiver_observation"))
+        endpoints.pop("observes_receiver")
+    return endpoints
 
 
 def _stable_id(kind: str, identity: list[Any]) -> str:
@@ -118,15 +137,7 @@ def validate_graph_references(graph: dict[str, Any]) -> None:
     for node in graph["nodes"]:
         if node["id"].split(":", 1)[0] != node["kind"]:
             raise ValueError(f"semantic program graph node {node['id']!r} has a mismatched kind")
-    valid_endpoints = {
-        "contains": {("program", "function"), ("function", "operation")},
-        "calls": {("operation", "function")},
-        "reads": {("operation", "field")},
-        "writes": {("operation", "field")},
-    }
-    if graph_format == FORMAT_V2:
-        valid_endpoints["contains"].add(("function", "receiver_observation"))
-        valid_endpoints["observes_receiver"] = {("operation", "receiver_observation")}
+    valid_endpoints = _valid_edge_endpoints(graph_format)
     observations_with_edges: set[str] = set()
     for edge in graph["edges"]:
         source_kind = kinds.get(edge["from"])
