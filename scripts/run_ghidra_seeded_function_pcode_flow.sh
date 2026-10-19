@@ -33,7 +33,7 @@ mkdir -p "$(dirname -- "$OUTPUT")"
 TMP_SCRIPT_DIR=$(mktemp -d)
 TMP_LOG_DIR=$(mktemp -d)
 trap 'rm -rf -- "$TMP_SCRIPT_DIR" "$TMP_LOG_DIR"' EXIT
-cp "$ROOT/ghidra/SeedFunctionAtAddress.java" "$ROOT/ghidra/ExportFunctionPcodeFlow.java" "$TMP_SCRIPT_DIR/"
+cp "$ROOT/ghidra/support/SeedFunctionAtAddress.java" "$ROOT/ghidra/ExportFunctionPcodeFlow.java" "$TMP_SCRIPT_DIR/"
 
 RUN_LOG="$TMP_LOG_DIR/analyze.log"
 if ! "$ANALYZE" \
