@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/direct-call-argument-observation-v1.schema.json",
+  "title": "REVENGINSTR.DirectCallArgumentObservation/1 JSONL record",
+  "description": "Evidence-linked observed arguments from one resolved direct High-P-code CALL site; this is not a recovered function prototype.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program_id", "caller_entry", "callee_entry", "call_address", "call_time", "argument_count", "arguments", "evidence_ref"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.DirectCallArgumentObservation/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "caller_entry": {"$ref": "#/$defs/address"},
+    "callee_entry": {"$ref": "#/$defs/address"},
+    "call_address": {"$ref": "#/$defs/address"},
+    "call_time": {"type": "integer", "minimum": 0},
+    "argument_count": {"type": "integer", "minimum": 0},
+    "arguments": {"type": "array", "items": {"$ref": "#/$defs/argument"}},
+    "evidence_ref": {"$ref": "#/$defs/evidence_ref"}
+  },
+  "$defs": {
+    "address": {"type": "string", "pattern": "^(?:[A-Za-z_$][\\w$]*:)?(?:0x)?[0-9a-fA-F]+$"},
+    "evidence_ref": {
+      "type": "object", "additionalProperties": false,
+      "required": ["artifact_sha256", "record_index", "source_format"],
+      "properties": {
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "record_index": {"type": "integer", "minimum": 1},
+        "source_format": {"const": "REVENGINSTR.GhidraFunctionPcodeFlow/1"}
+      }
+    },
+    "argument": {
+      "type": "object", "additionalProperties": false,
+      "required": ["index", "value_token", "width_bytes"],
+      "properties": {
+        "index": {"type": "integer", "minimum": 0},
+        "value_token": {"type": "string", "minLength": 1},
+        "width_bytes": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

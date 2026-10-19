@@ -1105,7 +1105,11 @@ contracts and scoring infrastructure only: no prototype inference engine or
 independent consumer gold corpus exists yet, so M8.1 remains partial.
 `GhidraFunctionPrototype/1` now supplies a structured, hash-pinned snapshot of
 the signatures already stored in Ghidra, including declaration source and ABI.
-It is an evidence acquisition path, not a prototype inference engine.
+`DirectCallArgumentObservation/1` now records observed argument counts and
+varnode widths at resolved direct P-code call sites with exact source links.
+Both are evidence acquisition paths, not a prototype inference engine; the
+call observations do not claim that all callers were exported or recover
+pointer/scalar types.
 
 ### M8.2 Struct/class layout recovery
 

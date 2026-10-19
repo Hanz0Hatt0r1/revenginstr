@@ -29,6 +29,19 @@ GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_function_prototypes.sh \
 This provides structured source evidence for later inference and adjudication.
 It does not assign hypothesis confidence or infer signatures from call sites.
 
+`revenginstr-direct-call-arguments` extracts observed argument counts and
+varnode widths from resolved direct `CALL` rows in `GhidraFunctionPcodeFlow/1`
+TSV files. Each row points to its exact source file hash and data row. The
+observation retains call-site evidence and does not claim that all callers were
+exported, turn argument widths into pointer/scalar types, or treat an observed
+call shape as the callee's complete prototype. Keep inputs from one Ghidra
+program per invocation.
+
+```sh
+revenginstr-direct-call-arguments caller-flow-*.tsv --program-id nfs-shift-1.0 \
+  --output direct-call-arguments.jsonl
+```
+
 `FunctionPrototypeGold/1` describes one independently adjudicated function.
 `complete_properties` names the top-level signature properties the reviewer
 verified; `complete_parameter_indices` names parameter positions verified
