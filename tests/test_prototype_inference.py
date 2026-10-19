@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from jsonschema import Draft202012Validator
 
+from revenginstr.prototype_callsite_observations import observe_call_arguments
 from revenginstr.prototype_inference import infer_prototypes
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,6 +31,109 @@ def test_prototype_inference_joins_formals_and_call_arity_as_review_evidence() -
         "REVENGINSTR.GhidraDecompilerParameters/1",
         "REVENGINSTR.DirectCallArgumentObservation/1",
     ]
+
+
+def test_exact_call_result_return_path_adds_only_a_review_candidate(tmp_path: Path) -> None:
+    functions = [
+        json.loads(line)
+        for line in (FIXTURES / "decompiler-parameters.jsonl").read_text().splitlines()
+    ]
+    caller = next(row for row in functions if row["function_entry"] == "00010017")
+    caller["signature_source"] = "DEFAULT"
+    caller["return_type"] = {
+        "kind": "unknown", "name": "undefined4", "path": "/undefined4", "width_bytes": 4,
+    }
+    decompiler = tmp_path / "decompiler.jsonl"
+    decompiler.write_text("".join(json.dumps(row) + "\n" for row in functions), encoding="utf-8")
+
+    flow = tmp_path / "forward-return.tsv"
+    flow.write_text(
+        "function_entry\top_address\top_time\topcode\toutput\tinputs\tcallee_entry\tcallee_name\n"
+        "00010017\t0001001f\t14\tCALL\tdef:0001001f:14:4\tinput:Stack[0x4]:4;const:0x3:4\t00010000\tsample_add\n"
+        "00010017\t00010020\t15\tCOPY\tdef:00010020:15:4\tdef:0001001f:14:4\t-\t-\n"
+        "00010017\t00010024\t20\tRETURN\t-\tconst:0x0:4;def:00010020:15:4\t-\t-\n",
+        encoding="utf-8",
+    )
+    metadata = functions[0]
+    observations = observe_call_arguments(
+        [flow], program_id=metadata["program_id"], program_sha256=metadata["program_sha256"],
+    )
+    calls = tmp_path / "calls.jsonl"
+    calls.write_text("".join(json.dumps(row) + "\n" for row in observations), encoding="utf-8")
+
+    rows = infer_prototypes(decompiler, calls, function_pcode_flow_paths=[flow])
+    caller_hypothesis = next(row for row in rows if row["function_entry"] == "00010017")
+    Draft202012Validator(HYPOTHESIS_SCHEMA).validate(caller_hypothesis)
+    assert caller_hypothesis["status"] == "review"
+    assert caller_hypothesis["candidates"][0]["return_value"] == {"kind": "unknown", "width_bytes": 4}
+    suggestion = next(row for row in caller_hypothesis["candidates"] if row["candidate_id"] == "direct-call-return-shape")
+    assert suggestion["return_value"] == {"kind": "pointer", "width_bytes": 4}
+    assert suggestion["confidence"] == 0.35
+    assert any(ref["source_format"] == "REVENGINSTR.GhidraFunctionPcodeFlow/1" for ref in suggestion["evidence_refs"])
+
+    flow_text = flow.read_text(encoding="utf-8")
+    reversed_return = flow_text.replace(
+        "const:0x0:4;def:00010020:15:4", "def:00010020:15:4;const:0x0:4",
+    )
+    assert reversed_return != flow_text
+    flow.write_text(reversed_return, encoding="utf-8")
+    observations = observe_call_arguments(
+        [flow], program_id=metadata["program_id"], program_sha256=metadata["program_sha256"],
+    )
+    calls.write_text("".join(json.dumps(row) + "\n" for row in observations), encoding="utf-8")
+    rows = infer_prototypes(decompiler, calls, function_pcode_flow_paths=[flow])
+    caller_hypothesis = next(row for row in rows if row["function_entry"] == "00010017")
+    assert len(caller_hypothesis["candidates"]) == 1
+
+
+def test_call_result_that_is_cast_and_loaded_does_not_propagate_return_shape() -> None:
+    fixture = ROOT / "tests/fixtures/ghidra-untyped-prototype"
+    rows = infer_prototypes(
+        fixture / "decompiler-parameters.jsonl", fixture / "call-observations.jsonl",
+        caller_parameter_roots_path=fixture / "prototype-parameter-roots.tsv",
+        function_pcode_flow_paths=[fixture / "whole-program-flow.tsv"],
+    )
+    expected = [json.loads(line) for line in (fixture / "hypotheses.jsonl").read_text().splitlines()]
+    assert rows == expected
+    caller = next(row for row in rows if row["function_entry"] == "00010017")
+    assert all(candidate["candidate_id"] != "direct-call-return-shape" for candidate in caller["candidates"])
+    assert caller["candidates"][0]["return_value"] == {"kind": "unknown", "width_bytes": 4}
+
+
+def test_real_ghidra_tail_call_replay_emits_a_low_confidence_alternative() -> None:
+    fixture = ROOT / "tests/fixtures/ghidra-tail-call-return"
+    rows = infer_prototypes(
+        fixture / "decompiler-parameters.jsonl", fixture / "call-observations.jsonl",
+        function_pcode_flow_paths=[fixture / "forward-flow.tsv"],
+    )
+    expected = [json.loads(line) for line in (fixture / "hypotheses.jsonl").read_text().splitlines()]
+    assert rows == expected
+    caller = next(row for row in rows if row["function_entry"] == "00010017")
+    Draft202012Validator(HYPOTHESIS_SCHEMA).validate(caller)
+    assert caller["candidates"][0]["return_value"] == {"kind": "void", "width_bytes": None}
+    suggestion = caller["candidates"][1]
+    assert suggestion["candidate_id"] == "possible-tail-call-return"
+    assert suggestion["return_value"] == {"kind": "pointer", "width_bytes": 4}
+    assert suggestion["confidence"] == 0.2
+    assert len([ref for ref in suggestion["evidence_refs"] if ref["source_format"] == "REVENGINSTR.GhidraFunctionPcodeFlow/1"]) == 2
+
+
+def test_return_shape_inference_does_not_override_user_defined_void(tmp_path: Path) -> None:
+    fixture = ROOT / "tests/fixtures/ghidra-tail-call-return"
+    functions = [
+        json.loads(line)
+        for line in (fixture / "decompiler-parameters.jsonl").read_text().splitlines()
+    ]
+    functions[1]["signature_source"] = "USER_DEFINED"
+    decompiler = tmp_path / "decompiler.jsonl"
+    decompiler.write_text("".join(json.dumps(row) + "\n" for row in functions), encoding="utf-8")
+    rows = infer_prototypes(
+        decompiler, fixture / "call-observations.jsonl",
+        function_pcode_flow_paths=[fixture / "forward-flow.tsv"],
+    )
+    caller = next(row for row in rows if row["function_entry"] == "00010017")
+    assert len(caller["candidates"]) == 1
+    assert caller["candidates"][0]["return_value"] == {"kind": "void", "width_bytes": None}
 
 
 def test_call_arity_conflict_is_preserved_instead_of_unified(tmp_path: Path) -> None:

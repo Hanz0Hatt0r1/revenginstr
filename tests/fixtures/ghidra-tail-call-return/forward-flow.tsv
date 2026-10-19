@@ -1,0 +1,3 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+00010017	00010020	16	CALL	-	input:Stack[0x4]:4;input:Stack[0x8]:4	00010000	source
+00010017	00010029	31	RETURN	-	const:0x0:4	-	-
