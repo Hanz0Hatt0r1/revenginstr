@@ -1,0 +1,2 @@
+format	program_id	program_sha256	plan_id	callee_entry	parameter_index	caller_entry	caller_call_site	caller_parameter_index	argument_node_id	status
+REVENGINSTR.GhidraCallerArgumentParameterRoot/3	untyped.o	237d1e481b3b2c5e6bfe64c310a1486b451d3d2cf27281649a6338cfee664025	mutate-param0	00010000	0	00010017	0001001f	0	0	direct_parameter_root

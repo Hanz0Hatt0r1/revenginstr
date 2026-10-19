@@ -1,0 +1,88 @@
+{
+  "architecture": {
+    "endianness": "little",
+    "language_id": "x86:LE:32:default",
+    "pointer_width_bytes": 4
+  },
+  "decompiler_parameters": {
+    "complete_for_population": true,
+    "missing_entries": [],
+    "selected": 2,
+    "status_counts": {
+      "complete": 2,
+      "decompile_failed": 0,
+      "external": 0,
+      "no_high_function": 0,
+      "prototype_unavailable": 0
+    },
+    "unexpected_entries": []
+  },
+  "direct_calls": {
+    "complete_for_flow_artifacts": true,
+    "expected_resolved_sites": 1,
+    "extra_sites": [],
+    "missing_sites": [],
+    "observed_sites": 1,
+    "unresolved_sites": []
+  },
+  "format": "REVENGINSTR.FunctionPrototypeEvidenceCoverage/1",
+  "full_program_coverage": true,
+  "function_population": {
+    "external": 0,
+    "internal": 2,
+    "total": 2
+  },
+  "indirect_calls": {
+    "complete_for_flow_artifacts": true,
+    "expected_sites": 0,
+    "extra_sites": [],
+    "missing_sites": [],
+    "observed_sites": 0
+  },
+  "pcode_flow": {
+    "callind_count_mismatches": [],
+    "complete_for_population": true,
+    "flow_rows": 10,
+    "missing_entries": [],
+    "operation_count_mismatches": [],
+    "requested": 2,
+    "rows_without_acquisition": [],
+    "state_counts": {
+      "complete": 2,
+      "decompile_failed": 0,
+      "no_pcode": 0
+    },
+    "unexpected_entries": []
+  },
+  "program_id": "untyped.o",
+  "program_sha256": "237d1e481b3b2c5e6bfe64c310a1486b451d3d2cf27281649a6338cfee664025",
+  "source_artifacts": {
+    "acquisition": {
+      "artifact_sha256": "9fc313aa17b0438a3290536ad4eb860f0ef1db5f3e12ee65c5295c0d74f21c05",
+      "source_format": "REVENGINSTR.GhidraPcodeFlowAcquisition/1"
+    },
+    "call_observations": {
+      "artifact_sha256": "3fed877b204384fb79cb088755ab2e0e87eba1634aecfa17295db481e4b9ca44",
+      "source_format": "REVENGINSTR.DirectCallArgumentObservation/1"
+    },
+    "decompiler_parameters": {
+      "artifact_sha256": "2d656c87af6bed7118e709b697fffc3df7ba1c80a76f0a4a47a916c1da6e3551",
+      "source_format": "REVENGINSTR.GhidraDecompilerParameters/1"
+    },
+    "flows": [
+      {
+        "artifact_sha256": "e8cbff7fbf6b364a779134bc8fcfb480653a3ed157fbc68f7482256a0e627be7",
+        "record_count": 10,
+        "source_format": "REVENGINSTR.GhidraFunctionPcodeFlow/1"
+      }
+    ],
+    "function_index": {
+      "artifact_sha256": "a5ce6fca0bdb578660e7852db51cd21e1bdfc57a90a1856827885e858aac37b2",
+      "source_format": "REVENGINSTR.GhidraProgramIndex.Functions/1"
+    },
+    "indirect_call_evidence": {
+      "artifact_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_format": "REVENGINSTR.GhidraIndirectCallEvidence/1"
+    }
+  }
+}

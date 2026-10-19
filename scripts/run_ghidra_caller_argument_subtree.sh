@@ -4,6 +4,7 @@ set -euo pipefail
 if [[ $# -lt 5 ]]; then
   echo "Usage: GHIDRA_HOME=/opt/ghidra $0 <project-dir> <project-name> <program-name>" >&2
   echo "  <plan.tsv> <output.tsv> [--parameter-root-output <roots.tsv>]" >&2
+  echo "  [--prototype-parameter-root-output <prototype-roots.tsv>]" >&2
   echo "  [--parameter-offset-root-output <offset-roots.tsv>]" >&2
   echo "  [--caller-entry <address>]" >&2
   echo "Plan columns: v1 plan_id, callee_entry, parameter_index; v2 adds caller_entry (or -)" >&2
@@ -19,15 +20,19 @@ OUTPUT=$5
 POST_SCRIPT_ARGS=("$PLAN" "$OUTPUT")
 shift 5
 HAS_PARAMETER_ROOT_OUTPUT=0
+HAS_PROTOTYPE_PARAMETER_ROOT_OUTPUT=0
 HAS_PARAMETER_OFFSET_ROOT_OUTPUT=0
 HAS_CALLER_ENTRY=0
 while [[ $# -gt 0 ]]; do
   [[ $# -ge 2 ]] || { echo "Missing path after $1" >&2; exit 2; }
   case "$1" in
-    --parameter-root-output|--parameter-offset-root-output)
+    --parameter-root-output|--prototype-parameter-root-output|--parameter-offset-root-output)
       if [[ "$1" == "--parameter-root-output" ]]; then
         [[ $HAS_PARAMETER_ROOT_OUTPUT -eq 0 ]] || { echo "Duplicate option: $1" >&2; exit 2; }
         HAS_PARAMETER_ROOT_OUTPUT=1
+      elif [[ "$1" == "--prototype-parameter-root-output" ]]; then
+        [[ $HAS_PROTOTYPE_PARAMETER_ROOT_OUTPUT -eq 0 ]] || { echo "Duplicate option: $1" >&2; exit 2; }
+        HAS_PROTOTYPE_PARAMETER_ROOT_OUTPUT=1
       else
         [[ $HAS_PARAMETER_OFFSET_ROOT_OUTPUT -eq 0 ]] || { echo "Duplicate option: $1" >&2; exit 2; }
         HAS_PARAMETER_OFFSET_ROOT_OUTPUT=1
@@ -77,6 +82,12 @@ fi
 if [[ $HAS_PARAMETER_ROOT_OUTPUT -eq 1 ]]; then
   if ! grep -Fq 'CALLER_ARGUMENT_PARAMETER_ROOT_FORMAT=REVENGINSTR.GhidraCallerArgumentParameterRoot/1' "$RUN_LOG"; then
     echo "error: Ghidra did not report successful caller-parameter-root export completion" >&2
+    exit 1
+  fi
+fi
+if [[ $HAS_PROTOTYPE_PARAMETER_ROOT_OUTPUT -eq 1 ]]; then
+  if ! grep -Fq 'CALLER_ARGUMENT_PROTOTYPE_PARAMETER_ROOT_FORMAT=REVENGINSTR.GhidraCallerArgumentParameterRoot/3' "$RUN_LOG"; then
+    echo "error: Ghidra did not report successful prototype parameter-root export completion" >&2
     exit 1
   fi
 fi

@@ -1115,15 +1115,15 @@ per-call results do not establish whole-program compatibility.
 
 `GhidraDecompilerParameters/1` now records High-P-code formal parameter
 symbols, type widths/kinds, storage, `this`/hidden-return markers and return
-shape with per-function decompilation status. `revenginstr-prototype-infer`
-joins these rows to hash-pinned direct-call argument observations and emits
-`FunctionPrototypeHypothesis/1` review records. It treats call arity as a
-constraint, never as a type label; conflicting call sites are marked
-`conflicted`, and emitted confidence scores stay below the evaluator's
-high-confidence threshold. A real Ghidra replay covers the two-function sample
-fixture. The generic inference and coverage paths now exist, but independent
-consumer gold, calibrated confidence and indirect-call target constraints
-remain required before M8.1 is complete. The new
+shape with per-function decompilation status; Ghidra `Undefined` data types are
+reported as `unknown`. `revenginstr-prototype-infer` joins these rows to
+hash-pinned direct-call arguments and can propagate shape only along
+program-pinned exact caller-formal roots. Conflicting call arity or types are
+marked `conflicted`, and emitted confidence stays below the evaluator's
+high-confidence threshold. Real Ghidra replays cover both an imported-signature
+sample and a stripped, no-DWARF x86 object. The generic inference and coverage
+paths now exist, but independent consumer gold, calibrated confidence and
+indirect-call target constraints remain required before M8.1 is complete. The new
 `FunctionPrototypeEvidenceCoverage/1` audit now checks population, P-code row
 counts, decompiler result status, and direct/indirect call-site capture against
 the exact supplied artifacts. A complete report means evidence capture covers

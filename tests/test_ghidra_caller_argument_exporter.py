@@ -14,10 +14,13 @@ def test_caller_argument_subtree_contract_is_generic() -> None:
         '"REVENGINSTR.GhidraCallerArgumentSubtree/1"',
         '"REVENGINSTR.GhidraCallerArgumentParameterRoot/1"',
         '"REVENGINSTR.GhidraCallerArgumentParameterRoot/2"',
+        '"REVENGINSTR.GhidraCallerArgumentParameterRoot/3"',
         "Expected plan_id, callee_entry, parameter_index header",
         "plan_id\\tcallee_entry\\tparameter_index",
         "parameterIndex(HighFunction high, Varnode node)",
         "--parameter-root-output",
+        "--prototype-parameter-root-output",
+        "getExecutableSHA256()",
         "--parameter-offset-root-output",
         "MAX_DEPTH = 12",
         "MAX_NODES = 96",
@@ -89,7 +92,26 @@ def test_caller_argument_parameter_root_sidecar_schema_and_runner() -> None:
     })
     runner = (ROOT / "scripts/run_ghidra_caller_argument_subtree.sh").read_text(encoding="utf-8")
     assert "--parameter-root-output" in runner
+    assert "--prototype-parameter-root-output" in runner
     assert '"${POST_SCRIPT_ARGS[@]}"' in runner
+
+    prototype_schema = json.loads(
+        (ROOT / "schemas/ghidra-caller-argument-parameter-root-v3.schema.json").read_text()
+    )
+    Draft202012Validator.check_schema(prototype_schema)
+    Draft202012Validator(prototype_schema).validate({
+        "format": "REVENGINSTR.GhidraCallerArgumentParameterRoot/3",
+        "program_id": "fixture.o",
+        "program_sha256": "0" * 64,
+        "plan_id": "plan-0",
+        "callee_entry": "00401000",
+        "parameter_index": "1",
+        "caller_entry": "00402000",
+        "caller_call_site": "00402020",
+        "caller_parameter_index": "0",
+        "argument_node_id": "0",
+        "status": "direct_parameter_root",
+    })
 
 
 def test_multiequal_root_offset_guard_is_preserved() -> None:

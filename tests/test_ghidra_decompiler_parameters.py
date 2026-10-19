@@ -34,6 +34,7 @@ def test_real_decompiler_parameter_replay_matches_schema_and_source_flow() -> No
     for expected in (
         '"REVENGINSTR.GhidraDecompilerParameters/1"', "getLocalSymbolMap()",
         "getParamSymbol(index)", "isThisPointer()", "isHiddenReturn()", "getExecutableSHA256()",
+        "Undefined.isUndefined(type)", "Undefined.isUndefinedArray(type)",
     ):
         assert expected in exporter
     assert "-readOnly" in runner and "-noanalysis" in runner

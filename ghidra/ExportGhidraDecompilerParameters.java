@@ -6,6 +6,7 @@ import ghidra.program.model.data.Array;
 import ghidra.program.model.data.Composite;
 import ghidra.program.model.data.DataType;
 import ghidra.program.model.data.Pointer;
+import ghidra.program.model.data.Undefined;
 import ghidra.program.model.data.VoidDataType;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.listing.FunctionManager;
@@ -62,6 +63,7 @@ public class ExportGhidraDecompilerParameters extends GhidraScript {
 
     private static String typeKind(DataType type) {
         if (type == null) return "unknown";
+        if (Undefined.isUndefined(type) || Undefined.isUndefinedArray(type)) return "unknown";
         if (type instanceof VoidDataType) return "void";
         if (type instanceof Pointer) return "pointer";
         if (type instanceof Array || type instanceof Composite) return "aggregate";
