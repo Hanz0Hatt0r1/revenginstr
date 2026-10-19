@@ -1,0 +1,495 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-direct-call-memory-effect-closure-v2.schema.json",
+  "title": "REVENGINSTR.GhidraDirectCallMemoryEffectClosure/2 JSONL row",
+  "description": "A direct call-site memory-effect summary over a bounded, hash-pinned closure of High-P-code function flows, optionally annotated with scoped static indirect-target observations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "program_id",
+    "function_entry",
+    "address",
+    "time",
+    "opcode",
+    "callee_entry",
+    "status",
+    "effect_opcodes",
+    "provenance"
+  ],
+  "properties": {
+    "format": {
+      "const": "REVENGINSTR.GhidraDirectCallMemoryEffectClosure/2"
+    },
+    "program_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "function_entry": {
+      "type": "string",
+      "minLength": 1
+    },
+    "address": {
+      "type": "string",
+      "minLength": 1
+    },
+    "time": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "opcode": {
+      "enum": [
+        "CALL",
+        "CALLIND"
+      ]
+    },
+    "callee_entry": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "no_explicit_memory_write",
+        "explicit_memory_write",
+        "unknown_effect",
+        "unresolved_target",
+        "indirect_call",
+        "missing_callee_flow"
+      ]
+    },
+    "effect_opcodes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "provenance": {
+            "required": [
+              "static_indirect_target_observations"
+            ]
+          }
+        },
+        "required": [
+          "provenance"
+        ]
+      },
+      "then": {
+        "properties": {
+          "opcode": {
+            "const": "CALLIND"
+          },
+          "status": {
+            "const": "indirect_call"
+          },
+          "callee_entry": {
+            "type": "null"
+          },
+          "effect_opcodes": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "no_explicit_memory_write"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "opcode": {
+            "const": "CALL"
+          },
+          "callee_entry": {
+            "type": "string",
+            "minLength": 1
+          },
+          "effect_opcodes": {
+            "maxItems": 0
+          },
+          "provenance": {
+            "properties": {
+              "callee_pcode_flow_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "callee_pcode_flow_record_count": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "closure_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "closure_function_entries": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "explicit_memory_write"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "opcode": {
+            "const": "CALL"
+          },
+          "callee_entry": {
+            "type": "string",
+            "minLength": 1
+          },
+          "effect_opcodes": {
+            "contains": {
+              "const": "STORE"
+            }
+          },
+          "provenance": {
+            "properties": {
+              "callee_pcode_flow_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "callee_pcode_flow_record_count": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "closure_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "closure_function_entries": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "unknown_effect"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "opcode": {
+            "const": "CALL"
+          },
+          "callee_entry": {
+            "type": "string",
+            "minLength": 1
+          },
+          "effect_opcodes": {
+            "minItems": 1,
+            "not": {
+              "contains": {
+                "const": "STORE"
+              }
+            }
+          },
+          "provenance": {
+            "properties": {
+              "callee_pcode_flow_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "callee_pcode_flow_record_count": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "closure_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "closure_function_entries": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "unresolved_target"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "opcode": {
+            "const": "CALL"
+          },
+          "callee_entry": {
+            "type": "null"
+          },
+          "effect_opcodes": {
+            "maxItems": 0
+          },
+          "provenance": {
+            "properties": {
+              "callee_pcode_flow_sha256": {
+                "type": "null"
+              },
+              "callee_pcode_flow_record_count": {
+                "const": 0
+              },
+              "closure_sha256": {
+                "type": "null"
+              },
+              "closure_function_entries": {
+                "maxItems": 0
+              },
+              "closure_call_site_count": {
+                "const": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "indirect_call"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "opcode": {
+            "const": "CALLIND"
+          },
+          "callee_entry": {
+            "type": "null"
+          },
+          "effect_opcodes": {
+            "maxItems": 0
+          },
+          "provenance": {
+            "properties": {
+              "callee_pcode_flow_sha256": {
+                "type": "null"
+              },
+              "callee_pcode_flow_record_count": {
+                "const": 0
+              },
+              "closure_sha256": {
+                "type": "null"
+              },
+              "closure_function_entries": {
+                "maxItems": 0
+              },
+              "closure_call_site_count": {
+                "const": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "missing_callee_flow"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "opcode": {
+            "const": "CALL"
+          },
+          "callee_entry": {
+            "type": "string",
+            "minLength": 1
+          },
+          "effect_opcodes": {
+            "maxItems": 0
+          },
+          "provenance": {
+            "properties": {
+              "callee_pcode_flow_sha256": {
+                "type": "null"
+              },
+              "callee_pcode_flow_record_count": {
+                "const": 0
+              },
+              "closure_sha256": {
+                "type": "null"
+              },
+              "closure_function_entries": {
+                "maxItems": 0
+              },
+              "closure_call_site_count": {
+                "const": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "caller_pcode_flow_sha256",
+        "caller_pcode_flow_record_index",
+        "callee_pcode_flow_sha256",
+        "callee_pcode_flow_record_count",
+        "closure_sha256",
+        "closure_function_entries",
+        "closure_call_site_count"
+      ],
+      "properties": {
+        "caller_pcode_flow_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "caller_pcode_flow_record_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "callee_pcode_flow_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "callee_pcode_flow_record_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "closure_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "closure_function_entries": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "closure_call_site_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "static_indirect_target_observations": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/static_indirect_target_observation"
+          }
+        }
+      }
+    },
+    "static_indirect_target_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_address",
+        "resolution_scope",
+        "program_sha256",
+        "source"
+      ],
+      "properties": {
+        "target_address": {
+          "type": "string",
+          "pattern": "^0x[0-9a-f]{8}$"
+        },
+        "resolution_scope": {
+          "const": "observed_global_singleton_initializer"
+        },
+        "program_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "artifact_path",
+            "artifact_sha256",
+            "record_index",
+            "source_format"
+          ],
+          "properties": {
+            "artifact_path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "artifact_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "record_index": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "source_format": {
+              "const": "REVENGINSTR.GhidraStaticIndirectCallTarget/1"
+            }
+          }
+        }
+      }
+    }
+  }
+}

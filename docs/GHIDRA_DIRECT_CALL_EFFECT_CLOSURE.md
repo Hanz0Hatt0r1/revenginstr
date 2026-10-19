@@ -5,6 +5,9 @@ caller P-code flow over the reachable direct-call graph supplied to the
 builder. It extends the one-function evidence in
 [`GhidraDirectCallMemoryEffect/1`](GHIDRA_FUNCTION_PCODE_FLOW.md) without
 changing that format or the existing dominance audit.
+The optional static-target join emits
+`GhidraDirectCallMemoryEffectClosure/2`; calls without that option continue to
+emit `/1`.
 
 ## Build a closure
 
@@ -24,6 +27,27 @@ closure. Unused supplied flows are rejected. Byte, operation, call-site,
 function-count, and total closure-visit budgets bound graph traversal and the
 reachable-function entries included in output. Repeated calls to the same
 direct target reuse the computed summary.
+
+## Join reviewed indirect-target observations
+
+For reviewed `GhidraStaticIndirectCallTarget/1` evidence, pass the evidence
+JSONL and the analyzed binary SHA-256:
+
+```sh
+revenginstr-direct-call-memory-effect-closure caller.tsv \
+  --program-id sample:program \
+  --static-indirect-call-targets static-targets.jsonl \
+  --program-sha256 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef \
+  --output call-effect-closure.jsonl
+```
+
+The join requires an exact `function_entry`, call address, and P-code time, and
+rejects evidence for another program identity or binary hash. Matching rows
+add a source-pinned `static_indirect_target_observations` list under
+`provenance` in a `/2` output. These rows describe the evidence's declared resolution scope;
+they do not resolve the `CALLIND`, add a function to its transitive closure,
+or remove the `indirect_call` effect barrier. A runtime-mutated pointer can
+still select a different target.
 
 ## Fail-closed statuses
 

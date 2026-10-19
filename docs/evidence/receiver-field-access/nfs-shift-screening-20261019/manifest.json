@@ -2866,6 +2866,23 @@
       "rows": 2
     },
     {
+      "path": "scan37/replay-0041dd40/static-call-target-closure-0064a0c0.jsonl",
+      "bytes": 2549,
+      "sha256": "0d538c26b4d34c41405477071b42b83d2554cd76799ee7e67202b9650ea71f11",
+      "rows": 3
+    },
+    {
+      "path": "scan37/replay-0041dd40/static-call-target-closure-0064a100.jsonl",
+      "bytes": 3295,
+      "sha256": "185cff0569db49dfd1f392adc32336225680bd8f88b67dd970965f7fa28cf2a8",
+      "rows": 4
+    },
+    {
+      "path": "scan37/replay-0041dd40/static-call-target-closure-replay.md",
+      "bytes": 2928,
+      "sha256": "6954bee67076f96f4eb498437994a54abcb171bac913efaf1f0f7a814fe10d53"
+    },
+    {
       "path": "scan37/replay-0041dd40/target-function-00664a10-callind-evidence.jsonl",
       "bytes": 772,
       "sha256": "274f11246aa3b168709548034809d3ba43756be4a7eef5418391080f98f2e8d7",

@@ -2258,12 +2258,17 @@ unique candidate. Global `00bfc728` may alias a tracked parameter, and 22
 the [seeded-callee descendant replay](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/cfg-v5-seeded-callee-descendants.md)
 for the pinned inputs and reproduction command.
 
-**Next:** wire reviewed static-target evidence into the effect closure, then
-continue target recovery across the 22 focused `CALLIND` effect barriers.
-Two singleton wrapper sites now have static targets for the observed global
-initializer path, with caller and raw-vtable provenance; they remain barriers
-in the effect output because that consumer does not yet ingest the target
-records. Preserve unresolved target and alias barriers; keep selector and
+The `/2` direct-call effect closure now accepts reviewed
+`GhidraStaticIndirectCallTarget/1` evidence. It joins exact function/address/
+time identities, requires a matching program id and binary SHA-256, and pins
+the source artifact row in its output. The two singleton wrapper sites are
+therefore visible to closure consumers with their declared
+`observed_global_singleton_initializer` scope, while their `CALLIND` statuses
+remain barriers and no target flow is treated as part of the closed graph.
+See the [closure replay](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/static-call-target-closure-replay.md).
+
+**Next:** continue target recovery across the 22 focused `CALLIND` effect
+barriers. Preserve unresolved target and alias barriers; keep selector and
 receiver conclusions conditional until runtime evidence binds them. Assess
 bodies smaller than 40 bytes only when a remaining target or pair gives a
 concrete reason to extend the population screen. Do not infer alias facts from

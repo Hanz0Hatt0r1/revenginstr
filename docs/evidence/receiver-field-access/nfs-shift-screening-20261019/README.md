@@ -15,6 +15,12 @@ disabled for all evidence exports. The `006642a5` replay seeded the missing
 function only in a disposable project copy; its CFG export then opened that
 copy read-only.
 
+The two singleton wrapper targets are joined into the `/2` direct-call effect
+closure with an exact function/address/time match and the pinned executable
+hash. The resulting rows retain `indirect_call` barriers; the static records
+remain scoped to their observed initializer path. See the
+[closure replay](scan37/replay-0041dd40/static-call-target-closure-replay.md).
+
 ## Screens
 
 Each screen uses entries in `00401000`–`004fffff` that are non-external,
