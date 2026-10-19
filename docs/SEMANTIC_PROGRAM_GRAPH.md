@@ -25,6 +25,26 @@ only when function entry, call address, and P-code time all match. The
 site, a missing function in Effect IR, a missing call site, and a site that is
 not indirect. Unjoined observations remain in the graph without a call edge.
 
+Add an optional `TypeLayoutHypothesis/1` JSONL input to emit `/3` and connect
+candidate layouts to the same program graph:
+
+```sh
+revenginstr-semantic-program-graph function-effects.jsonl \
+  --type-layout-hypotheses type-layout-hypotheses.jsonl \
+  --output program-graphs.jsonl
+```
+
+Every layout row's `program_id` must exactly match an Effect IR program id;
+the builder does not infer identity from binary hashes. `/3` pins the layout
+artifact hash, adds a `type` node and one `layout_field` node per reviewed
+offset, and connects them with `has_field`. Type nodes retain architecture,
+object-size evidence, vtable anchors, candidate relationships, and conflicts.
+Field nodes retain access evidence, type candidates, and conflicts. These
+nodes remain candidate/review data, use null confidence, and stay out of the
+accepted-high-confidence view. Explicitly conflicted inputs remain contested.
+When both receiver observations and layouts are supplied, `/3` retains both
+inputs and joins them independently.
+
 This first projection emits program, function, operation, and
 parameter-rooted field nodes. It emits `contains` edges for observed program,
 function, and operation membership; exact `calls` edges only when a direct
@@ -52,11 +72,12 @@ strings are decompiler type metadata; they do not establish a class, dispatch
 slot, or target. No `dispatches` edge is inferred.
 
 The `semantic-program-graph` stage can be chained in a pinned benchmark
-manifest after `function-effect-ir`, with the receiver TSV declared as an
-additional input when used. The schemas cover structural facts and observed
-receiver metadata. Receiver dispatch, recovered layouts, roles, states,
-resources, callbacks, execution contexts, and CFG-feasible path/reachability
-queries remain open. Two narrow consumer-owned structural gold replays now
+manifest after `function-effect-ir`, with receiver TSV and layout JSONL inputs
+declared when used. `/3` connects candidate layouts but does not infer object
+identity from function-local fields or promote candidate type/layout labels
+to accepted facts. Receiver dispatch, roles, states, resources, callbacks,
+execution contexts, and CFG-feasible path/reachability queries remain open.
+Two narrow consumer-owned structural gold replays now
 exist for Nevergone and NFS SHIFT; broadly scoped semantic subsystem gold and
 M10 exit criteria remain open. See [graph evaluation replays](evidence/semantic-program-graph-evaluation/README.md).
 The deterministic graph selector and its three evidence views are documented in

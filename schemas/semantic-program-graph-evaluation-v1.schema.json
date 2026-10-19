@@ -32,7 +32,7 @@
     "per_relation": {
       "type": "object",
       "minProperties": 1,
-      "propertyNames": {"enum": ["contains", "calls", "reads", "writes", "observes_receiver"]},
+      "propertyNames": {"enum": ["contains", "calls", "reads", "writes", "observes_receiver", "has_field"]},
       "additionalProperties": {"$ref": "#/$defs/relation_metrics"}
     }
   },

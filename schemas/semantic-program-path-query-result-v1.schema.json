@@ -15,7 +15,7 @@
     "format": {"const": "REVENGINSTR.SemanticProgramPathQueryResult/1"},
     "query_id": {"type": "string", "pattern": "^path-query:[0-9a-f]{64}$"},
     "source_graph_id": {"type": "string", "pattern": "^program:[0-9a-f]{64}$"},
-    "source_graph_format": {"enum": ["REVENGINSTR.SemanticProgramGraph/1", "REVENGINSTR.SemanticProgramGraph/2"]},
+    "source_graph_format": {"enum": ["REVENGINSTR.SemanticProgramGraph/1", "REVENGINSTR.SemanticProgramGraph/2", "REVENGINSTR.SemanticProgramGraph/3"]},
     "program_id": {"type": "string", "minLength": 1},
     "source_graph_sha256": {"$ref": "#/$defs/sha256"},
     "cfg_source_sha256": {"$ref": "#/$defs/sha256"},
@@ -41,8 +41,8 @@
       "type": "object",
       "required": ["id", "kind"],
       "properties": {
-        "id": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation):[0-9a-f]{64}$"},
-        "kind": {"enum": ["program", "function", "operation", "field", "receiver_observation"]}
+        "id": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation|type|layout_field):[0-9a-f]{64}$"},
+        "kind": {"enum": ["program", "function", "operation", "field", "receiver_observation", "type", "layout_field"]}
       },
       "additionalProperties": true
     },
@@ -51,9 +51,9 @@
       "required": ["id", "from", "to", "relation"],
       "properties": {
         "id": {"type": "string", "pattern": "^edge:[0-9a-f]{64}$"},
-        "from": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation):[0-9a-f]{64}$"},
-        "to": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation):[0-9a-f]{64}$"},
-        "relation": {"enum": ["contains", "calls", "reads", "writes", "observes_receiver"]}
+        "from": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation|type|layout_field):[0-9a-f]{64}$"},
+        "to": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation|type|layout_field):[0-9a-f]{64}$"},
+        "relation": {"enum": ["contains", "calls", "reads", "writes", "observes_receiver", "has_field"]}
       },
       "additionalProperties": true
     },

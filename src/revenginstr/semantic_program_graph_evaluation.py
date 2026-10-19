@@ -11,6 +11,7 @@ from typing import Any
 from revenginstr.semantic_program_graph import (
     FORMAT_V1,
     FORMAT_V2,
+    FORMAT_V3,
     _read_jsonl,
     _valid_edge_endpoints,
     validate_graph_references,
@@ -20,7 +21,7 @@ from revenginstr.semantic_program_query import RELATIONS, VIEWS, _in_view
 FORMAT = "REVENGINSTR.SemanticProgramGraphEvaluation/1"
 GOLD_FORMAT = "REVENGINSTR.SemanticProgramGraphGold/1"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-_NODE_ID = re.compile(r"^(?:program|function|operation|field|receiver_observation):[0-9a-f]{64}$")
+_NODE_ID = re.compile(r"^(?:program|function|operation|field|receiver_observation|type|layout_field):[0-9a-f]{64}$")
 _GOLD_SOURCE_OPCODES = {
     "calls": {"CALL"},
     "reads": {"LOAD"},
@@ -49,7 +50,7 @@ def _evidence_refs(value: Any, where: str, graph_sha256: str) -> None:
         if type(ref["record_index"]) is not int or ref["record_index"] < 1:
             raise ValueError(f"{ref_where}: invalid record_index")
         _nonempty_string(ref["source_format"], ref_where)
-        if ref["source_format"] in {FORMAT_V1, FORMAT_V2, FORMAT}:
+        if ref["source_format"] in {FORMAT_V1, FORMAT_V2, FORMAT_V3, FORMAT}:
             raise ValueError(f"{ref_where}: gold evidence cannot cite graph output")
 
 
@@ -173,7 +174,7 @@ def evaluate_semantic_program_graph(
     gold_rows, gold_sha256 = _read_jsonl(gold_path)
     graph_by_id = {}
     for index, graph in enumerate(graphs, 1):
-        if not isinstance(graph, dict) or graph.get("format") not in {FORMAT_V1, FORMAT_V2}:
+        if not isinstance(graph, dict) or graph.get("format") not in {FORMAT_V1, FORMAT_V2, FORMAT_V3}:
             raise ValueError(f"graph record {index}: unsupported semantic graph")
         validate_graph_references(graph)
         if graph["graph_id"] in graph_by_id:
