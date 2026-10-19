@@ -187,6 +187,11 @@ def test_caller_argument_fixtures_match_export_schemas() -> None:
         for row in csv.DictReader(handle, delimiter="\t"):
             root_schema.validate(row)
 
+    offset_root_schema = validator("ghidra-caller-argument-parameter-root-v2.schema.json")
+    with (fixture_dir / "parameter-offset-roots.tsv").open(encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle, delimiter="\t"):
+            offset_root_schema.validate(row)
+
 
 def test_generic_defined_string_tsv_row_schema() -> None:
     schema = validator("ghidra-pcode-defined-strings-v1.schema.json")

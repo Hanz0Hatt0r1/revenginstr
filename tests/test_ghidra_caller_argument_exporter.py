@@ -13,10 +13,12 @@ def test_caller_argument_subtree_contract_is_generic() -> None:
     for required in (
         '"REVENGINSTR.GhidraCallerArgumentSubtree/1"',
         '"REVENGINSTR.GhidraCallerArgumentParameterRoot/1"',
+        '"REVENGINSTR.GhidraCallerArgumentParameterRoot/2"',
         "Expected plan_id, callee_entry, parameter_index header",
         "plan_id\\tcallee_entry\\tparameter_index",
         "parameterIndex(HighFunction high, Varnode node)",
         "--parameter-root-output",
+        "--parameter-offset-root-output",
         "MAX_DEPTH = 12",
         "MAX_NODES = 96",
         "MAX_CALLERS = 128",
@@ -88,3 +90,11 @@ def test_caller_argument_parameter_root_sidecar_schema_and_runner() -> None:
     runner = (ROOT / "scripts/run_ghidra_caller_argument_subtree.sh").read_text(encoding="utf-8")
     assert "--parameter-root-output" in runner
     assert '"${POST_SCRIPT_ARGS[@]}"' in runner
+
+
+def test_multiequal_root_offset_guard_is_preserved() -> None:
+    source = (ROOT / "ghidra/ExportGhidraCallerArgumentSubtree.java").read_text(encoding="utf-8")
+    assert (
+        "else if (merged.parameterIndex != incoming.parameterIndex ||\n"
+        "                            merged.offsetBytes != incoming.offsetBytes) return null;"
+    ) in source
