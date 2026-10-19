@@ -108,6 +108,20 @@ exact source join and is not a calibration result. This version handles
 name-encoded exports only; dynamically registered JNI methods remain
 unresolved.
 
+Optional repeated `--function-pcode-flow flow.tsv` inputs add cautious return
+shape alternatives from exact direct-call flow. A `CALL` result that reaches a
+`RETURN` through only `COPY` operations can suggest the callee's return shape
+(`direct-call-return-shape`, confidence `0.35`). When Ghidra omits the call
+result, an otherwise two-operation `CALL` then `RETURN` function can suggest a
+possible tail-return from the callee (`possible-tail-call-return`, confidence
+`0.2`). The latter is inherently ambiguous: the machine code cannot tell this
+case apart from a call whose result is ignored. Both forms retain the existing
+candidate and add a separately evidenced alternative; they do not change
+imported or user-defined signatures. Propagation stops at casts, loads, and
+other operations, and confidence is a triage score rather than a probability.
+The real Ghidra replay in `tests/fixtures/ghidra-tail-call-return/` exercises
+this ambiguity with a source-backed pointer return.
+
 `tests/fixtures/nevergone-android-jni-prototype/` replays the original
 Nevergone 1.0.9 ARMv7 library against native method declarations from its DEX.
 For 21 exact exported methods, the baseline High-P-code inference got arity

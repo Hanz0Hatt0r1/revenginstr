@@ -17,6 +17,7 @@ from .ghidra_indirect_call_evidence import FORMAT_V3, FORMAT_V4, validate_row
 DECOMPILER_FORMAT = "REVENGINSTR.GhidraDecompilerParameters/1"
 CALL_FORMAT = "REVENGINSTR.DirectCallArgumentObservation/1"
 CALLER_PARAMETER_ROOT_FORMAT = "REVENGINSTR.GhidraCallerArgumentParameterRoot/3"
+FLOW_FORMAT = "REVENGINSTR.GhidraFunctionPcodeFlow/1"
 FORMAT = "REVENGINSTR.FunctionPrototypeHypothesis/1"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _ADDRESS = re.compile(r"^(?:[A-Za-z_$][\w$]*:)?(?:0x)?[0-9a-fA-F]+$")
@@ -316,6 +317,247 @@ def _read_android_jni_prototypes(
     return prototypes, digest
 
 
+def _read_return_flow_edges(
+    paths: list[Path],
+    calls: list[dict[str, Any]],
+    calls_sha: str,
+    functions: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    if not paths:
+        return []
+    flow_columns = [
+        "function_entry", "op_address", "op_time", "opcode", "output", "inputs",
+        "callee_entry", "callee_name",
+    ]
+    calls_by_ref = {
+        (row["evidence_ref"]["artifact_sha256"], row["evidence_ref"]["record_index"]): row
+        for row in calls
+    }
+    function_keys = {}
+    for entry in functions:
+        key = _address_key(entry)
+        if key in function_keys:
+            raise ValueError(f"{entry!r}: duplicate normalized decompiler function entry")
+        function_keys[key] = entry
+    edges = []
+    seen_paths: set[Path] = set()
+    for path in sorted((path.resolve() for path in paths), key=str):
+        if path in seen_paths:
+            continue
+        seen_paths.add(path)
+        raw = path.read_bytes()
+        digest = hashlib.sha256(raw).hexdigest()
+        try:
+            text = raw.decode("utf-8")
+            reader = csv.DictReader(io.StringIO(text), delimiter="\t", strict=True)
+            if reader.fieldnames != flow_columns:
+                raise ValueError(f"{path}: expected exact {FLOW_FORMAT} columns")
+            rows = []
+            for record_index, row in enumerate(reader, 1):
+                if None in row or any(value is None for value in row.values()):
+                    raise ValueError(f"{path}: malformed P-code row {record_index}")
+                function_entry = _address(row["function_entry"], f"{path}:{record_index}: function_entry")
+                _address(row["op_address"], f"{path}:{record_index}: op_address")
+                if row["callee_entry"] != "-":
+                    _address(row["callee_entry"], f"{path}:{record_index}: callee_entry")
+                if _address_key(function_entry) not in function_keys:
+                    continue
+                if not row["op_time"].isascii() or not row["op_time"].isdecimal():
+                    raise ValueError(f"{path}:{record_index}: invalid op_time")
+                if not row["opcode"] or not row["output"] or not row["inputs"]:
+                    raise ValueError(f"{path}:{record_index}: invalid P-code operation")
+                row = {**row, "_record_index": record_index}
+                rows.append(row)
+        except (UnicodeDecodeError, csv.Error) as error:
+            raise ValueError(f"{path}: invalid UTF-8 P-code TSV: {error}") from error
+
+        users: dict[tuple[tuple[str, int], str], list[tuple[dict[str, Any], int]]] = {}
+        operations_by_function: dict[tuple[str, int], list[dict[str, Any]]] = {}
+        for row in rows:
+            if row["inputs"] == "-":
+                inputs = []
+            else:
+                inputs = row["inputs"].split(";")
+                if any(not token for token in inputs):
+                    raise ValueError(f"{path}:{row['_record_index']}: invalid input token list")
+            row["_input_tokens"] = inputs
+            function_key = _address_key(row["function_entry"])
+            operations_by_function.setdefault(function_key, []).append(row)
+            for input_index, token in enumerate(inputs):
+                users.setdefault((function_key, token), []).append((row, input_index))
+
+        for call_row in rows:
+            if call_row["opcode"] != "CALL" or call_row["callee_entry"] == "-":
+                continue
+            flow_index = call_row["_record_index"]
+            call = calls_by_ref.get((digest, flow_index))
+            if call is None:
+                continue
+            if (
+                _address_key(call_row["function_entry"]) != _address_key(call["caller_entry"])
+                or _address_key(call_row["callee_entry"]) != _address_key(call["callee_entry"])
+                or _address_key(call_row["op_address"]) != _address_key(call["call_address"])
+                or int(call_row["op_time"]) != call["call_time"]
+            ):
+                raise ValueError(f"{path}:{flow_index}: direct-call row disagrees with its observation")
+            caller = function_keys[_address_key(call["caller_entry"])]
+            callee = function_keys.get(_address_key(call["callee_entry"]))
+            if callee is None:
+                continue
+            if call_row["output"] == "-":
+                caller_rows = operations_by_function[_address_key(caller)]
+                caller_function = functions[caller]
+                if (
+                    len(caller_rows) != 2
+                    or caller_rows[0] is not call_row
+                    or caller_rows[1]["opcode"] != "RETURN"
+                    or int(caller_rows[1]["op_time"]) <= int(call_row["op_time"])
+                    or len(caller_rows[1]["_input_tokens"]) != 1
+                    or not re.fullmatch(r"const:0x0:[1-9][0-9]*", caller_rows[1]["_input_tokens"][0])
+                    or caller_function["status"] != "complete"
+                    or caller_function["return_type"]["kind"] not in {"void", "unknown"}
+                ):
+                    continue
+                callee_function = functions[callee]
+                if callee_function["status"] != "complete":
+                    continue
+                callee_return = callee_function["return_type"]
+                kind = _shape_kind(callee_return, return_value=True)
+                width = callee_return["width_bytes"]
+                if kind not in {"pointer", "aggregate", "scalar"} or type(width) is not int:
+                    continue
+                call_ref = _evidence(calls_sha, call["_record_index"], CALL_FORMAT)
+                edges.append({
+                    "caller": caller,
+                    "callee": callee,
+                    "value_width_bytes": width,
+                    "candidate_id": "possible-tail-call-return",
+                    "confidence": 0.2,
+                    "evidence_refs": _dedupe_refs([
+                        _evidence(digest, call_row["_record_index"], FLOW_FORMAT),
+                        _evidence(digest, caller_rows[1]["_record_index"], FLOW_FORMAT),
+                        call_ref,
+                    ]),
+                })
+                continue
+            parents: dict[str, tuple[str, dict[str, Any]] | None] = {call_row["output"]: None}
+            pending = [call_row["output"]]
+            returned = []
+            cursor = 0
+            while cursor < len(pending):
+                token = pending[cursor]
+                cursor += 1
+                for user, input_index in users.get((_address_key(caller), token), []):
+                    if (
+                        user["opcode"] == "RETURN"
+                        and input_index == len(user["_input_tokens"]) - 1
+                    ):
+                        path_rows = []
+                        current = token
+                        while current != call_row["output"]:
+                            parent = parents[current]
+                            assert parent is not None
+                            current, operation = parent
+                            path_rows.append(operation)
+                        returned.append([call_row, *reversed(path_rows), user])
+                    elif user["opcode"] == "COPY" and len(user["_input_tokens"]) == 1 and user["output"] != "-":
+                        output = user["output"]
+                        if output not in parents:
+                            parents[output] = (token, user)
+                            pending.append(output)
+
+            value_width_text = call_row["output"].rpartition(":")[2]
+            if not value_width_text.isascii() or not value_width_text.isdecimal() or int(value_width_text) < 1:
+                raise ValueError(f"{path}:{flow_index}: invalid CALL result width")
+            for path_rows in returned:
+                flow_refs = [
+                    _evidence(digest, row["_record_index"], FLOW_FORMAT)
+                    for row in path_rows
+                ]
+                call_ref = _evidence(calls_sha, call["_record_index"], CALL_FORMAT)
+                edges.append({
+                    "caller": caller,
+                    "callee": callee,
+                    "value_width_bytes": int(value_width_text),
+                    "candidate_id": "direct-call-return-shape",
+                    "confidence": 0.35,
+                    "evidence_refs": _dedupe_refs([*flow_refs, call_ref]),
+                })
+    return edges
+
+
+def _return_shape_suggestions(
+    functions: dict[str, dict[str, Any]],
+    android_jni: dict[str, dict[str, Any]],
+    android_jni_sha: str | None,
+    decompiler_sha: str,
+    edges: list[dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    adjacency: dict[str, list[tuple[str, dict[str, Any]]]] = {entry: [] for entry in functions}
+    for edge in edges:
+        adjacency[edge["caller"]].append((edge["callee"], edge))
+        adjacency[edge["callee"]].append((edge["caller"], edge))
+
+    known: dict[str, tuple[str, int, dict[str, Any]]] = {}
+    for entry, function in functions.items():
+        if entry in android_jni:
+            jni = android_jni[entry]
+            kind = jni["return_value"]["kind"]
+            width = jni["return_value"]["width_bytes"]
+            assert android_jni_sha is not None
+            ref = _evidence(android_jni_sha, jni["_record_index"], ANDROID_JNI_FORMAT)
+        elif function["status"] == "complete":
+            return_type = function["return_type"]
+            kind = _shape_kind(return_type, return_value=True)
+            width = return_type["width_bytes"]
+            ref = _evidence(decompiler_sha, function["_record_index"], DECOMPILER_FORMAT)
+        else:
+            continue
+        if kind not in {"pointer", "aggregate", "scalar"} or type(width) is not int:
+            continue
+        known[entry] = (kind, width, ref)
+
+    suggestions: dict[str, dict[str, Any]] = {}
+    visited = set()
+    for start in adjacency:
+        if start in visited:
+            continue
+        component = []
+        component_edges = []
+        pending = [start]
+        visited.add(start)
+        while pending:
+            current = pending.pop()
+            component.append(current)
+            for neighbor, edge in adjacency[current]:
+                component_edges.append(edge)
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    pending.append(neighbor)
+        labels = {(known[entry][0], known[entry][1]) for entry in component if entry in known}
+        widths = {edge["value_width_bytes"] for edge in component_edges}
+        refs = _dedupe_refs([
+            *(known[entry][2] for entry in component if entry in known),
+            *(ref for edge in component_edges for ref in edge["evidence_refs"]),
+        ])
+        if len(labels) != 1 or widths - {next(iter(labels))[1]}:
+            continue
+        kind, width = next(iter(labels))
+        for entry in component:
+            if entry not in known:
+                function = functions[entry]
+                if function["signature_source"].strip().upper() in {"IMPORTED", "USER_DEFINED"}:
+                    continue
+                suggestions[entry] = {
+                    "kind": kind,
+                    "width_bytes": width,
+                    "candidate_id": min(component_edges, key=lambda edge: edge["confidence"])["candidate_id"],
+                    "confidence": min(edge["confidence"] for edge in component_edges),
+                    "evidence_refs": refs,
+                }
+    return suggestions
+
+
 def _read_caller_parameter_roots(
     path: Path,
     calls: list[dict[str, Any]],
@@ -510,6 +752,7 @@ def infer_prototypes(
     caller_parameter_roots_path: Path | None = None,
     indirect_call_evidence_path: Path | None = None,
     android_jni_evidence_path: Path | None = None,
+    function_pcode_flow_paths: list[Path] | None = None,
 ) -> list[dict[str, Any]]:
     """Create hypotheses from formal types, source prototypes and exact call constraints."""
     functions, program_id, program_sha, decompiler_sha, architecture = _read_decompiler(decompiler_path)
@@ -520,6 +763,12 @@ def infer_prototypes(
         android_jni, android_jni_sha = _read_android_jni_prototypes(
             android_jni_evidence_path, program_id, program_sha, architecture, functions,
         )
+    return_edges = _read_return_flow_edges(
+        function_pcode_flow_paths or [], calls, calls_sha, functions,
+    )
+    return_shape_suggestions = _return_shape_suggestions(
+        functions, android_jni, android_jni_sha, decompiler_sha, return_edges,
+    )
     indirect_calls = []
     indirect_root_edges = []
     if indirect_call_evidence_path is not None:
@@ -609,10 +858,20 @@ def infer_prototypes(
                 "confidence": 0.1,
                 "evidence_refs": [source_ref, *call_refs],
             }
+            candidates = [candidate]
+            suggestion = return_shape_suggestions.get(entry)
+            if suggestion is not None:
+                candidates.append({
+                    **candidate,
+                    "candidate_id": suggestion["candidate_id"],
+                    "return_value": {"kind": suggestion["kind"], "width_bytes": suggestion["width_bytes"]},
+                    "confidence": suggestion["confidence"],
+                    "evidence_refs": _dedupe_refs([*candidate["evidence_refs"], *suggestion["evidence_refs"]]),
+                })
             results.append({
                 "format": FORMAT, "program_id": program_id, "program_sha256": program_sha,
-                "architecture": architecture, "function_entry": entry, "status": "review",
-                "candidates": [candidate], "conflicts": [],
+                "architecture": architecture, "function_entry": entry,
+                "status": "review", "candidates": candidates, "conflicts": [],
             })
             continue
 
@@ -676,10 +935,20 @@ def infer_prototypes(
         conflicts.extend(parameter_conflicts.get(entry, []))
         if conflicts:
             status = "conflicted"
+        candidates = [candidate]
+        suggestion = return_shape_suggestions.get(entry)
+        if suggestion is not None:
+            candidates.append({
+                **candidate,
+                "candidate_id": suggestion["candidate_id"],
+                "return_value": {"kind": suggestion["kind"], "width_bytes": suggestion["width_bytes"]},
+                "confidence": suggestion["confidence"],
+                "evidence_refs": _dedupe_refs([*candidate["evidence_refs"], *suggestion["evidence_refs"]]),
+            })
         results.append({
             "format": FORMAT, "program_id": program_id, "program_sha256": program_sha,
             "architecture": architecture, "function_entry": entry, "status": status,
-            "candidates": [candidate], "conflicts": conflicts,
+            "candidates": candidates, "conflicts": conflicts,
         })
     return results
 
@@ -700,6 +969,10 @@ def main(argv: list[str] | None = None) -> int:
         "--android-jni-evidence", type=Path,
         help="optional executable-matched AndroidJniPrototypeEvidence/1 exact native prototypes",
     )
+    parser.add_argument(
+        "--function-pcode-flow", action="append", type=Path,
+        help="optional GhidraFunctionPcodeFlow/1 TSVs for cautious direct-call return-shape candidates",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     inputs = {args.decompiler_parameters.resolve(), args.call_observations.resolve()}
@@ -709,13 +982,15 @@ def main(argv: list[str] | None = None) -> int:
         inputs.add(args.indirect_call_evidence.resolve())
     if args.android_jni_evidence is not None:
         inputs.add(args.android_jni_evidence.resolve())
+    if args.function_pcode_flow is not None:
+        inputs.update(path.resolve() for path in args.function_pcode_flow)
     if args.output.resolve() in inputs:
         print("error: output path must differ from every input path", file=sys.stderr)
         return 2
     try:
         rows = infer_prototypes(
             args.decompiler_parameters, args.call_observations, args.caller_parameter_roots,
-            args.indirect_call_evidence, args.android_jni_evidence,
+            args.indirect_call_evidence, args.android_jni_evidence, args.function_pcode_flow,
         )
     except (OSError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
