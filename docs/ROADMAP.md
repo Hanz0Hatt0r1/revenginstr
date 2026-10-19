@@ -1282,6 +1282,13 @@ sampled-value joins remain open.
 
 Compare bounded runs where one caller-controlled input/state/action differs. Rank candidate causal relationships by reproducible observation while retaining `correlation`, `intervention_support` and `confirmed_exact` as distinct evidence classes.
 
+**Pairwise differential v1 implemented:** two hash-pinned runtime/static reports
+can be compared under a caller-declared one-factor change and fixed-context
+hash. It ranks changed normalized event frequencies as `correlation` evidence
+only. It does not infer event ordering or promote a single pair to causal
+support. Repeated-run `intervention_support` and stronger `confirmed_exact`
+evidence remain open.
+
 ### M9.4 Runtime value-flow confirmation
 
 Use runtime observations to confirm or reject high-value static candidates such as receiver identity, field write/read linkage, state transitions, factory returns and lifetime events. A runtime witness can strengthen a candidate but cannot retroactively make unsupported static paths exact.

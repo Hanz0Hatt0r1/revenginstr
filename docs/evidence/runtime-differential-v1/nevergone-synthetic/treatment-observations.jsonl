@@ -1,0 +1,7 @@
+{"capture_id": "synthetic-nevergone-left-action-treatment", "event_kind": "instruction", "format": "REVENGINSTR.RuntimeAddressObservation/1", "runtime_address": "0x7031de44", "sequence": 0}
+{"capture_id": "synthetic-nevergone-left-action-treatment", "event_kind": "function_entry", "format": "REVENGINSTR.RuntimeAddressObservation/1", "runtime_address": "0x7031ddee", "sequence": 1}
+{"capture_id": "synthetic-nevergone-left-action-treatment", "event_kind": "call_target", "format": "REVENGINSTR.RuntimeAddressObservation/1", "runtime_address": "0x70539756", "sequence": 2}
+{"capture_id": "synthetic-nevergone-left-action-treatment", "event_kind": "instruction", "format": "REVENGINSTR.RuntimeAddressObservation/1", "runtime_address": "0x70100000", "sequence": 3}
+{"capture_id": "synthetic-nevergone-left-action-treatment", "event_kind": "instruction", "format": "REVENGINSTR.RuntimeAddressObservation/1", "runtime_address": "0x1", "sequence": 4}
+{"capture_id": "synthetic-nevergone-left-action-treatment", "event_kind": "function_entry", "format": "REVENGINSTR.RuntimeAddressObservation/1", "runtime_address": "0x7031a4ec", "sequence": 5}
+{"capture_id": "synthetic-nevergone-left-action-treatment", "event_kind": "instruction", "format": "REVENGINSTR.RuntimeAddressObservation/1", "runtime_address": "0x7031de60", "sequence": 6}

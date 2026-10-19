@@ -1,0 +1,13 @@
+{
+  "baseline_report_sha256": "c88058fcab630f7c238193b8a38645186840c68fbb13ac062514995586db717c",
+  "comparison_id": "synthetic-horizontal-control-action",
+  "format": "REVENGINSTR.RuntimeDifferentialManifest/1",
+  "intervention": {
+    "baseline_label": "released",
+    "dimension": "action",
+    "fixed_context_sha256": "76cfd6bc6ee87286260611d8777bbff4862483dc2c3b1a903d0db9d0fc6b2431",
+    "name": "horizontal_control",
+    "treatment_label": "left_pressed"
+  },
+  "treatment_report_sha256": "28b0b881815caeca29190400d8b48aeb8af934f7950f2e10496521e5f4e583de"
+}
