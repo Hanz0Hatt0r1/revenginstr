@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-indirect-call-vtable-candidates-v1.schema.json",
   "title": "REVENGINSTR.GhidraIndirectCallVtableCandidates/1 record",
-  "description": "Bounded static target candidates for indirect calls whose receiver is tied to observed constructor and vtable evidence; unresolved returned-object receivers remain explicit.",
+  "description": "Bounded or partial static target candidates for indirect calls whose receiver is tied to observed constructor, vtable, or returned-subobject evidence; unresolved returned-object receivers remain explicit.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -31,7 +31,7 @@
     "call_time": {"type": "integer", "minimum": 0},
     "slot_offset_bytes": {"type": "integer", "minimum": 0},
     "status": {
-      "enum": ["bounded_static_target_candidates", "unresolved_return_object_vtable"]
+      "enum": ["bounded_static_target_candidates", "partial_static_target_candidates", "unresolved_return_object_vtable"]
     },
     "receiver": {"$ref": "#/$defs/receiver"},
     "candidate_targets": {
@@ -56,6 +56,24 @@
       "then": {
         "properties": {
           "candidate_targets": {"maxItems": 0},
+          "receiver": {"properties": {"kind": {"const": "prior_indirect_call_result"}}}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "partial_static_target_candidates"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "candidate_targets": {
+            "minItems": 1,
+            "items": {
+              "properties": {
+                "vtable_origins": {
+                  "items": {"required": ["subobject_provenance"]}
+                }
+              }
+            }
+          },
           "receiver": {"properties": {"kind": {"const": "prior_indirect_call_result"}}}
         }
       }
@@ -132,7 +150,45 @@
         "vtable_address": {"$ref": "#/$defs/address"},
         "vtable_store": {"$ref": "#/$defs/evidence_ref"},
         "vtable_store_pcode": {"$ref": "#/$defs/evidence_ref"},
-        "vtable_value_pcode": {"$ref": "#/$defs/evidence_ref"}
+        "vtable_value_pcode": {"$ref": "#/$defs/evidence_ref"},
+        "subobject_provenance": {"$ref": "#/$defs/subobject_provenance"}
+      }
+    },
+    "subobject_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parent_candidate_evidence", "parent_call_address", "parent_dispatch_target",
+        "selector_value", "selector_case_export", "member_offset_bytes",
+        "member_count", "member_address_pcode", "subobject_constructor_entry",
+        "constructor_call_path", "member_store_destination_pcode"
+      ],
+      "properties": {
+        "parent_candidate_evidence": {"$ref": "#/$defs/evidence_ref"},
+        "parent_call_address": {"$ref": "#/$defs/address"},
+        "parent_dispatch_target": {"$ref": "#/$defs/address"},
+        "selector_value": {"type": "integer", "minimum": 0},
+        "selector_case_export": {"$ref": "#/$defs/source_excerpt_ref"},
+        "member_offset_bytes": {"type": "integer", "minimum": 0},
+        "member_count": {"type": ["integer", "null"], "minimum": 1},
+        "member_address_pcode": {"$ref": "#/$defs/evidence_ref"},
+        "subobject_constructor_entry": {"$ref": "#/$defs/address"},
+        "constructor_call_path": {
+          "type": "array", "minItems": 1, "items": {"$ref": "#/$defs/evidence_ref"}
+        },
+        "member_store_destination_pcode": {"$ref": "#/$defs/evidence_ref"}
+      }
+    },
+    "source_excerpt_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_path", "artifact_sha256", "line_start", "line_end", "source_format"],
+      "properties": {
+        "artifact_path": {"type": "string", "minLength": 1},
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "line_start": {"type": "integer", "minimum": 1},
+        "line_end": {"type": "integer", "minimum": 1},
+        "source_format": {"type": "string", "minLength": 1}
       }
     }
   }

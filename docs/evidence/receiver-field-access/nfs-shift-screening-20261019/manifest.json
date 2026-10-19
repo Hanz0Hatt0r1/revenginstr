@@ -2416,8 +2416,8 @@
     },
     {
       "path": "scan37/replay-0041dd40/manual-static-vtable-review.md",
-      "bytes": 10794,
-      "sha256": "b04d4b8902472b34793881f2e24262b48a276418d5fefe5ecb3e11c0bd72442c"
+      "bytes": 16351,
+      "sha256": "913449af9519899c853336e9fb8783dc6823ef51dbc1f7b3017925918539779d"
     },
     {
       "path": "scan37/replay-0041dd40/memory-store-access-full-closure-scope.jsonl",
@@ -2516,6 +2516,75 @@
       "path": "scan37/selection-source.json",
       "bytes": 48272,
       "sha256": "03e05add901088bfb566abdc8f40703e2c5c76f636125d41fb87f10681a68e85"
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-constructor-functions.txt",
+      "bytes": 72,
+      "sha256": "7dd25297965585738d1eeac80d76e2b123dc45dcab6ee6513680be7a369dccdd",
+      "rows": 8
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-constructor-pcode-flow.tsv",
+      "bytes": 210701,
+      "sha256": "6f52c33fda106cf4e9a71a235b13679342816221e8e3530d047db3504db589cc",
+      "rows": 2402
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-constructor-callind.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "rows": 0
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-constructor-acquisition.jsonl",
+      "bytes": 1404,
+      "sha256": "38cca8943d07f097fc192afeb46138507dfce4659c61085b88a8c3e1a6908dd8",
+      "rows": 8
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-constructor-export.log",
+      "bytes": 5107,
+      "sha256": "b995a42c8897a37dab255a006c2602523409bd5e9042898d6c56ab6f908f2cad"
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-functions.txt",
+      "bytes": 54,
+      "sha256": "af66588fb25771e67638a3ee0e2126dbeca3c5464b4ffc0beefcf8b9fa0e4263",
+      "rows": 6
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-pcode-flow.tsv",
+      "bytes": 4169,
+      "sha256": "bd531a61f945e97189274448fa468e4c84b925807d878fe072701b06a84614d0",
+      "rows": 56
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-callind.jsonl",
+      "bytes": 1236,
+      "sha256": "eb7c25dca4b672d75ff3e850fa56cd1d2cd376db0805f5b1fcc62cda986a9186",
+      "rows": 2
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-acquisition.jsonl",
+      "bytes": 1046,
+      "sha256": "a9d74faf702ecc40e388d86f9c1ab6ecd320267fa4bce9179cdab7bc3121c274",
+      "rows": 6
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-export.log",
+      "bytes": 5084,
+      "sha256": "7d9068fd066bbc9c4a83d678806a29574eddce5f9afb5ba8eb2d9ad12955bd0b"
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-cases.md",
+      "bytes": 1235,
+      "sha256": "757141e02193713435787f48579a23cc465ab4e17b75ab0eb57b73d978298a3c"
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-nested-vtable-call-candidates.jsonl",
+      "bytes": 89693,
+      "sha256": "152a6f5b851c025a6335451357f2647b407cc274c20eba8108ca8310dd9786ef",
+      "rows": 2
     }
   ]
 }

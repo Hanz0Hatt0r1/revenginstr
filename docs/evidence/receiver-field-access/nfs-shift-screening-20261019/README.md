@@ -193,9 +193,9 @@ recorded in
 `00664a10` returns the second reader's runtime field value, so it still does
 not identify the runtime receiver used by later calls in `006657e0` and
 `00665820`. Static vtable evidence now gives bounded candidate sets for the
-first-level cached-field calls, while the two calls on their returned objects
-remain unresolved. This manual review does not change the `/6` statuses or
-establish that runtime memory cannot be overwritten.
+first-level cached-field calls and partial candidate sets for the two calls on
+their returned objects. This manual review does not change the `/6` statuses
+or establish that runtime memory cannot be overwritten.
 The generic [`IndirectCallPointerSlot/1` replay](scan37/replay-0041dd40/indirect-call-pointer-slots.jsonl)
 joins all 22 closure `CALLIND` sites to the exact pointer-provenance rows. Six
 have a single aligned constant-offset pointer-slot shape. The four downstream
@@ -226,13 +226,17 @@ The new [`TypeLayoutHypothesis/1` row](scan37/replay-0041dd40/field20-type-layou
 captures this as an opaque review-level cluster with a 56-byte minimum
 observed extent and a 4-byte data-pointer candidate; it leaves exact size and
 pointee identity unresolved.
-The new [`GhidraIndirectCallVtableCandidates/1` capture](scan37/replay-0041dd40/field20-vtable-call-candidates.jsonl)
+The [`GhidraIndirectCallVtableCandidates/1` first-level capture](scan37/replay-0041dd40/field20-vtable-call-candidates.jsonl)
 contains three static target candidates (`00663030`, `00676040`, `006770b0`)
 for each first-level call at `006657ed` and `0066582d`, with constructor,
-factory, store-graph, vtable-slot, and raw-byte references. It does not select
-the runtime branch or rule out unobserved writers. The calls at `00665801`
-and `00665841` remain unresolved because their receivers are returned objects
-whose vtables are not bound by this evidence. The `/6` results remain
+factory, store-graph, vtable-slot, and raw-byte references. The second-level
+[`nested candidate capture`](scan37/replay-0041dd40/field20-nested-vtable-call-candidates.jsonl)
+records partial target candidates for `00665801` (`00674f10`, `007091d0`) and
+`00665841` (`00674f30`, `00677210`) from vtables initialized in returned
+subobjects. Those rows retain the parent call, selector case, member offset,
+constructor path, and exact P-code store references. They remain partial: the
+first-level target `00663030`, selector-1 returns at `+0x74`, runtime selector
+values, and unobserved writers remain unresolved. The `/6` results remain
 unchanged.
 The replay also includes the 32-row, read-only generic Ghidra pointer-table
 export at [`ghidra-pointer-table-slots.jsonl`](scan37/replay-0041dd40/ghidra-pointer-table-slots.jsonl);

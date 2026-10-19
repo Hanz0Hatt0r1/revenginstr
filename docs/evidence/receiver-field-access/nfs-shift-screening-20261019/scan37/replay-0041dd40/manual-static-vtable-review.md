@@ -123,11 +123,76 @@ proofs, and `+0x20` store-graph references are retained per origin in
 using [`GhidraIndirectCallVtableCandidates/1`](../../../../../../schemas/ghidra-indirect-call-vtable-candidates-v1.schema.json).
 
 The later calls `00665801` (`+0x8`) and `00665841` (`+0xc`) use the prior
-`CALLIND` results as receivers. Their returned objects have no concrete vtable
-binding in the retained evidence, so both rows deliberately have empty target
-sets and status `unresolved_return_object_vtable`. In particular, the
-original cached object's vtable entries at `+0x8` and `+0xc` are not evidence
-for these calls.
+`CALLIND` results as receivers. A follow-up replay traces subobject vtables
+written by the observed first-level constructors, giving partial static target
+sets for both calls. In particular, the original cached object's vtable
+entries at `+0x8` and `+0xc` are not evidence for these calls.
+
+## Partial targets on returned subobjects
+
+Read-only P-code batches completed for all eight constructor/helper functions
+and all six getter/leaf functions. The inputs, outputs, and acquisition rows
+are retained in [`field20-subobject-constructor-functions.txt`](field20-subobject-constructor-functions.txt),
+[`field20-subobject-constructor-pcode-flow.tsv`](field20-subobject-constructor-pcode-flow.tsv),
+[`field20-subobject-constructor-callind.jsonl`](field20-subobject-constructor-callind.jsonl),
+[`field20-subobject-constructor-acquisition.jsonl`](field20-subobject-constructor-acquisition.jsonl),
+[`field20-subobject-dispatch-functions.txt`](field20-subobject-dispatch-functions.txt),
+[`field20-subobject-dispatch-pcode-flow.tsv`](field20-subobject-dispatch-pcode-flow.tsv),
+[`field20-subobject-dispatch-callind.jsonl`](field20-subobject-dispatch-callind.jsonl),
+and [`field20-subobject-dispatch-acquisition.jsonl`](field20-subobject-dispatch-acquisition.jsonl).
+All 14 functions completed with P-code; the constructor replay contains 2,402
+flow rows and the getter/leaf replay contains 56. The getter case mapping is
+preserved with the source hash in
+[`field20-subobject-dispatch-cases.md`](field20-subobject-dispatch-cases.md).
+
+The returned-object getters expose these static cases:
+
+| Getter target | Selector | Returned member | Bounds |
+| --- | ---: | --- | --- |
+| `00676040` | 4 | parent `+0x128` | index `< 3`, stride `0x5c` |
+| `006770b0` | 2 | parent `+0x4c0` | index `< 2`, stride `0x48` |
+| `006770b0` | 4 | parent `+0x128` | index `< 10`, stride `0x5c` |
+| `006770b0` | 5 | parent `+0x550` | singleton |
+
+The existing first-level rows do not bind the runtime selector register. Each
+known getter also returns parent `+0x74` for selector 1; that member's vtable
+is still unresolved. The first-level candidate `00663030` also has no recovered
+returned-vtable provenance.
+
+The constructor helpers write vtables `00af6b38` at `+0x128`, `00af7050` at
+`+0x4c0`, and `00af723c` at `+0x550`. The getter conditions above therefore
+bound the following partial candidates from the pinned executable's raw slot
+bytes:
+
+| Later `CALLIND` | Slot on returned object | Static target | Returned-object vtable origins | Origin paths |
+| --- | ---: | --- | --- | ---: |
+| `00665801` | `+0x8` | `00674f10` | `00af6b38`, `00af7050` | 7 |
+| `00665801` | `+0x8` | `007091d0` | `00af723c` | 3 |
+| `00665841` | `+0xc` | `00674f30` | `00af6b38`, `00af7050` | 7 |
+| `00665841` | `+0xc` | `00677210` | `00af723c` | 3 |
+
+The PE `.rdata` mapping used for these slots has virtual base `00aa6000` and
+raw file offset `006a4a00`. The six little-endian entries are:
+
+| Vtable | Slot | File offset | Bytes | Target |
+| --- | ---: | --- | --- | --- |
+| `00af6b38` | `+0x8` | `006f5540` | `10 4f 67 00` | `00674f10` |
+| `00af6b38` | `+0xc` | `006f5544` | `30 4f 67 00` | `00674f30` |
+| `00af7050` | `+0x8` | `006f5a58` | `10 4f 67 00` | `00674f10` |
+| `00af7050` | `+0xc` | `006f5a5c` | `30 4f 67 00` | `00674f30` |
+| `00af723c` | `+0x8` | `006f5c44` | `d0 91 70 00` | `007091d0` |
+| `00af723c` | `+0xc` | `006f5c48` | `10 72 67 00` | `00677210` |
+
+The seven paths for the first two vtables retain each applicable parent
+constructor, including `006749e0` calling base constructor `006747b0`; the
+three paths for `00af723c` are the applicable `006747b0`, `006749e0`, and
+`00675040` constructor roots. Each vtable origin in
+[`field20-nested-vtable-call-candidates.jsonl`](field20-nested-vtable-call-candidates.jsonl)
+links back to its first-level candidate row, the getter return case, the
+constructor call path, the exact helper STORE/PTRSUB rows, and the raw slot
+address and bytes. The schema labels these rows
+`partial_static_target_candidates` to preserve the missing selector-1,
+`00663030`, runtime-selection, and unobserved-writer cases.
 
 The new generic [`IndirectCallPointerSlot/1` replay](indirect-call-pointer-slots.jsonl)
 joins all 22 closure targets to their exact `PointerProvenance/1` rows. It
@@ -208,4 +273,25 @@ GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_address_references.sh \
   /path/to/ghidra-projects shift SHIFT.exe /tmp/anchor-address-references.jsonl \
   0x006657e0 0x00665820 0x00665880 0x0066ee90 0x00663f50 \
   0x009d1880 0x00af0860 0x00af08a0 0x0043c792 0x0066efc0 0x0066efcd
+```
+
+The returned-subobject P-code replays use the saved `shift` project with
+analysis disabled. From the repository root, reproduce both batches with:
+
+```sh
+GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_pcode_flow_batch.sh \
+  /home/pes/ghidra_projects/shift shift SHIFT.exe \
+  docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-constructor-functions.txt \
+  docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-constructor-pcode-flow.tsv \
+  docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-constructor-callind.jsonl \
+  docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-constructor-acquisition.jsonl \
+  8 900 > docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-constructor-export.log 2>&1
+
+GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_pcode_flow_batch.sh \
+  /home/pes/ghidra_projects/shift shift SHIFT.exe \
+  docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-dispatch-functions.txt \
+  docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-dispatch-pcode-flow.tsv \
+  docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-dispatch-callind.jsonl \
+  docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-dispatch-acquisition.jsonl \
+  6 900 > docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-dispatch-export.log 2>&1
 ```

@@ -2224,18 +2224,24 @@ The candidate rows retain the constructor, factory, field-store, vtable-slot,
 and raw-byte evidence in
 [`field20-vtable-call-candidates.jsonl`](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-vtable-call-candidates.jsonl).
 This is a bounded static set: it does not identify runtime branch selection,
-exclude unobserved writers, or establish a unique runtime target. The calls at
-`00665801` and `00665841` use results of the preceding virtual calls; their
-returned-object vtables remain unresolved and their candidate sets stay empty.
-The field writer/copy inventory and six result-to-store paths are documented
-in the [manual static review](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/manual-static-vtable-review.md).
+exclude unobserved writers, or establish a unique runtime target.
 
-**Next:** trace the returned-object provenance after the first-level calls, or
-acquire bounded runtime evidence for those returned receivers. Keep unresolved
-targets and roots as barriers. The five focused candidate pairs now have a
-fresh CFG/5 memory-effect replay: four remain possible and one remains unique
-because `CALLIND` and `STORE` effects are unresolved. The bounded slice at
-`006642a5` is not a complete function flow or CFG. Assess bodies smaller than
-40 bytes only if this unresolved set or new pair evidence gives a concrete
-reason to extend the population screen. Do not infer alias facts from
-decompiler text or instruction-level corpus labels.
+A read-only replay of the two known getter bodies and three subobject
+constructors now adds partial static target sets for `00665801` (`00674f10`,
+`007091d0`) and `00665841` (`00674f30`, `00677210`). The nested candidate
+records retain the parent candidate, selector case, member offset, helper-call
+path, exact vtable stores, and raw table bytes. They remain partial because
+the `00663030` return vtable and selector-1 returns at parent `+0x74` are
+unresolved; runtime selector values and unobserved writers are also unknown.
+The field writer/copy inventory and both replay chains are documented in the
+[manual static review](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/manual-static-vtable-review.md).
+
+**Next:** trace the `00663030` return provenance and the nested receiver at
+parent `+0x74`, or capture bounded runtime selector/receiver values. Keep
+unresolved targets and roots as barriers. The five focused candidate pairs
+still have a fresh CFG/5 memory-effect replay: four remain possible and one
+remains unique because `CALLIND` and `STORE` effects are unresolved. The
+bounded slice at `006642a5` is not a complete function flow or CFG. Assess
+bodies smaller than 40 bytes only if this unresolved set or new pair evidence
+gives a concrete reason to extend the population screen. Do not infer alias
+facts from decompiler text or instruction-level corpus labels.
