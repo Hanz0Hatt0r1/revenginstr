@@ -12,6 +12,15 @@ from typing import Any
 
 CANDIDATES_FORMAT = "REVENGINSTR.EvidenceRequestCandidates/1"
 PLAN_FORMAT = "REVENGINSTR.EvidenceRequestPlan/1"
+PROBE_KINDS = {
+    "function_entry_exit",
+    "field_watch_read_write",
+    "argument_return_sampling",
+    "call_dispatch_trace",
+    "allocation_lifetime",
+    "state_snapshot",
+    "differential_intervention",
+}
 ACTION_TYPES = {
     "function_slice", "callers_callees", "field_store_recovery",
     "constructor_vtable_anchor", "consumer_native_probe", "family_example", "human_review",
@@ -92,7 +101,7 @@ def _validate_candidates(candidates: Any) -> list[dict[str, Any]]:
             "cost_units", "expected_uncertainty_reduction", "downstream_leverage",
             "rationale_codes", "approval_status", "approval_sha256",
         }
-        if not isinstance(row, dict) or set(row) != fields:
+        if not isinstance(row, dict) or set(row) not in (fields, fields | {"probe_kind"}):
             raise ValueError(f"{where}: unexpected fields")
         request_id = _nonempty_id(row["request_id"], f"{where} request_id")
         subject_id = _nonempty_id(row["subject_id"], f"{where} subject_id")
@@ -107,6 +116,12 @@ def _validate_candidates(candidates: Any) -> list[dict[str, Any]]:
         action_type = row["action_type"]
         if not isinstance(action_type, str) or action_type not in ACTION_TYPES:
             raise ValueError(f"{where}: unsupported action_type")
+        if "probe_kind" in row and (
+            action_type != "consumer_native_probe"
+            or not isinstance(row["probe_kind"], str)
+            or row["probe_kind"] not in PROBE_KINDS
+        ):
+            raise ValueError(f"{where}: invalid probe_kind for action_type")
         bounds = _validate_bounds(action_type, row["bounds"], f"{where} bounds")
         cost = row["cost_units"]
         if isinstance(cost, bool) or not isinstance(cost, int) or not 1 <= cost <= 1000000:
@@ -141,6 +156,7 @@ def _validate_candidates(candidates: Any) -> list[dict[str, Any]]:
             "approval_status": "approved",
             "approval_sha256": row["approval_sha256"],
             "priority_score": leverage * reduction / cost,
+            **({"probe_kind": row["probe_kind"]} if "probe_kind" in row else {}),
         })
     return rows
 
@@ -182,8 +198,8 @@ def build_evidence_request_plan(
             key: row[key] for key in (
                 "request_id", "subject_id", "subject_kind", "action_type", "bounds",
                 "cost_units", "expected_uncertainty_reduction", "downstream_leverage",
-                "priority_score", "rationale_codes", "approval_status", "approval_sha256",
-            )
+                "priority_score", "rationale_codes", "approval_status", "approval_sha256", "probe_kind",
+            ) if key in row
         })
 
     return {

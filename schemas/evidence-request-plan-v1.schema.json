@@ -148,6 +148,17 @@
             "human_review"
           ]
         },
+        "probe_kind": {
+          "enum": [
+            "function_entry_exit",
+            "field_watch_read_write",
+            "argument_return_sampling",
+            "call_dispatch_trace",
+            "allocation_lifetime",
+            "state_snapshot",
+            "differential_intervention"
+          ]
+        },
         "bounds": {
           "$ref": "#/$defs/bounds"
         },
@@ -195,6 +206,17 @@
         }
       },
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action_type": {
+                "not": {"const": "consumer_native_probe"}
+              }
+            },
+            "required": ["action_type"]
+          },
+          "then": {"not": {"required": ["probe_kind"]}}
+        },
         {
           "if": {
             "properties": {
