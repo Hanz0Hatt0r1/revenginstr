@@ -1,0 +1,46 @@
+{
+  "candidate_count": 21,
+  "conflicted_hypotheses": 0,
+  "dataset_id": "nevergone-android-jni-1.0.9",
+  "format": "REVENGINSTR.FunctionPrototypeEvaluation/2",
+  "function_prototype_hypotheses_sha256": "b35d03de0ed1cdb0d30b3f8f8d4154788cfa9109a0ecd1629a3e72811af75ecb",
+  "functions_evaluated": 21,
+  "gold_artifact_sha256": "0a9f1f4858c8a12d49eae9d4d4ecc91f2991733e23ef6a47f2bec2862a1199cd",
+  "high_confidence_candidate_compatibility": null,
+  "high_confidence_candidate_count": 0,
+  "high_confidence_compatible_candidates": 0,
+  "high_confidence_function_count": 0,
+  "high_confidence_function_coverage": 0.0,
+  "hypotheses_missing": 0,
+  "hypotheses_present": 21,
+  "hypothesis_conflict_rate": 0.0,
+  "minimum_confidence": 0.95,
+  "per_property": {
+    "parameter_count": {
+      "accuracy": 0.5238095238095238,
+      "compatible": 11,
+      "coverage": 1.0,
+      "known_accuracy": 0.5238095238095238,
+      "scored": 21,
+      "unknown": 0
+    },
+    "parameters": {
+      "accuracy": 0.0,
+      "compatible": 0,
+      "coverage": 0.0,
+      "known_accuracy": null,
+      "scored": 21,
+      "unknown": 21
+    },
+    "return_value": {
+      "accuracy": 0.9047619047619048,
+      "compatible": 19,
+      "coverage": 0.9047619047619048,
+      "known_accuracy": 1.0,
+      "scored": 21,
+      "unknown": 2
+    }
+  },
+  "split_id": "armeabi-v7a-exported-jni-v1",
+  "top_candidate_compatibility": null
+}

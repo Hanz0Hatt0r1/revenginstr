@@ -48,6 +48,7 @@ revenginstr-direct-call-arguments = "revenginstr.prototype_callsite_observations
 revenginstr-prototype-callsite-check = "revenginstr.prototype_callsite_compatibility:main"
 revenginstr-prototype-infer = "revenginstr.prototype_inference:main"
 revenginstr-prototype-coverage = "revenginstr.prototype_coverage:main"
+revenginstr-android-jni-prototypes = "revenginstr.android_jni_prototypes:main"
 revenginstr-evidence-aggregate = "revenginstr.evidence.aggregate:main"
 revenginstr-receiver-plan = "revenginstr.receiver.plan:main"
 revenginstr-receiver-infer = "revenginstr.receiver.infer:main"

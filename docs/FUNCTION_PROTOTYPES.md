@@ -95,6 +95,30 @@ Because hypothesis schema `/1` has no variadic marker, variadic observations
 retain their fixed parameter prefix but emit `parameter_count: null` instead
 of presenting the prefix as the total argument count.
 
+For Android APKs, `revenginstr-android-jni-prototypes` reads DEX native method
+declarations and joins name-encoded `Java_...` exports to Ghidra function-index
+rows. It emits an exact JNI ABI prototype only when the APK contains the same
+native library SHA-256 as the decompiler snapshot. The prototype includes the
+implicit `JNIEnv *` and class/receiver parameters plus Java descriptor-derived
+argument and return shapes. Pass its output to `--android-jni-evidence`; exact
+DEX evidence replaces incomplete `DEFAULT` High-P-code signatures, while a
+disagreement with a stored `IMPORTED` or `USER_DEFINED` signature remains a
+conflict. These source-backed candidates use confidence `1.0`; that denotes an
+exact source join and is not a calibration result. This version handles
+name-encoded exports only; dynamically registered JNI methods remain
+unresolved.
+
+`tests/fixtures/nevergone-android-jni-prototype/` replays the original
+Nevergone 1.0.9 ARMv7 library against native method declarations from its DEX.
+For 21 exact exported methods, the baseline High-P-code inference got arity
+right for 11 and had no fully known parameter lists; the DEX-backed candidates
+match all 21 complete source prototypes. Six additional DEX native methods do
+not have a matching exported JNI symbol. The APK and native library are not
+redistributed; hashes, mapped DEX rows, Ghidra outputs, gold, and evaluation
+reports are checked in. Because hypotheses and gold trace to the same exact
+DEX source, this replay validates the evidence adapter and signature join,
+not statistical confidence calibration or recovery of internal game methods.
+
 `revenginstr-prototype-coverage` audits whether the evidence set covers the
 program index: it checks P-code acquisition states and operation counts,
 decompiler-parameter status for each indexed function, and exact direct and
