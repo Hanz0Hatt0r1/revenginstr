@@ -35,3 +35,18 @@ This checked-in input is a synthetic contract fixture, not a Nevergone device
 capture. The current bounded device startup capture contains no game value
 observations, so this milestone does not yet include real receiver, field,
 state, factory or lifetime witnesses.
+
+## Decision-ledger replay
+
+Convert replay JSON into `AnalysisDecisionLedgerEvent/1` JSONL with:
+
+```sh
+python -m revenginstr.runtime_evidence_ledger /tmp/runtime-value-flow-replay.json \
+  --output /tmp/runtime-value-flow-ledger.jsonl
+```
+
+Each event pins the replay artifact hash and candidate row. A runtime witness
+is routed to `review_required`, a pair mismatch to `escalated_conflict`, and an
+inconclusive pair to `review_required` with a missing-evidence reason. Every
+event has a null confidence delta; this adapter cannot emit `accepted_exact`
+or `accepted_high_confidence`.
