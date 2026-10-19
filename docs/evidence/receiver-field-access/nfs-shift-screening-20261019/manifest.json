@@ -1291,9 +1291,15 @@
       "sha256": "ba1fa2ef927884f370c975633c86528ba452ebbbe7f7303576ed7d5ba7557aff"
     },
     {
+      "path": "scan37/replay-0041dd40/call-store-flow-closure.jsonl",
+      "bytes": 50266,
+      "sha256": "1166306fd1202db811e8a817912243ef5dff8cf8496b1082cabe9b97e0ee5af7",
+      "rows": 32
+    },
+    {
       "path": "scan37/replay-0041dd40/call-store-flow-replay.md",
-      "bytes": 1663,
-      "sha256": "50b3c2fb98f8a887a5de6734e04b4d49a2f9c3160470ee9128da1d658529a611"
+      "bytes": 2702,
+      "sha256": "157627db56e77dc8c8cfadbc4ce7b4c6fd7fe2ddbccc4bf7f8285e4966f23128"
     },
     {
       "path": "scan37/replay-0041dd40/call-store-flow.jsonl",

@@ -34,3 +34,26 @@ revenginstr-receiver-call-store-flow \
 The graph records def-use paths only. `MULTIEQUAL` alternatives are not
 branch-resolved, and the replay does not identify returned object types,
 runtime referents, or feasible execution paths.
+
+## Wider closure replay
+
+The same command was applied to the retained `closure-pcode-flow.tsv` capture:
+7,576 rows across 100 functions, SHA-256
+`171beb5825a0c39c09d2fb2ee4ed0ef779f54b20223839746ebb06d24eaf764a`. It emitted
+32 schema-valid graphs in eight functions. All 32 sources are direct `CALL`
+operations; 11 paths go directly to `STORE`, while 21 include intermediate
+P-code operations. The wider paths include `LOAD`, `PTRADD`, and `MULTIEQUAL`,
+so they show structural dependence to a store's value operand, not unchanged
+copying of the call result or a feasible runtime path.
+
+The frozen output is [`call-store-flow-closure.jsonl`](call-store-flow-closure.jsonl),
+SHA-256
+`1166306fd1202db811e8a817912243ef5dff8cf8496b1082cabe9b97e0ee5af7`. Reproduce
+it with:
+
+```sh
+revenginstr-receiver-call-store-flow \
+  docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/closure-pcode-flow.tsv \
+  --program-id 'nfs-shift:SHIFT.exe' \
+  --output /tmp/call-store-flow-closure.jsonl --max-graphs 50000
+```
