@@ -50,6 +50,14 @@ def test_type_layout_hypothesis_fixture_and_fail_closed_conflicts() -> None:
     row = json.loads(fixture.read_text(encoding="utf-8").splitlines()[0])
     schema.validate(row)
 
+    consumer_evidence = ROOT / (
+        "docs/evidence/receiver-field-access/nfs-shift-screening-20261019/"
+        "scan37/replay-0041dd40/field20-type-layout-hypothesis.jsonl"
+    )
+    for line in consumer_evidence.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            schema.validate(json.loads(line))
+
     conflicted = {**row, "status": "conflicted"}
     with pytest.raises(ValidationError):
         schema.validate(conflicted)

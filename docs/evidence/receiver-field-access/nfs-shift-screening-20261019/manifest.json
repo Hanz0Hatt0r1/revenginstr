@@ -2232,6 +2232,54 @@
       "rows": 5
     },
     {
+      "path": "scan37/replay-0041dd40/field20-acquisition.jsonl",
+      "bytes": 1752,
+      "sha256": "fe831974a20737b81b4bb9a4de9a00fe91935f8a31123293c3708b1f90654379",
+      "rows": 10
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-callind.jsonl",
+      "bytes": 7196,
+      "sha256": "3d2d7128f0bc0924b19110eeff56d5711a042d81aeb6d3c3488ac1ff142c3c57",
+      "rows": 21
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-functions.txt",
+      "bytes": 90,
+      "sha256": "f7f3596201eff42157b194aaa109dc70ad5b0d3514bd4d0e3d50b5074ce50e6d",
+      "rows": 10
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-memory-store-access.jsonl",
+      "bytes": 33586,
+      "sha256": "ca95f6c849e38276adab6c78e489a0a7594bf30b700ee761ff52792f20038d1b",
+      "rows": 58
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-parameter-stores.tsv",
+      "bytes": 1143,
+      "sha256": "6d9cb681d903d6fe49114258ac463b5a96796be7d687e9edd6779765a3ccfa37",
+      "rows": 8
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-pcode-flow.tsv",
+      "bytes": 135558,
+      "sha256": "e08449432fd3c7b32a964fc2e7f95d00ce8b5df459f488d538d56b77725ca8ab",
+      "rows": 1527
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-pointer-provenance.jsonl",
+      "bytes": 2546482,
+      "sha256": "14ee8006e4fda980813054cf36fcb044740f7f5695b473b47408947733f55f28",
+      "rows": 1393
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-type-layout-hypothesis.jsonl",
+      "bytes": 3603,
+      "sha256": "86520e8906da7f962f3b88fa400a1d9af3b6280c4bdba8fb18f7d1bd81f1c267",
+      "rows": 1
+    },
+    {
       "path": "scan37/replay-0041dd40/function-pcode-cfg-v4-full-closure-scope.jsonl",
       "bytes": 2426014,
       "sha256": "03e5653457961b650a710615cb21dc6e3db7cfe85d907c93393c53e529cde86a",
@@ -2292,8 +2340,8 @@
     },
     {
       "path": "scan37/replay-0041dd40/manual-static-vtable-review.md",
-      "bytes": 6206,
-      "sha256": "43cdb03fac5bb9492ba8dfabc6498f31504c730b27e26d6bef2442c44cfe3f3f"
+      "bytes": 8423,
+      "sha256": "a993e16d8fee4604e23da06d530e492e777f9879ef1825e248f89048415241f0"
     },
     {
       "path": "scan37/replay-0041dd40/memory-store-access-full-closure-scope.jsonl",

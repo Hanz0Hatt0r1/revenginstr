@@ -188,9 +188,22 @@ show that `006657e0` and `00665820` are called directly from wrappers
 which returns the runtime field at `+0x20`. The xrefs to table `0x00af0860`
 include its writes in `0066ee90` and `00663f50`, plus `0043c792`. The latter is
 reached from the cleanup path `0066efc0` and is not another factory. This
-narrows static population evidence but does not identify the runtime value
-stored in `+0x20`. No downstream function target is promoted, and the `/6`
-results remain unchanged.
+is now complemented by a read-only High-P-code capture of ten exact functions.
+The `+0x20` field is initialized to null in `0066ee90`, copied from the source
+object in `00663f50`, lazily populated by `0066eff0`, and released/cleared by
+`0066ebc0`. The `AptCIH::GetAnimationInst` reader at `009d1880` returns this
+field. Pointer provenance keeps the value reaching the lazy store ambiguous
+across five call-result barriers and two null alternatives. See the exact
+operation keys in [`field20-memory-store-access.jsonl`](scan37/replay-0041dd40/field20-memory-store-access.jsonl),
+[`field20-pcode-flow.tsv`](scan37/replay-0041dd40/field20-pcode-flow.tsv), and
+[`field20-pointer-provenance.jsonl`](scan37/replay-0041dd40/field20-pointer-provenance.jsonl).
+The new [`TypeLayoutHypothesis/1` row](scan37/replay-0041dd40/field20-type-layout-hypothesis.jsonl)
+captures this as an opaque review-level cluster with a 56-byte minimum
+observed extent and a 4-byte data-pointer candidate; it leaves exact size and
+pointee identity unresolved.
+This narrows the static writer and lifecycle paths without resolving the
+runtime referent/type at the four downstream sites. No downstream function
+target is promoted, and the `/6` results remain unchanged.
 The replay also includes the 32-row, read-only generic Ghidra pointer-table
 export at [`ghidra-pointer-table-slots.jsonl`](scan37/replay-0041dd40/ghidra-pointer-table-slots.jsonl);
 its schema and invocation are documented in

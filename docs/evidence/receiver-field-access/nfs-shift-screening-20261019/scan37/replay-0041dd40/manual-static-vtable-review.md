@@ -50,9 +50,43 @@ The PE `.rdata` section maps virtual address `0x00af0860` to file offset
 Thus both indirect-call target identities are resolved for the observed
 collection construction path. The second function returns a field value; its
 runtime contents remain unknown. The four downstream anchors in `006657e0`
-and `00665820` therefore remain unresolved. The existing `/6` pair statuses
-are unchanged because this review did not rerun the complete interprocedural
-memory-effect audit.
+and `00665820` therefore remain target-unresolved. The existing `/6` pair
+statuses are unchanged because this review did not rerun the complete
+interprocedural memory-effect audit.
+
+## Exact writers for object offset `+0x20`
+
+The saved Ghidra project for this same binary was opened read-only with
+analysis disabled and Java 21. A bounded batch export covers the ten exact
+entries in [`field20-functions.txt`](field20-functions.txt): all ten completed
+with P-code, yielding 1,527 flow rows. The accompanying
+[`GhidraMemoryStoreAccess/1` capture](field20-memory-store-access.jsonl)
+contains 58 STORE rows; four are parameter-0-rooted accesses at offset `+0x20`:
+
+| Function | Store address | Source | Observed operation |
+| --- | --- | --- | --- |
+| `0066ee90` | `0066eee2` | constant zero | Constructor initializes the field to null. |
+| `00663f50` | `00663f8d` | load from source object `+0x20` | Copy helper preserves the source field. |
+| `0066eff0` | `0066f215` | merged value from five calls or null | Lazy getter checks the cached field; on a miss it branches on the object's type tag, constructs one of the observed variants, then stores the result. |
+| `0066ebc0` | `0066ebd2` | constant zero | Releases a non-null cached object through its first virtual method, then clears the field. |
+
+`AptCIH::GetAnimationInst` at `009d1880` is an exact load of `[this + 0x20]`.
+The [`PointerProvenance/1` replay](field20-pointer-provenance.jsonl) keeps the
+value reaching `0066f215` ambiguous: five call-result barriers and two null
+alternatives. The candidate field therefore has observed initialization,
+copy, lazy materialization, and reset paths, while the actual runtime
+referent/type on the four downstream callsites remains unresolved.
+
+[`TypeLayoutHypothesis/1`](field20-type-layout-hypothesis.jsonl) records this
+as an opaque review-level cluster anchored at `0x00af0860`. It contains a
+56-byte minimum observed extent and a 4-byte data-pointer candidate at `+0x20`;
+exact size, pointee identity, and inheritance/composition links remain unset.
+
+The flow, indirect-call, acquisition, memory-access, and parameter-store
+captures are retained beside this review and pinned by the parent manifest.
+Their hashes bind each derived pointer-provenance alternative back to the
+P-code rows. This narrows the static writer gap; it does not promote the four
+`/6` rows or identify a target class.
 
 The new generic [`IndirectCallPointerSlot/1` replay](indirect-call-pointer-slots.jsonl)
 joins all 22 closure targets to their exact `PointerProvenance/1` rows. It
