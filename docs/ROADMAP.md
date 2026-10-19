@@ -1123,7 +1123,12 @@ marked `conflicted`, and emitted confidence stays below the evaluator's
 high-confidence threshold. Real Ghidra replays cover both an imported-signature
 sample and a stripped, no-DWARF x86 object. The generic inference and coverage
 paths now exist, but independent consumer gold, calibrated confidence and
-indirect-call target constraints remain required before M8.1 is complete. The new
+indirect-call target constraints remain required before M8.1 is complete. The
+stripped fixture now also has source-backed `FunctionPrototypeGold/1` for two
+functions: parameter counts and shapes score 2/2, returns score 1/2, and neither
+hypothesis reaches the default 0.95 acceptance threshold. This isolates return
+shape inference as a measured gap without presenting the micro-fixture as
+consumer accuracy. The new
 `FunctionPrototypeEvidenceCoverage/1` audit now checks population, P-code row
 counts, decompiler result status, and direct/indirect call-site capture against
 the exact supplied artifacts. A complete report means evidence capture covers

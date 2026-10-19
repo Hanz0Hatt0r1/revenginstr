@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import csv
+import gzip
 import hashlib
 import json
 from pathlib import Path
@@ -9,6 +10,7 @@ from pathlib import Path
 import pytest
 from jsonschema import Draft202012Validator
 
+from revenginstr.prototype_evaluation import evaluate_prototypes
 from revenginstr.prototype_inference import infer_prototypes
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -66,6 +68,27 @@ def test_untyped_ghidra_replay_propagates_only_exact_parameter_root() -> None:
     _validate("function-prototype-evidence-coverage-v1.schema.json", coverage)
     assert coverage["full_program_coverage"] is True
 
+    gold = _jsonl(FIXTURE / "gold.jsonl")
+    gold_schema = json.loads((ROOT / "schemas/function-prototype-gold-v1.schema.json").read_text())
+    for row in gold:
+        Draft202012Validator(gold_schema).validate(row)
+        assert row["program_sha256"] == hashlib.sha256((FIXTURE / "untyped.o").read_bytes()).hexdigest()
+    source_sha = hashlib.sha256((FIXTURE / "untyped.c").read_bytes()).hexdigest()
+    index_path = FIXTURE / "functions.tsv.gz"
+    index_sha = hashlib.sha256(index_path.read_bytes()).hexdigest()
+    source_lines = (FIXTURE / "untyped.c").read_text(encoding="utf-8").splitlines()
+    with gzip.open(index_path, "rt", encoding="utf-8", newline="") as handle:
+        indexed_functions = list(csv.DictReader(handle, delimiter="\t"))
+    for row in gold:
+        function = next(item for item in indexed_functions if item["entry"] == row["function_entry"])
+        source_ref = next(ref for ref in row["evidence_refs"] if ref["source_format"] == "C11 function definition/1")
+        index_ref = next(ref for ref in row["evidence_refs"] if ref["source_format"] == "REVENGINSTR.GhidraProgramIndex.Functions/1")
+        assert source_ref["artifact_sha256"] == source_sha
+        assert function["name"] in source_lines[source_ref["record_index"] - 1]
+        assert index_ref["artifact_sha256"] == index_sha
+        assert index_ref["record_index"] in {1, 2}
+        assert indexed_functions[index_ref["record_index"] - 1] == function
+
     without_roots = infer_prototypes(decompiler_path, calls_path)
     with_roots = infer_prototypes(decompiler_path, calls_path, roots_path)
     caller_without = next(row for row in without_roots if row["function_entry"] == caller["function_entry"])
@@ -83,6 +106,16 @@ def test_untyped_ghidra_replay_propagates_only_exact_parameter_root() -> None:
     for row in with_roots:
         Draft202012Validator(hypothesis_schema).validate(row)
     assert with_roots == _jsonl(FIXTURE / "hypotheses.jsonl")
+
+    evaluation_schema = json.loads((ROOT / "schemas/function-prototype-evaluation-v1.schema.json").read_text())
+    evaluation = evaluate_prototypes(FIXTURE / "hypotheses.jsonl", FIXTURE / "gold.jsonl")
+    assert evaluation["functions_evaluated"] == 2
+    assert evaluation["high_confidence_candidate_count"] == 0
+    assert evaluation["per_property"]["parameter_count"]["accuracy"] == 1.0
+    assert evaluation["per_property"]["parameters"]["accuracy"] == 1.0
+    assert evaluation["per_property"]["return_value"]["accuracy"] == 0.5
+    Draft202012Validator(evaluation_schema).validate(evaluation)
+    assert evaluation == json.loads((FIXTURE / "evaluation.json").read_text(encoding="utf-8"))
 
 
 def test_root_identity_mismatch_and_conflicting_callee_types_are_preserved(tmp_path: Path) -> None:
