@@ -12,10 +12,38 @@ from revenginstr.semantic_program_graph import (
     _read_jsonl,
     build_semantic_program_graphs,
 )
-from revenginstr.semantic_program_query import query_graphs
+from revenginstr.semantic_program_query import _in_view, query_graphs
 from revenginstr.semantic_program_graph_evaluation import evaluate_semantic_program_graph
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_accepted_view_includes_exact_uncontested_rows_without_confidence() -> None:
+    assert _in_view({
+        "evidence_class": "exact_static",
+        "confidence": None,
+        "conflict_state": "uncontested",
+    }, "accepted-high-confidence", 0.95)
+    assert not _in_view({
+        "evidence_class": "exact_static",
+        "confidence": None,
+        "conflict_state": "contested",
+    }, "accepted-high-confidence", 0.95)
+    assert not _in_view({
+        "evidence_class": "derived_structural",
+        "confidence": None,
+        "conflict_state": "uncontested",
+    }, "accepted-high-confidence", 0.95)
+    assert _in_view({
+        "evidence_class": "derived_structural",
+        "confidence": 0.95,
+        "conflict_state": "uncontested",
+    }, "accepted-high-confidence", 0.95)
+    assert not _in_view({
+        "evidence_class": "derived_structural",
+        "confidence": 0.94,
+        "conflict_state": "uncontested",
+    }, "accepted-high-confidence", 0.95)
 
 
 def _schema(name: str) -> Draft202012Validator:
@@ -195,4 +223,29 @@ def test_nevergone_runtime_resource_calls_match_independent_instruction_referenc
     assert calls["candidate_edge_precision"] == calls["recall"] == 1.0
     assert evaluation["unsupported_edge_count"] == 0
     assert evaluation["provenance_completeness"] == 1.0
-    assert evaluation["accepted_edge_count"] == 0
+    assert evaluation["accepted_edge_count"] == 36
+    assert evaluation["accepted_edge_true_positives"] == 36
+    assert evaluation["accepted_edge_precision"] == 1.0
+
+    graph_rows, graph_sha256 = _read_jsonl(graph_path)
+    accepted_query = query_graphs(
+        graph_rows,
+        source_sha256=graph_sha256,
+        view="accepted-high-confidence",
+        relations=["calls"],
+    )[0]
+    graph_nodes = {node["id"]: node for node in graph_rows[0]["nodes"]}
+    accepted_calls = {
+        (
+            graph_nodes[edge["from"]]["function_entry"],
+            graph_nodes[edge["from"]]["operation_address"],
+            graph_nodes[edge["to"]]["entry"],
+        )
+        for edge in accepted_query["edges"]
+    }
+    crosschecked_calls = {
+        (row["function_entry"], row["operation_address"], row["target_entry"])
+        for row in crosscheck_rows
+    }
+    assert crosschecked_calls <= accepted_calls
+    assert all(edge["confidence"] is None for edge in accepted_query["edges"])

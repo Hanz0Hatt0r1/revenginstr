@@ -71,15 +71,21 @@ and ordering are deterministic; the graph pins each input artifact's hash.
 strings are decompiler type metadata; they do not establish a class, dispatch
 slot, or target. No `dispatches` edge is inferred.
 
+The `accepted-high-confidence` view admits uncontested `exact_static` facts
+without assigning them a numeric confidence. Other evidence classes still
+need a calibrated score at the requested threshold; contested records never
+pass. This separates exact static facts from confidence estimates.
+
 The `semantic-program-graph` stage can be chained in a pinned benchmark
 manifest after `function-effect-ir`, with receiver TSV and layout JSONL inputs
 declared when used. `/3` connects candidate layouts but does not infer object
 identity from function-local fields or promote candidate type/layout labels
 to accepted facts. Receiver dispatch, roles, states, resources, callbacks,
 execution contexts, and CFG-feasible path/reachability queries remain open.
-Two narrow consumer-owned structural gold replays now
-exist for Nevergone and NFS SHIFT; broadly scoped semantic subsystem gold and
-M10 exit criteria remain open. See [graph evaluation replays](evidence/semantic-program-graph-evaluation/README.md).
+Narrow structural gold and projection audits now report 1.0 precision for
+55 accepted direct-call edges across five frozen subgraphs. Derived field
+edges remain review-only; broadly scoped semantic subsystem gold and the M10
+exit criteria remain open. See [graph evaluation replays](evidence/semantic-program-graph-evaluation/README.md).
 The deterministic graph selector and its three evidence views are documented in
 [Semantic program queries](SEMANTIC_PROGRAM_QUERIES.md), including the bounded
 direct-call path query. These call-graph paths do not establish CFG-feasible
@@ -88,5 +94,6 @@ execution reachability.
 Consumer-owned subgraphs can be scored with the scoped
 [`SemanticProgramGraphGold/1` evaluator](SEMANTIC_PROGRAM_GRAPH_EVALUATION.md).
 GT5 and the NFS call-path replay remain raw P-code projection audits.
-Nevergone and NFS M2.3 now provide narrow consumer-owned structural gold; they
-do not yet establish broad subsystem semantics or accepted-edge precision.
+Nevergone and NFS M2.3 now provide narrow consumer-owned structural gold;
+they do not yet establish broad subsystem semantics or accepted precision for
+derived field relations.

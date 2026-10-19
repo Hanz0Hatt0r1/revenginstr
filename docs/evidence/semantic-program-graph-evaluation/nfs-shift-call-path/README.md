@@ -20,8 +20,8 @@ uv run --project . revenginstr-semantic-program-graph-evaluate \
 | Artifact | SHA-256 |
 | --- | --- |
 | Gold subgraph | `d11991b337369e4d5db25691550cacdd685eaf15d58f3a5b13d1be2c9380ef7e` |
-| Semantic Program Graph Evaluation/1 | `b3813aebbe88b91e78e14aa90ec56457223d2297a65623da1e9dfb4b48dd059a` |
+| Semantic Program Graph Evaluation/1 | `87cf9340dc85951524b33afc01a3173bf58e27653530480b3265aa5079c24fa3` |
 
 Result: 7/7 candidate calls match the reviewed source rows, and each edge has
-the provenance fields required by the graph schema. No edge meets the
-accepted-confidence threshold.
+the provenance fields required by the graph schema. All seven uncontested
+exact-static calls are accepted; accepted-edge precision is 1.0.

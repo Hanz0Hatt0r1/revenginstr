@@ -55,10 +55,10 @@
       "sha256": "aa14ad64a541c20d0015a4c742ffb02d2c939318f628a7928d7adf5cad9c72d5"
     },
     {
-      "bytes": 830,
+      "bytes": 831,
       "id": "evaluation",
       "path": "evaluation.json",
-      "sha256": "0107d4339370072a3424c70918edae7ae22234270999233f8c41d6cadc39d04d"
+      "sha256": "2a345d3c738503dcf2f6866e7a76c720ae8f587d78d598242b882ab2acc7627e"
     }
   ],
   "crosscheck_counts": {
@@ -69,7 +69,8 @@
     "pcode_calls": 36
   },
   "evaluation_summary": {
-    "accepted_edges": 0,
+    "accepted_edges": 36,
+    "accepted_edge_precision": 1.0,
     "candidate_edge_precision": 1.0,
     "provenance_completeness": 1.0,
     "recall": 1.0,

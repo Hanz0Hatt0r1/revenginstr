@@ -55,11 +55,11 @@ Views are:
 
 - `exact-only`: select records marked `exact_static`. Contested records remain
   visible with their conflict state.
-- `accepted-high-confidence`: select only uncontested records whose recorded
-  confidence is non-null and meets `--minimum-confidence` (default `0.95`).
-  The query does not calibrate confidence; use this view only when the graph
-  producer documents calibration. Current structural graph builders emit
-  null confidence, so this view returns no accepted records for their output.
+- `accepted-high-confidence`: select only uncontested records whose evidence
+  is `exact_static`, or whose numeric confidence is non-null and meets
+  `--minimum-confidence` (default `0.95`). Exact static facts do not receive a
+  fabricated probability; inferred and structural facts still require
+  calibrated confidence. Contested records never pass.
 - `exploratory`: keep all graph records, including `exact_static`,
   `derived_structural`, `mixed`, `observed_metadata`, and contested records.
 

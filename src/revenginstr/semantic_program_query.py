@@ -27,12 +27,15 @@ def _in_view(row: dict[str, Any], view: str, minimum_confidence: float) -> bool:
         return True
     if view == "exact-only":
         return row.get("evidence_class") == "exact_static"
+    if row.get("conflict_state") != "uncontested":
+        return False
+    if row.get("evidence_class") == "exact_static":
+        return True
     confidence = row.get("confidence")
     return (
         isinstance(confidence, (int, float))
         and not isinstance(confidence, bool)
         and confidence >= minimum_confidence
-        and row.get("conflict_state") == "uncontested"
     )
 
 

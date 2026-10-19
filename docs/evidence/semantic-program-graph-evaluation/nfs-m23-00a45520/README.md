@@ -21,8 +21,10 @@ The evaluator uses the `exploratory` view because the field-access edges are
 | `reads` | 2 | 2 | 1.0 | 1.0 |
 | `writes` | 1 | 1 | 1.0 | 1.0 |
 
-Unsupported edge rate is 0%; provenance completeness is 100%. Accepted-edge
-precision is `null` because confidence is uncalibrated.
+Unsupported edge rate is 0%; provenance completeness is 100%. Seven
+uncontested exact-static call edges are accepted with precision 1.0. The two
+reads and one write remain review-only: structural evidence does not receive
+a confidence score from this replay.
 
 ## Query replay
 
@@ -40,7 +42,7 @@ only; it does not prove CFG-feasible or runtime execution. Its artifact is
 | --- | --- |
 | Function Effect IR | `39149a87c687e12872b120ef5fafd72bc2e1862feea3d980c6e2f5594243ed22` |
 | Semantic Program Graph | `7662c65c2db67e34f25ae92f0d7c5ec5c71e254c5b2549c5209f6974d4856c4e` |
-| Evaluation result | `551a88c090493869fff577d2d225154adc4ff516e0e7340cb6fea69cbaeffb7b` |
+| Evaluation result | `271d6d09bf46583f08df20d04cb4f374083b265abedbdad600383392493e92b4` |
 | Query result | `5a4e07542f547c4dc0801239c1eefe4679e5b66b99fd6425ea56fed9b93b6777` |
 | Direct-call path query | `17e645b00a2719d17967b4ed5cca53ab87f605ff98b7e03b3f21efc53b687302` |
 | Consumer gold subgraph | `df606c38bf980329081929d63f2f1835f8e293eb78f6bdadd344ef140888496f` |

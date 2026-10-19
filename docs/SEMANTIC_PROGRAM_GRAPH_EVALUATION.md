@@ -31,8 +31,9 @@ Per-relation candidate precision and recall are emitted only for
 declared-complete relations.
 `unsupported_edge_rate` is the share of selected candidate edges absent from
 the adjudicated gold set within that scope. `accepted_edge_precision` scores
-uncontested edges meeting the confidence threshold within complete relations;
-it is `null` when no labeled edge meets that threshold.
+uncontested exact-static edges and other uncontested edges meeting the
+confidence threshold within complete relations; it is `null` when no labeled
+edge passes either rule.
 `provenance_completeness` checks that selected edges carry a nonempty support
 chain with source format, artifact hash, and record index. It does not check
 that every referenced source artifact is available on disk.

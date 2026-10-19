@@ -30,6 +30,6 @@ The generator requires the P-code `CALL` rows, Ghidra instruction references, an
 | Candidate precision / recall | 1.0 / 1.0 |
 | Unsupported edge rate | 0% |
 | Provenance completeness | 100% |
-| Accepted edges / accepted-edge precision | 0 / `null` |
+| Accepted edges / accepted-edge precision | 36 / 1.0 |
 
-The independent instruction-reference export validates static direct-call edge extraction for these two function bodies. It does not establish runtime execution, function behavior, or accepted-edge accuracy. The runtime capture corroborates only that both function entries were observed; its completeness remains unknown. The raw function instructions export is not committed; its SHA-256 and size are recorded in `replay-manifest.json`, and the derived callsite evidence and gold subgraph are retained here.
+The independent instruction-reference export validates all 36 accepted static direct-call edges in these two function bodies. It does not establish runtime execution or function behavior. The runtime capture corroborates only that both function entries were observed; its completeness remains unknown. The raw function instructions export is not committed; its SHA-256 and size are recorded in `replay-manifest.json`, and the derived callsite evidence and gold subgraph are retained here.

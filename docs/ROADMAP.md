@@ -78,7 +78,7 @@ Reference measurements currently retained by the Nevergone consumer give the fol
 | Non-Nevergone validated consumers | 1 early consumer (NFS Shift) | >=2 | >=3 |
 | High-confidence recovered-layout audit acceptance | not canonical yet | >=90% | >=95% |
 | Decisive bounded probe rate on planner-selected unresolved cases | not canonical yet | >=50% | >=70% |
-| Semantic graph accepted-edge precision | not canonical yet | >=0.95 | >=0.98 |
+| Semantic graph accepted-edge precision | 1.0 on five narrow call-edge scopes | >=0.95 | >=0.98 |
 | Validated ISA/ABI combinations | ARM32 + early x86-32 consumers | >=4 | >=5 |
 
 ## 3. Engineering rules
@@ -1528,9 +1528,15 @@ against Ghidra instruction-level references; all 36 match with full
 provenance. Runtime evidence corroborates only the two function entries, not
 the call edges. All fifty-eight evaluated edges have complete provenance
 fields. The three consumer golds are narrow structural interpretations; the
-NFS gold does not assign field meaning or prove memory flow. Calibrated
-accepted edges and reconstruction/query of two broader semantic subsystems
-remain open, so M10.5 and its exit criteria are not complete.
+NFS gold does not assign field meaning or prove memory flow. The
+accepted-high-confidence view now admits uncontested exact-static facts
+without assigning numeric confidence; other evidence classes still require a
+calibrated score. Across these five frozen subgraphs, 55 exact direct-call
+edges are accepted and all 55 match their reviewed labels (precision 1.0).
+The three NFS field edges remain review-only because their structural evidence
+is not calibrated. These bounded call-only results meet the precision gate for
+those relations, but accepted derived relations and reconstruction/query of
+two broader semantic subsystems remain open; M10.5 is not complete.
 
 ---
 
@@ -1768,7 +1774,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 31. Bounded runtime probe-request and correlation contracts.
 32. Static/runtime differential replay and information-gain metrics.
 33. Semantic Program Graph schema and deterministic builder.
-34. 🟡 Scoped graph-gold schema/evaluator, two raw P-code projection audits, and narrow Nevergone/NFS consumer-owned structural golds implemented; accepted-edge precision and end-to-end semantic subsystem gates remain open.
+34. 🟡 Scoped graph-gold schema/evaluator, two raw P-code projection audits, and narrow Nevergone/NFS consumer-owned structural golds implemented; exact direct-call edges reach 1.0 accepted precision on five frozen scopes, while accepted derived relations and end-to-end semantic subsystem gates remain open.
 35. Feedback quarantine, adjudication and leakage-gated training promotion.
 
 ## P4 — architecture and integration
