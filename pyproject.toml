@@ -61,6 +61,7 @@ revenginstr-receiver-field-access-pairs = "revenginstr.receiver.provenance:field
 revenginstr-receiver-load-return-flow = "revenginstr.receiver.provenance:parameter_load_return_main"
 revenginstr-receiver-argument-propagate = "revenginstr.receiver.provenance:recursive_argument_main"
 revenginstr-receiver-call-return-flow = "revenginstr.receiver.provenance:call_return_main"
+revenginstr-receiver-call-store-flow = "revenginstr.receiver.provenance:call_store_main"
 revenginstr-direct-call-memory-effects = "revenginstr.receiver.call_effects:main"
 revenginstr-direct-call-memory-effect-closure = "revenginstr.receiver.call_effect_closure:main"
 revenginstr-interprocedural-memory-effects = "revenginstr.receiver.interprocedural_memory:main"

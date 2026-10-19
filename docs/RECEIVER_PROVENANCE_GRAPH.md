@@ -279,6 +279,19 @@ the selected path as provenance. It reports generic `return_flow` evidence;
 callee names and this structural relation alone do not establish factory or
 constructor semantics.
 
+Call-result values can also be traced to the value operand of a P-code `STORE`:
+
+```sh
+revenginstr-receiver-call-store-flow function-pcode-flow.tsv \
+  --program-id 'consumer:analysis-id' --output call-store-flow.jsonl \
+  --max-graphs 10000
+```
+
+This follows the same bounded P-code dependencies, stops at the `STORE` value
+operand (input index 2), and retains the call, intermediate operations, and
+store as provenance. The edge is generic data-flow evidence: it does not infer
+the store's field offset, runtime path, or callee semantics.
+
 Exact caller-formal roots can be propagated backward across a supplied set of
 callee plans:
 
