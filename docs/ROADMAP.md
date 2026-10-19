@@ -1282,8 +1282,13 @@ installed Nevergone 1.0.9 APK confirmed that its
 graph. The package-artifact identity record is retained under
 `docs/evidence/runtime-static-correlation-v1/`. This verifies static artifact
 provenance, establishes that this graph's Ghidra image base is `0x10000`, and
-includes a bounded startup capture. Object-instance, field, call-edge, and
-sampled-value joins remain open.
+includes a bounded startup capture. A second hash-pinned graph replay adds
+exact P-code for runtime-observed `GameLevels::LoadGameLevels` at `0x2d2f1c`
+and `cocos2d::CCFileUtilsAndroid::getFileData` at `0x544a60`; all 88 sampled
+function-entry observations now join to exact function nodes. This confirms
+function presence only: completeness remains unknown, and object-instance,
+field, call-edge, and sampled-value joins remain open. See the
+[runtime graph replay](evidence/semantic-program-graph-v3/nevergone-runtime-correlation-20261020/README.md).
 
 **Indirect-call triple correlation v1 implemented:**
 `RuntimeIndirectCallObservation/1` binds a runtime caller entry, `CALLIND`
@@ -1302,13 +1307,13 @@ are supplied. See [runtime indirect-call correlation](RUNTIME_INDIRECT_CALL_CORR
 into one deterministic `AnalysisDecisionLedgerEvent/1` per observed event.
 Exact joins remain `review_required` pending human review; unmatched,
 ambiguous, or unmapped joins remain `review_required` with
-`missing_evidence`. A real Nevergone device capture of 88 startup function
-entries replays to 88 `missing_evidence` events because both resource
-functions fall outside the pinned CCJoyStick graph; no event is auto-accepted.
-The replay does not treat an observed target as exhaustive. The retained
-decision-ledger replay is documented with the [device capture evidence](evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/README.md).
-Consumer-collected NFS dispatch observations and frozen probe outcome
-measurements remain open.
+`missing_evidence`. The real Nevergone startup capture now joins all 88
+observations to exact static function entries; its ledger has 88
+`human_review` events and zero accepts. Sampling completeness remains unknown,
+and the replay does not treat any observed target as exhaustive. Consumer-
+collected NFS dispatch observations, runtime value-flow observations, and
+frozen probe outcome measurements remain open. The retained decision-ledger
+replay is documented with the [device capture evidence](evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/README.md).
 
 ### M9.3 Differential and interventional analysis
 
