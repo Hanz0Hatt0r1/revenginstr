@@ -19,6 +19,7 @@ FORMAT = FORMAT_V1
 RECEIVER_TYPE_FORMAT = "REVENGINSTR.GhidraIndirectReceiverType/1"
 TYPE_LAYOUT_FORMAT = "REVENGINSTR.TypeLayoutHypothesis/1"
 CALL_ARGUMENT_FORMAT = "REVENGINSTR.DirectCallArgumentObservation/1"
+CALL_ARGUMENT_DEFINITION_FORMAT = "REVENGINSTR.DirectCallArgumentDefinition/1"
 RECEIVER_COLUMNS = (
     "format", "source_id", "function_entry", "call_index", "call_address",
     "call_time", "arg_count", "receiver_present", "receiver_storage_kind",
@@ -225,6 +226,116 @@ def _validate_call_argument_rows(
     return by_program, program_hashes
 
 
+def _validate_call_argument_definition_rows(
+    rows: list[dict[str, Any]], *,
+    call_arguments_by_program: dict[str, list[dict[str, Any]]],
+    call_argument_sha256: str,
+) -> dict[str, dict[tuple[int, int], dict[str, Any]]]:
+    if not rows:
+        raise ValueError("DirectCallArgumentDefinition input is empty")
+    expected: dict[tuple[str, int, int], tuple[dict[str, Any], dict[str, Any]]] = {}
+    for program_id, observations in call_arguments_by_program.items():
+        for observation in observations:
+            for argument in observation["arguments"]:
+                key = (program_id, observation["_record_index"], argument["index"])
+                expected[key] = (observation, argument)
+
+    by_program: dict[str, dict[tuple[int, int], dict[str, Any]]] = defaultdict(dict)
+    expected_fields = {
+        "format", "program_id", "program_sha256", "caller_entry", "callee_entry",
+        "call_address", "call_time", "argument_index", "argument_count", "value_token",
+        "width_bytes", "resolution_state", "call_observation_ref",
+        "call_pcode_evidence_ref", "definition_evidence_refs",
+    }
+    seen: set[tuple[str, int, int]] = set()
+    for definition_index, row in enumerate(rows, 1):
+        where = f"call-argument definition record {definition_index}"
+        if not isinstance(row, dict) or set(row) != expected_fields:
+            raise ValueError(f"{where}: malformed DirectCallArgumentDefinition/1 fields")
+        if row.get("format") != CALL_ARGUMENT_DEFINITION_FORMAT:
+            raise ValueError(f"{where}: unsupported format")
+        observation_ref = row.get("call_observation_ref")
+        if not isinstance(observation_ref, dict):
+            raise ValueError(f"{where}: malformed call_observation_ref")
+        observation_index = observation_ref.get("record_index")
+        argument_index = row.get("argument_index")
+        if type(observation_index) is not int or observation_index < 1 or type(argument_index) is not int or argument_index < 0:
+            raise ValueError(f"{where}: invalid call or argument record index")
+        program_id = row.get("program_id")
+        if not isinstance(program_id, str) or not program_id:
+            raise ValueError(f"{where}: invalid program_id")
+        key = (program_id, observation_index, argument_index)
+        if key not in expected:
+            raise ValueError(f"{where}: definition does not identify an input call argument")
+        if key in seen:
+            raise ValueError(f"{where}: duplicate definition for input call argument")
+        seen.add(key)
+        observation, argument = expected[key]
+        if row.get("program_sha256") != observation["program_sha256"]:
+            raise ValueError(f"{where}: program_sha256 does not match call observation")
+        if (
+            type(row.get("call_time")) is not int
+            or type(row.get("argument_count")) is not int
+            or type(row.get("width_bytes")) is not int
+        ):
+            raise ValueError(f"{where}: call and argument counts/width must be integers")
+        for field in ("caller_entry", "callee_entry", "call_address", "call_time", "argument_count"):
+            if row.get(field) != observation[field]:
+                raise ValueError(f"{where}: {field} does not match call observation")
+        if row.get("value_token") != argument["value_token"] or row.get("width_bytes") != argument["width_bytes"]:
+            raise ValueError(f"{where}: argument token or width does not match call observation")
+        if observation_ref != {
+            "artifact_sha256": call_argument_sha256,
+            "record_index": observation_index,
+            "source_format": CALL_ARGUMENT_FORMAT,
+        }:
+            raise ValueError(f"{where}: call_observation_ref does not pin the supplied observations")
+        if row.get("call_pcode_evidence_ref") != observation["evidence_ref"]:
+            raise ValueError(f"{where}: call P-code evidence_ref does not match the observation")
+
+        state = row.get("resolution_state")
+        references = row.get("definition_evidence_refs")
+        allowed_states = {
+            "exact_definition", "definition_not_found", "ambiguous_definition", "non_definition_token",
+        }
+        if not isinstance(state, str) or state not in allowed_states or not isinstance(references, list):
+            raise ValueError(f"{where}: invalid definition resolution")
+        expected_count = 1 if state == "exact_definition" else 2 if state == "ambiguous_definition" else 0
+        if (state == "ambiguous_definition" and len(references) < expected_count) or (
+            state != "ambiguous_definition" and len(references) != expected_count
+        ):
+            raise ValueError(f"{where}: definition references disagree with resolution state")
+        if state == "non_definition_token" and argument["value_token"].startswith("def:"):
+            raise ValueError(f"{where}: def token cannot be classified as non-definition")
+        if state != "non_definition_token" and not argument["value_token"].startswith("def:"):
+            raise ValueError(f"{where}: non-def token cannot have a definition resolution")
+        seen_refs: set[tuple[str, int]] = set()
+        for reference in references:
+            if not isinstance(reference, dict) or set(reference) != {
+                "artifact_sha256", "record_index", "source_format",
+            }:
+                raise ValueError(f"{where}: malformed definition evidence_ref")
+            if (
+                reference.get("artifact_sha256") != observation["evidence_ref"]["artifact_sha256"]
+                or type(reference.get("record_index")) is not int
+                or reference["record_index"] < 1
+                or reference.get("source_format") != "REVENGINSTR.GhidraFunctionPcodeFlow/1"
+            ):
+                raise ValueError(f"{where}: definition evidence_ref must use the call's exact P-code artifact")
+            reference_key = (reference["artifact_sha256"], reference["record_index"])
+            if reference_key in seen_refs:
+                raise ValueError(f"{where}: duplicate definition evidence_ref")
+            seen_refs.add(reference_key)
+        by_program[row["program_id"]][(observation_index, argument_index)] = {
+            **row, "_record_index": definition_index,
+        }
+
+    if seen != set(expected):
+        missing = len(set(expected) - seen)
+        raise ValueError(f"DirectCallArgumentDefinition input omits {missing} call arguments")
+    return by_program
+
+
 def _support_key(support: dict[str, Any]) -> tuple[Any, ...]:
     if "effect_id" in support:
         return ("effect", support["effect_id"])
@@ -357,6 +468,18 @@ def validate_graph_references(graph: dict[str, Any]) -> None:
             or not _is_sha256(graph.get("source_call_arguments_program_sha256", ""))
         ):
             raise ValueError("SemanticProgramGraph/4 requires pinned call-argument input")
+        definition_format = graph.get("source_call_argument_definitions_format")
+        definition_sha256 = graph.get("source_call_argument_definitions_sha256")
+        has_definition_format = definition_format is not None
+        has_definition_sha256 = definition_sha256 is not None
+        if has_definition_format != has_definition_sha256:
+            raise ValueError("call-argument definition pins must include format and SHA-256")
+        if has_definition_format and (
+            definition_format != CALL_ARGUMENT_DEFINITION_FORMAT
+            or not _is_sha256(definition_sha256)
+        ):
+            raise ValueError("invalid pinned DirectCallArgumentDefinition input")
+        seen_definition_record_indices: set[int] = set()
         annotation_fields = {
             "call_argument_count", "call_arguments", "call_argument_callee_entry",
             "call_argument_observation_record_index", "call_argument_source_evidence_ref",
@@ -385,10 +508,24 @@ def validate_graph_references(graph: dict[str, Any]) -> None:
                 raise ValueError("call arguments must attach to one resolved CALL operation")
             if node.get("target_entries") != [node.get("call_argument_callee_entry")]:
                 raise ValueError("call-argument callee does not match resolved CALL target")
+            source_ref = node.get("call_argument_source_evidence_ref")
+            if not isinstance(source_ref, dict) or set(source_ref) != {
+                "artifact_sha256", "record_index", "source_format",
+            }:
+                raise ValueError("call arguments lack their source P-code evidence_ref")
             for index, argument in enumerate(arguments):
+                base_argument_fields = {"index", "value_token", "width_bytes"}
+                definition_argument_fields = {
+                    "definition_resolution_state", "definition_analysis_record_index",
+                    "definition_evidence_refs",
+                }
+                required_argument_fields = (
+                    base_argument_fields | definition_argument_fields
+                    if has_definition_format else base_argument_fields
+                )
                 if (
                     not isinstance(argument, dict)
-                    or set(argument) != {"index", "value_token", "width_bytes"}
+                    or set(argument) != required_argument_fields
                     or type(argument.get("index")) is not int
                     or argument["index"] != index
                     or not isinstance(argument.get("value_token"), str)
@@ -396,11 +533,48 @@ def validate_graph_references(graph: dict[str, Any]) -> None:
                     or argument["width_bytes"] < 1
                 ):
                     raise ValueError("call-argument list is malformed")
-            source_ref = node.get("call_argument_source_evidence_ref")
-            if not isinstance(source_ref, dict) or set(source_ref) != {
-                "artifact_sha256", "record_index", "source_format",
-            }:
-                raise ValueError("call arguments lack their source P-code evidence_ref")
+                if has_definition_format:
+                    state = argument["definition_resolution_state"]
+                    references = argument["definition_evidence_refs"]
+                    if (
+                        not isinstance(state, str)
+                        or state not in {
+                            "exact_definition", "definition_not_found", "ambiguous_definition",
+                            "non_definition_token",
+                        }
+                        or type(argument["definition_analysis_record_index"]) is not int
+                        or argument["definition_analysis_record_index"] < 1
+                        or not isinstance(references, list)
+                    ):
+                        raise ValueError("call-argument definition annotation is malformed")
+                    expected_count = 1 if state == "exact_definition" else 2 if state == "ambiguous_definition" else 0
+                    if (state == "ambiguous_definition" and len(references) < expected_count) or (
+                        state != "ambiguous_definition" and len(references) != expected_count
+                    ):
+                        raise ValueError("call-argument definition refs disagree with resolution state")
+                    if state == "non_definition_token" and argument["value_token"].startswith("def:"):
+                        raise ValueError("def token cannot be classified as non-definition")
+                    if state != "non_definition_token" and not argument["value_token"].startswith("def:"):
+                        raise ValueError("non-def token cannot have a definition resolution")
+                    definition_record_index = argument["definition_analysis_record_index"]
+                    if definition_record_index in seen_definition_record_indices:
+                        raise ValueError("duplicate call-argument definition analysis record index")
+                    seen_definition_record_indices.add(definition_record_index)
+                    seen_definition_refs: set[tuple[str, int]] = set()
+                    for reference in references:
+                        if not isinstance(reference, dict) or set(reference) != {
+                            "artifact_sha256", "record_index", "source_format",
+                        } or (
+                            reference.get("artifact_sha256") != source_ref["artifact_sha256"]
+                            or type(reference.get("record_index")) is not int
+                            or reference["record_index"] < 1
+                            or reference.get("source_format") != "REVENGINSTR.GhidraFunctionPcodeFlow/1"
+                        ):
+                            raise ValueError("call-argument definition ref must match the call P-code artifact")
+                        reference_key = (reference["artifact_sha256"], reference["record_index"])
+                        if reference_key in seen_definition_refs:
+                            raise ValueError("duplicate call-argument definition evidence ref")
+                        seen_definition_refs.add(reference_key)
             if (
                 source_ref.get("source_format") != "REVENGINSTR.GhidraFunctionPcodeFlow/1"
                 or not _is_sha256(source_ref.get("artifact_sha256", ""))
@@ -417,7 +591,11 @@ def validate_graph_references(graph: dict[str, Any]) -> None:
         if annotated_nodes == 0:
             raise ValueError("SemanticProgramGraph/4 requires at least one attached call-argument observation")
     elif any(
-        "call_argument_observation_record_index" in node for node in graph["nodes"]
+        "call_argument_observation_record_index" in node
+        or "call_arguments" in node
+        or "source_call_argument_definitions_format" in graph
+        or "source_call_argument_definitions_sha256" in graph
+        for node in graph["nodes"]
     ):
         raise ValueError("call-argument observations require SemanticProgramGraph/4")
 
@@ -483,6 +661,8 @@ def build_semantic_program_graphs(
     type_layout_sha256: str | None = None,
     call_argument_rows: list[dict[str, Any]] | None = None,
     call_argument_sha256: str | None = None,
+    call_argument_definition_rows: list[dict[str, Any]] | None = None,
+    call_argument_definition_sha256: str | None = None,
 ) -> list[dict[str, Any]]:
     """Project effects, optional receiver/layout evidence, and call arguments."""
     if not records:
@@ -528,10 +708,24 @@ def build_semantic_program_graphs(
                 for row in layouts
             ):
                 raise ValueError("call-argument program_sha256 does not match type-layout program_sha256")
+    call_argument_definitions_by_program: dict[str, dict[tuple[int, int], dict[str, Any]]] = defaultdict(dict)
+    if call_argument_definition_rows is not None:
+        if call_argument_rows is None or call_argument_sha256 is None:
+            raise ValueError("call-argument definitions require pinned call-argument observations")
+        if call_argument_definition_sha256 is None or not _is_sha256(call_argument_definition_sha256):
+            raise ValueError("call-argument definitions require their source SHA-256")
+        call_argument_definitions_by_program = _validate_call_argument_definition_rows(
+            call_argument_definition_rows,
+            call_arguments_by_program=call_arguments_by_program,
+            call_argument_sha256=call_argument_sha256,
+        )
+    elif call_argument_definition_sha256 is not None:
+        raise ValueError("call-argument definition SHA-256 supplied without definition rows")
 
     graphs: list[dict[str, Any]] = []
     for program_id, functions in sorted(by_program.items()):
         program_call_arguments = call_arguments_by_program.get(program_id, [])
+        program_call_argument_definitions = call_argument_definitions_by_program.get(program_id, {})
         nodes: dict[str, dict[str, Any]] = {}
         edges: dict[str, dict[str, Any]] = {}
         all_support: list[dict[str, Any]] = []
@@ -704,7 +898,17 @@ def build_semantic_program_graphs(
                     "call-argument evidence_ref does not match the CALL operation P-code source"
                 )
             operation["call_argument_count"] = row["argument_count"]
-            operation["call_arguments"] = row["arguments"]
+            operation["call_arguments"] = []
+            for argument in row["arguments"]:
+                graph_argument = dict(argument)
+                if call_argument_definition_rows is not None:
+                    definition = program_call_argument_definitions[(row["_record_index"], argument["index"])]
+                    graph_argument.update({
+                        "definition_resolution_state": definition["resolution_state"],
+                        "definition_analysis_record_index": definition["_record_index"],
+                        "definition_evidence_refs": definition["definition_evidence_refs"],
+                    })
+                operation["call_arguments"].append(graph_argument)
             operation["call_argument_callee_entry"] = row["callee_entry"]
             operation["call_argument_observation_record_index"] = row["_record_index"]
             operation["call_argument_source_evidence_ref"] = source_ref
@@ -913,6 +1117,9 @@ def build_semantic_program_graphs(
             graph["source_call_arguments_format"] = CALL_ARGUMENT_FORMAT
             graph["source_call_arguments_sha256"] = call_argument_sha256
             graph["source_call_arguments_program_sha256"] = call_argument_program_hashes[program_id]
+        if call_argument_definition_rows is not None and program_call_arguments:
+            graph["source_call_argument_definitions_format"] = CALL_ARGUMENT_DEFINITION_FORMAT
+            graph["source_call_argument_definitions_sha256"] = call_argument_definition_sha256
         graph = {
             key: graph[key]
             for key in (
@@ -921,6 +1128,7 @@ def build_semantic_program_graphs(
                 "source_receiver_types_sha256", "source_type_layout_hypotheses_format",
                 "source_type_layout_hypotheses_sha256", "source_call_arguments_format",
                 "source_call_arguments_sha256", "source_call_arguments_program_sha256",
+                "source_call_argument_definitions_format", "source_call_argument_definitions_sha256",
                 "nodes", "edges",
             )
             if key in graph
@@ -981,6 +1189,10 @@ def main(argv: list[str] | None = None) -> int:
         "--call-arguments", type=Path,
         help="optional DirectCallArgumentObservation/1 JSONL; joins exact resolved CALL sites",
     )
+    parser.add_argument(
+        "--call-argument-definitions", type=Path,
+        help="optional DirectCallArgumentDefinition/1 JSONL; pins exact argument definition rows",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     records, source_sha256 = _read_jsonl(args.function_effect_ir)
@@ -996,6 +1208,10 @@ def main(argv: list[str] | None = None) -> int:
     call_argument_sha256 = None
     if args.call_arguments is not None:
         call_argument_rows, call_argument_sha256 = _read_jsonl(args.call_arguments)
+    call_argument_definition_rows = None
+    call_argument_definition_sha256 = None
+    if args.call_argument_definitions is not None:
+        call_argument_definition_rows, call_argument_definition_sha256 = _read_jsonl(args.call_argument_definitions)
     graphs = build_semantic_program_graphs(
         records,
         source_sha256=source_sha256,
@@ -1005,6 +1221,8 @@ def main(argv: list[str] | None = None) -> int:
         type_layout_sha256=type_layout_sha256,
         call_argument_rows=call_argument_rows,
         call_argument_sha256=call_argument_sha256,
+        call_argument_definition_rows=call_argument_definition_rows,
+        call_argument_definition_sha256=call_argument_definition_sha256,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", encoding="utf-8") as handle:
@@ -1034,6 +1252,8 @@ def main(argv: list[str] | None = None) -> int:
             "call_argument_observation_record_index" in node
             for graph in graphs for node in graph["nodes"]
         ))
+    if call_argument_definition_sha256 is not None:
+        print("source call-argument definitions SHA-256:", call_argument_definition_sha256)
     print("output:", args.output)
     return 0
 

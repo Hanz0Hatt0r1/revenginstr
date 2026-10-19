@@ -31,16 +31,55 @@
     "source_type_layout_hypotheses_sha256": {"$ref": "#/$defs/sha256"},
     "source_call_arguments_format": {"const": "REVENGINSTR.DirectCallArgumentObservation/1"},
     "source_call_arguments_sha256": {"$ref": "#/$defs/sha256"},
-    "source_call_arguments_program_sha256": {"$ref": "#/$defs/sha256"}
+    "source_call_arguments_program_sha256": {"$ref": "#/$defs/sha256"},
+    "source_call_argument_definitions_format": {"const": "REVENGINSTR.DirectCallArgumentDefinition/1"},
+    "source_call_argument_definitions_sha256": {"$ref": "#/$defs/sha256"}
   },
   "allOf": [
     {"if": {"required": ["source_receiver_types_format"]}, "then": {"required": ["source_receiver_types_sha256"]}},
     {"if": {"required": ["source_receiver_types_sha256"]}, "then": {"required": ["source_receiver_types_format"]}},
     {"if": {"required": ["source_type_layout_hypotheses_format"]}, "then": {"required": ["source_type_layout_hypotheses_sha256"]}},
-    {"if": {"required": ["source_type_layout_hypotheses_sha256"]}, "then": {"required": ["source_type_layout_hypotheses_format"]}}
+    {"if": {"required": ["source_type_layout_hypotheses_sha256"]}, "then": {"required": ["source_type_layout_hypotheses_format"]}},
+    {"if": {"required": ["source_call_argument_definitions_format"]}, "then": {"required": ["source_call_argument_definitions_sha256"]}},
+    {"if": {"required": ["source_call_argument_definitions_sha256"]}, "then": {"required": ["source_call_argument_definitions_format"]}},
+    {
+      "if": {"required": ["source_call_argument_definitions_format"]},
+      "then": {
+        "properties": {
+          "nodes": {
+            "items": {
+              "if": {"required": ["call_argument_observation_record_index"]},
+              "then": {
+                "properties": {
+                  "call_arguments": {
+                    "items": {
+                      "required": [
+                        "definition_resolution_state",
+                        "definition_analysis_record_index",
+                        "definition_evidence_refs"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   ],
   "$defs": {
     "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "pcode_evidence_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_sha256", "record_index", "source_format"],
+      "properties": {
+        "artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "record_index": {"type": "integer", "minimum": 1},
+        "source_format": {"const": "REVENGINSTR.GhidraFunctionPcodeFlow/1"}
+      }
+    },
     "support": {
       "oneOf": [
         {
@@ -145,9 +184,30 @@
             "properties": {
               "index": {"type": "integer", "minimum": 0},
               "value_token": {"type": "string", "minLength": 1},
-              "width_bytes": {"type": "integer", "minimum": 1}
+              "width_bytes": {"type": "integer", "minimum": 1},
+              "definition_resolution_state": {"enum": ["exact_definition", "definition_not_found", "ambiguous_definition", "non_definition_token"]},
+              "definition_analysis_record_index": {"type": "integer", "minimum": 1},
+              "definition_evidence_refs": {"type": "array", "items": {"$ref": "#/$defs/pcode_evidence_ref"}}
+            },
+            "allOf": [
+              {
+                "if": {"required": ["definition_resolution_state"]},
+                "then": {"required": ["definition_analysis_record_index", "definition_evidence_refs"]}
+              },
+              {
+                "if": {"properties": {"definition_resolution_state": {"const": "exact_definition"}}, "required": ["definition_resolution_state"]},
+                "then": {"properties": {"definition_evidence_refs": {"minItems": 1, "maxItems": 1}}}
+              },
+              {
+                "if": {"properties": {"definition_resolution_state": {"const": "ambiguous_definition"}}, "required": ["definition_resolution_state"]},
+                "then": {"properties": {"definition_evidence_refs": {"minItems": 2}}}
+              },
+              {
+                "if": {"properties": {"definition_resolution_state": {"enum": ["definition_not_found", "non_definition_token"]}}, "required": ["definition_resolution_state"]},
+                "then": {"properties": {"definition_evidence_refs": {"maxItems": 0}}}
+              }
+            ]
             }
-          }
         },
         "opcode": {"enum": ["LOAD", "STORE", "CALL", "CALLIND", "RETURN"]},
         "kinds": {

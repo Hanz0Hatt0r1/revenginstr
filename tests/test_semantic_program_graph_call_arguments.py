@@ -46,10 +46,12 @@ def test_v4_joins_call_arguments_to_exact_resolved_call_sites() -> None:
         "nevergone-ccjoystick/type-layout-hypothesis.jsonl"
     )
     observations_path = REPLAY / "call-arguments.jsonl"
+    definitions_path = REPLAY / "argument-definitions.jsonl"
     graph_path = REPLAY / "semantic-program-graph.jsonl"
     effects, effects_sha256 = _read_jsonl(effects_path)
     layouts, layout_sha256 = _read_jsonl(layout_path)
     observations, observations_sha256 = _read_jsonl(observations_path)
+    definitions, definitions_sha256 = _read_jsonl(definitions_path)
     graphs, graph_sha256 = _read_jsonl(graph_path)
 
     assert len(graphs) == 1
@@ -57,6 +59,7 @@ def test_v4_joins_call_arguments_to_exact_resolved_call_sites() -> None:
     assert graph["format"] == FORMAT_V4
     assert graph["source_call_arguments_sha256"] == observations_sha256
     assert graph["source_call_arguments_program_sha256"] == manifest["program_sha256"]
+    assert graph["source_call_argument_definitions_sha256"] == definitions_sha256
     _validator("semantic-program-graph-v4.schema.json").validate(graph)
     observation_validator = _validator("direct-call-argument-observation-v1.schema.json")
     for row in observations:
@@ -69,6 +72,8 @@ def test_v4_joins_call_arguments_to_exact_resolved_call_sites() -> None:
         type_layout_sha256=layout_sha256,
         call_argument_rows=observations,
         call_argument_sha256=observations_sha256,
+        call_argument_definition_rows=definitions,
+        call_argument_definition_sha256=definitions_sha256,
     )[0]
     assert (json.dumps(rebuilt, sort_keys=True) + "\n").encode() == graph_path.read_bytes()
 
@@ -82,6 +87,14 @@ def test_v4_joins_call_arguments_to_exact_resolved_call_sites() -> None:
         argument["value_token"].startswith("const:")
         for node in annotated for argument in node["call_arguments"]
     ) == 10
+    assert sum(
+        argument["definition_resolution_state"] == "exact_definition"
+        for node in annotated for argument in node["call_arguments"]
+    ) == 56
+    assert sum(
+        len(argument["definition_evidence_refs"]) == 1
+        for node in annotated for argument in node["call_arguments"]
+    ) == 56
     assert all(
         node["call_argument_source_evidence_ref"]
         == next(
@@ -166,6 +179,16 @@ def test_v4_joins_call_arguments_to_exact_resolved_call_sites() -> None:
     with pytest.raises(ValueError, match="must include all provenance and value fields"):
         validate_graph_references(malformed_graph)
 
+    malformed_definition_graph = json.loads(json.dumps(graph))
+    definition_argument = next(
+        argument for node in malformed_definition_graph["nodes"]
+        for argument in node.get("call_arguments", [])
+        if argument.get("definition_resolution_state") == "exact_definition"
+    )
+    definition_argument["definition_evidence_refs"][0]["artifact_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="definition ref must match the call P-code artifact"):
+        validate_graph_references(malformed_definition_graph)
+
     mismatched = [dict(row) for row in observations]
     mismatched[0] = {**mismatched[0], "callee_entry": "ffffffff"}
     with pytest.raises(ValueError, match="does not match one exact resolved CALL site"):
@@ -187,6 +210,20 @@ def test_v4_joins_call_arguments_to_exact_resolved_call_sites() -> None:
             type_layout_sha256=layout_sha256,
             call_argument_rows=wrong_build,
             call_argument_sha256=observations_sha256,
+        )
+
+    mismatched_definitions = [dict(row) for row in definitions]
+    mismatched_definitions[0] = {**mismatched_definitions[0], "value_token": "const:0x0:4"}
+    with pytest.raises(ValueError, match="argument token or width does not match"):
+        build_semantic_program_graphs(
+            effects,
+            source_sha256=effects_sha256,
+            type_layout_rows=layouts,
+            type_layout_sha256=layout_sha256,
+            call_argument_rows=observations,
+            call_argument_sha256=observations_sha256,
+            call_argument_definition_rows=mismatched_definitions,
+            call_argument_definition_sha256=definitions_sha256,
         )
 
     malformed_graph = json.loads(json.dumps(graph))

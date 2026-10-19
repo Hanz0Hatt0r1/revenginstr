@@ -16,17 +16,18 @@ PYTHONPATH=src python -m revenginstr.prototype_callsite_observations \
   --program-sha256 94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e \
   --output docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/call-arguments.jsonl
 
-PYTHONPATH=src python -m revenginstr.semantic_program_graph \
-  docs/evidence/semantic-program-graph-v3/nevergone-runtime-correlation-20261020/function-effects.jsonl \
-  --type-layout-hypotheses docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick/type-layout-hypothesis.jsonl \
-  --call-arguments docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/call-arguments.jsonl \
-  --output docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/semantic-program-graph.jsonl
-
 PYTHONPATH=src python -m revenginstr.direct_call_argument_definitions \
   docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/call-arguments.jsonl \
   docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/LoadGameLevels.pcode-flow.tsv \
   docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/CCFileUtilsAndroid-getFileData.pcode-flow.tsv \
   --output docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/argument-definitions.jsonl
+
+PYTHONPATH=src python -m revenginstr.semantic_program_graph \
+  docs/evidence/semantic-program-graph-v3/nevergone-runtime-correlation-20261020/function-effects.jsonl \
+  --type-layout-hypotheses docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick/type-layout-hypothesis.jsonl \
+  --call-arguments docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/call-arguments.jsonl \
+  --call-argument-definitions docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/argument-definitions.jsonl \
+  --output docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/semantic-program-graph.jsonl
 ```
 
 Query the observations while keeping the exact call-site provenance:
@@ -45,8 +46,10 @@ The frozen graph has 90 nodes and 128 edges. It attaches observations to 36
 exact resolved call sites, preserving 70 ordered argument tokens; 10 tokens
 are constants. The exact-definition pass matches all 56 `def:` tokens to one
 output row in the same caller's source P-code artifact; the other 14 tokens
-remain non-definition tokens. Rebuilding both outputs is deterministic, and
-the graph validates against `SemanticProgramGraph/4`. The pinned replay
+remain non-definition tokens. The graph now attaches each resolution state
+and definition row reference to its exact argument, pinned to the definition
+analysis artifact. Rebuilding all outputs is deterministic, and the graph
+validates against `SemanticProgramGraph/4`. The pinned replay
 manifest records byte lengths and SHA-256 values for all source, output, and
 schema artifacts.
 

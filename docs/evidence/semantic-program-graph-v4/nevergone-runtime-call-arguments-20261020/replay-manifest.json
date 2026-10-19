@@ -31,16 +31,16 @@
       "sha256": "3ea5e756a606d8ff0b4d9e10eda79df51326013a4f67e84a989ef0b3316d1546"
     },
     {
-      "bytes": 228991,
+      "bytes": 247099,
       "id": "semantic_graph",
       "path": "semantic-program-graph.jsonl",
-      "sha256": "de0abaa666307d38c4ceb11371b62b936e9a307bcdd1d59ae3078ba7ae51ef8f"
+      "sha256": "47fff022e3396bc2d515d0c7b5e801b4e02b4c971d8465dda56290bcb8599463"
     },
     {
-      "bytes": 20489,
+      "bytes": 23483,
       "id": "graph_schema_v4",
       "path": "../../../../schemas/semantic-program-graph-v4.schema.json",
-      "sha256": "30b86890d2f00067f7f9c1d0ac4f68aed491df1914a78b9e8fd4deefd116dff3"
+      "sha256": "727eb34c57d7af57a68eacb6aa172e8fc98f9812cb4cbfafb7b8e2d8f9588aaa"
     },
     {
       "bytes": 2069,

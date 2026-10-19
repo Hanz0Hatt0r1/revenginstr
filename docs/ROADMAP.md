@@ -1563,6 +1563,13 @@ it does not chase transitive dependencies or infer types, semantic roles, or
 runtime values. This supplies a precise first link for later data-flow
 reconstruction, not a value-flow conclusion.
 
+SemanticProgramGraph/4 can now consume the definition-analysis JSONL and attach
+its resolution state and exact P-code row references to each call argument.
+The graph validates that the sidecar row points back to the exact pinned call
+observation and that its token and width agree. This makes the bounded
+definition evidence queryable alongside the callsite without upgrading it to
+a semantic or runtime value-flow claim.
+
 ---
 
 # 16. M11 — Active learning and reviewer-feedback loop

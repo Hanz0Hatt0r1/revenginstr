@@ -52,6 +52,7 @@ Supply an optional `DirectCallArgumentObservation/1` JSONL file to emit `/4`:
 revenginstr-semantic-program-graph function-effects.jsonl \
   --type-layout-hypotheses type-layout-hypotheses.jsonl \
   --call-arguments direct-call-arguments.jsonl \
+  --call-argument-definitions direct-call-argument-definitions.jsonl \
   --output program-graphs.jsonl
 ```
 
@@ -63,6 +64,13 @@ P-code time, resolved callee, and the original P-code artifact/row all match.
 Unmatched or ambiguous observations fail closed. Argument tokens remain
 static observations; `def:` tokens are not resolved here, and constants do
 not establish resource names, prototypes, or runtime value flow.
+
+Optionally supply the matching `DirectCallArgumentDefinition/1` JSONL. The
+builder verifies each definition row against the pinned call-observation
+record, callsite identity, P-code artifact, argument index, token, and width.
+It attaches the resolution state and exact definition evidence references to
+each argument and pins the definition-analysis artifact hash. This remains a
+single-row definition link and does not chase transitive data flow.
 
 This first projection emits program, function, operation, and
 parameter-rooted field nodes. It emits `contains` edges for observed program,
