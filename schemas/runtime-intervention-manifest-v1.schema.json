@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/runtime-intervention-manifest-v1.schema.json",
+  "title": "REVENGINSTR.RuntimeInterventionManifest/1",
+  "description": "Pins at least three distinct pairwise runtime differential reports for one declared intervention.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "collection_id", "intervention", "observation_window_sha256", "comparisons"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.RuntimeInterventionManifest/1"},
+    "collection_id": {"type": "string", "minLength": 1},
+    "intervention": {"$ref": "#/$defs/intervention"},
+    "observation_window_sha256": {"$ref": "#/$defs/sha256"},
+    "comparisons": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 100,
+      "items": {"$ref": "#/$defs/comparison"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "intervention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dimension", "name", "baseline_label", "treatment_label", "fixed_context_sha256"],
+      "properties": {
+        "dimension": {"enum": ["input", "state", "action"]},
+        "name": {"type": "string", "minLength": 1, "maxLength": 256},
+        "baseline_label": {"type": "string", "minLength": 1, "maxLength": 256},
+        "treatment_label": {"type": "string", "minLength": 1, "maxLength": 256},
+        "fixed_context_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["comparison_id", "report_path", "report_sha256"],
+      "properties": {
+        "comparison_id": {"type": "string", "minLength": 1},
+        "report_path": {"type": "string", "minLength": 1},
+        "report_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}
