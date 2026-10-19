@@ -38,8 +38,25 @@ call shape as the callee's complete prototype. Keep inputs from one Ghidra
 program per invocation.
 
 ```sh
-revenginstr-direct-call-arguments caller-flow-*.tsv --program-id nfs-shift-1.0 \
+revenginstr-direct-call-arguments caller-flow-*.tsv --program-id program-name \
+  --program-sha256 <executable-sha256> \
   --output direct-call-arguments.jsonl
+```
+
+`revenginstr-prototype-callsite-check` compares those observations with
+`GhidraFunctionPrototype/1` snapshots by exact callee entry. It checks arity
+only: fixed signatures require an exact argument count, while variadic
+signatures require at least their fixed parameter count. Results retain both
+input artifact references and the Ghidra signature source. A matching call
+shape is local evidence only; it does not prove that all callers were captured
+or that the stored signature is correct. Use the same `program_id` in both
+inputs; it must equal the Ghidra program name recorded in the prototype export.
+The call observations also carry the executable SHA-256; the checker rejects
+observations and prototypes pinned to different binaries.
+
+```sh
+revenginstr-prototype-callsite-check direct-call-arguments.jsonl \
+  function-prototypes.jsonl --output callsite-compatibility.jsonl
 ```
 
 `FunctionPrototypeGold/1` describes one independently adjudicated function.

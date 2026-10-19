@@ -47,12 +47,16 @@ def _arguments(value: str, where: str) -> list[dict[str, Any]]:
     return result
 
 
-def observe_call_arguments(paths: list[Path], *, program_id: str) -> list[dict[str, Any]]:
+def observe_call_arguments(
+    paths: list[Path], *, program_id: str, program_sha256: str,
+) -> list[dict[str, Any]]:
     """Return one evidence-linked row per resolved direct P-code CALL site."""
     if not paths:
         raise ValueError("at least one Ghidra P-code flow TSV is required")
     if not isinstance(program_id, str) or not program_id:
         raise ValueError("program_id must be non-empty")
+    if not isinstance(program_sha256, str) or not re.fullmatch(r"[0-9a-f]{64}", program_sha256):
+        raise ValueError("program_sha256 must be lowercase SHA-256")
     observations = []
     call_sites: set[tuple[str, str, str]] = set()
     seen_paths: set[Path] = set()
@@ -88,6 +92,7 @@ def observe_call_arguments(paths: list[Path], *, program_id: str) -> list[dict[s
                 observations.append({
                     "format": FORMAT,
                     "program_id": program_id,
+                    "program_sha256": program_sha256,
                     "caller_entry": caller,
                     "callee_entry": callee,
                     "call_address": call_address,
@@ -107,10 +112,13 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("flows", nargs="+", type=Path, help="GhidraFunctionPcodeFlow/1 TSV files")
     parser.add_argument("--program-id", required=True, help="stable id for the single analyzed program")
+    parser.add_argument("--program-sha256", required=True, help="executable hash from Ghidra prototype metadata")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
-        rows = observe_call_arguments(args.flows, program_id=args.program_id)
+        rows = observe_call_arguments(
+            args.flows, program_id=args.program_id, program_sha256=args.program_sha256,
+        )
     except (OSError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2

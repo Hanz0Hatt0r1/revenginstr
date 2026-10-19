@@ -20,7 +20,9 @@ FIELDS = [
 
 
 def test_direct_call_observation_is_schema_valid_and_source_linked() -> None:
-    rows = observe_call_arguments([FLOW_FIXTURE], program_id="synthetic-x86")
+    rows = observe_call_arguments(
+        [FLOW_FIXTURE], program_id="synthetic-x86", program_sha256="c" * 64,
+    )
     schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
     Draft202012Validator.check_schema(schema)
     Draft202012Validator(schema).validate(rows[0])
@@ -29,6 +31,7 @@ def test_direct_call_observation_is_schema_valid_and_source_linked() -> None:
     assert rows[0]["caller_entry"] == "ram:00001000"
     assert rows[0]["callee_entry"] == "ram:00001020"
     assert rows[0]["program_id"] == "synthetic-x86"
+    assert rows[0]["program_sha256"] == "c" * 64
     assert rows[0]["argument_count"] == 2
     assert [item["width_bytes"] for item in rows[0]["arguments"]] == [4, 4]
     assert rows[0]["evidence_ref"] == {
@@ -59,7 +62,9 @@ def test_zero_argument_calls_are_retained_and_unresolved_calls_are_skipped(tmp_p
             "callee_name": "-",
         })
 
-    rows = observe_call_arguments([path], program_id="synthetic-x86")
+    rows = observe_call_arguments(
+        [path], program_id="synthetic-x86", program_sha256="c" * 64,
+    )
     assert len(rows) == 1
     assert rows[0]["argument_count"] == 0
     assert rows[0]["arguments"] == []
@@ -79,7 +84,7 @@ def test_duplicate_callsite_fails_closed(tmp_path: Path) -> None:
         writer.writerow(row)
 
     with pytest.raises(ValueError, match="duplicate direct call site"):
-        observe_call_arguments([path], program_id="synthetic-x86")
+        observe_call_arguments([path], program_id="synthetic-x86", program_sha256="c" * 64)
 
 
 def test_bad_argument_width_fails_closed(tmp_path: Path) -> None:
@@ -95,4 +100,9 @@ def test_bad_argument_width_fails_closed(tmp_path: Path) -> None:
         writer.writerow(row)
 
     with pytest.raises(ValueError, match="no positive byte width"):
-        observe_call_arguments([path], program_id="synthetic-x86")
+        observe_call_arguments([path], program_id="synthetic-x86", program_sha256="c" * 64)
+
+
+def test_program_sha256_must_be_lowercase_sha256() -> None:
+    with pytest.raises(ValueError, match="program_sha256 must be lowercase SHA-256"):
+        observe_call_arguments([FLOW_FIXTURE], program_id="synthetic-x86", program_sha256="C" * 64)
