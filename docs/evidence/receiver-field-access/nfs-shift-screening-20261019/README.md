@@ -247,11 +247,15 @@ roots and adds those origins to the nested candidate rows. Selector values
 remain dynamic, unobserved writers remain possible, and the `/6` results remain
 unchanged. See
 [`field20-selector1-resolution.md`](scan37/replay-0041dd40/field20-selector1-resolution.md).
-An additional CFG/5 replay added exact bodies for `006642a5` and its direct
-callee `00664140`, together with nine store facts. The five `/6` statuses remain
-unchanged; the bounded closure now exposes five further unresolved calls from
-`00664140`. See
-[`cfg-v5-seeded-callee-extension.md`](scan37/replay-0041dd40/cfg-v5-seeded-callee-extension.md).
+An additional CFG/5 replay extended that chain through all five direct callees
+of `00664140` and two terminal descendants, retaining 127 exact P-code rows,
+34 store facts, and 10 caller-parameter-offset roots across the nine added
+functions. The five `/6` statuses remain unchanged; 22 `CALLIND` sites and
+older missing direct-call flows remain barriers. See
+[`cfg-v5-seeded-callee-descendants.md`](scan37/replay-0041dd40/cfg-v5-seeded-callee-descendants.md)
+for the complete input set and replay command. The earlier
+[`cfg-v5-seeded-callee-extension.md`](scan37/replay-0041dd40/cfg-v5-seeded-callee-extension.md)
+records the intermediate exact-callee capture.
 The replay also includes the 32-row, read-only generic Ghidra pointer-table
 export at [`ghidra-pointer-table-slots.jsonl`](scan37/replay-0041dd40/ghidra-pointer-table-slots.jsonl);
 its schema and invocation are documented in

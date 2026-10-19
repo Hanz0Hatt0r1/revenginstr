@@ -56,4 +56,6 @@ can affect the tracked field pairs.
 The two RevEngInstr CLIs consumed these pinned inputs to build the effect and
 audit sidecars. The original CFG/5 capture remains available in
 [`cfg-v5-entry-block-replay.md`](cfg-v5-entry-block-replay.md); this note records
-the exact additions and resulting closure.
+the exact additions and resulting closure. A later replay resolves these five
+direct callees and their selected descendants; see
+[`cfg-v5-seeded-callee-descendants.md`](cfg-v5-seeded-callee-descendants.md).

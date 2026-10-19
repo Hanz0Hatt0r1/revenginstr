@@ -1,0 +1,59 @@
+format	row_type	plan_id	callee_entry	parameter_index	direct_caller_functions	caller_functions_decompiled	caller_functions_failed	callers_with_matched_calls	matched_caller_calls	caller_entry	caller_name	caller_call_site	node_id	parent_node_id	input_index	depth	edge_kind	node_token	type_display	pointer_depth	pointee_type_display	constant_value	defining_opcode	defining_address	defining_time	call_target_entry	call_target_name	truncation	status
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_00533e70_0064ec60_0	00533e70	0	-	-	-	-	-	0064ec60	FUN_0064ec60	0064ec79	0	-1	-1	0	root	def:PTRADD@0064ec6b:99:4	undefined4 *	1	undefined4	-	PTRADD	0064ec6b	99	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_00533e70_0064ec60_0	00533e70	0	-	-	-	-	-	0064ec60	FUN_0064ec60	0064ec79	1	0	0	1	base	register:register:00000004:4	undefined4 *	1	undefined4	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_00533e70_0064ec60_0	00533e70	0	-	-	-	-	-	0064ec60	FUN_0064ec60	0064ec79	2	0	1	1	offset_index	const:0x5:4	int	0	-	0x5	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_00533e70_0064ec60_0	00533e70	0	-	-	-	-	-	0064ec60	FUN_0064ec60	0064ec79	3	0	2	1	offset_scale	const:0x4:4	int	0	-	0x4	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	root_00533e70_0064ec60_0	00533e70	0	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0064ec60_00664140_0	0064ec60	0	-	-	-	-	-	00664140	FUN_00664140	0066417d	0	-1	-1	0	root	def:PTRADD@00664177:178:4	undefined4 *	1	undefined4	-	PTRADD	00664177	178	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0064ec60_00664140_0	0064ec60	0	-	-	-	-	-	00664140	FUN_00664140	0066417d	1	0	0	1	base	register:register:00000004:4	undefined4 *	1	undefined4	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0064ec60_00664140_0	0064ec60	0	-	-	-	-	-	00664140	FUN_00664140	0066417d	2	0	1	1	offset_index	const:0x1b:4	int	0	-	0x1b	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0064ec60_00664140_0	0064ec60	0	-	-	-	-	-	00664140	FUN_00664140	0066417d	3	0	2	1	offset_scale	const:0x4:4	int	0	-	0x4	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	root_0064ec60_00664140_0	0064ec60	0	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0066e0e0_00664140_0	0066e0e0	0	-	-	-	-	-	00664140	FUN_00664140	00664188	0	-1	-1	0	root	def:PTRADD@00664182:180:4	undefined4 *	1	undefined4	-	PTRADD	00664182	180	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0066e0e0_00664140_0	0066e0e0	0	-	-	-	-	-	00664140	FUN_00664140	00664188	1	0	0	1	base	register:register:00000004:4	undefined4 *	1	undefined4	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0066e0e0_00664140_0	0066e0e0	0	-	-	-	-	-	00664140	FUN_00664140	00664188	2	0	1	1	offset_index	const:0x22:4	int	0	-	0x22	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0066e0e0_00664140_0	0066e0e0	0	-	-	-	-	-	00664140	FUN_00664140	00664188	3	0	2	1	offset_scale	const:0x4:4	int	0	-	0x4	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	root_0066e0e0_00664140_0	0066e0e0	0	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0066f510_00664140_0	0066f510	0	-	-	-	-	-	00664140	FUN_00664140	0066416e	0	-1	-1	0	root	def:PTRADD@0066415c:171:4	undefined4 *	1	undefined4	-	PTRADD	0066415c	171	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0066f510_00664140_0	0066f510	0	-	-	-	-	-	00664140	FUN_00664140	0066416e	1	0	0	1	base	register:register:00000004:4	undefined4 *	1	undefined4	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0066f510_00664140_0	0066f510	0	-	-	-	-	-	00664140	FUN_00664140	0066416e	2	0	1	1	offset_index	const:0x18:4	int	0	-	0x18	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0066f510_00664140_0	0066f510	0	-	-	-	-	-	00664140	FUN_00664140	0066416e	3	0	2	1	offset_scale	const:0x4:4	int	0	-	0x4	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	root_0066f510_00664140_0	0066f510	0	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0066f5b0_00664140_0	0066f5b0	0	-	-	-	-	-	00664140	FUN_00664140	00664144	0	-1	-1	0	root	register:register:00000004:4	undefined4 *	1	undefined4	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	root_0066f5b0_00664140_0	0066f5b0	0	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_007f6690_00664140_0	007f6690	0	-	-	-	-	-	00664140	FUN_00664140	00664157	0	-1	-1	0	root	def:PTRADD@0066414b:169:4	undefined4 *	1	undefined4	-	PTRADD	0066414b	169	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_007f6690_00664140_0	007f6690	0	-	-	-	-	-	00664140	FUN_00664140	00664157	1	0	0	1	base	register:register:00000004:4	undefined4 *	1	undefined4	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_007f6690_00664140_0	007f6690	0	-	-	-	-	-	00664140	FUN_00664140	00664157	2	0	1	1	offset_index	const:0x2:4	int	0	-	0x2	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_007f6690_00664140_0	007f6690	0	-	-	-	-	-	00664140	FUN_00664140	00664157	3	0	2	1	offset_scale	const:0x4:4	int	0	-	0x4	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	root_007f6690_00664140_0	007f6690	0	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_00664140_006642a5_0	00664140	0	-	-	-	-	-	006642a5	FUN_006642a5	006642b8	0	-1	-1	0	root	def:CAST@006642b8:99:4	undefined4 *	1	undefined4	-	CAST	006642b8	99	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_00664140_006642a5_0	00664140	0	-	-	-	-	-	006642a5	FUN_006642a5	006642b8	1	0	0	1	value	def:PTRSUB@006642b8:98:4	undefined *	1	undefined	-	PTRSUB	006642b8	98	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_00664140_006642a5_0	00664140	0	-	-	-	-	-	006642a5	FUN_006642a5	006642b8	2	1	0	2	base	const:0x0:4	void *	1	void	0x0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_00664140_006642a5_0	00664140	0	-	-	-	-	-	006642a5	FUN_006642a5	006642b8	3	1	1	2	offset	const:0xbfc728:4	int	0	-	0xbfc728	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	root_00664140_006642a5_0	00664140	0	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_00900fb3_006642a5_0	00900fb3	0	-	-	-	-	-	006642a5	FUN_006642a5	006642c2	0	-1	-1	0	root	def:CAST@006642c2:100:4	_func_4879 *	1	_func_4879	-	CAST	006642c2	100	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_00900fb3_006642a5_0	00900fb3	0	-	-	-	-	-	006642a5	FUN_006642a5	006642c2	1	0	0	1	value	def:PTRSUB@006642c2:97:4	undefined1 *	1	undefined1	-	PTRSUB	006642c2	97	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_00900fb3_006642a5_0	00900fb3	0	-	-	-	-	-	006642a5	FUN_006642a5	006642c2	2	1	0	2	base	const:0x0:4	void *	1	void	0x0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_00900fb3_006642a5_0	00900fb3	0	-	-	-	-	-	006642a5	FUN_006642a5	006642c2	3	1	1	2	offset	const:0xa9e620:4	int	0	-	0xa9e620	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	root_00900fb3_006642a5_0	00900fb3	0	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_00533e70_0066e0e0_0	00533e70	0	-	-	-	-	-	0066e0e0	FUN_0066e0e0	0066e0ed	0	-1	-1	0	root	def:CAST@0066e0e3:137:4	undefined4 *	1	undefined4	-	CAST	0066e0e3	137	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_00533e70_0066e0e0_0	00533e70	0	-	-	-	-	-	0066e0e0	FUN_0066e0e0	0066e0ed	1	0	0	1	value	def:INT_ADD@0066e0e3:4:4	int	0	-	-	INT_ADD	0066e0e3	4	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_00533e70_0066e0e0_0	00533e70	0	-	-	-	-	-	0066e0e0	FUN_0066e0e0	0066e0ed	2	1	0	2	base	def:CAST@0066e0e3:136:4	int	0	-	-	CAST	0066e0e3	136	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_00533e70_0066e0e0_0	00533e70	0	-	-	-	-	-	0066e0e0	FUN_0066e0e0	0066e0ed	3	2	0	3	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_00533e70_0066e0e0_0	00533e70	0	-	-	-	-	-	0066e0e0	FUN_0066e0e0	0066e0ed	4	1	1	2	offset	const:0x30:4	int	0	-	0x30	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	root_00533e70_0066e0e0_0	00533e70	0	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_009015b0_0066e0e0_0	009015b0	0	-	-	-	-	-	0066e0e0	FUN_0066e0e0	0066e0ff	0	-1	-1	0	root	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_009015b0_0066e0e0_0	009015b0	0	-	-	-	-	-	0066e0e0	FUN_0066e0e0	0066e10c	0	-1	-1	0	root	def:CAST@0066e106:145:4	void *	1	void	-	CAST	0066e106	145	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_009015b0_0066e0e0_0	009015b0	0	-	-	-	-	-	0066e0e0	FUN_0066e0e0	0066e10c	1	0	0	1	value	def:INT_ADD@0066e106:33:4	int	0	-	-	INT_ADD	0066e106	33	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_009015b0_0066e0e0_0	009015b0	0	-	-	-	-	-	0066e0e0	FUN_0066e0e0	0066e10c	2	1	0	2	base	def:CAST@0066e106:144:4	int	0	-	-	CAST	0066e106	144	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_009015b0_0066e0e0_0	009015b0	0	-	-	-	-	-	0066e0e0	FUN_0066e0e0	0066e10c	3	2	0	3	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_009015b0_0066e0e0_0	009015b0	0	-	-	-	-	-	0066e0e0	FUN_0066e0e0	0066e10c	4	1	1	2	offset	const:0x38:4	int	0	-	0x38	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	root_009015b0_0066e0e0_0	009015b0	0	1	1	0	1	2	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_009015b0_0066e0e0_1	009015b0	1	-	-	-	-	-	0066e0e0	FUN_0066e0e0	0066e0ff	0	-1	-1	0	root	const:0x0:4	int	0	-	0x0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_009015b0_0066e0e0_1	009015b0	1	-	-	-	-	-	0066e0e0	FUN_0066e0e0	0066e10c	0	-1	-1	0	root	const:0x0:4	int	0	-	0x0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	root_009015b0_0066e0e0_1	009015b0	1	1	1	0	1	2	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_009015b0_0066e0e0_2	009015b0	2	-	-	-	-	-	0066e0e0	FUN_0066e0e0	0066e0ff	0	-1	-1	0	root	const:0x2c:4	size_t	0	-	0x2c	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_009015b0_0066e0e0_2	009015b0	2	-	-	-	-	-	0066e0e0	FUN_0066e0e0	0066e10c	0	-1	-1	0	root	const:0x2c:4	size_t	0	-	0x2c	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	root_009015b0_0066e0e0_2	009015b0	2	1	1	0	1	2	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0062f260_007f6690_0	0062f260	0	-	-	-	-	-	007f6690	FUN_007f6690	007f6693	0	-1	-1	0	root	register:register:00000004:4	undefined4 *	1	undefined4	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	root_0062f260_007f6690_0	0062f260	0	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees

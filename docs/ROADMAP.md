@@ -2248,18 +2248,20 @@ the [manual static review](evidence/receiver-field-access/nfs-shift-screening-20
 and the [selector-1 replay](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-selector1-resolution.md).
 
 The refreshed CFG/5 memory-effect replay now includes exact flows for
-`006642a5` and `00664140`, plus nine stores relative to `00664140` parameter 0.
-The extended closures contain 95 functions and expose five more unresolved
-direct calls from `00664140`; its caller passes global address `00bfc728`, whose
-possible alias with tracked fields is not established. The four possible `/6`
-pairs and one unique candidate are unchanged. See the
-[seeded-callee extension](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/cfg-v5-seeded-callee-extension.md)
-for the inputs and retained outputs.
+`006642a5`, `00664140`, all five direct targets from `00664140`, and two terminal
+descendants. The nine additions contribute 127 P-code rows, 34 STORE facts,
+and 10 exact caller-parameter-offset roots. All 12 direct calls introduced by
+those function bodies resolve to selected flow records. The extended closures
+contain 102 functions; the `/6` audit remains four possible pairs and one
+unique candidate. Global `00bfc728` may alias a tracked parameter, and 22
+`CALLIND` sites plus older missing direct-call flows remain unresolved. See
+the [seeded-callee descendant replay](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/cfg-v5-seeded-callee-descendants.md)
+for the pinned inputs and reproduction command.
 
-**Next:** prioritize the five newly exposed direct targets from `00664140` for
-bounded flow/CFG and memory-store acquisition, then refresh the closure only
-when those records add exact effect evidence. Keep selector and receiver
-conclusions conditional until runtime evidence binds them. Assess bodies
-smaller than 40 bytes only when a remaining target or pair gives a concrete
-reason to extend the population screen. Do not infer alias facts from
+**Next:** prioritize exact static targets for the 22 remaining `CALLIND` sites
+that occur in the focused closures, using vtable and constructor evidence
+where available. Preserve unresolved target and alias barriers; keep selector
+and receiver conclusions conditional until runtime evidence binds them. Assess
+bodies smaller than 40 bytes only when a remaining target or pair gives a
+concrete reason to extend the population screen. Do not infer alias facts from
 decompiler text or instruction-level corpus labels.
