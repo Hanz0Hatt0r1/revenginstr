@@ -65,6 +65,9 @@ one `GhidraPcodeFlowAcquisition/1` row for every request, including
 the completion marker and makes the runner fail. A function with no P-code has
 no flow rows, so callers use the acquisition sidecar rather than interpreting
 an empty file as a successful function export.
+The batch target-expression sidecar is `GhidraIndirectCallEvidence/2`; each
+row pins the executable SHA-256 and ABI, while flow TSV records retain their
+existing metadata-only format.
 
 `ExportBoundedCallGraphPcodeFlow.java` and
 `ExportBoundedReverseCallGraphPcodeFlow.java` emit the same TSV row contract

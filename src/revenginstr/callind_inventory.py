@@ -11,11 +11,12 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable, Iterator
 
+from .ghidra_indirect_call_evidence import FORMAT_V2, validate_row
+
 POPULATION_FORMAT = "REVENGINSTR.CallindPopulation/1"
 INVENTORY_FORMAT = "REVENGINSTR.CallindInventory/1"
 SUMMARY_FORMAT = "REVENGINSTR.CallindInventorySummary/1"
 FLOW_FORMAT = "REVENGINSTR.GhidraFunctionPcodeFlow/1"
-CALL_EVIDENCE_FORMAT = "REVENGINSTR.GhidraIndirectCallEvidence/1"
 POPULATION_STATES = {
     "complete", "truncated", "no_pcode", "decompile_failed", "export_failed",
     "not_exported", "unknown",
@@ -222,37 +223,23 @@ def read_flows(paths: Iterable[Path]) -> tuple[dict[str, list[dict[str, Any]]], 
 def read_call_evidence(paths: Iterable[Path]) -> tuple[dict[tuple[str, str, str, int], dict[str, Any]], dict[str, dict[str, Any]]]:
     evidence: dict[tuple[str, str, str, int], dict[str, Any]] = {}
     source_counts: dict[str, dict[str, Any]] = {}
+    program_identities: dict[str, tuple[str, dict[str, Any]]] = {}
     for path in paths:
         digest = _sha256(path)
         count = 0
         for record_index, row in _read_jsonl(path):
             where = f"{path}:{record_index}"
-            required = {
-                "format", "program", "requested", "function_entry", "call_address",
-                "call_time", "target", "target_expression", "arg_count",
-            }
-            if set(row) != required:
-                raise ValueError(f"{where}: indirect-call evidence has missing or unknown fields")
-            if row.get("format") != CALL_EVIDENCE_FORMAT:
-                raise ValueError(f"{where}: expected {CALL_EVIDENCE_FORMAT}")
+            source_format = validate_row(row, where)
             program_id = row.get("program")
-            if not isinstance(program_id, str) or not program_id:
-                raise ValueError(f"{where}: program must be non-empty")
-            requested = row.get("requested")
-            if not isinstance(requested, str) or not requested:
-                raise ValueError(f"{where}: requested must be non-empty")
+            if source_format == FORMAT_V2:
+                identity = (row["program_sha256"], row["architecture"])
+                if program_id in program_identities and program_identities[program_id] != identity:
+                    raise ValueError(f"{where}: mixed binary identities for program {program_id!r}")
+                program_identities[program_id] = identity
             call_time = row.get("call_time")
             arg_count = row.get("arg_count")
-            if isinstance(call_time, bool) or not isinstance(call_time, int) or call_time < 0:
-                raise ValueError(f"{where}: call_time must be a non-negative integer")
-            if isinstance(arg_count, bool) or not isinstance(arg_count, int) or arg_count < 0:
-                raise ValueError(f"{where}: arg_count must be a non-negative integer")
             target = row.get("target")
             expression = row.get("target_expression")
-            if not isinstance(target, str) or not target:
-                raise ValueError(f"{where}: target must be non-empty")
-            if not isinstance(expression, str) or not expression:
-                raise ValueError(f"{where}: target_expression must be non-empty")
             function_key = _address_key(row.get("function_entry"), f"{where}: function_entry")
             address_key = _address_key(row.get("call_address"), f"{where}: call_address")
             key = (program_id, function_key, address_key, call_time)

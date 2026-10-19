@@ -121,6 +121,9 @@ the prototypes are correct, that an unresolved direct call has a target, or
 that an indirect call target was resolved. The v1 program index has no in-band
 binary identity, so supply it from the same Ghidra program used for the other
 inputs; the report hashes the index artifact.
+When indirect evidence uses `/2`, the coverage audit also requires its binary
+SHA-256 and ABI to match the decompiler snapshot. Legacy `/1` rows remain
+readable but cannot prove binary identity.
 
 `FunctionPrototypeGold/1` describes one independently adjudicated function.
 `complete_properties` names the top-level signature properties the reviewer

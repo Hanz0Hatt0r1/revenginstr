@@ -25,7 +25,7 @@ import java.util.Set;
 public class ExportProgramPcodeFlowBatch extends GhidraScript {
     private static final String FLOW_HEADER =
         "function_entry\top_address\top_time\topcode\toutput\tinputs\tcallee_entry\tcallee_name";
-    private static final String EVIDENCE_FORMAT = "REVENGINSTR.GhidraIndirectCallEvidence/1";
+    private static final String EVIDENCE_FORMAT = "REVENGINSTR.GhidraIndirectCallEvidence/2";
     private static final String ACQUISITION_FORMAT = "REVENGINSTR.GhidraPcodeFlowAcquisition/1";
     private static final int DEFAULT_MAX_FUNCTIONS = 1000;
     private static final int DEFAULT_MAX_TOTAL_SECONDS = 3600;
@@ -195,6 +195,10 @@ public class ExportProgramPcodeFlowBatch extends GhidraScript {
         Varnode target = op.getNumInputs() > 0 ? op.getInput(0) : null;
         out.write("{\"format\":" + json(EVIDENCE_FORMAT) +
             ",\"program\":" + json(currentProgram.getName()) +
+            ",\"program_sha256\":" + json(currentProgram.getExecutableSHA256()) +
+            ",\"architecture\":{\"language_id\":" + json(currentProgram.getLanguageID().toString()) +
+            ",\"pointer_width_bytes\":" + currentProgram.getDefaultPointerSize() +
+            ",\"endianness\":" + json(currentProgram.getLanguage().isBigEndian() ? "big" : "little") + "}" +
             ",\"requested\":" + json(requested) +
             ",\"function_entry\":" + json(address(function.getEntryPoint())) +
             ",\"call_address\":" + json(address(sequence.getTarget())) +
@@ -219,6 +223,10 @@ public class ExportProgramPcodeFlowBatch extends GhidraScript {
 
     @Override
     public void run() throws Exception {
+        String executableSha256 = currentProgram.getExecutableSHA256();
+        if (executableSha256 == null || !executableSha256.matches("[0-9a-f]{64}")) {
+            throw new IllegalStateException("Current program has no valid executable SHA-256");
+        }
         String[] args = getScriptArgs();
         if (args.length < 4 || args.length > 6) {
             throw new IllegalArgumentException(

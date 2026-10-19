@@ -116,3 +116,54 @@ def test_indirect_call_evidence_uses_batch_address_spelling(tmp_path: Path) -> N
     assert report["indirect_calls"]["expected_sites"] == 1
     assert report["indirect_calls"]["complete_for_flow_artifacts"] is True
     assert report["full_program_coverage"] is True
+
+
+def test_v2_indirect_call_evidence_is_pinned_to_decompiler_program(tmp_path: Path) -> None:
+    flow = tmp_path / "flow.tsv"
+    flow.write_text(
+        (FIXTURES / "whole-program-flow.tsv").read_text(encoding="utf-8")
+        + "00010017\t0001002b\t99\tCALLIND\tdef:0001002b:99:4\tinput:Stack[0x4]:4\t-\t-\n",
+        encoding="utf-8",
+    )
+    acquisition_rows = [
+        json.loads(line) for line in (FIXTURES / "acquisition.jsonl").read_text().splitlines()
+    ]
+    acquisition_rows[1]["operation_count"] += 1
+    acquisition_rows[1]["callind_count"] = 1
+    acquisition = tmp_path / "acquisition.jsonl"
+    acquisition.write_text("".join(json.dumps(row) + "\n" for row in acquisition_rows), encoding="utf-8")
+    call_row = json.loads((FIXTURES / "full-call-observations.jsonl").read_text().splitlines()[0])
+    call_row["evidence_ref"]["artifact_sha256"] = hashlib.sha256(flow.read_bytes()).hexdigest()
+    observations = tmp_path / "calls.jsonl"
+    observations.write_text(json.dumps(call_row) + "\n", encoding="utf-8")
+    decompiler_row = json.loads((FIXTURES / "decompiler-parameters.jsonl").read_text().splitlines()[0])
+    indirect_row = {
+        "format": "REVENGINSTR.GhidraIndirectCallEvidence/2",
+        "program": decompiler_row["program_id"],
+        "program_sha256": decompiler_row["program_sha256"],
+        "architecture": decompiler_row["architecture"],
+        "requested": "00010017",
+        "function_entry": "0x00010017",
+        "call_address": "0x0001002b",
+        "call_time": 99,
+        "target": "input:Stack[0x4]:4",
+        "target_expression": "input:Stack[0x4]:4",
+        "arg_count": 1,
+    }
+    indirect = tmp_path / "indirect.jsonl"
+    indirect.write_text(json.dumps(indirect_row) + "\n", encoding="utf-8")
+
+    report = audit_prototype_coverage(
+        FIXTURES / "functions.tsv.gz", acquisition,
+        FIXTURES / "decompiler-parameters.jsonl", observations, indirect, [flow],
+    )
+    assert report["source_artifacts"]["indirect_call_evidence"]["source_format"] == indirect_row["format"]
+    assert report["full_program_coverage"] is True
+
+    indirect_row["program_sha256"] = "0" * 64
+    indirect.write_text(json.dumps(indirect_row) + "\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="does not match the expected binary"):
+        audit_prototype_coverage(
+            FIXTURES / "functions.tsv.gz", acquisition,
+            FIXTURES / "decompiler-parameters.jsonl", observations, indirect, [flow],
+        )

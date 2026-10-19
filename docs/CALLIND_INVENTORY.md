@@ -2,7 +2,8 @@
 
 `revenginstr-callind-inventory` reconciles a hash-linked function population
 with `GhidraFunctionPcodeFlow/1` TSV and optional
-`GhidraIndirectCallEvidence/1` JSONL. It emits one function record for every
+`GhidraIndirectCallEvidence/1` or `/2` JSONL. V2 rows pin the executable
+SHA-256 and ABI. It emits one function record for every
 population member and one site record for every observed `CALLIND`.
 
 The normalized input `CallindPopulation/1` must contain one row per function
