@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/indirect-call-target-triage-v1.schema.json",
+  "title": "REVENGINSTR.IndirectCallTargetTriage/1 JSONL row",
+  "description": "Source-pinned classification of bounded, mixed, and provenance-barrier paths to one indirect call; it does not resolve the call target.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "program_id", "function_entry", "call_address", "call_time",
+    "provenance_status", "classification", "bounded_path_count", "dynamic_barrier_count",
+    "limited_path_count", "alternatives", "pcode_operation", "callind_evidence", "source"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.IndirectCallTargetTriage/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "function_entry": {"$ref": "#/$defs/address"},
+    "call_address": {"$ref": "#/$defs/address"},
+    "call_time": {"type": "integer", "minimum": 0},
+    "provenance_status": {"$ref": "#/$defs/provenanceStatus"},
+    "classification": {
+      "enum": [
+        "analysis_limited", "mixed_bounded_and_blocked", "mixed_bounded_and_unresolved", "dynamic_barrier_only",
+        "bounded_provenance_only", "unresolved"
+      ]
+    },
+    "bounded_path_count": {"type": "integer", "minimum": 0},
+    "dynamic_barrier_count": {"type": "integer", "minimum": 0},
+    "limited_path_count": {"type": "integer", "minimum": 0},
+    "alternatives": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/alternative"}
+    },
+    "pcode_operation": {"$ref": "#/$defs/lineageRef"},
+    "callind_evidence": {"$ref": "#/$defs/lineageRef"},
+    "source": {"$ref": "#/$defs/evidenceRef"}
+  },
+  "$defs": {
+    "address": {
+      "type": "string",
+      "pattern": "^(?:(?:[A-Za-z_$][\\w$]*):)?(?:0x)?[0-9a-fA-F]+$"
+    },
+    "provenanceStatus": {
+      "enum": [
+        "resolved", "ambiguous", "unknown", "load_anchor", "indirect_barrier", "call_barrier",
+        "unsupported_opcode", "dynamic_offset", "cycle", "depth_limit",
+        "offset_overflow", "width_mismatch", "alternative_limit", "missing_definition"
+      ]
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_format", "artifact_path", "artifact_sha256", "record_index"],
+      "properties": {
+        "source_format": {"const": "REVENGINSTR.PointerProvenance/1"},
+        "artifact_path": {"type": "string", "minLength": 1},
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "record_index": {"type": "integer", "minimum": 1}
+      }
+    },
+    "lineageRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_path", "artifact_sha256", "record_index", "source_format"],
+      "properties": {
+        "artifact_path": {"type": "string", "minLength": 1},
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "record_index": {"type": "integer", "minimum": 1},
+        "source_format": {"type": "string", "minLength": 1}
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation_address", "operation_time", "opcode"],
+      "properties": {
+        "operation_address": {"type": "string", "minLength": 1},
+        "operation_time": {"type": "integer", "minimum": 0},
+        "opcode": {"type": "string", "minLength": 1}
+      }
+    },
+    "alternative": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root_kind", "evidence_class", "root_id", "offset_bytes", "pointer_size_bytes",
+        "address_space_token", "status", "transformation_path", "evidence_refs"
+      ],
+      "properties": {
+        "root_kind": {"enum": ["function_parameter", "address_anchor", "memory_read_anchor", "unknown"]},
+        "evidence_class": {"const": "derived_structural"},
+        "root_id": {"type": "string", "minLength": 1},
+        "offset_bytes": {"type": ["integer", "null"]},
+        "pointer_size_bytes": {"type": ["integer", "null"], "minimum": 1},
+        "address_space_token": {"type": ["string", "null"]},
+        "status": {"$ref": "#/$defs/provenanceStatus"},
+        "transformation_path": {"type": "array", "items": {"$ref": "#/$defs/step"}},
+        "evidence_refs": {"type": "array", "items": {"$ref": "#/$defs/lineageRef"}}
+      }
+    }
+  }
+}

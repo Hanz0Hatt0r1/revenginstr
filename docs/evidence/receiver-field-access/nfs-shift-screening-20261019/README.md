@@ -21,6 +21,11 @@ time matches and the pinned executable hash. The resulting rows retain
 `indirect_call` barriers; each observation keeps its bounded or partial source
 scope. See the
 [closure replay](scan37/replay-0041dd40/static-call-target-closure-replay.md).
+The generic `IndirectCallTargetTriage/1` report groups the 22 retained
+CALLIND provenance paths: six have bounded provenance, 13 have only dynamic
+barriers, and three mix bounded and blocked paths. It records where further
+runtime acquisition can add information without claiming target resolution;
+see the [triage replay](scan37/replay-0041dd40/callind-target-triage-replay.md).
 
 ## Screens
 

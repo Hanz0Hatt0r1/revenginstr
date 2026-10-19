@@ -2269,9 +2269,13 @@ All 22 `CALLIND` sites remain effect barriers and none of their target flows
 is treated as part of the closed graph. Six sites now carry scoped target
 observations; 16 have no target observations yet.
 See the [closure replay](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/static-call-target-closure-replay.md).
+The new source-pinned [CALLIND provenance triage](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/callind-target-triage-replay.md)
+classifies the 16 remaining sites as 13 dynamic-barrier-only and three mixed
+bounded/dynamic paths.
 
-**Next:** continue target recovery on the 16 `CALLIND` sites without target
-observations, then bind runtime state for the six scoped candidate sets.
+**Next:** prioritize runtime observations for the three mixed-path sites, then
+the 13 dynamic-barrier-only sites, and bind runtime state for the six scoped
+candidate sets.
 Preserve unresolved target and alias barriers; keep selector and receiver
 conclusions conditional until runtime evidence binds them. Assess bodies
 smaller than 40 bytes only when a remaining target or pair gives a concrete
