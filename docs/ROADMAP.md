@@ -1297,6 +1297,16 @@ consumer-collected runtime dispatch events; no NFS Shift runtime capture has
 been collected yet, and static barriers remain open until such observations
 are supplied. See [runtime indirect-call correlation](RUNTIME_INDIRECT_CALL_CORRELATION.md).
 
+`revenginstr-runtime-ledger` now also replays
+`RuntimeIndirectCallCorrelation/1` reports into one deterministic
+`AnalysisDecisionLedgerEvent/1` per observed call. Exact caller/site/target
+joins remain `review_required` pending human review; unmatched, ambiguous, or
+unmapped joins remain `review_required` with `missing_evidence`. The replay
+does not turn an observed target into an exhaustive set or auto-accept a static
+claim. This closes the generic ledger path for correlated indirect-call
+observations; consumer-collected NFS runtime observations and frozen probe
+outcome measurements remain open.
+
 ### M9.3 Differential and interventional analysis
 
 Compare bounded runs where one caller-controlled input/state/action differs. Rank candidate causal relationships by reproducible observation while retaining `correlation`, `intervention_support` and `confirmed_exact` as distinct evidence classes.
