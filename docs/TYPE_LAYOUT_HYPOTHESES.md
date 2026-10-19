@@ -125,9 +125,12 @@ evaluation.json`. The report includes field-offset precision/recall, compatible
 type accuracy and coverage, observed conflict rates, and acceptance among
 fields in `review` state. The current hypothesis contract has neither a
 confidence score nor prototype records, so high-confidence reviewer acceptance
-and prototype compatibility are explicitly reported as not evaluated. Synthetic
-replays validate metric behavior and coverage handling; they are not consumer
-accuracy results. The exact synthetic replay in
+is explicitly reported as not evaluated. A matching
+`FunctionPrototypeEvaluation/1` report can be supplied with
+`--prototype-evaluation-report`; its dataset and split must match the layout
+gold, and its hash is retained in the combined report. Synthetic replays
+validate metric behavior and coverage handling; they are not consumer accuracy
+results. The exact synthetic replay in
 `tests/fixtures/type-layout-gold/` is hash-linked to its source observation and
 scores the known `+0x20` field at precision/recall 1.0; type accuracy remains
 undefined because the fixture hypothesis is not a reviewed type decision.

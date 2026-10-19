@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/function-prototype-gold-v1.schema.json",
+  "title": "REVENGINSTR.FunctionPrototypeGold/1 record",
+  "description": "Independent adjudication of compatible prototypes with explicit property and parameter-index coverage.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "dataset_id", "split_id", "program_id", "program_sha256", "architecture", "function_entry", "complete_properties", "complete_parameter_indices", "compatible_prototypes", "evidence_refs", "adjudication_status"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.FunctionPrototypeGold/1"},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "split_id": {"type": "string", "minLength": 1},
+    "program_id": {"type": "string", "minLength": 1},
+    "program_sha256": {"$ref": "#/$defs/sha256"},
+    "architecture": {"$ref": "#/$defs/architecture"},
+    "function_entry": {"type": "string", "minLength": 1},
+    "complete_properties": {"type": "array", "uniqueItems": true, "items": {"enum": ["parameter_count", "calling_convention", "return_value", "receiver_parameter_index"]}},
+    "complete_parameter_indices": {"type": "array", "uniqueItems": true, "items": {"type": "integer", "minimum": 0}},
+    "compatible_prototypes": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/prototype"}},
+    "evidence_refs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/evidence_ref"}},
+    "adjudication_status": {"const": "adjudicated"}
+  },
+  "allOf": [{
+    "anyOf": [
+      {"properties": {"complete_properties": {"minItems": 1}}},
+      {"properties": {"complete_parameter_indices": {"minItems": 1}}}
+    ]
+  }],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "architecture": {
+      "type": "object", "additionalProperties": false,
+      "required": ["language_id", "pointer_width_bytes", "endianness"],
+      "properties": {
+        "language_id": {"type": "string", "minLength": 1},
+        "pointer_width_bytes": {"type": "integer", "minimum": 1},
+        "endianness": {"enum": ["little", "big"]}
+      }
+    },
+    "evidence_ref": {
+      "type": "object", "additionalProperties": false,
+      "required": ["artifact_sha256", "record_index", "source_format"],
+      "properties": {
+        "artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "record_index": {"type": "integer", "minimum": 1},
+        "source_format": {"type": "string", "minLength": 1}
+      }
+    },
+    "parameter": {
+      "type": "object", "additionalProperties": false,
+      "required": ["index", "kind", "width_bytes"],
+      "properties": {
+        "index": {"type": "integer", "minimum": 0},
+        "kind": {"enum": ["pointer", "reference", "scalar", "aggregate", "unknown"]},
+        "width_bytes": {"type": ["integer", "null"], "minimum": 1},
+        "target_type_id": {"type": "string", "minLength": 1}
+      },
+      "allOf": [{"if": {"properties": {"target_type_id": {"type": "string"}}, "required": ["target_type_id"]}, "then": {"properties": {"kind": {"enum": ["pointer", "reference"]}}}}]
+    },
+    "return_value": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "width_bytes"],
+      "properties": {
+        "kind": {"enum": ["void", "pointer", "reference", "scalar", "aggregate", "unknown"]},
+        "width_bytes": {"type": ["integer", "null"], "minimum": 1},
+        "target_type_id": {"type": "string", "minLength": 1}
+      },
+      "allOf": [{"if": {"properties": {"target_type_id": {"type": "string"}}, "required": ["target_type_id"]}, "then": {"properties": {"kind": {"enum": ["pointer", "reference"]}}}}]
+    },
+    "prototype": {
+      "type": "object", "additionalProperties": false,
+      "required": ["parameter_count", "calling_convention", "parameters", "return_value", "receiver_parameter_index"],
+      "properties": {
+        "parameter_count": {"type": ["integer", "null"], "minimum": 0},
+        "calling_convention": {"type": ["string", "null"], "minLength": 1},
+        "parameters": {"type": "array", "items": {"$ref": "#/$defs/parameter"}},
+        "return_value": {"$ref": "#/$defs/return_value"},
+        "receiver_parameter_index": {"type": ["integer", "null"], "minimum": 0}
+      }
+    }
+  }
+}

@@ -181,7 +181,40 @@ def _validate_prediction_field(field: Any, where: str) -> int:
     return field["offset_bytes"]
 
 
-def evaluate_type_layouts(predictions_path: Path, gold_path: Path) -> dict[str, Any]:
+def _read_prototype_evaluation(path: Path, expected: tuple[str, str]) -> tuple[dict[str, Any], str]:
+    raw = path.read_bytes()
+    digest = hashlib.sha256(raw).hexdigest()
+    try:
+        report = json.loads(
+            raw.decode("utf-8"), object_pairs_hook=_unique_object, parse_constant=_reject_constant,
+        )
+    except (UnicodeDecodeError, ValueError) as error:
+        raise ValueError(f"{path}: invalid prototype evaluation report: {error}") from error
+    if not isinstance(report, dict) or report.get("format") != "REVENGINSTR.FunctionPrototypeEvaluation/1":
+        raise ValueError(f"{path}: expected REVENGINSTR.FunctionPrototypeEvaluation/1")
+    for key in ("function_prototype_hypotheses_sha256", "gold_artifact_sha256"):
+        if not isinstance(report.get(key), str) or not _SHA256.fullmatch(report[key]):
+            raise ValueError(f"{path}: invalid {key}")
+    if "top_candidate_compatibility" not in report:
+        raise ValueError(f"{path}: missing top_candidate_compatibility")
+    if (report.get("dataset_id"), report.get("split_id")) != expected:
+        raise ValueError("prototype evaluation dataset/split does not match layout gold")
+    compatibility = report.get("top_candidate_compatibility")
+    if compatibility is not None and (
+        isinstance(compatibility, bool)
+        or not isinstance(compatibility, (int, float))
+        or not 0 <= compatibility <= 1
+    ):
+        raise ValueError("prototype evaluation has invalid top_candidate_compatibility")
+    return report, digest
+
+
+def evaluate_type_layouts(
+    predictions_path: Path,
+    gold_path: Path,
+    *,
+    prototype_evaluation_path: Path | None = None,
+) -> dict[str, Any]:
     """Score fields only inside explicit gold coverage; unreviewed offsets are unknown."""
     predictions, predictions_sha256 = _read_jsonl(predictions_path)
     gold_rows, gold_sha256 = _read_jsonl(gold_path)
@@ -289,6 +322,18 @@ def evaluate_type_layouts(predictions_path: Path, gold_path: Path) -> dict[str, 
 
     precision = _ratio(true_positive_count, candidate_field_count)
     recall = _ratio(true_positive_count, gold_field_count)
+    prototype_compatibility = None
+    prototype_evaluation_sha256 = None
+    prototype_status = "not_evaluated_no_prototype_evaluation_input"
+    if prototype_evaluation_path is not None:
+        report, prototype_evaluation_sha256 = _read_prototype_evaluation(
+            prototype_evaluation_path, metadata,
+        )
+        prototype_compatibility = report["top_candidate_compatibility"]
+        prototype_status = (
+            "evaluated" if prototype_compatibility is not None
+            else "evaluated_no_scored_top_candidate"
+        )
     return {
         "format": FORMAT,
         "dataset_id": metadata[0],
@@ -322,8 +367,9 @@ def evaluate_type_layouts(predictions_path: Path, gold_path: Path) -> dict[str, 
         "conflicted_fields": conflicted_field_count,
         "output_fields": output_field_count,
         "field_conflict_rate": _ratio(conflicted_field_count, output_field_count),
-        "prototype_compatibility": None,
-        "prototype_compatibility_status": "not_evaluated_no_prototype_hypothesis_input",
+        "prototype_compatibility": prototype_compatibility,
+        "prototype_compatibility_status": prototype_status,
+        "prototype_evaluation_sha256": prototype_evaluation_sha256,
     }
 
 
@@ -331,10 +377,14 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("type_layout_hypotheses", type=Path)
     parser.add_argument("gold_layouts", type=Path)
+    parser.add_argument("--prototype-evaluation-report", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
-        result = evaluate_type_layouts(args.type_layout_hypotheses, args.gold_layouts)
+        result = evaluate_type_layouts(
+            args.type_layout_hypotheses, args.gold_layouts,
+            prototype_evaluation_path=args.prototype_evaluation_report,
+        )
     except ValueError as error:
         parser.error(str(error))
     args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -5,7 +5,7 @@
   "description": "Coverage-aware metrics for type-layout hypotheses against independent adjudicated gold.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["format", "dataset_id", "split_id", "type_layout_hypotheses_sha256", "gold_artifact_sha256", "layouts_evaluated", "layouts_missing", "prediction_layouts_present", "audited_field_offset_count", "gold_field_count", "candidate_field_count", "unscored_candidate_field_count", "field_offset_true_positives", "field_offset_precision", "field_offset_recall", "field_offset_f1", "compatible_type_labeled_fields", "reviewed_type_fields", "compatible_type_accuracy", "compatible_type_review_coverage", "reviewed_fields", "accepted_reviewed_fields", "reviewed_field_acceptance", "high_confidence_reviewer_acceptance", "high_confidence_reviewer_acceptance_status", "conflicted_layouts", "layout_conflict_rate", "conflicted_fields", "output_fields", "field_conflict_rate", "prototype_compatibility", "prototype_compatibility_status"],
+  "required": ["format", "dataset_id", "split_id", "type_layout_hypotheses_sha256", "gold_artifact_sha256", "layouts_evaluated", "layouts_missing", "prediction_layouts_present", "audited_field_offset_count", "gold_field_count", "candidate_field_count", "unscored_candidate_field_count", "field_offset_true_positives", "field_offset_precision", "field_offset_recall", "field_offset_f1", "compatible_type_labeled_fields", "reviewed_type_fields", "compatible_type_accuracy", "compatible_type_review_coverage", "reviewed_fields", "accepted_reviewed_fields", "reviewed_field_acceptance", "high_confidence_reviewer_acceptance", "high_confidence_reviewer_acceptance_status", "conflicted_layouts", "layout_conflict_rate", "conflicted_fields", "output_fields", "field_conflict_rate", "prototype_compatibility", "prototype_compatibility_status", "prototype_evaluation_sha256"],
   "properties": {
     "format": {"const": "REVENGINSTR.TypeLayoutEvaluation/1"},
     "dataset_id": {"type": "string", "minLength": 1},
@@ -38,7 +38,8 @@
     "output_fields": {"type": "integer", "minimum": 0},
     "field_conflict_rate": {"$ref": "#/$defs/nullable_ratio"},
     "prototype_compatibility": {"$ref": "#/$defs/nullable_ratio"},
-    "prototype_compatibility_status": {"const": "not_evaluated_no_prototype_hypothesis_input"}
+    "prototype_compatibility_status": {"enum": ["not_evaluated_no_prototype_evaluation_input", "evaluated", "evaluated_no_scored_top_candidate"]},
+    "prototype_evaluation_sha256": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]}
   },
   "$defs": {
     "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
