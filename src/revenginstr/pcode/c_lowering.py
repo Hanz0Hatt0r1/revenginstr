@@ -782,10 +782,13 @@ static int rvi_float80_load(const uint8_t input[10], long double *value) {
         if (significand == UINT64_C(0x8000000000000000)) *value = INFINITY;
         else *value = nanl("");
     } else {
-        if (exponent == 0) exponent = 1;
-        else if (!(significand >> 63)) return -1;
-        binary_exponent = (int)exponent - 16383 - 63;
-        *value = ldexpl((long double)significand, binary_exponent);
+        if (exponent != 0 && !(significand >> 63)) {
+            *value = nanl("");
+        } else {
+            if (exponent == 0) exponent = 1;
+            binary_exponent = (int)exponent - 16383 - 63;
+            *value = ldexpl((long double)significand, binary_exponent);
+        }
     }
     if (sign_exponent & 0x8000) *value = copysignl(*value, -1.0L);
     return 0;
@@ -877,7 +880,10 @@ static int rvi_float80_compare(const uint8_t left[10], const uint8_t right[10],
     long double a, b;
     if (!result || rvi_float80_load(left, &a) != 0 || rvi_float80_load(right, &b) != 0) return -1;
     *result = 0;
-    if (isnan(a) || isnan(b)) return 0;
+    if (isnan(a) || isnan(b)) {
+        *result = op == RVI_FLOAT80_NOTEQUAL;
+        return 0;
+    }
     switch (op) {
     case RVI_FLOAT80_EQUAL: *result = a == b; break;
     case RVI_FLOAT80_NOTEQUAL: *result = a != b; break;
