@@ -28,3 +28,14 @@ its x86-64 ABI. It joins to the exact `CALLIND` row and argument count in
 `flow.tsv`. Running `revenginstr-prototype-infer` with the matching decompiler
 snapshot and empty direct-call observations propagates `plus_one`'s scalar
 parameter shape to `call_callback`; both hypotheses remain in review state.
+Passing `flow.tsv` with `--function-pcode-flow` also emits a separate
+`possible-indirect-call-return` scalar candidate because `callind.c` returns
+the callback result while the decompiler snapshot records the caller as
+`void`. The static target row, call and return flow rows, and callee return
+record are linked as evidence. The result remains a 0.15-confidence
+alternative because this call shape cannot distinguish a returned value from
+an ignored result.
+`return-shape-hypotheses.jsonl`, `return-shape-gold.jsonl`, and
+`return-shape-evaluation.json` replay this case against the C function
+definition: return coverage is 1/2, accuracy among known predictions is 1.0,
+and neither candidate reaches the 0.95 acceptance threshold.

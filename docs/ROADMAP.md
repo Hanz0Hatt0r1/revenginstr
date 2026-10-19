@@ -1126,9 +1126,10 @@ resolves only exact static function-pointer targets; v4 adds exact
 caller-formal roots for untransformed arguments and uses those links for arity
 and shape constraints. Dynamic or multi-target dispatch remains unresolved.
 Return-shape propagation now adds low-confidence alternatives for exact
-call-result-to-return COPY chains and possible two-operation tail returns;
-transformed paths and the distinction between returned and ignored call
-results remain unresolved. An Android source-backed replay adds 21
+direct-call result-to-return COPY chains, uniquely resolved static `CALLIND`
+targets, and narrow possible return patterns; transformed paths and the
+distinction between returned and ignored call results remain unresolved. An
+Android source-backed replay adds 21
 exported Nevergone JNI prototypes from DEX declarations: the High-P-code
 baseline gets 11/21 parameter counts right and has no fully known parameter
 lists, while exact APK-to-library matches recover all 21 JNI interfaces. Six
@@ -1144,7 +1145,11 @@ shape inference as a measured gap without presenting the micro-fixture as
 consumer accuracy. A second source-backed replay for a possible tail return has
 2/3 return-shape coverage and 100% accuracy among its known predictions across
 three candidates; none reaches the 0.95 acceptance threshold, and the two
-function sample is not a calibration set. The new
+function sample is not a calibration set. An x86-64 replay adds the same
+possible-return evidence for one exactly resolved `CALLIND`; the combined
+x86-32/x86-64 fixture scores three gold functions and five candidates, with
+return coverage 3/5 and 100% accuracy among known predictions. No candidate
+reaches 0.95, and this focused replay set is not a calibration corpus. The new
 `FunctionPrototypeEvidenceCoverage/1` audit now checks population, P-code row
 counts, decompiler result status, and direct/indirect call-site capture against
 the exact supplied artifacts. A complete report means evidence capture covers

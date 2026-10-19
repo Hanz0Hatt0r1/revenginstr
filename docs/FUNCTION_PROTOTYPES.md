@@ -119,11 +119,26 @@ case apart from a call whose result is ignored. Both forms retain the existing
 candidate and add a separately evidenced alternative; they do not change
 imported or user-defined signatures. Propagation stops at casts, loads, and
 other operations, and confidence is a triage score rather than a probability.
+With `--indirect-call-evidence`, a uniquely resolved static `CALLIND` target
+can also anchor the same COPY-flow candidate, `resolved-indirect-call-return-shape`
+at confidence `0.3`. A possible return candidate,
+`possible-indirect-call-return` at confidence `0.15`, is emitted only for one
+exact static indirect call, one void `RETURN`, and call-local `INDIRECT`,
+`CAST`, or `COPY` bookkeeping. An unresolved, dynamic, or multiply-targeted
+call contributes no return shape.
 The real Ghidra replay in `tests/fixtures/ghidra-tail-call-return/` exercises
 this ambiguity with a source-backed pointer return. Across its three emitted
 candidates, return-shape coverage is 2/3 with 100% accuracy among known
 predictions; none reaches the 0.95 acceptance threshold. This two-function
 fixture exercises evidence and abstention behavior, not confidence calibration.
+The real indirect-call replay in `tests/fixtures/ghidra-indirect-call-v4/`
+adds a scalar return alternative for one exact static function-pointer target;
+source-gold evaluation reports 50% return coverage and 100% accuracy among
+known predictions, with no candidate accepted at 0.95.
+`tests/fixtures/prototype-return-shape-benchmark/` combines the x86-32 and
+x86-64 replays: across three gold functions and five candidates, return
+coverage is 3/5, accuracy among known predictions is 100%, and no candidate
+reaches 0.95. This is a focused regression set, not a consumer corpus.
 
 `tests/fixtures/nevergone-android-jni-prototype/` replays the original
 Nevergone 1.0.9 ARMv7 library against native method declarations from its DEX.
