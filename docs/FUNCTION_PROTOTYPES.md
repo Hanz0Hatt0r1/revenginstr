@@ -135,6 +135,10 @@ The real indirect-call replay in `tests/fixtures/ghidra-indirect-call-v4/`
 adds a scalar return alternative for one exact static function-pointer target;
 source-gold evaluation reports 50% return coverage and 100% accuracy among
 known predictions, with no candidate accepted at 0.95.
+`tests/fixtures/prototype-return-shape-benchmark/` combines the x86-32 and
+x86-64 replays: across three gold functions and five candidates, return
+coverage is 3/5, accuracy among known predictions is 100%, and no candidate
+reaches 0.95. This is a focused regression set, not a consumer corpus.
 
 `tests/fixtures/nevergone-android-jni-prototype/` replays the original
 Nevergone 1.0.9 ARMv7 library against native method declarations from its DEX.
