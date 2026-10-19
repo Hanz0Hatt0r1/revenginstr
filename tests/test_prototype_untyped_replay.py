@@ -107,13 +107,19 @@ def test_untyped_ghidra_replay_propagates_only_exact_parameter_root() -> None:
         Draft202012Validator(hypothesis_schema).validate(row)
     assert with_roots == _jsonl(FIXTURE / "hypotheses.jsonl")
 
-    evaluation_schema = json.loads((ROOT / "schemas/function-prototype-evaluation-v1.schema.json").read_text())
-    evaluation = evaluate_prototypes(FIXTURE / "hypotheses.jsonl", FIXTURE / "gold.jsonl")
+    evaluation_schema = json.loads((ROOT / "schemas/function-prototype-evaluation-v2.schema.json").read_text())
+    evaluation = evaluate_prototypes(
+        FIXTURE / "hypotheses.jsonl", FIXTURE / "gold.jsonl", format_version=2,
+    )
     assert evaluation["functions_evaluated"] == 2
     assert evaluation["high_confidence_candidate_count"] == 0
     assert evaluation["per_property"]["parameter_count"]["accuracy"] == 1.0
+    assert evaluation["per_property"]["parameter_count"]["coverage"] == 1.0
     assert evaluation["per_property"]["parameters"]["accuracy"] == 1.0
     assert evaluation["per_property"]["return_value"]["accuracy"] == 0.5
+    assert evaluation["per_property"]["return_value"]["unknown"] == 1
+    assert evaluation["per_property"]["return_value"]["coverage"] == 0.5
+    assert evaluation["per_property"]["return_value"]["known_accuracy"] == 1.0
     Draft202012Validator(evaluation_schema).validate(evaluation)
     assert evaluation == json.loads((FIXTURE / "evaluation.json").read_text(encoding="utf-8"))
 

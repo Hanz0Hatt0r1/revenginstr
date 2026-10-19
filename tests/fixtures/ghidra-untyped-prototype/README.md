@@ -26,5 +26,7 @@ index. That is a capture-coverage result, not independent prototype gold.
 the current result at the default 0.95 acceptance threshold: no candidate
 reaches that threshold, parameter counts and parameter shapes are both 2/2
 correct, and return shapes are 1/2 correct because `mystery_caller` still has
-an unknown return type. This fixture measures the inference boundary; it does
-not imply that the project is ready for broad automatic prototype recovery.
+an unknown return type. Evaluation v2 separates that abstention from errors:
+return-shape coverage is 1/2, with 1/1 accuracy among known predictions. This
+fixture measures the inference boundary; it does not imply that the project is
+ready for broad automatic prototype recovery.

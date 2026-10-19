@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/function-prototype-evaluation-v2.schema.json",
+  "title": "REVENGINSTR.FunctionPrototypeEvaluation/2",
+  "description": "Prototype accuracy, prediction coverage, and confidence-thresholded compatibility on explicitly adjudicated gold.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "dataset_id", "split_id", "function_prototype_hypotheses_sha256", "gold_artifact_sha256", "functions_evaluated", "hypotheses_present", "hypotheses_missing", "candidate_count", "minimum_confidence", "high_confidence_candidate_count", "high_confidence_compatible_candidates", "high_confidence_candidate_compatibility", "high_confidence_function_count", "high_confidence_function_coverage", "top_candidate_compatibility", "conflicted_hypotheses", "hypothesis_conflict_rate", "per_property"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.FunctionPrototypeEvaluation/2"},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "split_id": {"type": "string", "minLength": 1},
+    "function_prototype_hypotheses_sha256": {"$ref": "#/$defs/sha256"},
+    "gold_artifact_sha256": {"$ref": "#/$defs/sha256"},
+    "functions_evaluated": {"type": "integer", "minimum": 1},
+    "hypotheses_present": {"type": "integer", "minimum": 0},
+    "hypotheses_missing": {"type": "integer", "minimum": 0},
+    "candidate_count": {"type": "integer", "minimum": 0},
+    "minimum_confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "high_confidence_candidate_count": {"type": "integer", "minimum": 0},
+    "high_confidence_compatible_candidates": {"type": "integer", "minimum": 0},
+    "high_confidence_candidate_compatibility": {"$ref": "#/$defs/nullable_ratio"},
+    "high_confidence_function_count": {"type": "integer", "minimum": 0},
+    "high_confidence_function_coverage": {"$ref": "#/$defs/nullable_ratio"},
+    "top_candidate_compatibility": {"$ref": "#/$defs/nullable_ratio"},
+    "conflicted_hypotheses": {"type": "integer", "minimum": 0},
+    "hypothesis_conflict_rate": {"$ref": "#/$defs/nullable_ratio"},
+    "per_property": {
+      "type": "object",
+      "propertyNames": {"enum": ["calling_convention", "parameter_count", "parameters", "receiver_parameter_index", "return_value"]},
+      "additionalProperties": {"$ref": "#/$defs/property_metrics"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nullable_ratio": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "property_metrics": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scored", "compatible", "unknown", "accuracy", "coverage", "known_accuracy"],
+      "properties": {
+        "scored": {"type": "integer", "minimum": 0},
+        "compatible": {"type": "integer", "minimum": 0},
+        "unknown": {"type": "integer", "minimum": 0},
+        "accuracy": {"$ref": "#/$defs/nullable_ratio"},
+        "coverage": {"$ref": "#/$defs/nullable_ratio"},
+        "known_accuracy": {"$ref": "#/$defs/nullable_ratio"}
+      }
+    }
+  }
+}
