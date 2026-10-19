@@ -1,0 +1,21 @@
+{
+  "candidates": [],
+  "claim_scope": "Single-function structural candidate only; no state semantics, branch truth polarity, path feasibility, or runtime value-flow claim.",
+  "format": "REVENGINSTR.StateMachineCandidateAudit/2",
+  "program_id": "nfs-shift:SHIFT.exe",
+  "selected_function_entries": [
+    "00a277d0"
+  ],
+  "source": {
+    "candidate_count": 0,
+    "cfg_sha256": "e8ac68b98f970558f773d7b571e713602d00a7b810c1f7cc673a5c2ad91baa83",
+    "function_count": 1,
+    "memory_store_rows": 3,
+    "memory_store_sha256": "daa886daacc77d84cc5c6aa3b8bc0f7b957b8f3579e866a890b8592493a033eb",
+    "parameter_load_rows": 12,
+    "parameter_load_sha256": "2f82f0e230e71043d287fd93110293161ba6a0d3b2520fd4335bc7da1f463c1d",
+    "pcode_flow_sha256": "06f8b1197ec3ee104f73d4040751fe794e3e0f934f96cd42da0fbfb86c5f8c0c",
+    "pcode_operations": 169,
+    "unresolved_store_rows": 0
+  }
+}

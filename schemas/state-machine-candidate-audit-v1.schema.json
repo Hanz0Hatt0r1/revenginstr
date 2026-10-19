@@ -267,7 +267,8 @@
         },
         "write_reachable_successor_index": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "description": "CFG block_index value of the unique successor that can reach the write; this is not the array position in successor_block_indices."
         }
       }
     },

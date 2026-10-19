@@ -1,0 +1,325 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/state-machine-candidate-audit-v2.schema.json",
+  "title": "REVENGINSTR.StateMachineCandidateAudit/2 report",
+  "description": "Provenance-linked single-function structural candidates with an explicit selected-function scope when inputs contain additional functions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "program_id",
+    "claim_scope",
+    "selected_function_entries",
+    "source",
+    "candidates"
+  ],
+  "properties": {
+    "format": {
+      "const": "REVENGINSTR.StateMachineCandidateAudit/2"
+    },
+    "program_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "claim_scope": {
+      "const": "Single-function structural candidate only; no state semantics, branch truth polarity, path feasibility, or runtime value-flow claim."
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/candidate"
+      }
+    },
+    "selected_function_entries": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Sorted exact function entries selected from the hash-pinned source inputs."
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cfg_sha256",
+        "pcode_flow_sha256",
+        "parameter_load_sha256",
+        "memory_store_sha256",
+        "function_count",
+        "pcode_operations",
+        "parameter_load_rows",
+        "memory_store_rows",
+        "unresolved_store_rows",
+        "candidate_count"
+      ],
+      "properties": {
+        "cfg_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "pcode_flow_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "parameter_load_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "memory_store_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "function_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "pcode_operations": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "parameter_load_rows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "memory_store_rows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unresolved_store_rows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "candidate_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "function_entry",
+        "field",
+        "load",
+        "comparison",
+        "branch",
+        "write",
+        "reason_codes"
+      ],
+      "properties": {
+        "candidate_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "function_entry": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field": {
+          "$ref": "#/$defs/field"
+        },
+        "load": {
+          "$ref": "#/$defs/load"
+        },
+        "comparison": {
+          "$ref": "#/$defs/comparison"
+        },
+        "branch": {
+          "$ref": "#/$defs/branch"
+        },
+        "write": {
+          "$ref": "#/$defs/write"
+        },
+        "reason_codes": {
+          "const": [
+            "parameter_field_load_directly_compared",
+            "comparison_result_controls_conditional_branch",
+            "same_parameter_offset_store_reachable_from_one_successor"
+          ]
+        }
+      }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root_parameter_index",
+        "offset_bytes"
+      ],
+      "properties": {
+        "root_parameter_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "offset_bytes": {
+          "type": "integer"
+        }
+      }
+    },
+    "load": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation_address",
+        "operation_time",
+        "parameter_load_record_index",
+        "pcode_flow_record_index"
+      ],
+      "properties": {
+        "operation_address": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operation_time": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "parameter_load_record_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "pcode_flow_record_index": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "opcode",
+        "operation_address",
+        "operation_time",
+        "pcode_flow_record_index"
+      ],
+      "properties": {
+        "opcode": {
+          "enum": [
+            "INT_EQUAL",
+            "INT_NOTEQUAL",
+            "INT_LESS",
+            "INT_LESSEQUAL",
+            "INT_SLESS",
+            "INT_SLESSEQUAL",
+            "FLOAT_EQUAL",
+            "FLOAT_NOTEQUAL",
+            "FLOAT_LESS",
+            "FLOAT_LESSEQUAL",
+            "FLOAT_NAN"
+          ]
+        },
+        "operation_address": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operation_time": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pcode_flow_record_index": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "branch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation_address",
+        "operation_time",
+        "pcode_flow_record_index",
+        "cfg_record_index",
+        "cfg_block_index",
+        "successor_block_indices",
+        "write_reachable_successor_index"
+      ],
+      "properties": {
+        "operation_address": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operation_time": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pcode_flow_record_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cfg_record_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cfg_block_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "successor_block_indices": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "write_reachable_successor_index": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "CFG block_index value of the unique successor that can reach the write; this is not the array position in successor_block_indices."
+        }
+      }
+    },
+    "write": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation_address",
+        "operation_time",
+        "pcode_flow_record_index",
+        "memory_store_record_index",
+        "cfg_record_index",
+        "cfg_block_index"
+      ],
+      "properties": {
+        "operation_address": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operation_time": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pcode_flow_record_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "memory_store_record_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cfg_record_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cfg_block_index": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

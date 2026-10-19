@@ -820,9 +820,17 @@ Recover candidate state fields and transition graphs from repeated comparisons/w
 joins, a parameter-rooted field load feeding a comparison and terminal
 conditional branch, and a same-parameter/same-offset store reachable from only
 one of two CFG successors. It emits hash-pinned `StateMachineCandidateAudit/1`
-records and makes no branch-polarity, path-feasibility, runtime-value, or state
+records by default and `/2` when selecting exact function entries from larger
+multi-function captures; `/2` records that scope even when it finds no
+candidates. The detector makes no branch-polarity, path-feasibility,
+runtime-value, or state
 semantics claim. Cross-function field sharing, switch recovery, transition
 graphs, confidence per edge, and consumer evaluation remain open.
+An exploratory NFS SHIFT replay over fourteen selected functions found two
+such structural candidates and twelve non-matches; both positive candidates
+were checked against their original P-code, parameter-load, memory-store, and
+CFG records (see the
+[replay](evidence/state-machine-candidates/nfs-shift-m23-scan/README.md)).
 
 ## M5.5 Object-role clustering
 

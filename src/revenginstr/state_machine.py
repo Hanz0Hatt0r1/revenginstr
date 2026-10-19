@@ -12,7 +12,9 @@ from typing import Any
 
 from revenginstr.evidence.structural import COMPARE_OPS
 
-FORMAT = "REVENGINSTR.StateMachineCandidateAudit/1"
+FORMAT_V1 = "REVENGINSTR.StateMachineCandidateAudit/1"
+FORMAT_V2 = "REVENGINSTR.StateMachineCandidateAudit/2"
+FORMAT = FORMAT_V1
 CFG_FORMAT = "REVENGINSTR.GhidraFunctionPcodeCFG/3"
 LOAD_FORMAT = "REVENGINSTR.GhidraParameterLoadField/1"
 STORE_FORMAT = "REVENGINSTR.GhidraMemoryStoreAccess/1"
@@ -177,7 +179,7 @@ def _cfg_index(
             if set(block["successors"]) - by_index.keys():
                 raise ValueError(f"CFG row {cfg_index}: successor references an unknown block")
         cfgs[function_entry] = {
-            "record_index": cfg_index,
+            "record_index": cfg.get("_source_record_index", cfg_index),
             "entry_block_index": entry,
             "blocks": by_index,
             "operation_opcodes": opcodes,
@@ -199,7 +201,7 @@ def _reachable(blocks: dict[int, dict[str, Any]], start: int) -> set[int]:
     return reached
 
 
-def _pcode_index(rows: list[dict[str, str]]) -> tuple[dict[str, list[dict[str, Any]]], dict[str, dict[tuple[str, int], dict[str, Any]]]]:
+def _pcode_index(rows: list[dict[str, Any]]) -> tuple[dict[str, list[dict[str, Any]]], dict[str, dict[tuple[str, int], dict[str, Any]]]]:
     by_function: dict[str, list[dict[str, Any]]] = defaultdict(list)
     by_key: dict[str, dict[tuple[str, int], dict[str, Any]]] = defaultdict(dict)
     for record_index, row in enumerate(rows, 1):
@@ -215,7 +217,7 @@ def _pcode_index(rows: list[dict[str, str]]) -> tuple[dict[str, list[dict[str, A
             raise ValueError(f"{where}: missing output cell")
         inputs = _token_list(row.get("inputs", ""), where)
         operation = {
-            "record_index": record_index,
+            "record_index": row.get("_source_record_index", record_index),
             "address": address,
             "time": time,
             "opcode": opcode,
@@ -232,8 +234,8 @@ def _pcode_index(rows: list[dict[str, str]]) -> tuple[dict[str, list[dict[str, A
 
 def build_state_machine_candidates(
     cfg_rows: list[dict[str, Any]],
-    pcode_rows: list[dict[str, str]],
-    parameter_load_rows: list[dict[str, str]],
+    pcode_rows: list[dict[str, Any]],
+    parameter_load_rows: list[dict[str, Any]],
     memory_store_rows: list[dict[str, Any]],
     *,
     cfg_sha256: str,
@@ -241,6 +243,7 @@ def build_state_machine_candidates(
     parameter_load_sha256: str,
     memory_store_sha256: str,
     max_candidates: int = 100_000,
+    function_entries: list[str] | None = None,
 ) -> dict[str, Any]:
     """Emit narrow compare/branch/same-field-write structural candidates."""
     if isinstance(max_candidates, bool) or not isinstance(max_candidates, int) or max_candidates < 1:
@@ -252,10 +255,36 @@ def build_state_machine_candidates(
         if not isinstance(digest, str) or len(digest) != 64 or any(ch not in "0123456789abcdef" for ch in digest):
             raise ValueError(f"{name}: invalid SHA-256")
 
+    selected_functions = None
+    if function_entries is not None:
+        if (
+            not isinstance(function_entries, list)
+            or not function_entries
+            or any(not isinstance(entry, str) or not entry for entry in function_entries)
+            or len(function_entries) != len(set(function_entries))
+        ):
+            raise ValueError("function_entries must be a non-empty list of unique function entries")
+        selected_functions = set(function_entries)
+
+        def select(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+            return [
+                {**row, "_source_record_index": record_index}
+                for record_index, row in enumerate(rows, 1)
+                if row.get("function_entry") in selected_functions
+            ]
+
+        cfg_rows = select(cfg_rows)
+        pcode_rows = select(pcode_rows)
+        parameter_load_rows = select(parameter_load_rows)
+        memory_store_rows = select(memory_store_rows)
+
     program_id, cfgs, cfg_op_blocks = _cfg_index(cfg_rows)
     pcode_by_function, pcode_by_key = _pcode_index(pcode_rows)
     if set(cfgs) != set(pcode_by_function):
         raise ValueError("CFG and P-code function populations differ")
+    if selected_functions is not None and set(cfgs) != selected_functions:
+        missing = sorted(selected_functions - set(cfgs))
+        raise ValueError(f"selected functions are absent from CFG/P-code input: {', '.join(missing)}")
 
     pcode_operation_count = 0
     store_keys: set[tuple[str, str, int]] = set()
@@ -274,7 +303,8 @@ def build_state_machine_candidates(
                 store_keys.add((function_entry, key[0], key[1]))
             pcode_operation_count += 1
 
-    for record_index, row in enumerate(parameter_load_rows, 1):
+    for row_index, row in enumerate(parameter_load_rows, 1):
+        record_index = row.get("_source_record_index", row_index)
         where = f"parameter load record {record_index}"
         if row.get("format") != LOAD_FORMAT or row.get("status") != "parameter_field_load":
             raise ValueError(f"{where}: unsupported format or status")
@@ -307,7 +337,8 @@ def build_state_machine_candidates(
 
     store_rows: dict[tuple[str, str, int], dict[str, Any]] = {}
     unresolved_store_count = 0
-    for record_index, row in enumerate(memory_store_rows, 1):
+    for row_index, row in enumerate(memory_store_rows, 1):
+        record_index = row.get("_source_record_index", row_index)
         where = f"memory store record {record_index}"
         if row.get("format") != STORE_FORMAT or row.get("opcode") != "STORE":
             raise ValueError(f"{where}: unsupported format or opcode")
@@ -484,8 +515,8 @@ def build_state_machine_candidates(
         row["function_entry"], row["branch"]["operation_time"], row["field"]["root_parameter_index"],
         row["field"]["offset_bytes"], row["write"]["operation_time"], row["candidate_id"],
     ))
-    return {
-        "format": FORMAT,
+    report = {
+        "format": FORMAT_V2 if selected_functions is not None else FORMAT,
         "program_id": program_id,
         "claim_scope": CLAIM_SCOPE,
         "source": {
@@ -502,6 +533,9 @@ def build_state_machine_candidates(
         },
         "candidates": candidates,
     }
+    if selected_functions is not None:
+        report["selected_function_entries"] = sorted(selected_functions)
+    return report
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -511,6 +545,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("parameter_loads_tsv", type=Path)
     parser.add_argument("memory_stores_jsonl", type=Path)
     parser.add_argument("--max-candidates", type=int, default=100_000)
+    parser.add_argument(
+        "--function-entry", action="append", dest="function_entries",
+        help="limit analysis to one function; repeat for multiple functions",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
 
@@ -522,7 +560,7 @@ def main(argv: list[str] | None = None) -> int:
         cfg_rows, pcode_rows, load_rows, store_rows,
         cfg_sha256=cfg_sha256, pcode_sha256=pcode_sha256,
         parameter_load_sha256=loads_sha256, memory_store_sha256=stores_sha256,
-        max_candidates=args.max_candidates,
+        max_candidates=args.max_candidates, function_entries=args.function_entries,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
