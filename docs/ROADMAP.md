@@ -1126,9 +1126,10 @@ resolves only exact static function-pointer targets; v4 adds exact
 caller-formal roots for untransformed arguments and uses those links for arity
 and shape constraints. Dynamic or multi-target dispatch remains unresolved.
 Return-shape propagation now adds low-confidence alternatives for exact
-call-result-to-return COPY chains and possible two-operation tail returns;
-transformed paths and the distinction between returned and ignored call
-results remain unresolved. An Android source-backed replay adds 21
+direct-call result-to-return COPY chains, uniquely resolved static `CALLIND`
+targets, and narrow possible return patterns; transformed paths and the
+distinction between returned and ignored call results remain unresolved. An
+Android source-backed replay adds 21
 exported Nevergone JNI prototypes from DEX declarations: the High-P-code
 baseline gets 11/21 parameter counts right and has no fully known parameter
 lists, while exact APK-to-library matches recover all 21 JNI interfaces. Six

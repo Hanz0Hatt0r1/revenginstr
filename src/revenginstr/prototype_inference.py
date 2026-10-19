@@ -322,6 +322,7 @@ def _read_return_flow_edges(
     calls: list[dict[str, Any]],
     calls_sha: str,
     functions: dict[str, dict[str, Any]],
+    indirect_calls: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     if not paths:
         return []
@@ -333,6 +334,16 @@ def _read_return_flow_edges(
         (row["evidence_ref"]["artifact_sha256"], row["evidence_ref"]["record_index"]): row
         for row in calls
     }
+    indirect_calls_by_site = {}
+    for call in indirect_calls:
+        site = (
+            _address_key(call["caller_entry"]),
+            _address_key(call["call_address"]),
+            call["call_time"],
+        )
+        if site in indirect_calls_by_site:
+            raise ValueError(f"duplicate resolved indirect-call site {site}")
+        indirect_calls_by_site[site] = call
     function_keys = {}
     for entry in functions:
         key = _address_key(entry)
@@ -387,33 +398,76 @@ def _read_return_flow_edges(
                 users.setdefault((function_key, token), []).append((row, input_index))
 
         for call_row in rows:
-            if call_row["opcode"] != "CALL" or call_row["callee_entry"] == "-":
-                continue
             flow_index = call_row["_record_index"]
-            call = calls_by_ref.get((digest, flow_index))
-            if call is None:
+            if call_row["opcode"] == "CALL":
+                if call_row["callee_entry"] == "-":
+                    continue
+                call = calls_by_ref.get((digest, flow_index))
+                if call is None:
+                    continue
+                if (
+                    _address_key(call_row["function_entry"]) != _address_key(call["caller_entry"])
+                    or _address_key(call_row["callee_entry"]) != _address_key(call["callee_entry"])
+                    or _address_key(call_row["op_address"]) != _address_key(call["call_address"])
+                    or int(call_row["op_time"]) != call["call_time"]
+                ):
+                    raise ValueError(f"{path}:{flow_index}: direct-call row disagrees with its observation")
+                caller = function_keys[_address_key(call["caller_entry"])]
+                callee = function_keys.get(_address_key(call["callee_entry"]))
+                call_ref = _evidence(calls_sha, call["_record_index"], CALL_FORMAT)
+            elif call_row["opcode"] == "CALLIND" and call_row["callee_entry"] == "-":
+                site = (
+                    _address_key(call_row["function_entry"]),
+                    _address_key(call_row["op_address"]),
+                    int(call_row["op_time"]),
+                )
+                call = indirect_calls_by_site.get(site)
+                if call is None:
+                    continue
+                caller = function_keys[_address_key(call["caller_entry"])]
+                callee = function_keys.get(_address_key(call["callee_entry"]))
+                call_ref = call["_evidence_ref"]
+            else:
                 continue
-            if (
-                _address_key(call_row["function_entry"]) != _address_key(call["caller_entry"])
-                or _address_key(call_row["callee_entry"]) != _address_key(call["callee_entry"])
-                or _address_key(call_row["op_address"]) != _address_key(call["call_address"])
-                or int(call_row["op_time"]) != call["call_time"]
-            ):
-                raise ValueError(f"{path}:{flow_index}: direct-call row disagrees with its observation")
-            caller = function_keys[_address_key(call["caller_entry"])]
-            callee = function_keys.get(_address_key(call["callee_entry"]))
             if callee is None:
                 continue
             if call_row["output"] == "-":
                 caller_rows = operations_by_function[_address_key(caller)]
                 caller_function = functions[caller]
+                if call_row["opcode"] == "CALL":
+                    return_row = caller_rows[1] if len(caller_rows) == 2 else None
+                    simple_void_return = (
+                        return_row is not None
+                        and caller_rows[0] is call_row
+                        and return_row["opcode"] == "RETURN"
+                    )
+                else:
+                    # A resolved CALLIND can retain call-local bookkeeping ops
+                    # even when High-P-code drops the caller's returned value.
+                    return_rows = [row for row in caller_rows if row["opcode"] == "RETURN"]
+                    call_rows = [row for row in caller_rows if row["opcode"] in {"CALL", "CALLIND"}]
+                    return_row = return_rows[0] if len(return_rows) == 1 else None
+                    support_rows = [
+                        row for row in caller_rows
+                        if row["opcode"] not in {"CALLIND", "RETURN"}
+                    ]
+                    support_addresses = {
+                        _address_key(call_row["op_address"]),
+                        *(_address_key(row["op_address"]) for row in return_rows),
+                    }
+                    simple_void_return = (
+                        len(call_rows) == 1
+                        and call_rows[0] is call_row
+                        and return_row is not None
+                        and all(row["opcode"] in {"INDIRECT", "CAST", "COPY"} for row in support_rows)
+                        and all(_address_key(row["op_address"]) in support_addresses for row in support_rows)
+                    )
                 if (
-                    len(caller_rows) != 2
-                    or caller_rows[0] is not call_row
-                    or caller_rows[1]["opcode"] != "RETURN"
-                    or int(caller_rows[1]["op_time"]) <= int(call_row["op_time"])
-                    or len(caller_rows[1]["_input_tokens"]) != 1
-                    or not re.fullmatch(r"const:0x0:[1-9][0-9]*", caller_rows[1]["_input_tokens"][0])
+                    not simple_void_return
+                    or return_row is None
+                    or int(return_row["op_time"]) <= int(call_row["op_time"])
+                    or len(return_row["_input_tokens"]) != 1
+                    or not re.fullmatch(r"const:0x0:[1-9][0-9]*", return_row["_input_tokens"][0])
                     or caller_function["status"] != "complete"
                     or caller_function["return_type"]["kind"] not in {"void", "unknown"}
                 ):
@@ -426,16 +480,18 @@ def _read_return_flow_edges(
                 width = callee_return["width_bytes"]
                 if kind not in {"pointer", "aggregate", "scalar"} or type(width) is not int:
                     continue
-                call_ref = _evidence(calls_sha, call["_record_index"], CALL_FORMAT)
                 edges.append({
                     "caller": caller,
                     "callee": callee,
                     "value_width_bytes": width,
-                    "candidate_id": "possible-tail-call-return",
-                    "confidence": 0.2,
+                    "candidate_id": (
+                        "possible-tail-call-return" if call_row["opcode"] == "CALL"
+                        else "possible-indirect-call-return"
+                    ),
+                    "confidence": 0.2 if call_row["opcode"] == "CALL" else 0.15,
                     "evidence_refs": _dedupe_refs([
                         _evidence(digest, call_row["_record_index"], FLOW_FORMAT),
-                        _evidence(digest, caller_rows[1]["_record_index"], FLOW_FORMAT),
+                        _evidence(digest, return_row["_record_index"], FLOW_FORMAT),
                         call_ref,
                     ]),
                 })
@@ -474,13 +530,15 @@ def _read_return_flow_edges(
                     _evidence(digest, row["_record_index"], FLOW_FORMAT)
                     for row in path_rows
                 ]
-                call_ref = _evidence(calls_sha, call["_record_index"], CALL_FORMAT)
                 edges.append({
                     "caller": caller,
                     "callee": callee,
                     "value_width_bytes": int(value_width_text),
-                    "candidate_id": "direct-call-return-shape",
-                    "confidence": 0.35,
+                    "candidate_id": (
+                        "direct-call-return-shape" if call_row["opcode"] == "CALL"
+                        else "resolved-indirect-call-return-shape"
+                    ),
+                    "confidence": 0.35 if call_row["opcode"] == "CALL" else 0.3,
                     "evidence_refs": _dedupe_refs([*flow_refs, call_ref]),
                 })
     return edges
@@ -763,18 +821,18 @@ def infer_prototypes(
         android_jni, android_jni_sha = _read_android_jni_prototypes(
             android_jni_evidence_path, program_id, program_sha, architecture, functions,
         )
-    return_edges = _read_return_flow_edges(
-        function_pcode_flow_paths or [], calls, calls_sha, functions,
-    )
-    return_shape_suggestions = _return_shape_suggestions(
-        functions, android_jni, android_jni_sha, decompiler_sha, return_edges,
-    )
     indirect_calls = []
     indirect_root_edges = []
     if indirect_call_evidence_path is not None:
         indirect_calls, indirect_root_edges, _ = _read_indirect_calls(
             indirect_call_evidence_path, program_id, program_sha, architecture, functions,
         )
+    return_edges = _read_return_flow_edges(
+        function_pcode_flow_paths or [], calls, calls_sha, functions, indirect_calls,
+    )
+    return_shape_suggestions = _return_shape_suggestions(
+        functions, android_jni, android_jni_sha, decompiler_sha, return_edges,
+    )
     missing_callees = sorted({call["callee_entry"] for call in calls} - set(functions))
     if missing_callees:
         preview = ", ".join(missing_callees[:5])
@@ -971,7 +1029,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--function-pcode-flow", action="append", type=Path,
-        help="optional GhidraFunctionPcodeFlow/1 TSVs for cautious direct-call return-shape candidates",
+        help="optional GhidraFunctionPcodeFlow/1 TSVs for cautious direct and resolved indirect return-shape candidates",
     )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
