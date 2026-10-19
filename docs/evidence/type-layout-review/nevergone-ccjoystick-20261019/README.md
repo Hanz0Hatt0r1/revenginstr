@@ -1,4 +1,4 @@
-# Nevergone `CCJoyStick` size review
+# Nevergone `CCJoyStick` layout review
 
 This bundle joins the existing consumer-owned `CCJoyStick::init` field-access
 evidence to a separate exact-size review. The Nevergone `libcocos2dcpp.so`
@@ -15,8 +15,12 @@ returned pointer, and passing it to `CCJoyStick::CCJoyStick()` before calling
 independent observed field extent is 337 bytes, so the size is consistent and
 leaves three unobserved bytes.
 
-The map retains opaque type ID `nevergone:opaque-object-002a6584`; this bundle
-does not promote field types, vtable identity, relationships, or ownership.
+The map retains opaque type ID `nevergone:opaque-object-002a6584`. A separate
+review records three four-byte `data_pointer` candidates targeting
+`cocos2d::CCSprite` at `+0x104`, `+0x108`, and `+0x10c`; its source commit and
+evidence boundary are described in
+[`field-type-evidence.md`](field-type-evidence.md). Vtable identity for the
+containing object and ownership remain unresolved.
 Raw memory-store and parameter-load rows stay in the
 [consumer evidence directory](https://github.com/Hanz0Hatt0r1/nevergone-recomp/tree/main/docs/evidence/field-store-load-cfg-ccjoystick-init).
 
@@ -40,6 +44,7 @@ revenginstr-type-layout-hypothesis \
   --parameter-loads-tsv path/to/field-store-load-cfg-ccjoystick-init/parameter-loads.tsv \
   --member-map-jsonl member-map.jsonl \
   --size-review-jsonl size-review.jsonl \
+  --field-type-review-jsonl field-type-review.jsonl \
   --program-id 'nevergone:libcocos2dcpp.so' \
   --program-sha256 94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e \
   --language-id ARM:LE:32:v8 --pointer-width-bytes 4 \
@@ -48,5 +53,6 @@ revenginstr-type-layout-hypothesis \
 ```
 
 The retained hypothesis contains 13 field offsets, a 337-byte minimum
-observed extent, and the reviewer-evidenced 340-byte exact size. The type ID
-remains opaque, and no field type or relationship candidate is produced.
+observed extent, the reviewer-evidenced 340-byte exact size, and three
+reviewed pointer target candidates. The type ID remains opaque; other field
+types and a full class-layout claim remain unresolved.

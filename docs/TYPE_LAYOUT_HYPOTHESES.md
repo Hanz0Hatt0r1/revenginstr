@@ -20,6 +20,14 @@ size, source hash, source record, and evidence class. The builder attaches that
 evidence without deriving a size from the observed extent; a size below the
 extent or conflicting exact-size reviews makes the hypothesis `conflicted`.
 
+The builder also accepts reviewer-supplied
+[`TypeLayoutFieldTypeReview/1`](../schemas/type-layout-field-type-review-v1.schema.json)
+rows through `--field-type-review-jsonl`. A row joins only by pinned
+`(program_id, program_sha256, type_id, offset_bytes)` and can carry a type kind,
+width, and optional pointer target. Its offset must already have an observed
+field. Competing candidates remain on that field and mark it conflicted; the
+review never fills gaps or infers neighboring fields.
+
 `candidate`, `review`, and `conflicted` are triage states, not confidence
 scores. A conflicted record, field, or relationship must retain at least one
 reason-coded conflict. The schema does not rank competing types, infer field
@@ -34,10 +42,11 @@ It joins `GhidraMemoryStoreAccess/1` rows and optional
 keys `(function_entry, root_parameter_index)`. The map pins `program_id`, the
 binary SHA-256, and an opaque reviewer-chosen `type_id`; the caller supplies the
 architecture. The builder emits separate read and write observations, leaves
-type candidates, vtable anchors, and relationships empty, and derives a minimum
-observed extent only from non-negative offsets with known access widths. Exact
-size remains null unless a matching size-review row is supplied. Every emitted
-field and size bound retains its exact access row and the reviewer map row.
+type candidates, vtable anchors, and relationships empty unless a matching
+field-type review is supplied, and derives a minimum observed extent only from
+non-negative offsets with known access widths. Exact size remains null unless a
+matching size-review row is supplied. Every emitted field and size bound
+retains its exact access row and the reviewer map row.
 Unmatched roots, unresolved store
 locations, and negative offsets do not contribute. Parameter loads can be the
 only access input when a consumer has no store capture for the selected
@@ -79,10 +88,11 @@ hash-pinned instruction excerpt in
 [`allocation-sequence.txt`](evidence/type-layout-review/nevergone-ccjoystick-20261019/allocation-sequence.txt).
 The binary hash is
 `94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e`.
-The output keeps the type ID opaque and leaves field types, vtable anchors,
-relationships, and class identity promotion unresolved; raw Nevergone
-store/load rows stay in that consumer repository. The complete review bundle
-is retained in
+The new field-type review records `data_pointer` candidates, width 4, targeting
+`cocos2d::CCSprite` at `+0x104`, `+0x108`, and `+0x10c`, based on the pinned
+Nevergone initializer evidence. Other field types, vtable anchors, and class
+identity of the containing object remain unresolved. Raw Nevergone store/load
+rows stay in that consumer repository. The complete review bundle is retained in
 [`nevergone-ccjoystick-20261019`](evidence/type-layout-review/nevergone-ccjoystick-20261019/README.md).
 The reviewer-map row used for this smoke was:
 

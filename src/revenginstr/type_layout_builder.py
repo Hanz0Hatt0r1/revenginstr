@@ -16,8 +16,13 @@ from typing import Any, Iterable, Iterator
 STORE_FORMAT = "REVENGINSTR.GhidraMemoryStoreAccess/1"
 MEMBER_FORMAT = "REVENGINSTR.TypeLayoutMemberMap/1"
 SIZE_REVIEW_FORMAT = "REVENGINSTR.TypeLayoutSizeReview/1"
+FIELD_TYPE_REVIEW_FORMAT = "REVENGINSTR.TypeLayoutFieldTypeReview/1"
 LOAD_FORMAT = "REVENGINSTR.GhidraParameterLoadField/1"
 OUTPUT_FORMAT = "REVENGINSTR.TypeLayoutHypothesis/1"
+TYPE_KINDS = {
+    "integer", "floating_point", "data_pointer", "function_pointer",
+    "aggregate", "bitfield", "opaque_bytes",
+}
 LOAD_COLUMNS = (
     "format", "function_entry", "function_name", "load_address", "load_time",
     "base_parameter_index", "field_offset", "address_pattern", "value_size",
@@ -107,13 +112,17 @@ def _nullable_positive_int(value: Any, where: str) -> int | None:
 
 def _evidence(
     *, source_format: str, source_sha256: str, record_key: str, evidence_class: str,
+    source_pointer: str | None = None,
 ) -> dict[str, str]:
-    return {
+    result = {
         "source_format": source_format,
         "source_sha256": source_sha256,
         "record_key": record_key,
         "evidence_class": evidence_class,
     }
+    if source_pointer is not None:
+        result["source_pointer"] = source_pointer
+    return result
 
 
 def _sort_evidence(items: Iterable[dict[str, str]]) -> list[dict[str, str]]:
@@ -188,19 +197,7 @@ def _validate_member(
     return function_entry, root_index, type_id
 
 
-def _validate_size_review(
-    row: dict[str, Any], where: str, *, program_id: str, program_sha256: str,
-) -> tuple[str, int, dict[str, str]]:
-    keys = {"format", "program_id", "program_sha256", "type_id", "exact_size_bytes", "evidence"}
-    if set(row) != keys or row.get("format") != SIZE_REVIEW_FORMAT:
-        raise ValueError(f"{where}: expected exact {SIZE_REVIEW_FORMAT} fields")
-    if _require_text(row["program_id"], f"{where}: program_id") != program_id:
-        raise ValueError(f"{where}: program_id does not match {program_id!r}")
-    if row["program_sha256"] != program_sha256:
-        raise ValueError(f"{where}: program_sha256 does not match the pinned program")
-    type_id = _require_text(row["type_id"], f"{where}: type_id")
-    size = _require_int(row["exact_size_bytes"], f"{where}: exact_size_bytes", minimum=1)
-    evidence = row["evidence"]
+def _validate_review_evidence(evidence: Any, where: str) -> dict[str, str]:
     evidence_keys = {"source_format", "source_sha256", "record_key", "source_pointer", "evidence_class"}
     if not isinstance(evidence, dict) or set(evidence) != evidence_keys:
         raise ValueError(f"{where}: evidence must have exact source fields")
@@ -215,13 +212,56 @@ def _validate_size_review(
         "exact_static", "runtime_native", "derived_structural", "human_review", "interventional_probe",
     }:
         raise ValueError(f"{where}: unsupported evidence_class")
-    return type_id, size, {
+    return {
         "source_format": source_format,
         "source_sha256": source_sha256,
         "record_key": record_key,
         "source_pointer": source_pointer,
         "evidence_class": evidence_class,
     }
+
+
+def _validate_size_review(
+    row: dict[str, Any], where: str, *, program_id: str, program_sha256: str,
+) -> tuple[str, int, dict[str, str]]:
+    keys = {"format", "program_id", "program_sha256", "type_id", "exact_size_bytes", "evidence"}
+    if set(row) != keys or row.get("format") != SIZE_REVIEW_FORMAT:
+        raise ValueError(f"{where}: expected exact {SIZE_REVIEW_FORMAT} fields")
+    if _require_text(row["program_id"], f"{where}: program_id") != program_id:
+        raise ValueError(f"{where}: program_id does not match {program_id!r}")
+    if row["program_sha256"] != program_sha256:
+        raise ValueError(f"{where}: program_sha256 does not match the pinned program")
+    type_id = _require_text(row["type_id"], f"{where}: type_id")
+    size = _require_int(row["exact_size_bytes"], f"{where}: exact_size_bytes", minimum=1)
+    return type_id, size, _validate_review_evidence(row["evidence"], where)
+
+
+def _validate_field_type_review(
+    row: dict[str, Any], where: str, *, program_id: str, program_sha256: str,
+) -> tuple[str, int, tuple[str, int | None, str | None], dict[str, str]]:
+    keys = {
+        "format", "program_id", "program_sha256", "type_id", "offset_bytes",
+        "kind", "width_bytes", "target_type_id", "evidence",
+    }
+    if set(row) != keys or row.get("format") != FIELD_TYPE_REVIEW_FORMAT:
+        raise ValueError(f"{where}: expected exact {FIELD_TYPE_REVIEW_FORMAT} fields")
+    if _require_text(row["program_id"], f"{where}: program_id") != program_id:
+        raise ValueError(f"{where}: program_id does not match {program_id!r}")
+    if row["program_sha256"] != program_sha256:
+        raise ValueError(f"{where}: program_sha256 does not match the pinned program")
+    type_id = _require_text(row["type_id"], f"{where}: type_id")
+    offset = _require_int(row["offset_bytes"], f"{where}: offset_bytes", minimum=0)
+    kind = _require_text(row["kind"], f"{where}: kind")
+    if kind not in TYPE_KINDS:
+        raise ValueError(f"{where}: unsupported field type kind")
+    width = _nullable_positive_int(row["width_bytes"], f"{where}: width_bytes")
+    target_type_id = row["target_type_id"]
+    if target_type_id is not None:
+        _require_text(target_type_id, f"{where}: target_type_id")
+        if kind != "data_pointer":
+            raise ValueError(f"{where}: target_type_id requires kind=data_pointer")
+    evidence = _validate_review_evidence(row["evidence"], where)
+    return type_id, offset, (kind, width, target_type_id), evidence
 
 
 def _read_parameter_loads(
@@ -255,6 +295,7 @@ def build_type_layout_hypotheses(
     *,
     parameter_load_paths: list[Path] | None = None,
     size_review_paths: list[Path] | None = None,
+    field_type_review_paths: list[Path] | None = None,
     program_id: str,
     program_sha256: str,
     language_id: str,
@@ -263,9 +304,10 @@ def build_type_layout_hypotheses(
     endianness: str,
     max_rows: int = DEFAULT_MAX_ROWS,
 ) -> list[dict[str, Any]]:
-    """Join accesses to explicit members and attach only reviewer-supplied exact sizes."""
+    """Join accesses to explicit members and attach only reviewer-supplied types and sizes."""
     parameter_load_paths = parameter_load_paths or []
     size_review_paths = size_review_paths or []
+    field_type_review_paths = field_type_review_paths or []
     if not member_map_paths or (not memory_store_paths and not parameter_load_paths):
         raise ValueError("provide a member map and at least one memory-store or parameter-load input")
     if not isinstance(program_sha256, str) or not SHA256_RE.fullmatch(program_sha256):
@@ -321,6 +363,35 @@ def build_type_layout_hypotheses(
                 evidence_class="human_review",
             )
             size_reviews[type_id].append((size_bytes, [evidence, review_ref]))
+
+    field_type_reviews: dict[
+        str, dict[int, dict[tuple[str, int | None, str | None], list[dict[str, str]]]]
+    ] = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+    field_type_review_rows = 0
+    for path in field_type_review_paths:
+        digest = _sha256(path)
+        for line_no, row in _read_jsonl(path, max_rows=max_rows):
+            field_type_review_rows += 1
+            if field_type_review_rows > max_rows:
+                raise ValueError(f"combined field-type-review row budget exceeded: {max_rows}")
+            where = f"{path}:{line_no}"
+            type_id, offset, signature, evidence = _validate_field_type_review(
+                row, where, program_id=program_id, program_sha256=program_sha256,
+            )
+            if signature[0] in {"data_pointer", "function_pointer"} and signature[1] is not None:
+                if signature[1] != architecture["pointer_width_bytes"]:
+                    raise ValueError(f"{where}: pointer width does not match the target architecture")
+            review_ref = _evidence(
+                source_format=FIELD_TYPE_REVIEW_FORMAT,
+                source_sha256=digest,
+                record_key=(
+                    f"type_id={type_id};offset_bytes={offset};kind={signature[0]};"
+                    f"width_bytes={signature[1]};target_type_id={signature[2]}"
+                ),
+                evidence_class="human_review",
+                source_pointer=f"{path.name}#line={line_no}",
+            )
+            field_type_reviews[type_id][offset][signature].extend([evidence, review_ref])
 
     grouped: dict[str, dict[int, dict[tuple[str, int | None], list[dict[str, str]]]]] = defaultdict(
         lambda: defaultdict(lambda: defaultdict(list))
@@ -423,12 +494,38 @@ def build_type_layout_hypotheses(
                     "width_bytes": access_key[1],
                     "evidence": _sort_evidence(refs),
                 })
+            candidate_groups = field_type_reviews.get(type_id, {}).pop(offset, {})
+            type_candidates = []
+            candidate_evidence: list[dict[str, str]] = []
+            for signature, refs in sorted(
+                candidate_groups.items(),
+                key=lambda item: (
+                    item[0][0], item[0][1] is None, item[0][1] or 0, item[0][2] or "",
+                ),
+            ):
+                kind, width, target_type_id = signature
+                evidence_refs = _sort_evidence(refs)
+                candidate_evidence.extend(evidence_refs)
+                candidate = {
+                    "kind": kind,
+                    "width_bytes": width,
+                    "evidence": evidence_refs,
+                }
+                if target_type_id is not None:
+                    candidate["target_type_id"] = target_type_id
+                type_candidates.append(candidate)
+            field_conflicts = []
+            if len(type_candidates) > 1:
+                field_conflicts.append({
+                    "reason": "evidence_conflict",
+                    "evidence": _sort_evidence(candidate_evidence),
+                })
             type_fields.append({
                 "offset_bytes": offset,
-                "status": "candidate",
+                "status": "conflicted" if field_conflicts else "review" if type_candidates else "candidate",
                 "accesses": accesses,
-                "type_candidates": [],
-                "conflicts": [],
+                "type_candidates": type_candidates,
+                "conflicts": field_conflicts,
             })
         max_extent = max(size_evidence[type_id], default=None)
         bound_refs = _sort_evidence(size_evidence[type_id][max_extent]) if max_extent is not None else []
@@ -446,6 +543,14 @@ def build_type_layout_hypotheses(
                 "reason": "size_bound_conflict",
                 "evidence": _sort_evidence([*bound_refs, *review_refs]),
             })
+        field_conflict_refs = _sort_evidence(
+            evidence
+            for field in type_fields
+            for conflict in field["conflicts"]
+            for evidence in conflict["evidence"]
+        )
+        if field_conflict_refs:
+            conflicts.append({"reason": "evidence_conflict", "evidence": field_conflict_refs})
         size_status = "conflicted" if conflicts else "candidate"
         results.append({
             "format": OUTPUT_FORMAT,
@@ -466,6 +571,13 @@ def build_type_layout_hypotheses(
         })
     if size_reviews:
         raise ValueError(f"size reviews do not match a mapped type: {sorted(size_reviews)}")
+    unmatched_field_type_reviews = {
+        type_id: sorted(offsets)
+        for type_id, offsets in field_type_reviews.items()
+        if offsets
+    }
+    if unmatched_field_type_reviews:
+        raise ValueError(f"field type reviews do not match an observed mapped field: {unmatched_field_type_reviews}")
     if not results:
         raise ValueError("no non-negative parameter-rooted stores matched the member map")
     return results
@@ -495,6 +607,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--parameter-loads-tsv", action="append", type=Path, default=[])
     parser.add_argument("--member-map-jsonl", action="append", type=Path, required=True)
     parser.add_argument("--size-review-jsonl", action="append", type=Path, default=[])
+    parser.add_argument("--field-type-review-jsonl", action="append", type=Path, default=[])
     parser.add_argument("--program-id", required=True)
     parser.add_argument("--program-sha256", required=True)
     parser.add_argument("--language-id", required=True)
@@ -509,7 +622,7 @@ def main(argv: list[str] | None = None) -> int:
         output_resolved = args.output.resolve()
         inputs = (
             args.memory_store_jsonl + args.parameter_loads_tsv
-            + args.member_map_jsonl + args.size_review_jsonl
+            + args.member_map_jsonl + args.size_review_jsonl + args.field_type_review_jsonl
         )
         if any(path.resolve() == output_resolved for path in inputs):
             parser.error("output must not overwrite an input artifact")
@@ -519,6 +632,7 @@ def main(argv: list[str] | None = None) -> int:
             args.member_map_jsonl,
             parameter_load_paths=args.parameter_loads_tsv,
             size_review_paths=args.size_review_jsonl,
+            field_type_review_paths=args.field_type_review_jsonl,
             program_id=args.program_id,
             program_sha256=args.program_sha256,
             language_id=args.language_id,

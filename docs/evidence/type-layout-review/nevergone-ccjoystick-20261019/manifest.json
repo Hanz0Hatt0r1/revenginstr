@@ -6,6 +6,17 @@
       "sha256": "17de813126c4d159dc1e47da7bb74739b90ecfac228e8b941653945fd4086b05"
     },
     {
+      "path": "field-type-evidence.md",
+      "bytes": 1158,
+      "sha256": "099b85f332a7718264cdc93e83640045f85b84d26956e14ef75d8b338ba9784c"
+    },
+    {
+      "path": "field-type-review.jsonl",
+      "bytes": 2290,
+      "sha256": "c552e94a1c103c01c635623b08e09406d4e10836ae7450116c97c1cb33367626",
+      "rows": 3
+    },
+    {
       "path": "member-map.jsonl",
       "bytes": 271,
       "sha256": "c9b12fff3ffb7fbdc0160bc2c557853269ffeef61ac3034f91e261313ab5d959",
@@ -19,8 +30,8 @@
     },
     {
       "path": "type-layout-hypothesis.jsonl",
-      "bytes": 13352,
-      "sha256": "381c604d0374cb8a4dabb8fea8741bf9771250aa699704f2ec382c1f97cea01e",
+      "bytes": 16002,
+      "sha256": "c7c8da3e4fb1f8661d8e75382344352939ea38e7556bad359912d696e7fa63c2",
       "rows": 1
     }
   ]
