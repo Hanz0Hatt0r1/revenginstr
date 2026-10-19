@@ -67,6 +67,11 @@ binary hash was pinned to
 This is a second-consumer projection smoke, not a verified class layout: exact
 size, field types, and class identity remain unknown, and raw Nevergone rows
 stay in that consumer repository.
+The reviewer-map row used for this smoke was:
+
+```json
+{"format":"REVENGINSTR.TypeLayoutMemberMap/1","program_id":"nevergone:libcocos2dcpp.so","program_sha256":"94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e","type_id":"nevergone:opaque-object-002a6584","function_entry":"002a6584","root_parameter_index":0}
+```
 
 The synthetic fixture in
 `tests/fixtures/type-layout-hypothesis/synthetic.jsonl`
