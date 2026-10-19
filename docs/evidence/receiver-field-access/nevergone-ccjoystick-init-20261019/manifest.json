@@ -2,14 +2,14 @@
   "apk_sha256": "97296efc9d32fdd46bdf2dba475aeb13adb4cc6d2957ddf02da7a5d9c56e9508",
   "artifacts": [
     {
-      "bytes": 3208,
+      "bytes": 4262,
       "path": "docs/evidence/receiver-field-access/nevergone-ccjoystick-init-20261019/README.md",
-      "sha256": "bde8abbbcb4236b32a567ebeffab634156c5dc5272be0a4346967290ad37716d"
+      "sha256": "ba8fb1393f163489e128b34ba49f4fdb1ffc569fe25eba1ab99404b669cab6e1"
     },
     {
-      "bytes": 5640,
+      "bytes": 8676,
       "path": "docs/evidence/receiver-field-access/nevergone-ccjoystick-init-20261019/benchmark-manifest.json",
-      "sha256": "f73959ecff5a93b510e117286f4651146ba298c451b626a6fa339f2af37cdb5e"
+      "sha256": "f2b92832a23cac921b107f1317a2da73d5c69d6f979d86523b1a454f66a224f6"
     },
     {
       "bytes": 2800,
@@ -18,10 +18,22 @@
       "sha256": "a914bacb54e8b0996091e443184ac456bb5c3ce93bc400759764a66e7d604e43"
     },
     {
+      "bytes": 8237,
+      "path": "docs/evidence/receiver-field-access/nevergone-ccjoystick-init-20261019/field-query.jsonl",
+      "rows": 1,
+      "sha256": "23e0463bb9ff67b6a7f0e33e3167248117c8432b6b54de029739af26bd67da72"
+    },
+    {
       "bytes": 3564,
       "path": "docs/evidence/receiver-field-access/nevergone-ccjoystick-init-20261019/field-store-load-dominance-audit-v2.expected.jsonl",
       "rows": 2,
       "sha256": "0bf48e0f06f7afbf918044718e12b3b72b47a83c316ac6aeb9547d1d9da5e911"
+    },
+    {
+      "bytes": 9065,
+      "path": "docs/evidence/receiver-field-access/nevergone-ccjoystick-init-20261019/function-effects.jsonl",
+      "rows": 1,
+      "sha256": "c8854141d955a30d9199a8b7fde0462e9943f5973ba66249921f13a7936cd3e0"
     },
     {
       "bytes": 17039,
@@ -46,6 +58,12 @@
       "path": "docs/evidence/receiver-field-access/nevergone-ccjoystick-init-20261019/parameter-stores.tsv",
       "rows": 6,
       "sha256": "308a90c88b719f1bb0bdbd3f605dd18968a2fe4e284b51cde6ac2a4c63749bc0"
+    },
+    {
+      "bytes": 53607,
+      "path": "docs/evidence/receiver-field-access/nevergone-ccjoystick-init-20261019/semantic-program-graph.jsonl",
+      "rows": 1,
+      "sha256": "eb9524284407e271a7fd3c35ed7e918167f6d543920ec71c264e1d02b4c10315"
     }
   ],
   "format": "REVENGINSTR.ConsumerEvidenceBundle/1",

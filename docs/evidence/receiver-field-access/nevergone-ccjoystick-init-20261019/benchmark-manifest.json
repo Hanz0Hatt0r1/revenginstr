@@ -26,6 +26,22 @@
       "schema": "receiver_graph",
       "sha256": "a914bacb54e8b0996091e443184ac456bb5c3ce93bc400759764a66e7d604e43"
     },
+    "field_query": {
+      "content": "jsonl",
+      "format": "REVENGINSTR.SemanticProgramQueryResult/1",
+      "kind": "file",
+      "path": "frozen-replay/field-query.jsonl",
+      "role": "output",
+      "schema": "semantic_program_query_result_v1"
+    },
+    "function_effects": {
+      "content": "jsonl",
+      "format": "REVENGINSTR.FunctionEffectIR/1",
+      "kind": "file",
+      "path": "frozen-replay/function-effects.jsonl",
+      "role": "output",
+      "schema": "function_effect_ir_v1"
+    },
     "function_pcode_cfg_v3": {
       "content": "jsonl",
       "format": "REVENGINSTR.GhidraFunctionPcodeCFG/3",
@@ -59,6 +75,14 @@
       "path": "parameter-stores.tsv",
       "role": "input",
       "sha256": "308a90c88b719f1bb0bdbd3f605dd18968a2fe4e284b51cde6ac2a4c63749bc0"
+    },
+    "semantic_graph": {
+      "content": "jsonl",
+      "format": "REVENGINSTR.SemanticProgramGraph/1",
+      "kind": "file",
+      "path": "frozen-replay/semantic-program-graph.jsonl",
+      "role": "output",
+      "schema": "semantic_program_graph_v1"
     }
   },
   "benchmark": {
@@ -114,6 +138,11 @@
       "sha256": "140b4d6804bde36c077b5ea5eb2c8ca2311eee9f22ff5c6f7c51cf5759e8786e",
       "version": "field store load dominance audit v2 schema"
     },
+    "function_effect_ir_v1": {
+      "path": "../../../../schemas/function-effect-ir-v1.schema.json",
+      "sha256": "d7e92fd6504c758fa4bc25f9a74c017f52aed9e4e61f11d0367a64db48cc721e",
+      "version": "REVENGINSTR.FunctionEffectIR/1"
+    },
     "memory_store_access": {
       "path": "../../../../schemas/ghidra-memory-store-access-v1.schema.json",
       "sha256": "bf53e4abc2d85609b23f831c85b0aa4b2bdb155bf2bc82ff7c5443a8c8c6b05d",
@@ -128,6 +157,16 @@
       "path": "../../../../schemas/receiver-provenance-graph-v1.schema.json",
       "sha256": "43cb888633ef724846361d6bcf67f32fa80b11272cd211be8e296d05178814de",
       "version": "receiver provenance graph v1 schema"
+    },
+    "semantic_program_graph_v1": {
+      "path": "../../../../schemas/semantic-program-graph-v1.schema.json",
+      "sha256": "73da66526eb6a2bae655c685744530a3ae179751b91952748a4d0b00c9eb90e3",
+      "version": "REVENGINSTR.SemanticProgramGraph/1"
+    },
+    "semantic_program_query_result_v1": {
+      "path": "../../../../schemas/semantic-program-query-result-v1.schema.json",
+      "sha256": "a20603565188d83b08936f87288e156aeb49480cfed1b7c718ad433d38978058",
+      "version": "REVENGINSTR.SemanticProgramQueryResult/1"
     }
   },
   "stages": [
@@ -150,6 +189,73 @@
         "dominance_audit_replay"
       ],
       "tool": "receiver-field-store-load-dominance-audit"
+    },
+    {
+      "args": [
+        "--program-id",
+        "nevergone:libcocos2dcpp.so",
+        "--parameter-stores",
+        "${artifact:parameter_stores}",
+        "--parameter-loads",
+        "${artifact:parameter_loads}",
+        "--output",
+        "${artifact:function_effects}"
+      ],
+      "id": "project_function_effect_ir",
+      "inputs": [
+        "parameter_stores",
+        "parameter_loads"
+      ],
+      "outputs": [
+        "function_effects"
+      ],
+      "tool": "function-effect-ir"
+    },
+    {
+      "args": [
+        "${artifact:function_effects}",
+        "--output",
+        "${artifact:semantic_graph}"
+      ],
+      "depends_on": [
+        "project_function_effect_ir"
+      ],
+      "id": "project_semantic_program_graph",
+      "inputs": [
+        "function_effects"
+      ],
+      "outputs": [
+        "semantic_graph"
+      ],
+      "tool": "semantic-program-graph"
+    },
+    {
+      "args": [
+        "${artifact:semantic_graph}",
+        "--view",
+        "exploratory",
+        "--kind",
+        "field",
+        "--function-entry",
+        "002a6584",
+        "--field-offset",
+        "0x119",
+        "--field-offset",
+        "0x11a",
+        "--output",
+        "${artifact:field_query}"
+      ],
+      "depends_on": [
+        "project_semantic_program_graph"
+      ],
+      "id": "query_paired_fields",
+      "inputs": [
+        "semantic_graph"
+      ],
+      "outputs": [
+        "field_query"
+      ],
+      "tool": "semantic-program-query"
     }
   ],
   "toolchain": {

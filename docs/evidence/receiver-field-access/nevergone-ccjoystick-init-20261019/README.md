@@ -34,6 +34,23 @@ whether an intervening store aliases the paired field, which store reaches a
 load, or what either field means at runtime. The offsets and widths are byte
 facts, not semantic labels.
 
+## Effect IR and graph projection
+
+The same captured TSV inputs also replay through the higher-level analyzer:
+
+- FunctionEffectIR/1 emits 15 parameter-rooted read/write facts for
+  `CCJoyStick::init`.
+- SemanticProgramGraph/1 emits 26 nodes and 31 edges.
+- The exploratory query selects the two fields at `0x119` and `0x11a`, with
+  four read/write edges and their four operation nodes as context.
+
+The checked-in Function Effect IR, graph, and query files are frozen outputs
+from these inputs. They are projection fixtures, not independent semantic
+gold labels. The benchmark reruns all three stages and validates each output
+schema. This replay keeps fields scoped to function entry, formal parameter,
+and offset; it does not connect them to a type/layout hypothesis or infer the
+fields' runtime meaning.
+
 ## Reproduce
 
 From the repository root, run:
@@ -45,11 +62,14 @@ uv run --project . revenginstr-benchmark \
   --output /tmp/nevergone-ccjoystick-init-replay-summary.json
 ```
 
-The manifest pins the four schemas and every input and expected-output hash.
-It compares status, both access identities, CFG witnesses, memory-effect
-results, claim scope, and provenance. The generated
-`frozen-replay/field-store-load-dominance-audit-v2.jsonl` is not checked in;
-remove it before repeating the command because benchmark output paths are
+The benchmark manifest pins the schemas, stage inputs, and expected audit
+output. The accompanying artifact manifest also pins the checked-in
+FunctionEffectIR, graph, and query projection files. The benchmark replays the
+CFG audit, builds FunctionEffectIR/1 and SemanticProgramGraph/1, then queries
+the two paired fields. Its audit comparison covers status, both access
+identities, CFG witnesses, memory-effect results, claim scope, and provenance.
+The generated files under `frozen-replay/` are not checked in; remove that
+directory before repeating the command because benchmark output paths are
 deliberately protected from accidental overwrite.
 
 The captured parameter TSVs and source-tool revision describe the historical
