@@ -158,15 +158,24 @@ or `size_t`, and the sole recovered pointee is `undefined4`. This adds no
 class or target identity evidence and does not narrow the call-effect set.
 
 A separate read-only static-data review resolves two of those six memory-read
-anchors. The `0064a0c0` and `0064a100` wrappers receive the result of
-`0064a010` at all four direct call sites in `0088d1d0`. `0064a010` returns
-`0x00bfa9b0` on both initialization paths. Its constructor stores the result
-of the `006642a0` helper in that object's first field; the helper's jump into
-the now fully exported function `006642a5` returns `0x00bfc728`. Constructor
-`00664140` sets that singleton's vtable pointer to `0x00af08a0`, whose slot at
-`+0x30` (`0x00af08d0`) contains `0x00664a10`. This makes `00664a10` the
-evidence-backed static target for `CALLIND` at `0064a0ce` and `0064a10e`.
-The caller and return evidence is in
+anchors for the observed singleton path. A follow-up xref and caller-flow
+replay covers all 14 direct calls to wrappers `0064a0c0` (six) and `0064a100`
+(eight), across five caller functions; argument 0 at each call derives from
+getter `0064a010`. The retained per-call provenance is in
+[`field20-wrapper-callind-argument-provenance.tsv`](scan37/replay-0041dd40/field20-wrapper-callind-argument-provenance.tsv),
+with caller flows and xrefs beside it. `0064a010` returns `0x00bfa9b0` on both
+initialization paths. Its constructor stores the result of the `006642a0`
+helper in that object's first field; the helper's jump into the now fully
+exported function `006642a5` returns `0x00bfc728`. Constructor `00664140` sets
+that singleton's vtable pointer to `0x00af08a0`, whose slot at `+0x30`
+(`0x00af08d0`) contains `0x00664a10`. The resulting static target rows for
+`CALLIND` at `0064a0ce` and `0064a10e` are in
+[`field20-wrapper-callind-static-targets.jsonl`](scan37/replay-0041dd40/field20-wrapper-callind-static-targets.jsonl).
+These rows apply to the observed singleton initializer path; they do not
+exclude indirect callers or runtime writes to the global pointer. Raw pointer
+provenance and the interprocedural-effect replay continue to preserve these
+`CALLIND` barriers until they consume the static-target evidence. The caller
+and return evidence is in
 [`caller-arguments-closure.tsv`](scan37/replay-0041dd40/caller-arguments-closure.tsv),
 [`closure-pcode-flow.tsv`](scan37/replay-0041dd40/closure-pcode-flow.tsv),
 [`closure-static-return-address-refs.jsonl`](scan37/replay-0041dd40/closure-static-return-address-refs.jsonl),

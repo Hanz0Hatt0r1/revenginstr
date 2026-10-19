@@ -2258,10 +2258,13 @@ unique candidate. Global `00bfc728` may alias a tracked parameter, and 22
 the [seeded-callee descendant replay](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/cfg-v5-seeded-callee-descendants.md)
 for the pinned inputs and reproduction command.
 
-**Next:** prioritize exact static targets for the 22 remaining `CALLIND` sites
-that occur in the focused closures, using vtable and constructor evidence
-where available. Preserve unresolved target and alias barriers; keep selector
-and receiver conclusions conditional until runtime evidence binds them. Assess
+**Next:** wire reviewed static-target evidence into the effect closure, then
+continue target recovery across the 22 focused `CALLIND` effect barriers.
+Two singleton wrapper sites now have static targets for the observed global
+initializer path, with caller and raw-vtable provenance; they remain barriers
+in the effect output because that consumer does not yet ingest the target
+records. Preserve unresolved target and alias barriers; keep selector and
+receiver conclusions conditional until runtime evidence binds them. Assess
 bodies smaller than 40 bytes only when a remaining target or pair gives a
 concrete reason to extend the population screen. Do not infer alias facts from
 decompiler text or instruction-level corpus labels.

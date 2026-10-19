@@ -18,6 +18,29 @@ vtable byte offset `0x30` is at `0x00af08d0`; its raw value is
 collection lookup for the initialized global object, rather than resolving
 arbitrary runtime receiver values.
 
+## Direct caller coverage for the outer dispatches
+
+A read-only address-reference export finds six direct references to
+`0064a0c0` and eight to `0064a100`, across `0088d1d0`, `0088d390`,
+`0088bf10`, `00889990`, and `0088dd40`. The retained caller flows show that
+argument 0 at each of those 14 calls is a single `CAST` of a direct call to
+getter `0064a010`. The per-call argument and
+P-code record indices are listed in
+[`field20-wrapper-callind-argument-provenance.tsv`](field20-wrapper-callind-argument-provenance.tsv);
+the four newly captured caller flows, acquisition results, and xrefs are in
+[`field20-wrapper-callers-flow.tsv`](field20-wrapper-callers-flow.tsv),
+[`field20-wrapper-callers-acquisition.jsonl`](field20-wrapper-callers-acquisition.jsonl),
+and [`field20-wrapper-address-references.jsonl`](field20-wrapper-address-references.jsonl).
+
+[`field20-wrapper-callind-static-targets.jsonl`](field20-wrapper-callind-static-targets.jsonl)
+records the resulting singleton-path target for each outer `CALLIND` using
+[`GhidraStaticIndirectCallTarget/1`](../../../../../../schemas/ghidra-static-indirect-call-target-v1.schema.json).
+This covers the retained direct references; it does not exclude indirect
+callers or runtime mutation of the global pointer. The raw
+`PointerProvenance/1` and interprocedural-effect outputs therefore retain
+their `CALLIND` barriers until a consumer explicitly incorporates this
+static-target evidence.
+
 ## Exact initializer body at `006642a5`
 
 The target is the tail-jump destination of thunk `006642a0` (which sets `EAX`

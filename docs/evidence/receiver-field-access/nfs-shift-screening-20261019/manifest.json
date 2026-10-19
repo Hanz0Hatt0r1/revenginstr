@@ -2661,6 +2661,36 @@
       "rows": 4
     },
     {
+      "path": "scan37/replay-0041dd40/field20-wrapper-address-references.jsonl",
+      "bytes": 29071,
+      "sha256": "cb8785f297d165d5c3743a890f57718289fa12cb35b5de0e522811186e1f20f6",
+      "rows": 10
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-wrapper-callers-acquisition.jsonl",
+      "bytes": 703,
+      "sha256": "fb6d5ad48a264b6fc7020e69f93b6da74f6a3ee7ed0800712ddf75eb1b77472f",
+      "rows": 4
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-wrapper-callers-flow.tsv",
+      "bytes": 104917,
+      "sha256": "e2d80d78197a5575c870e86f969e34741208f5ae26f2e3b2c11994a73e2bdca4",
+      "rows": 1188
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-wrapper-callind-argument-provenance.tsv",
+      "bytes": 5359,
+      "sha256": "b7d0fb85fbb1d1d1e83c4d71943a7a91194954ab7b0efe8f73113b62b94030d2",
+      "rows": 14
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-wrapper-callind-static-targets.jsonl",
+      "bytes": 27873,
+      "sha256": "81b4464fb2d7c922be1bc2702031d5393ada805f75cd94aa6830ff0dc32dbc03",
+      "rows": 2
+    },
+    {
       "path": "scan37/replay-0041dd40/function-pcode-cfg-v4-full-closure-scope.jsonl",
       "bytes": 2426014,
       "sha256": "03e5653457961b650a710615cb21dc6e3db7cfe85d907c93393c53e529cde86a",
@@ -2751,8 +2781,8 @@
     },
     {
       "path": "scan37/replay-0041dd40/manual-static-vtable-review.md",
-      "bytes": 19155,
-      "sha256": "882f98bc3a672680036118132cd946f9588597016d682bf7f67ab79b9a1904de"
+      "bytes": 20595,
+      "sha256": "99d2580164851af36bf0dd2b8d8ec3aa674a31714982da203de50b90fd665213"
     },
     {
       "path": "scan37/replay-0041dd40/memory-store-access-full-closure-scope-seeded-callees.jsonl",
