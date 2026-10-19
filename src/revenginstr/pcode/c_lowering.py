@@ -123,6 +123,27 @@ def _direct_control_target(node: object, default_space: str, where: str) -> int:
     raise PcodeLoweringError(f"{where}: expected a direct {default_space} target")
 
 
+def _x87_status_word_register(instructions: list[dict]) -> int | None:
+    for instruction in instructions:
+        mnemonic = instruction.get("mnemonic")
+        if not isinstance(mnemonic, str) or mnemonic.upper() != "FSTSW":
+            continue
+        for operation in instruction.get("pcode", []):
+            nodes = operation.get("inputs", [])
+            if operation.get("opcode") == "COPY" and len(nodes) == 1:
+                nodes = [nodes[0]]
+            elif operation.get("opcode") == "STORE" and len(nodes) == 3:
+                nodes = [nodes[2]]
+            else:
+                continue
+            node = nodes[0]
+            if (node.get("space") == "register" and
+                    node.get("constant") is False and
+                    _size(node, "FSTSW status word") == 2):
+                return _hex(node.get("offset"), "FSTSW status word")
+    return None
+
+
 def _pcode_relative_target(node: object, operation_index: int, where: str, operation_count: int) -> int:
     if not isinstance(node, dict) or node.get("space") != "const" or node.get("constant") is not True:
         raise PcodeLoweringError(f"{where}: expected a constant-space relative target")
@@ -1100,6 +1121,21 @@ def compile_function(
     if not isinstance(language_id, str) or not language_id:
         raise PcodeLoweringError("address-space table language_id is missing")
     supports_binary80 = language_id.split(":", 1)[0].lower() == "x86"
+    has_fprem = any(
+        isinstance(instruction, dict) and
+        isinstance(instruction.get("mnemonic"), str) and
+        instruction["mnemonic"].upper() == "FPREM"
+        for instruction in instructions
+    )
+    fprem_status_word_offset = None
+    if has_fprem:
+        # This lowerer computes the complete remainder in one pass; Ghidra's
+        # exported FPREM P-code omits the C2 status update consumed by FSTSW.
+        if not supports_binary80 or address_spaces.get("big_endian") is True:
+            raise PcodeLoweringError("FPREM status handling requires little-endian x86")
+        fprem_status_word_offset = _x87_status_word_register(instructions)
+        if fprem_status_word_offset is None:
+            raise PcodeLoweringError("FPREM has no exported FSTSW status-word register")
     default_space = address_spaces.get("default_space")
     if not isinstance(default_space, str) or not default_space:
         raise PcodeLoweringError("address-space table default_space is missing")
@@ -1541,6 +1577,20 @@ def compile_function(
             if terminator == "RETURN":
                 if op_index != len(operations) - 1 or (flow_type != "TERMINATOR" and not callind_return_suffix):
                     raise PcodeLoweringError(f"{address}: RETURN must be the final operation of a TERMINATOR")
+        mnemonic = instruction.get("mnemonic")
+        if isinstance(mnemonic, str) and mnemonic.upper() == "FPREM":
+            status_word = f"rvi_{operation_count}_fprem_status_word"
+            body.extend([
+                "    {",
+                f"      uint64_t {status_word};",
+                f"      if (rvi_read_value(ctx, _unique, UINT64_C(0), _unique_size, \"register\", "
+                f"UINT64_C(0x{fprem_status_word_offset:x}), 2, 0, &{status_word}) != 0) return -1;",
+                f"      if (rvi_write_value(ctx, _unique, UINT64_C(0), _unique_size, \"register\", "
+                f"UINT64_C(0x{fprem_status_word_offset:x}), 2, 0, "
+                f"({status_word} & ~UINT64_C(0x400)) & rvi_mask(2)) != 0) return -1;",
+                "    }",
+            ])
+            operation_count += 1
         last_opcode = operations[-1].get("opcode") if operations else None
         if callind_return_suffix:
             last_opcode = "CALLIND"

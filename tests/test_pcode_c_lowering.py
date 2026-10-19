@@ -524,6 +524,57 @@ int main(void) {
     subprocess.run([str(executable)], check=True)
 
 
+def test_codegen_clears_fprem_partial_remainder_status(tmp_path: Path) -> None:
+    row = _function_row()
+    row["instructions"] = [
+        {"address": "0x00401000", "mnemonic": "FPREM", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "COPY", "output": _varnode("register", "0x10ac", 4),
+            "inputs": [_varnode("const", "0x401000", 4, constant=True)],
+        }]},
+        {"address": "0x00401002", "mnemonic": "FSTSW", "flow_type": "FALL_THROUGH", "flows": [], "pcode": [{
+            "opcode": "COPY", "output": _varnode("register", "0x0", 2),
+            "inputs": [_varnode("register", "0x10a2", 2)],
+        }]},
+    ]
+    row["instruction_count"] = len(row["instructions"])
+    source, operation_count = compile_function(row, _address_spaces())
+    assert operation_count == 3
+
+    compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
+    if compiler is None:
+        pytest.skip("C compiler not available")
+    harness = r'''
+typedef struct { uint8_t registers[0x2000]; } TestState;
+static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(out, state->registers + offset, size);
+    return 0;
+}
+static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t size, const uint8_t *in) {
+    TestState *state = (TestState *)opaque;
+    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
+    memcpy(state->registers + offset, in, size);
+    return 0;
+}
+int rvi_00401000(RviPcodeContext *ctx);
+int main(void) {
+    TestState state = {{0}};
+    uint16_t status = UINT16_C(0xffff);
+    memcpy(state.registers + 0x10a2, &status, sizeof(status));
+    RviPcodeContext context = {&state, read_bytes, write_bytes, NULL, NULL};
+    if (rvi_00401000(&context) != 0) return 1;
+    memcpy(&status, state.registers, sizeof(status));
+    return status == UINT16_C(0xfbff) ? 0 : 2;
+}
+'''
+    c_path = tmp_path / "fprem-status.c"
+    executable = tmp_path / "fprem-status"
+    c_path.write_text(source + "\n" + harness, encoding="utf-8")
+    subprocess.run([compiler, "-std=c11", "-O0", str(c_path), "-lm", "-o", str(executable)], check=True, capture_output=True)
+    subprocess.run([str(executable)], check=True)
+
+
 def test_codegen_executes_signed_and_unsigned_division_and_remainder(tmp_path: Path) -> None:
     row = _function_row()
     row["instruction_count"] = 5
