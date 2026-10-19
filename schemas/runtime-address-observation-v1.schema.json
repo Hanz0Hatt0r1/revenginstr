@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/runtime-address-observation-v1.schema.json",
+  "title": "REVENGINSTR.RuntimeAddressObservation/1 JSONL row",
+  "description": "A runtime function or instruction address from one hash-pinned capture; no values or executable probes are represented.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "capture_id", "sequence", "event_kind", "runtime_address"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.RuntimeAddressObservation/1"},
+    "capture_id": {"type": "string", "minLength": 1},
+    "sequence": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+    "event_kind": {"enum": ["function_entry", "function_exit", "call_target", "instruction"]},
+    "runtime_address": {"type": "string", "pattern": "^(?:0x)?[0-9a-fA-F]{1,16}$"}
+  }
+}

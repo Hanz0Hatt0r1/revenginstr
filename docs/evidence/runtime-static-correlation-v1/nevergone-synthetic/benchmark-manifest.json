@@ -1,0 +1,133 @@
+{
+  "artifacts": {
+    "capture": {
+      "content": "json",
+      "format": "REVENGINSTR.RuntimeCaptureManifest/1",
+      "kind": "file",
+      "path": "capture-manifest.json",
+      "role": "input",
+      "schema": "capture",
+      "sha256": "4bafe0c2fb235a59f151257fc311f4ec97edf66121670217bc1c21f77d0c8b85"
+    },
+    "correlation": {
+      "content": "json",
+      "format": "REVENGINSTR.RuntimeStaticCorrelation/1",
+      "kind": "file",
+      "path": "correlation.generated.json",
+      "role": "output",
+      "schema": "correlation"
+    },
+    "graph": {
+      "content": "jsonl",
+      "format": "REVENGINSTR.SemanticProgramGraph/3",
+      "kind": "file",
+      "path": "../../semantic-program-graph-v3/nevergone-ccjoystick/semantic-program-graph.jsonl",
+      "role": "input",
+      "schema": "graph",
+      "sha256": "83093ddcab1e2a39abae5a53174ab1e835f501a92394ca09cc328682454186e3"
+    },
+    "identity": {
+      "content": "json",
+      "format": "REVENGINSTR.RuntimeStaticIdentity/1",
+      "kind": "file",
+      "path": "static-identity.json",
+      "role": "input",
+      "schema": "identity",
+      "sha256": "f7aa266927302148e412d529a447dd8e7d7d490316eaa64b102d2322ecaf9558"
+    },
+    "observations": {
+      "content": "jsonl",
+      "format": "REVENGINSTR.RuntimeAddressObservation/1",
+      "kind": "file",
+      "path": "observations.jsonl",
+      "role": "input",
+      "schema": "observation",
+      "sha256": "835efc3c03592dc3fb44baf51259887844366875579a1befea9a275cba6acfe7"
+    }
+  },
+  "benchmark": {
+    "dataset_artifact": "observations",
+    "dataset_id": "nevergone-ccjoystick-synthetic-runtime-addresses",
+    "family_set_id": null,
+    "id": "nevergone-synthetic-runtime-address-correlation-v1",
+    "split_id": "synthetic-load-bias-replay"
+  },
+  "configs": {
+    "scope": "exact function-entry and P-code operation address joins only"
+  },
+  "format": "REVENGINSTR.BenchmarkManifest/1",
+  "metrics": [
+    {
+      "artifact": "correlation",
+      "json_pointer": "/summary/event_count",
+      "minimum": 6,
+      "name": "events_replayed"
+    },
+    {
+      "artifact": "correlation",
+      "json_pointer": "/summary/matched_count",
+      "minimum": 4,
+      "name": "exact_matches"
+    },
+    {
+      "artifact": "correlation",
+      "json_pointer": "/summary/unmatched_count",
+      "minimum": 1,
+      "name": "unmatched_events_retained"
+    }
+  ],
+  "schemas": {
+    "capture": {
+      "path": "../../../../schemas/runtime-capture-manifest-v1.schema.json",
+      "sha256": "814049eef7b80a2c307c23edebf416f29561a1df26ea9f7b819ab523afed31a8",
+      "version": "REVENGINSTR.RuntimeCaptureManifest/1"
+    },
+    "correlation": {
+      "path": "../../../../schemas/runtime-static-correlation-v1.schema.json",
+      "sha256": "429a06bed83e5f830f39a160053b2a440a0b82fb44abff84f6076af482f7b1f8",
+      "version": "REVENGINSTR.RuntimeStaticCorrelation/1"
+    },
+    "graph": {
+      "path": "../../../../schemas/semantic-program-graph-v3.schema.json",
+      "sha256": "2310a0fca32c5c29301ac596df0925cbf4a7de5177742c1142f5256894afd067",
+      "version": "REVENGINSTR.SemanticProgramGraph/3"
+    },
+    "identity": {
+      "path": "../../../../schemas/runtime-static-identity-v1.schema.json",
+      "sha256": "7652547d5ac9ed466b2ac6a28352e0b7c90268cfcbd82c3dcf6b2f49a99e7551",
+      "version": "REVENGINSTR.RuntimeStaticIdentity/1"
+    },
+    "observation": {
+      "path": "../../../../schemas/runtime-address-observation-v1.schema.json",
+      "sha256": "fc01e9baee523c1cea87f97e58c6b7a2fcb26d879784a2691959212de2fc8856",
+      "version": "REVENGINSTR.RuntimeAddressObservation/1"
+    }
+  },
+  "stages": [
+    {
+      "args": [
+        "${artifact:graph}",
+        "${artifact:identity}",
+        "${artifact:capture}",
+        "${artifact:observations}",
+        "--output",
+        "${artifact:correlation}"
+      ],
+      "id": "correlate",
+      "inputs": [
+        "graph",
+        "identity",
+        "capture",
+        "observations"
+      ],
+      "outputs": [
+        "correlation"
+      ],
+      "tool": "runtime-static-correlation"
+    }
+  ],
+  "toolchain": {
+    "revenginstr_version": "0.5.2",
+    "source_revision": "synthetic-replay"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "capture_id": "synthetic-nevergone-load-bias-replay",
+  "format": "REVENGINSTR.RuntimeCaptureManifest/1",
+  "load_bias": "0x70000000",
+  "program_id": "nevergone-1.0.9-armv7-libcocos2dcpp",
+  "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
+  "sampling_gaps": [
+    {
+      "first_sequence": 5,
+      "last_sequence": 5,
+      "reason": "synthetic dropped event"
+    }
+  ],
+  "sampling_status": "sampled",
+  "static_identity_sha256": "f7aa266927302148e412d529a447dd8e7d7d490316eaa64b102d2322ecaf9558"
+}

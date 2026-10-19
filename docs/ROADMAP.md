@@ -1257,6 +1257,16 @@ core. Runtime capture, identity correlation, and evaluation remain open.
 
 Join runtime events to static function, instruction, object, field and callgraph identities using exact program/build hashes and normalized addresses. ASLR/load-bias mapping, sampling gaps and unmatched events are explicit metadata rather than guessed joins.
 
+**Address-only correlation v1 implemented:** a caller-pinned
+`RuntimeStaticIdentity/1` binds the exact SemanticProgramGraph/3 bytes and
+program SHA-256. `RuntimeCaptureManifest/1` repeats the exact build identity,
+pins the static identity, records load bias and sampling gaps, and
+`RuntimeAddressObservation/1` rows normalize into exact function-entry or
+P-code operation matches. Unmatched, ambiguous, and out-of-range addresses
+remain distinct; build/graph hash mismatches fail closed. No Nevergone runtime
+capture is present yet, and object-instance, field, call-edge, and sampled
+value joins remain open.
+
 ### M9.3 Differential and interventional analysis
 
 Compare bounded runs where one caller-controlled input/state/action differs. Rank candidate causal relationships by reproducible observation while retaining `correlation`, `intervention_support` and `confirmed_exact` as distinct evidence classes.

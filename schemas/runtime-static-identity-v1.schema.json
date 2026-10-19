@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/runtime-static-identity-v1.schema.json",
+  "title": "REVENGINSTR.RuntimeStaticIdentity/1",
+  "description": "Caller-pinned identity linking one SemanticProgramGraph/3 artifact to an exact program build.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program_id", "program_sha256", "semantic_graph_sha256"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.RuntimeStaticIdentity/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "program_sha256": {"$ref": "#/$defs/sha256"},
+    "semantic_graph_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

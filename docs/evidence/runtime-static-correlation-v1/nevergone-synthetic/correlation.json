@@ -1,0 +1,110 @@
+{
+  "address_mapping": {
+    "load_bias": "0x70000000",
+    "method": "runtime_address_minus_load_bias"
+  },
+  "capture_id": "synthetic-nevergone-load-bias-replay",
+  "capture_manifest_sha256": "4bafe0c2fb235a59f151257fc311f4ec97edf66121670217bc1c21f77d0c8b85",
+  "events": [
+    {
+      "capture_id": "synthetic-nevergone-load-bias-replay",
+      "event_kind": "instruction",
+      "function_entries": [
+        "0032ddee"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "operation:10dcf6425c7a97c7a1cdafa5d386092ab9d325bae2a6479e97f6341d3a72d331"
+      ],
+      "normalized_address": "0x32de44",
+      "runtime_address": "0x7032de44",
+      "sequence": 0
+    },
+    {
+      "capture_id": "synthetic-nevergone-load-bias-replay",
+      "event_kind": "function_entry",
+      "function_entries": [
+        "0032ddee"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:a5cac72cc70e1b4bcd84e33da7292adab57a305d721b84e859f9d2ffedb56dca"
+      ],
+      "normalized_address": "0x32ddee",
+      "runtime_address": "0x7032ddee",
+      "sequence": 1
+    },
+    {
+      "capture_id": "synthetic-nevergone-load-bias-replay",
+      "event_kind": "call_target",
+      "function_entries": [
+        "00549756"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:6cd3c19c8db2cbed2983ec90a7b29110f705ac80744c25dbc056679283dc8eb1"
+      ],
+      "normalized_address": "0x549756",
+      "runtime_address": "0x70549756",
+      "sequence": 2
+    },
+    {
+      "capture_id": "synthetic-nevergone-load-bias-replay",
+      "event_kind": "instruction",
+      "function_entries": [],
+      "match_state": "unmatched",
+      "matched_node_ids": [],
+      "normalized_address": "0x100000",
+      "runtime_address": "0x70100000",
+      "sequence": 3
+    },
+    {
+      "capture_id": "synthetic-nevergone-load-bias-replay",
+      "event_kind": "instruction",
+      "function_entries": [],
+      "match_state": "mapping_underflow",
+      "matched_node_ids": [],
+      "normalized_address": null,
+      "runtime_address": "0x1",
+      "sequence": 4
+    },
+    {
+      "capture_id": "synthetic-nevergone-load-bias-replay",
+      "event_kind": "instruction",
+      "function_entries": [
+        "0032ddee"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "operation:9b7729fb703901e9fde14e70e9a516b35a5216f7a9100d7c85bc64f907694374"
+      ],
+      "normalized_address": "0x32de60",
+      "runtime_address": "0x7032de60",
+      "sequence": 6
+    }
+  ],
+  "format": "REVENGINSTR.RuntimeStaticCorrelation/1",
+  "observations_sha256": "835efc3c03592dc3fb44baf51259887844366875579a1befea9a275cba6acfe7",
+  "program_id": "nevergone-1.0.9-armv7-libcocos2dcpp",
+  "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
+  "sampling": {
+    "gaps": [
+      {
+        "first_sequence": 5,
+        "last_sequence": 5,
+        "reason": "synthetic dropped event"
+      }
+    ],
+    "status": "sampled"
+  },
+  "semantic_graph_sha256": "83093ddcab1e2a39abae5a53174ab1e835f501a92394ca09cc328682454186e3",
+  "static_identity_sha256": "f7aa266927302148e412d529a447dd8e7d7d490316eaa64b102d2322ecaf9558",
+  "summary": {
+    "ambiguous_count": 0,
+    "event_count": 6,
+    "mapping_overflow_count": 0,
+    "mapping_underflow_count": 1,
+    "matched_count": 4,
+    "unmatched_count": 1
+  }
+}

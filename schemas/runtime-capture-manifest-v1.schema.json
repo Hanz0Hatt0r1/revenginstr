@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/runtime-capture-manifest-v1.schema.json",
+  "title": "REVENGINSTR.RuntimeCaptureManifest/1",
+  "description": "One bounded runtime capture pinned to a static build and graph with explicit load bias and sampling gaps.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "capture_id", "program_id", "program_sha256", "static_identity_sha256", "load_bias", "sampling_status", "sampling_gaps"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.RuntimeCaptureManifest/1"},
+    "capture_id": {"type": "string", "minLength": 1},
+    "program_id": {"type": "string", "minLength": 1},
+    "program_sha256": {"$ref": "#/$defs/sha256"},
+    "static_identity_sha256": {"$ref": "#/$defs/sha256"},
+    "load_bias": {"type": "string", "pattern": "^-?0x[0-9a-fA-F]{1,16}$"},
+    "sampling_status": {"enum": ["complete", "sampled", "unknown"]},
+    "sampling_gaps": {"type": "array", "maxItems": 10000, "items": {"$ref": "#/$defs/gap"}}
+  },
+  "allOf": [
+    {"if": {"properties": {"sampling_status": {"const": "complete"}}, "required": ["sampling_status"]}, "then": {"properties": {"sampling_gaps": {"maxItems": 0}}}},
+    {"if": {"properties": {"sampling_status": {"const": "sampled"}}, "required": ["sampling_status"]}, "then": {"properties": {"sampling_gaps": {"minItems": 1}}}}
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["first_sequence", "last_sequence", "reason"],
+      "properties": {
+        "first_sequence": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+        "last_sequence": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+        "reason": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
