@@ -2265,13 +2265,15 @@ function/address/time identities, requires a matching program id and binary
 SHA-256, and pins each source artifact row in its output. The singleton
 wrapper sites are visible with their initializer scope; the four field-20
 dispatch sites can carry bounded or partial constructor-derived candidates.
-All six `CALLIND` statuses remain barriers and none of their target flows is
-treated as part of the closed graph.
+All 22 `CALLIND` sites remain effect barriers and none of their target flows
+is treated as part of the closed graph. Six sites now carry scoped target
+observations; 16 have no target observations yet.
 See the [closure replay](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/static-call-target-closure-replay.md).
 
-**Next:** continue target recovery across the 22 focused `CALLIND` effect
-barriers. Preserve unresolved target and alias barriers; keep selector and
-receiver conclusions conditional until runtime evidence binds them. Assess
-bodies smaller than 40 bytes only when a remaining target or pair gives a
-concrete reason to extend the population screen. Do not infer alias facts from
+**Next:** continue target recovery on the 16 `CALLIND` sites without target
+observations, then bind runtime state for the six scoped candidate sets.
+Preserve unresolved target and alias barriers; keep selector and receiver
+conclusions conditional until runtime evidence binds them. Assess bodies
+smaller than 40 bytes only when a remaining target or pair gives a concrete
+reason to extend the population screen. Do not infer alias facts from
 decompiler text or instruction-level corpus labels.
