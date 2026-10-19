@@ -1103,6 +1103,9 @@ Exact debug/import/type information always outranks inferred prototypes. Conflic
 compatibility evaluator now exist with synthetic exact fixtures. They are
 contracts and scoring infrastructure only: no prototype inference engine or
 independent consumer gold corpus exists yet, so M8.1 remains partial.
+`GhidraFunctionPrototype/1` now supplies a structured, hash-pinned snapshot of
+the signatures already stored in Ghidra, including declaration source and ABI.
+It is an evidence acquisition path, not a prototype inference engine.
 
 ### M8.2 Struct/class layout recovery
 

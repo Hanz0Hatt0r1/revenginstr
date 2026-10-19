@@ -10,6 +10,25 @@ The architecture record pins language ID, pointer width, and endianness; gold
 and hypotheses must agree on it. The schema is a data contract and does not
 infer signatures.
 
+## Ghidra signature evidence
+
+`GhidraFunctionPrototype/1` snapshots signatures already stored in an analyzed
+Ghidra database, including structured parameter/return types, calling
+convention, signature source, executable SHA-256, and ABI. `USER_DEFINED`,
+`IMPORTED`, `ANALYSIS`, and `DEFAULT` remain distinct source labels; this
+exporter does not promote a Ghidra signature to recovered truth. The read-only
+runner accepts the same exact/containing function plan as the identity
+exporter:
+
+```sh
+GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_function_prototypes.sh \
+  /path/to/projects project-name program-name function-plan.tsv \
+  function-prototypes.jsonl
+```
+
+This provides structured source evidence for later inference and adjudication.
+It does not assign hypothesis confidence or infer signatures from call sites.
+
 `FunctionPrototypeGold/1` describes one independently adjudicated function.
 `complete_properties` names the top-level signature properties the reviewer
 verified; `complete_parameter_indices` names parameter positions verified

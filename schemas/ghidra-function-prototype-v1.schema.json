@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-function-prototype-v1.schema.json",
+  "title": "REVENGINSTR.GhidraFunctionPrototype/1 JSONL record",
+  "description": "Hash- and ABI-pinned snapshot of a function signature stored in an analyzed Ghidra program; it is evidence, not proof that the signature is correct.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "plan_id", "program_id", "program_sha256", "architecture", "requested_entry", "resolved_entry", "name", "qualified_name", "is_external", "signature_source", "calling_convention", "has_varargs", "parameter_count", "parameters", "return_type", "signature"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraFunctionPrototype/1"},
+    "plan_id": {"type": "string", "minLength": 1},
+    "program_id": {"type": "string", "minLength": 1},
+    "program_sha256": {"$ref": "#/$defs/sha256"},
+    "architecture": {"$ref": "#/$defs/architecture"},
+    "requested_entry": {"type": "string", "minLength": 1},
+    "resolved_entry": {"type": "string", "minLength": 1},
+    "name": {"type": "string", "minLength": 1},
+    "qualified_name": {"type": "string", "minLength": 1},
+    "is_external": {"type": "boolean"},
+    "signature_source": {"type": "string", "minLength": 1},
+    "calling_convention": {"type": ["string", "null"], "minLength": 1},
+    "has_varargs": {"type": "boolean"},
+    "parameter_count": {"type": "integer", "minimum": 0},
+    "parameters": {"type": "array", "items": {"$ref": "#/$defs/parameter"}},
+    "return_type": {"$ref": "#/$defs/type"},
+    "signature": {"type": "string", "minLength": 1}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "architecture": {
+      "type": "object", "additionalProperties": false,
+      "required": ["language_id", "pointer_width_bytes", "endianness"],
+      "properties": {
+        "language_id": {"type": "string", "minLength": 1},
+        "pointer_width_bytes": {"type": "integer", "minimum": 1},
+        "endianness": {"enum": ["little", "big"]}
+      }
+    },
+    "type": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "name", "path", "width_bytes", "target_name", "target_path"],
+      "properties": {
+        "kind": {"enum": ["void", "pointer", "aggregate", "scalar", "unknown"]},
+        "name": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "width_bytes": {"type": ["integer", "null"], "minimum": 1},
+        "target_name": {"type": ["string", "null"]},
+        "target_path": {"type": ["string", "null"]}
+      }
+    },
+    "parameter": {
+      "type": "object", "additionalProperties": false,
+      "required": ["index", "name", "source", "type"],
+      "properties": {
+        "index": {"type": "integer", "minimum": 0},
+        "name": {"type": "string", "minLength": 1},
+        "source": {"type": "string", "minLength": 1},
+        "type": {"$ref": "#/$defs/type"}
+      }
+    }
+  }
+}
