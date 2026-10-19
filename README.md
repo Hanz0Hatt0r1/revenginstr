@@ -98,6 +98,9 @@ REVENGINSTR.RuntimeDifferentialManifest/1
 REVENGINSTR.RuntimeDifferential/1
 REVENGINSTR.RuntimeInterventionManifest/1
 REVENGINSTR.RuntimeInterventionEvidence/1
+REVENGINSTR.RuntimeValueFlowManifest/1
+REVENGINSTR.RuntimeValueObservation/1
+REVENGINSTR.RuntimeValueFlowReplay/1
 ```
 
 JSON Schemas in `schemas/` define portable evidence, benchmark, determinism and

@@ -1,0 +1,54 @@
+{
+  "address_mapping": {
+    "method": "runtime_address_minus_module_delta",
+    "module_delta": "0x1000",
+    "runtime_module_base": "0x1000",
+    "static_image_base": "0x0"
+  },
+  "capture_id": "synthetic-field-pair",
+  "capture_manifest_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "events": [
+    {
+      "capture_id": "synthetic-field-pair",
+      "event_kind": "instruction",
+      "function_entries": [],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "store-op"
+      ],
+      "normalized_address": "0x1010",
+      "runtime_address": "0x2010",
+      "sequence": 11
+    },
+    {
+      "capture_id": "synthetic-field-pair",
+      "event_kind": "instruction",
+      "function_entries": [],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "load-op"
+      ],
+      "normalized_address": "0x1020",
+      "runtime_address": "0x2020",
+      "sequence": 12
+    }
+  ],
+  "format": "REVENGINSTR.RuntimeStaticCorrelation/1",
+  "observations_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "program_id": "nevergone-synthetic",
+  "program_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "sampling": {
+    "gaps": [],
+    "status": "complete"
+  },
+  "semantic_graph_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "static_identity_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "summary": {
+    "ambiguous_count": 0,
+    "event_count": 2,
+    "mapping_overflow_count": 0,
+    "mapping_underflow_count": 0,
+    "matched_count": 2,
+    "unmatched_count": 0
+  }
+}

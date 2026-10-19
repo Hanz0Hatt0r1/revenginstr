@@ -1,0 +1,16 @@
+{
+  "candidates": [
+    {
+      "candidate_id": "synthetic-write-read",
+      "expected_sink_node_id": "load-op",
+      "expected_source_node_id": "store-op",
+      "relation_kind": "field_write_read",
+      "sink_sequence": 12,
+      "source_sequence": 11
+    }
+  ],
+  "capture_id": "synthetic-field-pair",
+  "correlation_report_sha256": "af488d2f3a369c9375f2716103bb163caa5443c2cb1fcdfafe4a01f8450a723d",
+  "format": "REVENGINSTR.RuntimeValueFlowManifest/1",
+  "observations_sha256": "12ca7774cb26792a99dc1c58acfb34b441add432c9041c9a3288c508a4291e9c"
+}
