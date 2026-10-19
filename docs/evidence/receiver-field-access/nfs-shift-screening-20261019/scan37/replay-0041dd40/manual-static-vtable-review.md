@@ -6,6 +6,18 @@ retained High-P-code flow and `CALLIND` rows beside this file. It records a
 manual static resolution; it does not change the original
 `PointerProvenance/1` output.
 
+## Dispatch to the collection lookup
+
+`FUN_0064a010` initializes the wrapper at `0x00bfa9b0` with the pointer
+returned by `FUN_006642a5`. That initializer constructs the global object at
+`0x00bfc728` with `FUN_00664140`, whose vtable is `0x00af08a0`. The entry at
+vtable byte offset `0x30` is at `0x00af08d0`; its raw value is
+`10 4a 66 00`, or target `0x00664a10`. The machine code at `0064a0c0` and
+`0064a100` loads slot `+0x30` from that object and calls it at `0064a0ce` and
+`0064a10e`, respectively. This pins the two outer dispatches to the
+collection lookup for the initialized global object, rather than resolving
+arbitrary runtime receiver values.
+
 ## Receiver population
 
 `00664a10` walks the object collection at `this + 8`. Constructor `00664140`
@@ -65,6 +77,13 @@ objdump -d -Mintel --start-address=0x009d1880 --stop-address=0x009d1884 SHIFT.ex
 
 The entry at table offset `0` is at raw offset `0x006ef260`; the entry at
 table offset `0x34` is at raw offset `0x006ef294`.
+
+The containing controller's slot `+0x30` is reproducible with:
+
+```sh
+xxd -g1 -s 0x6ef2d0 -l 4 SHIFT.exe
+objdump -d -Mintel --start-address=0x0064a0c0 --stop-address=0x0064a115 SHIFT.exe
+```
 
 The existing local Ghidra C export used to cross-check constructor and method
 relationships had SHA-256
