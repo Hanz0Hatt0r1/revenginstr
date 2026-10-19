@@ -159,7 +159,7 @@ def test_indirect_call_ledger_rejects_inconsistent_match_counts() -> None:
         build_ledger_events(report, report_raw)
 
 
-def test_real_nevergone_runtime_capture_replays_to_missing_evidence_ledger() -> None:
+def test_real_nevergone_runtime_capture_replays_to_human_review_ledger() -> None:
     report_raw = STATIC_CORRELATION.read_bytes()
     report = json.loads(report_raw)
     assert report["format"] == STATIC_CORRELATION_FORMAT
@@ -167,9 +167,10 @@ def test_real_nevergone_runtime_capture_replays_to_missing_evidence_ledger() -> 
     events = build_ledger_events(report, report_raw)
     assert len(events) == 88
     assert all(event["state"] == "review_required" for event in events)
-    assert all(event["reason_codes"] == ["missing_evidence"] for event in events)
+    assert all(event["reason_codes"] == ["human_review"] for event in events)
     assert all(event["evidence_added"][0]["artifact_sha256"] == hashlib.sha256(report_raw).hexdigest() for event in events)
     ledger_raw = b"".join((json.dumps(event, sort_keys=True) + "\n").encode() for event in events)
     audit = audit_decision_ledger(hashlib.sha256(ledger_raw).hexdigest(), events)
     assert audit["events"] == 88
     assert audit["terminal_state_counts"]["accepted_exact"] == 0
+    assert audit["terminal_state_counts"]["review_required"] == 88
