@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/pointer-provenance-v1.schema.json",
+  "title": "REVENGINSTR.PointerProvenance/1 JSONL row",
+  "description": "One bounded structural provenance result for a High-P-code output varnode or exact CALLIND target.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "record_kind", "evidence_class", "program_id", "function_entry", "operation_address", "operation_time",
+    "opcode", "output_token", "status", "alternatives", "load_address", "source", "target_source"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.PointerProvenance/1"},
+    "record_kind": {"enum": ["operation_output", "callind_target"]},
+    "evidence_class": {"const": "derived_structural"},
+    "program_id": {"type": "string", "minLength": 1},
+    "function_entry": {"type": "string", "minLength": 1},
+    "operation_address": {"type": "string", "minLength": 1},
+    "operation_time": {"type": "integer", "minimum": 0},
+    "opcode": {"type": "string", "minLength": 1},
+    "output_token": {"type": "string", "minLength": 1},
+    "status": {"$ref": "#/$defs/status"},
+    "alternatives": {"type": "array", "items": {"$ref": "#/$defs/alternative"}},
+    "load_address": {
+      "oneOf": [
+        {"$ref": "#/$defs/loadAddress"},
+        {"type": "null"}
+      ]
+    },
+    "source": {"$ref": "#/$defs/evidenceRef"},
+    "target_source": {"oneOf": [{"$ref": "#/$defs/evidenceRef"}, {"type": "null"}]}
+  },
+  "$defs": {
+    "status": {
+      "enum": [
+        "resolved", "ambiguous", "unknown", "load_anchor", "indirect_barrier", "call_barrier",
+        "unsupported_opcode", "dynamic_offset", "cycle", "depth_limit",
+        "offset_overflow", "width_mismatch", "alternative_limit", "missing_definition"
+      ]
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_format", "artifact_path", "artifact_sha256", "record_index"],
+      "properties": {
+        "source_format": {"type": "string", "minLength": 1},
+        "artifact_path": {"type": "string", "minLength": 1},
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "record_index": {"type": "integer", "minimum": 1}
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation_address", "operation_time", "opcode"],
+      "properties": {
+        "operation_address": {"type": "string", "minLength": 1},
+        "operation_time": {"type": "integer", "minimum": 0},
+        "opcode": {"type": "string", "minLength": 1}
+      }
+    },
+    "alternative": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root_kind", "evidence_class", "root_id", "offset_bytes", "pointer_size_bytes",
+        "address_space_token", "status", "transformation_path", "evidence_refs"
+      ],
+      "properties": {
+        "root_kind": {"enum": ["function_parameter", "address_anchor", "memory_read_anchor", "unknown"]},
+        "evidence_class": {"const": "derived_structural"},
+        "root_id": {"type": "string", "minLength": 1},
+        "offset_bytes": {"type": ["integer", "null"]},
+        "pointer_size_bytes": {"type": ["integer", "null"], "minimum": 1},
+        "address_space_token": {"type": ["string", "null"]},
+        "status": {"$ref": "#/$defs/status"},
+        "transformation_path": {"type": "array", "items": {"$ref": "#/$defs/step"}},
+        "evidence_refs": {"type": "array", "items": {"$ref": "#/$defs/evidenceRef"}}
+      }
+    },
+    "loadAddress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["address_token", "space_token", "status", "alternatives"],
+      "properties": {
+        "address_token": {"type": "string", "minLength": 1},
+        "space_token": {"type": "string", "minLength": 1},
+        "status": {"$ref": "#/$defs/status"},
+        "alternatives": {"type": "array", "items": {"$ref": "#/$defs/alternative"}}
+      }
+    }
+  }
+}

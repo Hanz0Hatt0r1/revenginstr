@@ -1,0 +1,69 @@
+{
+  "format": "NFS.M23ScreeningSelection/1",
+  "limits": [
+    "Function inventory and call edges select export targets only. Actual parameter-field and memory facts come from read-only Ghidra High-P-code decompilation; no instruction-level labels or semantic claims are used."
+  ],
+  "program_id": "nfs-shift:SHIFT.exe",
+  "selection": {
+    "address_range": [
+      "00401000",
+      "004fffff"
+    ],
+    "candidate_entries": [
+      {
+        "address_count": 85,
+        "explicit_parameter_count": 0,
+        "function_entry": "00469ab0",
+        "function_name": "FUN_00469ab0",
+        "signature": "undefined __thiscall FUN_00469ab0(void * this)"
+      },
+      {
+        "address_count": 85,
+        "explicit_parameter_count": 0,
+        "function_entry": "0049d3e0",
+        "function_name": "FUN_0049d3e0",
+        "signature": "undefined __thiscall FUN_0049d3e0(void * this)"
+      },
+      {
+        "address_count": 89,
+        "explicit_parameter_count": 0,
+        "function_entry": "004d8850",
+        "function_name": "FUN_004d8850",
+        "signature": "undefined __thiscall FUN_004d8850(void * this)"
+      },
+      {
+        "address_count": 87,
+        "explicit_parameter_count": 0,
+        "function_entry": "004f64b0",
+        "function_name": "FUN_004f64b0",
+        "signature": "undefined __thiscall FUN_004f64b0(void * this)"
+      }
+    ],
+    "eligible_population": 4,
+    "filters": [
+      "Ghidra function inventory entry in address range",
+      "non-external function",
+      "function name does not begin with thunk_",
+      "signature has this and no explicit param_n formal",
+      "body address_count between 40 and 800 inclusive",
+      "present as a direct-call caller in pinned call-edge export",
+      "not selected by scans25–34"
+    ],
+    "sampling": "all 4 remaining eligible functions",
+    "selected_functions": 4
+  },
+  "source": {
+    "call_edges": {
+      "path": "nfs-shift-mass-recovery-20261017-artifacts/p1b-full-program-index/shift.calls.tsv.gz",
+      "sha256": "68d06720c8c0cbd370338c6b4d322d84ef0c15f4474c1a3e522f3e3ea2b2d2fe"
+    },
+    "executable": {
+      "path": "SHIFT.exe",
+      "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+    },
+    "function_inventory": {
+      "path": "shift.functions.tsv.gz",
+      "sha256": "8b8b00d8493dba459edf186869ddf492dc26002af3b65d08b6988dc91a87fa24"
+    }
+  }
+}

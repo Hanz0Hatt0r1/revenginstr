@@ -29,4 +29,6 @@ def test_vtable_runner_is_read_only_and_uses_shared_exporter() -> None:
     runner = (ROOT / "scripts/run_ghidra_vtable_slots.sh").read_text()
     assert "-readOnly" in runner
     assert "-noanalysis" in runner
+    assert "TMP_SCRIPT_DIR" in runner
+    assert "VTABLE_SLOT_FORMAT=REVENGINSTR.GhidraArm32ItaniumVtableSlots/1" in runner
     assert "ExportArm32ItaniumVtableSlots.java" in runner

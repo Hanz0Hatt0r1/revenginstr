@@ -1,0 +1,4 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+0091c06b	0091c06b	2	COPY	def:0091c06b:2:4	const:0x0:4	-	-
+0091c06b	0091c072	11	RETURN	-	const:0x0:4	-	-
+0091c06b	0091c072	14	COPY	def:0091c072:14:4	def:0091c06b:2:4	-	-

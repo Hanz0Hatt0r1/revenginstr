@@ -1,0 +1,76 @@
+openjdk version "21.0.12.1" 2026-08-18
+OpenJDK Runtime Environment (build 21.0.12.1+1)
+OpenJDK 64-Bit Server VM (build 21.0.12.1+1, mixed mode)
+INFO  Using log config file: jar:file:/opt/ghidra/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)
+INFO  Using log file: <LOCAL_HOME>/.config/ghidra/ghidra_12.1.2_DEV/application.log (LoggingInitialization)
+INFO  Loading user preferences: <LOCAL_HOME>/.config/ghidra/ghidra_12.1.2_DEV/preferences (Preferences)
+INFO  Searching for classes... (ClassSearcher)
+INFO  Class search complete (1404 ms) (ClassSearcher)
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)
+INFO  Initializing Random Number Generator... (SecureRandomFactory)
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)
+INFO  Headless startup complete (2796 ms) (AnalyzeHeadless)
+INFO  Class searcher loaded 59 extension points (21 false positives) (ClassSearcher)
+INFO  HEADLESS Script Paths:
+    /opt/ghidra/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/JVM/ghidra_scripts
+    /opt/ghidra/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/VersionTracking/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/PyGhidra/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    <LOCAL_HOME>/.config/ghidra/ghidra_12.1.2_DEV/Extensions/Lisa/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/Atmel/ghidra_scripts
+    /opt/ghidra/Ghidra/Debug/Debugger/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/Decompiler/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/FunctionID/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/PIC/ghidra_scripts
+    <LOCAL_HOME>/.config/ghidra/ghidra_12.1.2_DEV/Extensions/SleighDevTools/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/BSim/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/BytePatterns/ghidra_scripts
+    <LOCAL_HOME>/.config/ghidra/ghidra_12.1.2_DEV/Extensions/Jython/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/SystemEmulation/ghidra_scripts
+    <LOCAL_HOME>/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/DATA/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    <TEMP_DIR>
+    /opt/ghidra/Ghidra/Features/Base/ghidra_scripts
+    <LOCAL_HOME>/.config/ghidra/ghidra_12.1.2_DEV/Extensions/MachineLearning/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/PDB/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/8051/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/FileFormats/ghidra_scripts (HeadlessAnalyzer)
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)
+INFO  Opening existing project: <LOCAL_HOME>/ghidra_projects/shift/shift (HeadlessAnalyzer)
+INFO  Opening project: <LOCAL_HOME>/ghidra_projects/shift/shift (HeadlessProject)
+INFO  REPORT: Processing read-only project file: /SHIFT.exe (HeadlessAnalyzer)
+INFO  REPORT: Execute script: ExportGhidraParameterStoreField.java '00469ab0' '<LOCAL_HOME>/.local/share/ghidra-decompiler/workspace/nfs-m23-scan35/outputs/parameter-stores.tsv' '--function-entry' '0049d3e0' '--function-entry' '004d8850' '--function-entry' '004f64b0' '--load-output' '<LOCAL_HOME>/.local/share/ghidra-decompiler/workspace/nfs-m23-scan35/outputs/parameter-loads.tsv' '--memory-access-output' '<LOCAL_HOME>/.local/share/ghidra-decompiler/workspace/nfs-m23-scan35/outputs/memory-store-access.jsonl' '--program-id' 'nfs-shift:SHIFT.exe'  (HeadlessAnalyzer)
+INFO  SCRIPT: <TEMP_DIR>/ExportGhidraParameterStoreField.java (HeadlessAnalyzer)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_STORE_FIELD_FUNCTION=00469ab0:FUN_00469ab0 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_STORE_FIELD_FUNCTION_ROWS=0 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_LOAD_FIELD_FUNCTION_ROWS=0 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_MEMORY_STORE_ACCESS_FUNCTION_ROWS=0 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_STORE_FIELD_FUNCTION=0049d3e0:FUN_0049d3e0 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_STORE_FIELD_FUNCTION_ROWS=0 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_LOAD_FIELD_FUNCTION_ROWS=0 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_MEMORY_STORE_ACCESS_FUNCTION_ROWS=0 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_STORE_FIELD_FUNCTION=004d8850:FUN_004d8850 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_STORE_FIELD_FUNCTION_ROWS=0 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_LOAD_FIELD_FUNCTION_ROWS=0 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_MEMORY_STORE_ACCESS_FUNCTION_ROWS=0 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_STORE_FIELD_FUNCTION=004f64b0:FUN_004f64b0 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_STORE_FIELD_FUNCTION_ROWS=0 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_LOAD_FIELD_FUNCTION_ROWS=0 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_MEMORY_STORE_ACCESS_FUNCTION_ROWS=0 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_STORE_FIELD_FORMAT=REVENGINSTR.GhidraParameterStoreField/1 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_STORE_FIELD_FUNCTIONS=4 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_STORE_FIELD_ROWS=0 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_STORE_FIELD_OUTPUT=<LOCAL_HOME>/.local/share/ghidra-decompiler/workspace/nfs-m23-scan35/outputs/parameter-stores.tsv (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_LOAD_FIELD_FORMAT=REVENGINSTR.GhidraParameterLoadField/1 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_LOAD_FIELD_ROWS=0 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_LOAD_FIELD_OUTPUT=<LOCAL_HOME>/.local/share/ghidra-decompiler/workspace/nfs-m23-scan35/outputs/parameter-loads.tsv (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_MEMORY_STORE_ACCESS_FORMAT=REVENGINSTR.GhidraMemoryStoreAccess/1 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_MEMORY_STORE_ACCESS_ROWS=0 (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_MEMORY_STORE_ACCESS_OUTPUT=<LOCAL_HOME>/.local/share/ghidra-decompiler/workspace/nfs-m23-scan35/outputs/memory-store-access.jsonl (GhidraScript)
+INFO  ExportGhidraParameterStoreField.java> GHIDRA_PARAMETER_STORE_FIELD_SEMANTIC_CLAIM=none (GhidraScript)

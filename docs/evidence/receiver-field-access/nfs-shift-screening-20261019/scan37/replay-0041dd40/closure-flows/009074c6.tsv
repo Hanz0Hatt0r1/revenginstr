@@ -1,0 +1,3 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+009074c6	009074c8	5	CALL	-	const:0x8:4	0090e7c7	__lock
+009074c6	009074ce	12	RETURN	-	const:0x0:4	-	-

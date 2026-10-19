@@ -1,0 +1,6 @@
+format	plan_id	callee_entry	parameter_index	caller_entry	caller_call_site	caller_parameter_index	caller_parameter_offset_bytes	argument_node_id	status
+REVENGINSTR.GhidraCallerArgumentParameterRoot/2	root_0088d550_0	0088d550	0	0041dd40	0041ea66	0	0x7b0	0	constant_offset_parameter_root
+REVENGINSTR.GhidraCallerArgumentParameterRoot/2	root_0088d5d0_0	0088d5d0	0	0041dd40	0041eb3a	0	0x7b0	0	constant_offset_parameter_root
+REVENGINSTR.GhidraCallerArgumentParameterRoot/2	root_0088d620_0	0088d620	0	0041dd40	0041ec0e	0	0x7b0	0	constant_offset_parameter_root
+REVENGINSTR.GhidraCallerArgumentParameterRoot/2	root_0088d670_0	0088d670	0	0041dd40	0041ece2	0	0x7b0	0	constant_offset_parameter_root
+REVENGINSTR.GhidraCallerArgumentParameterRoot/2	root_0088bc20_0	0088bc20	0	0041dd40	0041edad	0	0x7b0	0	constant_offset_parameter_root

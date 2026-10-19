@@ -1,0 +1,14 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+0090e7c7	0090e7ce	160	PTRSUB	def:0090e7ce:160:4	const:0x0:4;const:0xb97610:4	-	-
+0090e7c7	0090e7ce	161	INT_MULT	def:0090e7ce:161:4	input:Stack[0x4]:4;const:0x2:4	-	-
+0090e7c7	0090e7ce	162	PTRADD	def:0090e7ce:162:4	def:0090e7ce:160:4;def:0090e7ce:161:4;const:0x4:4	-	-
+0090e7c7	0090e7d5	13	LOAD	def:0090e7d5:13:4	const:0x1a1:4;def:0090e7ce:162:4	-	-
+0090e7c7	0090e7d5	19	INT_EQUAL	def:0090e7d5:19:1	def:0090e7d5:13:4;const:0x0:4	-	-
+0090e7c7	0090e7d8	25	CBRANCH	-	address:0090e7ed:1;def:0090e7d5:19:1	-	-
+0090e7c7	0090e7db	31	CALL	def:0090e7db:31:4	input:Stack[0x4]:4	0090e704	__mtinitlocknum
+0090e7c7	0090e7e0	36	INT_EQUAL	def:0090e7e0:36:1	def:0090e7db:31:4;const:0x0:4	-	-
+0090e7c7	0090e7e3	46	CBRANCH	-	address:0090e7ed:1;def:0090e7e0:36:1	-	-
+0090e7c7	0090e7e7	52	CALL	-	const:0x11:4	00907467	__amsg_exit
+0090e7c7	0090e7ed	57	LOAD	def:0090e7ed:57:4	const:0x1a1:4;def:0090e7ce:162:4	-	-
+0090e7c7	0090e7ef	64	CALL	-	def:0090e7ed:57:4	-	-
+0090e7c7	0090e7f7	75	RETURN	-	const:0x0:4	-	-

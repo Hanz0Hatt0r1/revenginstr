@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/type-layout-field-type-review-v1.schema.json",
+  "title": "REVENGINSTR.TypeLayoutFieldTypeReview/1 record",
+  "description": "Program-pinned reviewer candidate for one observed field type, with independently hash-pinned source evidence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "program_id",
+    "program_sha256",
+    "type_id",
+    "offset_bytes",
+    "kind",
+    "width_bytes",
+    "target_type_id",
+    "evidence"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.TypeLayoutFieldTypeReview/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "program_sha256": {"$ref": "#/$defs/sha256"},
+    "type_id": {"type": "string", "minLength": 1},
+    "offset_bytes": {"type": "integer", "minimum": 0},
+    "kind": {"$ref": "#/$defs/type_kind"},
+    "width_bytes": {"type": ["integer", "null"], "minimum": 1},
+    "target_type_id": {"type": ["string", "null"], "minLength": 1},
+    "evidence": {"$ref": "#/$defs/evidence"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"target_type_id": {"type": "string"}}, "required": ["target_type_id"]},
+      "then": {"properties": {"kind": {"const": "data_pointer"}}}
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "type_kind": {
+      "enum": [
+        "boolean",
+        "integer",
+        "floating_point",
+        "data_pointer",
+        "function_pointer",
+        "aggregate",
+        "bitfield",
+        "opaque_bytes"
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_format", "source_sha256", "record_key", "source_pointer", "evidence_class"],
+      "properties": {
+        "source_format": {"type": "string", "minLength": 1},
+        "source_sha256": {"$ref": "#/$defs/sha256"},
+        "record_key": {"type": "string", "minLength": 1},
+        "source_pointer": {"type": "string", "minLength": 1},
+        "evidence_class": {
+          "enum": [
+            "exact_static",
+            "runtime_native",
+            "derived_structural",
+            "human_review",
+            "interventional_probe"
+          ]
+        }
+      }
+    }
+  }
+}

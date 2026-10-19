@@ -1,0 +1,9 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+0090a68d	0090a68d	2	CALL	def:0090a68d:2:4	-	0090ac77	FUN_0090ac77
+0090a68d	0090a692	7	INT_EQUAL	def:0090a692:7:1	def:0090a68d:2:4;const:0x0:4	-	-
+0090a68d	0090a694	13	CBRANCH	-	address:0090a69c:1;def:0090a692:7:1	-	-
+0090a68d	0090a696	14	PTRSUB	def:0090a696:14:4	const:0x0:4;const:0xb96f08:4	-	-
+0090a68d	0090a69b	17	RETURN	-	const:0x0:4;def:0090a69b:45:4	-	-
+0090a68d	0090a69b	45	CAST	def:0090a69b:45:4	def:0090a696:14:4	-	-
+0090a68d	0090a69c	44	PTRADD	def:0090a69c:44:4	def:0090a68d:2:4;const:0x2:4;const:0x4:4	-	-
+0090a68d	0090a69f	29	RETURN	-	const:0x0:4;def:0090a69c:44:4	-	-

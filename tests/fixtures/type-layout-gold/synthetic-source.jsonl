@@ -1,0 +1,1 @@
+{"format":"REVENGINSTR.SyntheticExactTypeLayoutObservation/1","program_id":"synthetic-x86","program_sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","type_id":"opaque-type-1","audited_field_offsets":[32,36],"fields":[{"offset_bytes":32,"kind":"data_pointer","width_bytes":4}]}

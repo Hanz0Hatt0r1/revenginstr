@@ -1,0 +1,4 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+009074b1	009074b5	7	CALL	-	input:Stack[0x4]:4	0090748b	FUN_0090748b
+009074b1	009074bf	20	CALL	-	input:Stack[0x4]:4	-	-
+009074b1	009074bf	22	RETURN	-	const:0x1:4	-	-

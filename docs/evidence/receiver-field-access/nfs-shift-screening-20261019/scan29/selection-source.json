@@ -1,0 +1,1833 @@
+{
+  "format": "NFS.M23ScreeningSelection/1",
+  "limits": [
+    "Function inventory and call edges select export targets only. Actual parameter-field and memory facts come from read-only Ghidra High-P-code decompilation; no instruction-level labels or semantic claims are used."
+  ],
+  "program_id": "nfs-shift:SHIFT.exe",
+  "selection": {
+    "address_range": [
+      "00401000",
+      "004fffff"
+    ],
+    "candidate_entries": [
+      {
+        "address_count": 48,
+        "explicit_parameter_count": 1,
+        "function_entry": "00402100",
+        "function_name": "FUN_00402100",
+        "signature": "undefined __fastcall FUN_00402100(float * param_1)"
+      },
+      {
+        "address_count": 132,
+        "explicit_parameter_count": 1,
+        "function_entry": "004030b0",
+        "function_name": "FUN_004030b0",
+        "signature": "undefined4 * __fastcall FUN_004030b0(undefined4 * param_1)"
+      },
+      {
+        "address_count": 677,
+        "explicit_parameter_count": 1,
+        "function_entry": "00405470",
+        "function_name": "FUN_00405470",
+        "signature": "undefined __stdcall FUN_00405470(undefined1 * param_1)"
+      },
+      {
+        "address_count": 82,
+        "explicit_parameter_count": 1,
+        "function_entry": "00406dc0",
+        "function_name": "FUN_00406dc0",
+        "signature": "undefined4 __fastcall FUN_00406dc0(int param_1)"
+      },
+      {
+        "address_count": 49,
+        "explicit_parameter_count": 2,
+        "function_entry": "00407920",
+        "function_name": "FUN_00407920",
+        "signature": "undefined __fastcall FUN_00407920(int param_1, int * param_2)"
+      },
+      {
+        "address_count": 86,
+        "explicit_parameter_count": 2,
+        "function_entry": "00408600",
+        "function_name": "FUN_00408600",
+        "signature": "undefined8 __fastcall FUN_00408600(int param_1, int param_2)"
+      },
+      {
+        "address_count": 47,
+        "explicit_parameter_count": 2,
+        "function_entry": "00408fd0",
+        "function_name": "FUN_00408fd0",
+        "signature": "undefined __thiscall FUN_00408fd0(void * this, uint param_1, undefined4 * param_2)"
+      },
+      {
+        "address_count": 78,
+        "explicit_parameter_count": 1,
+        "function_entry": "00409760",
+        "function_name": "FUN_00409760",
+        "signature": "undefined4 * __thiscall FUN_00409760(void * this, int param_1)"
+      },
+      {
+        "address_count": 351,
+        "explicit_parameter_count": 1,
+        "function_entry": "0040a360",
+        "function_name": "FUN_0040a360",
+        "signature": "undefined1 __fastcall FUN_0040a360(int param_1)"
+      },
+      {
+        "address_count": 719,
+        "explicit_parameter_count": 1,
+        "function_entry": "0040b080",
+        "function_name": "FUN_0040b080",
+        "signature": "undefined1 __thiscall FUN_0040b080(void * this, byte param_1)"
+      },
+      {
+        "address_count": 57,
+        "explicit_parameter_count": 1,
+        "function_entry": "0040cb90",
+        "function_name": "FUN_0040cb90",
+        "signature": "undefined __fastcall FUN_0040cb90(int param_1)"
+      },
+      {
+        "address_count": 411,
+        "explicit_parameter_count": 1,
+        "function_entry": "0040e460",
+        "function_name": "FUN_0040e460",
+        "signature": "undefined __fastcall FUN_0040e460(void * param_1)"
+      },
+      {
+        "address_count": 60,
+        "explicit_parameter_count": 1,
+        "function_entry": "0040f220",
+        "function_name": "FUN_0040f220",
+        "signature": "undefined __fastcall FUN_0040f220(void * param_1)"
+      },
+      {
+        "address_count": 89,
+        "explicit_parameter_count": 3,
+        "function_entry": "0040fd80",
+        "function_name": "FUN_0040fd80",
+        "signature": "undefined __fastcall FUN_0040fd80(int * param_1, int * param_2, char param_3)"
+      },
+      {
+        "address_count": 79,
+        "explicit_parameter_count": 1,
+        "function_entry": "00410790",
+        "function_name": "FUN_00410790",
+        "signature": "undefined __fastcall FUN_00410790(void * param_1)"
+      },
+      {
+        "address_count": 116,
+        "explicit_parameter_count": 1,
+        "function_entry": "004142b0",
+        "function_name": "FUN_004142b0",
+        "signature": "undefined __thiscall FUN_004142b0(void * this, int param_1)"
+      },
+      {
+        "address_count": 49,
+        "explicit_parameter_count": 2,
+        "function_entry": "004152f0",
+        "function_name": "FUN_004152f0",
+        "signature": "undefined __fastcall FUN_004152f0(int param_1, int param_2)"
+      },
+      {
+        "address_count": 325,
+        "explicit_parameter_count": 1,
+        "function_entry": "00417460",
+        "function_name": "FUN_00417460",
+        "signature": "uint __fastcall FUN_00417460(int param_1)"
+      },
+      {
+        "address_count": 105,
+        "explicit_parameter_count": 1,
+        "function_entry": "004195e0",
+        "function_name": "FUN_004195e0",
+        "signature": "undefined4 * __fastcall FUN_004195e0(undefined4 * param_1)"
+      },
+      {
+        "address_count": 98,
+        "explicit_parameter_count": 1,
+        "function_entry": "00419f10",
+        "function_name": "FUN_00419f10",
+        "signature": "undefined __fastcall FUN_00419f10(int param_1)"
+      },
+      {
+        "address_count": 92,
+        "explicit_parameter_count": 4,
+        "function_entry": "0041a890",
+        "function_name": "FUN_0041a890",
+        "signature": "undefined4 * __thiscall FUN_0041a890(void * this, void * param_1, undefined1 param_2, char * param_3, undefined1 param_4)"
+      },
+      {
+        "address_count": 134,
+        "explicit_parameter_count": 1,
+        "function_entry": "0041bab0",
+        "function_name": "FUN_0041bab0",
+        "signature": "undefined4 * __thiscall FUN_0041bab0(void * this, undefined4 * param_1)"
+      },
+      {
+        "address_count": 262,
+        "explicit_parameter_count": 1,
+        "function_entry": "0041d590",
+        "function_name": "FUN_0041d590",
+        "signature": "int __fastcall FUN_0041d590(int * param_1)"
+      },
+      {
+        "address_count": 100,
+        "explicit_parameter_count": 1,
+        "function_entry": "004209d0",
+        "function_name": "FUN_004209d0",
+        "signature": "undefined __fastcall FUN_004209d0(int param_1)"
+      },
+      {
+        "address_count": 92,
+        "explicit_parameter_count": 1,
+        "function_entry": "00427500",
+        "function_name": "FUN_00427500",
+        "signature": "undefined __fastcall FUN_00427500(int param_1)"
+      },
+      {
+        "address_count": 294,
+        "explicit_parameter_count": 1,
+        "function_entry": "00427f30",
+        "function_name": "FUN_00427f30",
+        "signature": "int __fastcall FUN_00427f30(int * param_1)"
+      },
+      {
+        "address_count": 350,
+        "explicit_parameter_count": 1,
+        "function_entry": "004284f0",
+        "function_name": "FUN_004284f0",
+        "signature": "undefined4 __thiscall FUN_004284f0(void * this, void * param_1)"
+      },
+      {
+        "address_count": 107,
+        "explicit_parameter_count": 1,
+        "function_entry": "004297e0",
+        "function_name": "FUN_004297e0",
+        "signature": "uint __thiscall FUN_004297e0(void * this, float param_1)"
+      },
+      {
+        "address_count": 46,
+        "explicit_parameter_count": 2,
+        "function_entry": "00429e20",
+        "function_name": "FUN_00429e20",
+        "signature": "undefined __stdcall FUN_00429e20(uint param_1, char param_2)"
+      },
+      {
+        "address_count": 338,
+        "explicit_parameter_count": 1,
+        "function_entry": "0042a310",
+        "function_name": "FUN_0042a310",
+        "signature": "undefined __fastcall FUN_0042a310(int param_1)"
+      },
+      {
+        "address_count": 65,
+        "explicit_parameter_count": 1,
+        "function_entry": "0042a940",
+        "function_name": "FUN_0042a940",
+        "signature": "undefined4 __fastcall FUN_0042a940(int param_1)"
+      },
+      {
+        "address_count": 366,
+        "explicit_parameter_count": 1,
+        "function_entry": "0042ae50",
+        "function_name": "FUN_0042ae50",
+        "signature": "undefined4 * __fastcall FUN_0042ae50(undefined4 * param_1)"
+      },
+      {
+        "address_count": 171,
+        "explicit_parameter_count": 1,
+        "function_entry": "0042b420",
+        "function_name": "FUN_0042b420",
+        "signature": "undefined4 __thiscall FUN_0042b420(void * this, char param_1)"
+      },
+      {
+        "address_count": 87,
+        "explicit_parameter_count": 2,
+        "function_entry": "0042c690",
+        "function_name": "FUN_0042c690",
+        "signature": "undefined4 __thiscall FUN_0042c690(void * this, int param_1, char param_2)"
+      },
+      {
+        "address_count": 339,
+        "explicit_parameter_count": 1,
+        "function_entry": "0042d1f0",
+        "function_name": "FUN_0042d1f0",
+        "signature": "undefined __thiscall FUN_0042d1f0(void * this, float param_1)"
+      },
+      {
+        "address_count": 44,
+        "explicit_parameter_count": 1,
+        "function_entry": "0042d670",
+        "function_name": "FUN_0042d670",
+        "signature": "undefined __thiscall FUN_0042d670(void * this, undefined4 param_1)"
+      },
+      {
+        "address_count": 75,
+        "explicit_parameter_count": 1,
+        "function_entry": "0042d870",
+        "function_name": "FUN_0042d870",
+        "signature": "undefined __thiscall FUN_0042d870(void * this, float param_1)"
+      },
+      {
+        "address_count": 40,
+        "explicit_parameter_count": 2,
+        "function_entry": "0042e9f0",
+        "function_name": "FUN_0042e9f0",
+        "signature": "undefined __fastcall FUN_0042e9f0(undefined4 * param_1, char param_2)"
+      },
+      {
+        "address_count": 54,
+        "explicit_parameter_count": 1,
+        "function_entry": "0042eda0",
+        "function_name": "FUN_0042eda0",
+        "signature": "undefined4 * __thiscall FUN_0042eda0(void * this, undefined4 * param_1)"
+      },
+      {
+        "address_count": 63,
+        "explicit_parameter_count": 1,
+        "function_entry": "0042f4b0",
+        "function_name": "FUN_0042f4b0",
+        "signature": "undefined __thiscall FUN_0042f4b0(void * this, undefined4 param_1)"
+      },
+      {
+        "address_count": 125,
+        "explicit_parameter_count": 1,
+        "function_entry": "004300c0",
+        "function_name": "FUN_004300c0",
+        "signature": "undefined4 __thiscall FUN_004300c0(void * this, uint param_1)"
+      },
+      {
+        "address_count": 107,
+        "explicit_parameter_count": 1,
+        "function_entry": "004316a0",
+        "function_name": "FUN_004316a0",
+        "signature": "int __thiscall FUN_004316a0(void * this, undefined1 * param_1)"
+      },
+      {
+        "address_count": 176,
+        "explicit_parameter_count": 1,
+        "function_entry": "004320d0",
+        "function_name": "FUN_004320d0",
+        "signature": "undefined4 * __fastcall FUN_004320d0(undefined4 * param_1)"
+      },
+      {
+        "address_count": 94,
+        "explicit_parameter_count": 1,
+        "function_entry": "004327d0",
+        "function_name": "FUN_004327d0",
+        "signature": "undefined __fastcall FUN_004327d0(int param_1)"
+      },
+      {
+        "address_count": 70,
+        "explicit_parameter_count": 1,
+        "function_entry": "00433340",
+        "function_name": "FUN_00433340",
+        "signature": "undefined __fastcall FUN_00433340(int param_1)"
+      },
+      {
+        "address_count": 91,
+        "explicit_parameter_count": 1,
+        "function_entry": "004336c0",
+        "function_name": "FUN_004336c0",
+        "signature": "bool __fastcall FUN_004336c0(int param_1)"
+      },
+      {
+        "address_count": 68,
+        "explicit_parameter_count": 1,
+        "function_entry": "00433b60",
+        "function_name": "FUN_00433b60",
+        "signature": "undefined __fastcall FUN_00433b60(undefined4 * param_1)"
+      },
+      {
+        "address_count": 73,
+        "explicit_parameter_count": 1,
+        "function_entry": "004344c0",
+        "function_name": "FUN_004344c0",
+        "signature": "undefined __fastcall FUN_004344c0(int param_1)"
+      },
+      {
+        "address_count": 67,
+        "explicit_parameter_count": 1,
+        "function_entry": "00434d00",
+        "function_name": "FUN_00434d00",
+        "signature": "undefined __fastcall FUN_00434d00(int * param_1)"
+      },
+      {
+        "address_count": 526,
+        "explicit_parameter_count": 1,
+        "function_entry": "00435390",
+        "function_name": "FUN_00435390",
+        "signature": "undefined __fastcall FUN_00435390(int * param_1)"
+      },
+      {
+        "address_count": 769,
+        "explicit_parameter_count": 1,
+        "function_entry": "00436a80",
+        "function_name": "FUN_00436a80",
+        "signature": "undefined __thiscall FUN_00436a80(void * this, int param_1)"
+      },
+      {
+        "address_count": 133,
+        "explicit_parameter_count": 1,
+        "function_entry": "004379f0",
+        "function_name": "FUN_004379f0",
+        "signature": "undefined __fastcall FUN_004379f0(int param_1)"
+      },
+      {
+        "address_count": 222,
+        "explicit_parameter_count": 1,
+        "function_entry": "00438000",
+        "function_name": "FUN_00438000",
+        "signature": "undefined4 * __fastcall FUN_00438000(undefined4 * param_1)"
+      },
+      {
+        "address_count": 67,
+        "explicit_parameter_count": 4,
+        "function_entry": "004390c0",
+        "function_name": "FUN_004390c0",
+        "signature": "undefined __stdcall FUN_004390c0(int * param_1, int * param_2, undefined4 param_3, undefined4 * param_4)"
+      },
+      {
+        "address_count": 90,
+        "explicit_parameter_count": 1,
+        "function_entry": "004397d0",
+        "function_name": "FUN_004397d0",
+        "signature": "undefined __thiscall FUN_004397d0(void * this, float param_1)"
+      },
+      {
+        "address_count": 93,
+        "explicit_parameter_count": 2,
+        "function_entry": "00439fd0",
+        "function_name": "FUN_00439fd0",
+        "signature": "float10 __stdcall FUN_00439fd0(undefined4 param_1, int * param_2)"
+      },
+      {
+        "address_count": 47,
+        "explicit_parameter_count": 2,
+        "function_entry": "0043ae20",
+        "function_name": "FUN_0043ae20",
+        "signature": "uint __stdcall FUN_0043ae20(int param_1, char * param_2)"
+      },
+      {
+        "address_count": 72,
+        "explicit_parameter_count": 1,
+        "function_entry": "0043bb70",
+        "function_name": "FUN_0043bb70",
+        "signature": "undefined __thiscall FUN_0043bb70(void * this, int param_1)"
+      },
+      {
+        "address_count": 121,
+        "explicit_parameter_count": 1,
+        "function_entry": "0043c7d0",
+        "function_name": "FUN_0043c7d0",
+        "signature": "undefined __fastcall FUN_0043c7d0(void * param_1)"
+      },
+      {
+        "address_count": 150,
+        "explicit_parameter_count": 1,
+        "function_entry": "0043e2e0",
+        "function_name": "FUN_0043e2e0",
+        "signature": "undefined __thiscall FUN_0043e2e0(void * this, int param_1)"
+      },
+      {
+        "address_count": 41,
+        "explicit_parameter_count": 2,
+        "function_entry": "0043fd10",
+        "function_name": "FUN_0043fd10",
+        "signature": "uint __fastcall FUN_0043fd10(void * param_1, uint param_2)"
+      },
+      {
+        "address_count": 75,
+        "explicit_parameter_count": 2,
+        "function_entry": "00441f20",
+        "function_name": "FUN_00441f20",
+        "signature": "undefined __thiscall FUN_00441f20(void * this, int param_1, char param_2)"
+      },
+      {
+        "address_count": 40,
+        "explicit_parameter_count": 3,
+        "function_entry": "00442180",
+        "function_name": "FUN_00442180",
+        "signature": "size_t __cdecl FUN_00442180(char * param_1, size_t param_2, char * param_3)"
+      },
+      {
+        "address_count": 729,
+        "explicit_parameter_count": 1,
+        "function_entry": "00443b30",
+        "function_name": "FUN_00443b30",
+        "signature": "undefined __thiscall FUN_00443b30(void * this, float param_1)"
+      },
+      {
+        "address_count": 84,
+        "explicit_parameter_count": 1,
+        "function_entry": "00444ef0",
+        "function_name": "FUN_00444ef0",
+        "signature": "undefined __fastcall FUN_00444ef0(int param_1)"
+      },
+      {
+        "address_count": 305,
+        "explicit_parameter_count": 1,
+        "function_entry": "00448280",
+        "function_name": "FUN_00448280",
+        "signature": "undefined __fastcall FUN_00448280(void * param_1)"
+      },
+      {
+        "address_count": 358,
+        "explicit_parameter_count": 1,
+        "function_entry": "004496f0",
+        "function_name": "FUN_004496f0",
+        "signature": "undefined __thiscall FUN_004496f0(void * this, int * param_1)"
+      },
+      {
+        "address_count": 163,
+        "explicit_parameter_count": 1,
+        "function_entry": "0044b450",
+        "function_name": "FUN_0044b450",
+        "signature": "undefined __fastcall FUN_0044b450(void * param_1)"
+      },
+      {
+        "address_count": 99,
+        "explicit_parameter_count": 1,
+        "function_entry": "0044c6d0",
+        "function_name": "FUN_0044c6d0",
+        "signature": "undefined __fastcall FUN_0044c6d0(void * param_1)"
+      },
+      {
+        "address_count": 603,
+        "explicit_parameter_count": 1,
+        "function_entry": "0044fec0",
+        "function_name": "FUN_0044fec0",
+        "signature": "undefined __fastcall FUN_0044fec0(void * param_1)"
+      },
+      {
+        "address_count": 83,
+        "explicit_parameter_count": 5,
+        "function_entry": "00453d40",
+        "function_name": "FUN_00453d40",
+        "signature": "uint __fastcall FUN_00453d40(float * param_1, undefined4 * param_2, byte * param_3, float param_4, float param_5)"
+      },
+      {
+        "address_count": 54,
+        "explicit_parameter_count": 1,
+        "function_entry": "00454350",
+        "function_name": "FUN_00454350",
+        "signature": "undefined4 * __fastcall FUN_00454350(undefined4 * param_1)"
+      },
+      {
+        "address_count": 80,
+        "explicit_parameter_count": 1,
+        "function_entry": "00454af0",
+        "function_name": "FUN_00454af0",
+        "signature": "uint __thiscall FUN_00454af0(void * this, int param_1)"
+      },
+      {
+        "address_count": 64,
+        "explicit_parameter_count": 2,
+        "function_entry": "00455690",
+        "function_name": "FUN_00455690",
+        "signature": "undefined4 __thiscall FUN_00455690(void * this, int param_1, char param_2)"
+      },
+      {
+        "address_count": 49,
+        "explicit_parameter_count": 1,
+        "function_entry": "00455ad0",
+        "function_name": "FUN_00455ad0",
+        "signature": "int * __fastcall FUN_00455ad0(int * param_1)"
+      },
+      {
+        "address_count": 76,
+        "explicit_parameter_count": 2,
+        "function_entry": "00456370",
+        "function_name": "FUN_00456370",
+        "signature": "undefined __fastcall FUN_00456370(undefined4 param_1, int * param_2)"
+      },
+      {
+        "address_count": 69,
+        "explicit_parameter_count": 2,
+        "function_entry": "00457b50",
+        "function_name": "FUN_00457b50",
+        "signature": "int __fastcall FUN_00457b50(int param_1, uint param_2)"
+      },
+      {
+        "address_count": 225,
+        "explicit_parameter_count": 1,
+        "function_entry": "00458170",
+        "function_name": "FUN_00458170",
+        "signature": "undefined4 * __thiscall FUN_00458170(void * this, undefined4 param_1)"
+      },
+      {
+        "address_count": 60,
+        "explicit_parameter_count": 1,
+        "function_entry": "00458a40",
+        "function_name": "FUN_00458a40",
+        "signature": "void * __thiscall FUN_00458a40(void * this, int param_1)"
+      },
+      {
+        "address_count": 73,
+        "explicit_parameter_count": 1,
+        "function_entry": "00459d60",
+        "function_name": "FUN_00459d60",
+        "signature": "undefined __fastcall FUN_00459d60(int param_1)"
+      },
+      {
+        "address_count": 155,
+        "explicit_parameter_count": 1,
+        "function_entry": "0045ab40",
+        "function_name": "FUN_0045ab40",
+        "signature": "undefined __fastcall FUN_0045ab40(int * param_1)"
+      },
+      {
+        "address_count": 86,
+        "explicit_parameter_count": 1,
+        "function_entry": "0045b600",
+        "function_name": "FUN_0045b600",
+        "signature": "undefined4 __fastcall FUN_0045b600(void * param_1)"
+      },
+      {
+        "address_count": 412,
+        "explicit_parameter_count": 1,
+        "function_entry": "0045c2e0",
+        "function_name": "FUN_0045c2e0",
+        "signature": "undefined __fastcall FUN_0045c2e0(int param_1)"
+      },
+      {
+        "address_count": 603,
+        "explicit_parameter_count": 1,
+        "function_entry": "0045d350",
+        "function_name": "FUN_0045d350",
+        "signature": "undefined __stdcall FUN_0045d350(int param_1)"
+      },
+      {
+        "address_count": 53,
+        "explicit_parameter_count": 3,
+        "function_entry": "0045d980",
+        "function_name": "FUN_0045d980",
+        "signature": "undefined __stdcall FUN_0045d980(undefined4 param_1, uint param_2, undefined4 * param_3)"
+      },
+      {
+        "address_count": 78,
+        "explicit_parameter_count": 1,
+        "function_entry": "0045dd40",
+        "function_name": "FUN_0045dd40",
+        "signature": "undefined __fastcall FUN_0045dd40(AptFrameStack * param_1)"
+      },
+      {
+        "address_count": 161,
+        "explicit_parameter_count": 1,
+        "function_entry": "00460730",
+        "function_name": "FUN_00460730",
+        "signature": "int * __thiscall FUN_00460730(void * this, int * param_1)"
+      },
+      {
+        "address_count": 304,
+        "explicit_parameter_count": 1,
+        "function_entry": "00462250",
+        "function_name": "FUN_00462250",
+        "signature": "undefined __thiscall FUN_00462250(void * this, undefined1 param_1)"
+      },
+      {
+        "address_count": 130,
+        "explicit_parameter_count": 1,
+        "function_entry": "00463e10",
+        "function_name": "FUN_00463e10",
+        "signature": "undefined __thiscall FUN_00463e10(void * this, undefined4 * param_1)"
+      },
+      {
+        "address_count": 672,
+        "explicit_parameter_count": 1,
+        "function_entry": "00465f70",
+        "function_name": "FUN_00465f70",
+        "signature": "undefined __fastcall FUN_00465f70(int param_1)"
+      },
+      {
+        "address_count": 409,
+        "explicit_parameter_count": 1,
+        "function_entry": "00468d30",
+        "function_name": "FUN_00468d30",
+        "signature": "undefined __fastcall FUN_00468d30(int param_1)"
+      },
+      {
+        "address_count": 69,
+        "explicit_parameter_count": 1,
+        "function_entry": "00469980",
+        "function_name": "FUN_00469980",
+        "signature": "undefined1 * __fastcall FUN_00469980(undefined1 * param_1)"
+      },
+      {
+        "address_count": 375,
+        "explicit_parameter_count": 1,
+        "function_entry": "0046b430",
+        "function_name": "FUN_0046b430",
+        "signature": "undefined __thiscall FUN_0046b430(void * this, int param_1)"
+      },
+      {
+        "address_count": 320,
+        "explicit_parameter_count": 1,
+        "function_entry": "0046c540",
+        "function_name": "FUN_0046c540",
+        "signature": "undefined __fastcall FUN_0046c540(int param_1)"
+      },
+      {
+        "address_count": 390,
+        "explicit_parameter_count": 1,
+        "function_entry": "0046cb10",
+        "function_name": "FUN_0046cb10",
+        "signature": "undefined __fastcall FUN_0046cb10(int param_1)"
+      },
+      {
+        "address_count": 64,
+        "explicit_parameter_count": 3,
+        "function_entry": "0046d660",
+        "function_name": "FUN_0046d660",
+        "signature": "undefined4 __fastcall FUN_0046d660(undefined1 * param_1, byte * param_2, int param_3)"
+      },
+      {
+        "address_count": 87,
+        "explicit_parameter_count": 2,
+        "function_entry": "0046f750",
+        "function_name": "FUN_0046f750",
+        "signature": "undefined __fastcall FUN_0046f750(int param_1, char param_2)"
+      },
+      {
+        "address_count": 145,
+        "explicit_parameter_count": 1,
+        "function_entry": "0046fc70",
+        "function_name": "FUN_0046fc70",
+        "signature": "char * __fastcall FUN_0046fc70(char * param_1)"
+      },
+      {
+        "address_count": 46,
+        "explicit_parameter_count": 1,
+        "function_entry": "00470250",
+        "function_name": "FUN_00470250",
+        "signature": "undefined4 * __fastcall FUN_00470250(undefined4 * param_1)"
+      },
+      {
+        "address_count": 99,
+        "explicit_parameter_count": 2,
+        "function_entry": "004712a0",
+        "function_name": "FUN_004712a0",
+        "signature": "undefined __fastcall FUN_004712a0(int * param_1, undefined4 param_2)"
+      },
+      {
+        "address_count": 262,
+        "explicit_parameter_count": 1,
+        "function_entry": "004716a0",
+        "function_name": "FUN_004716a0",
+        "signature": "int __fastcall FUN_004716a0(int * param_1)"
+      },
+      {
+        "address_count": 141,
+        "explicit_parameter_count": 1,
+        "function_entry": "00472310",
+        "function_name": "FUN_00472310",
+        "signature": "undefined4 * __fastcall FUN_00472310(undefined4 * param_1)"
+      },
+      {
+        "address_count": 118,
+        "explicit_parameter_count": 1,
+        "function_entry": "00472d80",
+        "function_name": "FUN_00472d80",
+        "signature": "undefined __fastcall FUN_00472d80(int * param_1)"
+      },
+      {
+        "address_count": 83,
+        "explicit_parameter_count": 3,
+        "function_entry": "00474380",
+        "function_name": "FUN_00474380",
+        "signature": "bool __fastcall FUN_00474380(int param_1, int * param_2, int * param_3)"
+      },
+      {
+        "address_count": 73,
+        "explicit_parameter_count": 1,
+        "function_entry": "00474c70",
+        "function_name": "FUN_00474c70",
+        "signature": "undefined __fastcall FUN_00474c70(int param_1)"
+      },
+      {
+        "address_count": 94,
+        "explicit_parameter_count": 1,
+        "function_entry": "00475a70",
+        "function_name": "FUN_00475a70",
+        "signature": "int __thiscall FUN_00475a70(void * this, uint param_1)"
+      },
+      {
+        "address_count": 143,
+        "explicit_parameter_count": 1,
+        "function_entry": "00476450",
+        "function_name": "FUN_00476450",
+        "signature": "bool __stdcall FUN_00476450(undefined4 * param_1)"
+      },
+      {
+        "address_count": 44,
+        "explicit_parameter_count": 1,
+        "function_entry": "00476b60",
+        "function_name": "FUN_00476b60",
+        "signature": "void * __thiscall FUN_00476b60(void * this, int * param_1)"
+      },
+      {
+        "address_count": 425,
+        "explicit_parameter_count": 1,
+        "function_entry": "00477660",
+        "function_name": "FUN_00477660",
+        "signature": "undefined __fastcall FUN_00477660(int param_1)"
+      },
+      {
+        "address_count": 79,
+        "explicit_parameter_count": 1,
+        "function_entry": "00478930",
+        "function_name": "FUN_00478930",
+        "signature": "undefined4 * __fastcall FUN_00478930(undefined4 * param_1)"
+      },
+      {
+        "address_count": 334,
+        "explicit_parameter_count": 1,
+        "function_entry": "0047a680",
+        "function_name": "FUN_0047a680",
+        "signature": "undefined __thiscall FUN_0047a680(void * this, float param_1)"
+      },
+      {
+        "address_count": 262,
+        "explicit_parameter_count": 1,
+        "function_entry": "0047ad50",
+        "function_name": "FUN_0047ad50",
+        "signature": "int __fastcall FUN_0047ad50(int * param_1)"
+      },
+      {
+        "address_count": 94,
+        "explicit_parameter_count": 1,
+        "function_entry": "0047b6e0",
+        "function_name": "FUN_0047b6e0",
+        "signature": "undefined4 * __thiscall FUN_0047b6e0(void * this, int param_1)"
+      },
+      {
+        "address_count": 74,
+        "explicit_parameter_count": 1,
+        "function_entry": "0047bed0",
+        "function_name": "FUN_0047bed0",
+        "signature": "undefined4 * __fastcall FUN_0047bed0(undefined4 * param_1)"
+      },
+      {
+        "address_count": 73,
+        "explicit_parameter_count": 1,
+        "function_entry": "0047c9f0",
+        "function_name": "FUN_0047c9f0",
+        "signature": "undefined __fastcall FUN_0047c9f0(int param_1)"
+      },
+      {
+        "address_count": 697,
+        "explicit_parameter_count": 1,
+        "function_entry": "0047e4d0",
+        "function_name": "FUN_0047e4d0",
+        "signature": "undefined __stdcall FUN_0047e4d0(void * param_1)"
+      },
+      {
+        "address_count": 88,
+        "explicit_parameter_count": 1,
+        "function_entry": "0047f9e0",
+        "function_name": "FUN_0047f9e0",
+        "signature": "undefined __fastcall FUN_0047f9e0(int * param_1)"
+      },
+      {
+        "address_count": 73,
+        "explicit_parameter_count": 1,
+        "function_entry": "00480680",
+        "function_name": "FUN_00480680",
+        "signature": "float10 __fastcall FUN_00480680(int param_1)"
+      },
+      {
+        "address_count": 800,
+        "explicit_parameter_count": 1,
+        "function_entry": "004810bf",
+        "function_name": "FUN_004810bf",
+        "signature": "undefined4 __fastcall FUN_004810bf(int param_1)"
+      },
+      {
+        "address_count": 75,
+        "explicit_parameter_count": 2,
+        "function_entry": "00483be0",
+        "function_name": "FUN_00483be0",
+        "signature": "uint __stdcall FUN_00483be0(int * param_1, char param_2)"
+      },
+      {
+        "address_count": 729,
+        "explicit_parameter_count": 1,
+        "function_entry": "00486320",
+        "function_name": "FUN_00486320",
+        "signature": "undefined __fastcall FUN_00486320(int param_1)"
+      },
+      {
+        "address_count": 252,
+        "explicit_parameter_count": 1,
+        "function_entry": "00486ee0",
+        "function_name": "FUN_00486ee0",
+        "signature": "int __fastcall FUN_00486ee0(int * param_1)"
+      },
+      {
+        "address_count": 40,
+        "explicit_parameter_count": 3,
+        "function_entry": "00488ae0",
+        "function_name": "FUN_00488ae0",
+        "signature": "undefined4 * __thiscall FUN_00488ae0(void * this, undefined4 param_1, undefined4 param_2, undefined4 param_3)"
+      },
+      {
+        "address_count": 73,
+        "explicit_parameter_count": 1,
+        "function_entry": "004892c0",
+        "function_name": "FUN_004892c0",
+        "signature": "undefined __fastcall FUN_004892c0(int param_1)"
+      },
+      {
+        "address_count": 149,
+        "explicit_parameter_count": 1,
+        "function_entry": "00489a00",
+        "function_name": "FUN_00489a00",
+        "signature": "int * __thiscall FUN_00489a00(void * this, int * param_1)"
+      },
+      {
+        "address_count": 262,
+        "explicit_parameter_count": 1,
+        "function_entry": "0048b890",
+        "function_name": "FUN_0048b890",
+        "signature": "int __fastcall FUN_0048b890(int * param_1)"
+      },
+      {
+        "address_count": 43,
+        "explicit_parameter_count": 2,
+        "function_entry": "0048c240",
+        "function_name": "FUN_0048c240",
+        "signature": "undefined __thiscall FUN_0048c240(void * this, undefined4 param_1, uint param_2)"
+      },
+      {
+        "address_count": 41,
+        "explicit_parameter_count": 1,
+        "function_entry": "0048ce90",
+        "function_name": "FUN_0048ce90",
+        "signature": "undefined __thiscall FUN_0048ce90(void * this, char * param_1)"
+      },
+      {
+        "address_count": 56,
+        "explicit_parameter_count": 1,
+        "function_entry": "0048d6f0",
+        "function_name": "FUN_0048d6f0",
+        "signature": "undefined __fastcall FUN_0048d6f0(uint * param_1)"
+      },
+      {
+        "address_count": 51,
+        "explicit_parameter_count": 1,
+        "function_entry": "0048dcd0",
+        "function_name": "FUN_0048dcd0",
+        "signature": "undefined4 * __fastcall FUN_0048dcd0(undefined4 * param_1)"
+      },
+      {
+        "address_count": 49,
+        "explicit_parameter_count": 1,
+        "function_entry": "0048e5a0",
+        "function_name": "FUN_0048e5a0",
+        "signature": "undefined __fastcall FUN_0048e5a0(int param_1)"
+      },
+      {
+        "address_count": 445,
+        "explicit_parameter_count": 1,
+        "function_entry": "0048f100",
+        "function_name": "FUN_0048f100",
+        "signature": "undefined __fastcall FUN_0048f100(int param_1)"
+      },
+      {
+        "address_count": 54,
+        "explicit_parameter_count": 1,
+        "function_entry": "004900d0",
+        "function_name": "FUN_004900d0",
+        "signature": "void * __thiscall FUN_004900d0(void * this, int param_1)"
+      },
+      {
+        "address_count": 41,
+        "explicit_parameter_count": 1,
+        "function_entry": "00490b00",
+        "function_name": "FUN_00490b00",
+        "signature": "undefined4 * __fastcall FUN_00490b00(undefined4 * param_1)"
+      },
+      {
+        "address_count": 182,
+        "explicit_parameter_count": 1,
+        "function_entry": "004915a0",
+        "function_name": "FUN_004915a0",
+        "signature": "undefined4 * __thiscall FUN_004915a0(void * this, int param_1)"
+      },
+      {
+        "address_count": 70,
+        "explicit_parameter_count": 1,
+        "function_entry": "00491d10",
+        "function_name": "FUN_00491d10",
+        "signature": "void * __thiscall FUN_00491d10(void * this, int * param_1)"
+      },
+      {
+        "address_count": 313,
+        "explicit_parameter_count": 1,
+        "function_entry": "00493180",
+        "function_name": "FUN_00493180",
+        "signature": "undefined __thiscall FUN_00493180(void * this, undefined4 * param_1)"
+      },
+      {
+        "address_count": 205,
+        "explicit_parameter_count": 1,
+        "function_entry": "00494c20",
+        "function_name": "FUN_00494c20",
+        "signature": "undefined4 __fastcall FUN_00494c20(int param_1)"
+      },
+      {
+        "address_count": 41,
+        "explicit_parameter_count": 1,
+        "function_entry": "00495860",
+        "function_name": "FUN_00495860",
+        "signature": "undefined __fastcall FUN_00495860(int * param_1)"
+      },
+      {
+        "address_count": 52,
+        "explicit_parameter_count": 3,
+        "function_entry": "00496180",
+        "function_name": "FUN_00496180",
+        "signature": "undefined4 * __fastcall FUN_00496180(undefined4 * param_1, undefined4 param_2, byte param_3)"
+      },
+      {
+        "address_count": 557,
+        "explicit_parameter_count": 1,
+        "function_entry": "00497620",
+        "function_name": "FUN_00497620",
+        "signature": "undefined4 __thiscall FUN_00497620(void * this, void * param_1)"
+      },
+      {
+        "address_count": 156,
+        "explicit_parameter_count": 1,
+        "function_entry": "00498d50",
+        "function_name": "FUN_00498d50",
+        "signature": "undefined __fastcall FUN_00498d50(AptFrameStack * param_1)"
+      },
+      {
+        "address_count": 57,
+        "explicit_parameter_count": 1,
+        "function_entry": "0049a3c0",
+        "function_name": "FUN_0049a3c0",
+        "signature": "undefined4 __thiscall FUN_0049a3c0(void * this, void * param_1)"
+      },
+      {
+        "address_count": 262,
+        "explicit_parameter_count": 1,
+        "function_entry": "0049a7e0",
+        "function_name": "FUN_0049a7e0",
+        "signature": "int __fastcall FUN_0049a7e0(int * param_1)"
+      },
+      {
+        "address_count": 57,
+        "explicit_parameter_count": 1,
+        "function_entry": "0049c700",
+        "function_name": "FUN_0049c700",
+        "signature": "undefined __fastcall FUN_0049c700(int param_1)"
+      },
+      {
+        "address_count": 128,
+        "explicit_parameter_count": 1,
+        "function_entry": "0049cc20",
+        "function_name": "FUN_0049cc20",
+        "signature": "uint __thiscall FUN_0049cc20(void * this, undefined4 param_1)"
+      },
+      {
+        "address_count": 57,
+        "explicit_parameter_count": 3,
+        "function_entry": "0049d100",
+        "function_name": "FUN_0049d100",
+        "signature": "undefined __thiscall FUN_0049d100(void * this, uint param_1, uint param_2, undefined4 param_3)"
+      },
+      {
+        "address_count": 118,
+        "explicit_parameter_count": 1,
+        "function_entry": "0049d760",
+        "function_name": "FUN_0049d760",
+        "signature": "undefined __fastcall FUN_0049d760(int param_1)"
+      },
+      {
+        "address_count": 502,
+        "explicit_parameter_count": 1,
+        "function_entry": "0049e4f0",
+        "function_name": "FUN_0049e4f0",
+        "signature": "undefined4 __thiscall FUN_0049e4f0(void * this, void * param_1)"
+      },
+      {
+        "address_count": 120,
+        "explicit_parameter_count": 1,
+        "function_entry": "0049ebf0",
+        "function_name": "FUN_0049ebf0",
+        "signature": "undefined4 __fastcall FUN_0049ebf0(int param_1)"
+      },
+      {
+        "address_count": 105,
+        "explicit_parameter_count": 1,
+        "function_entry": "0049fca0",
+        "function_name": "FUN_0049fca0",
+        "signature": "undefined4 * __fastcall FUN_0049fca0(undefined4 * param_1)"
+      },
+      {
+        "address_count": 40,
+        "explicit_parameter_count": 4,
+        "function_entry": "004a21f0",
+        "function_name": "FUN_004a21f0",
+        "signature": "undefined4 __stdcall FUN_004a21f0(int param_1, int * param_2, int * param_3, char param_4)"
+      },
+      {
+        "address_count": 68,
+        "explicit_parameter_count": 1,
+        "function_entry": "004a2f00",
+        "function_name": "FUN_004a2f00",
+        "signature": "undefined __fastcall FUN_004a2f00(int param_1)"
+      },
+      {
+        "address_count": 62,
+        "explicit_parameter_count": 3,
+        "function_entry": "004a4f90",
+        "function_name": "FUN_004a4f90",
+        "signature": "AptFrameStack * __fastcall FUN_004a4f90(AptFrameStack * param_1, char param_2, byte param_3)"
+      },
+      {
+        "address_count": 145,
+        "explicit_parameter_count": 1,
+        "function_entry": "004a5800",
+        "function_name": "FUN_004a5800",
+        "signature": "undefined4 __thiscall FUN_004a5800(void * this, int * param_1)"
+      },
+      {
+        "address_count": 407,
+        "explicit_parameter_count": 1,
+        "function_entry": "004a67d0",
+        "function_name": "FUN_004a67d0",
+        "signature": "undefined __thiscall FUN_004a67d0(void * this, int * param_1)"
+      },
+      {
+        "address_count": 56,
+        "explicit_parameter_count": 5,
+        "function_entry": "004a7570",
+        "function_name": "FUN_004a7570",
+        "signature": "undefined __fastcall FUN_004a7570(int param_1, undefined4 param_2, char * param_3, char * param_4, undefined4 param_5)"
+      },
+      {
+        "address_count": 53,
+        "explicit_parameter_count": 2,
+        "function_entry": "004a9420",
+        "function_name": "FUN_004a9420",
+        "signature": "undefined __fastcall FUN_004a9420(int param_1, void * param_2)"
+      },
+      {
+        "address_count": 136,
+        "explicit_parameter_count": 1,
+        "function_entry": "004aa710",
+        "function_name": "FUN_004aa710",
+        "signature": "undefined4 * __thiscall FUN_004aa710(void * this, int * param_1)"
+      },
+      {
+        "address_count": 69,
+        "explicit_parameter_count": 2,
+        "function_entry": "004ab870",
+        "function_name": "FUN_004ab870",
+        "signature": "undefined __fastcall FUN_004ab870(undefined4 * param_1, uint param_2)"
+      },
+      {
+        "address_count": 159,
+        "explicit_parameter_count": 1,
+        "function_entry": "004ad260",
+        "function_name": "FUN_004ad260",
+        "signature": "undefined __stdcall FUN_004ad260(int param_1)"
+      },
+      {
+        "address_count": 109,
+        "explicit_parameter_count": 1,
+        "function_entry": "004af120",
+        "function_name": "FUN_004af120",
+        "signature": "uint __stdcall FUN_004af120(void * param_1)"
+      },
+      {
+        "address_count": 572,
+        "explicit_parameter_count": 1,
+        "function_entry": "004afde0",
+        "function_name": "FUN_004afde0",
+        "signature": "undefined __fastcall FUN_004afde0(int param_1)"
+      },
+      {
+        "address_count": 134,
+        "explicit_parameter_count": 1,
+        "function_entry": "004b0cf0",
+        "function_name": "FUN_004b0cf0",
+        "signature": "undefined4 __thiscall FUN_004b0cf0(void * this, int * param_1)"
+      },
+      {
+        "address_count": 119,
+        "explicit_parameter_count": 1,
+        "function_entry": "004b3620",
+        "function_name": "FUN_004b3620",
+        "signature": "undefined __stdcall FUN_004b3620(int param_1)"
+      },
+      {
+        "address_count": 438,
+        "explicit_parameter_count": 1,
+        "function_entry": "004b4b20",
+        "function_name": "FUN_004b4b20",
+        "signature": "undefined __fastcall FUN_004b4b20(int param_1)"
+      },
+      {
+        "address_count": 42,
+        "explicit_parameter_count": 4,
+        "function_entry": "004b5dd0",
+        "function_name": "FUN_004b5dd0",
+        "signature": "undefined __fastcall FUN_004b5dd0(int * param_1, int param_2, int param_3, int param_4)"
+      },
+      {
+        "address_count": 83,
+        "explicit_parameter_count": 1,
+        "function_entry": "004b6a70",
+        "function_name": "FUN_004b6a70",
+        "signature": "undefined __thiscall FUN_004b6a70(void * this, int * param_1)"
+      },
+      {
+        "address_count": 237,
+        "explicit_parameter_count": 1,
+        "function_entry": "004b7450",
+        "function_name": "FUN_004b7450",
+        "signature": "undefined1 __stdcall FUN_004b7450(undefined4 * param_1)"
+      },
+      {
+        "address_count": 57,
+        "explicit_parameter_count": 2,
+        "function_entry": "004b7bb0",
+        "function_name": "FUN_004b7bb0",
+        "signature": "uint __thiscall FUN_004b7bb0(void * this, uint param_1, uint param_2)"
+      },
+      {
+        "address_count": 70,
+        "explicit_parameter_count": 4,
+        "function_entry": "004b7dd0",
+        "function_name": "FUN_004b7dd0",
+        "signature": "float10 __thiscall FUN_004b7dd0(int param_1, uint param_2, uint param_3, uint param_4)"
+      },
+      {
+        "address_count": 53,
+        "explicit_parameter_count": 2,
+        "function_entry": "004b7fd0",
+        "function_name": "FUN_004b7fd0",
+        "signature": "float10 __thiscall FUN_004b7fd0(int param_1, uint param_2)"
+      },
+      {
+        "address_count": 57,
+        "explicit_parameter_count": 2,
+        "function_entry": "004b8120",
+        "function_name": "FUN_004b8120",
+        "signature": "float10 __thiscall FUN_004b8120(int param_1, uint param_2)"
+      },
+      {
+        "address_count": 76,
+        "explicit_parameter_count": 2,
+        "function_entry": "004b8440",
+        "function_name": "FUN_004b8440",
+        "signature": "void * __thiscall FUN_004b8440(void * this, void * param_1, uint param_2)"
+      },
+      {
+        "address_count": 96,
+        "explicit_parameter_count": 1,
+        "function_entry": "004b8bf0",
+        "function_name": "FUN_004b8bf0",
+        "signature": "uint __fastcall FUN_004b8bf0(uint param_1)"
+      },
+      {
+        "address_count": 374,
+        "explicit_parameter_count": 1,
+        "function_entry": "004b94f0",
+        "function_name": "FUN_004b94f0",
+        "signature": "undefined4 __thiscall FUN_004b94f0(void * this, int param_1)"
+      },
+      {
+        "address_count": 83,
+        "explicit_parameter_count": 1,
+        "function_entry": "004bb0d0",
+        "function_name": "FUN_004bb0d0",
+        "signature": "undefined __fastcall FUN_004bb0d0(int param_1)"
+      },
+      {
+        "address_count": 72,
+        "explicit_parameter_count": 1,
+        "function_entry": "004bc310",
+        "function_name": "FUN_004bc310",
+        "signature": "undefined __fastcall FUN_004bc310(int * param_1)"
+      },
+      {
+        "address_count": 81,
+        "explicit_parameter_count": 1,
+        "function_entry": "004bceb4",
+        "function_name": "FUN_004bceb4",
+        "signature": "undefined __fastcall FUN_004bceb4(undefined4 param_1)"
+      },
+      {
+        "address_count": 82,
+        "explicit_parameter_count": 1,
+        "function_entry": "004bdd30",
+        "function_name": "FUN_004bdd30",
+        "signature": "undefined __thiscall FUN_004bdd30(void * this, float param_1)"
+      },
+      {
+        "address_count": 203,
+        "explicit_parameter_count": 1,
+        "function_entry": "004bec80",
+        "function_name": "FUN_004bec80",
+        "signature": "undefined4 * __fastcall FUN_004bec80(undefined4 * param_1)"
+      },
+      {
+        "address_count": 45,
+        "explicit_parameter_count": 2,
+        "function_entry": "004bf090",
+        "function_name": "FUN_004bf090",
+        "signature": "float10 __thiscall FUN_004bf090(int param_1, undefined4 param_2)"
+      },
+      {
+        "address_count": 85,
+        "explicit_parameter_count": 1,
+        "function_entry": "004bf3d0",
+        "function_name": "FUN_004bf3d0",
+        "signature": "undefined4 __thiscall FUN_004bf3d0(void * this, float param_1)"
+      },
+      {
+        "address_count": 99,
+        "explicit_parameter_count": 1,
+        "function_entry": "004bfd40",
+        "function_name": "FUN_004bfd40",
+        "signature": "float10 __fastcall FUN_004bfd40(int param_1)"
+      },
+      {
+        "address_count": 332,
+        "explicit_parameter_count": 1,
+        "function_entry": "004c0be0",
+        "function_name": "FUN_004c0be0",
+        "signature": "undefined __thiscall FUN_004c0be0(void * this, int param_1)"
+      },
+      {
+        "address_count": 130,
+        "explicit_parameter_count": 1,
+        "function_entry": "004c12b0",
+        "function_name": "FUN_004c12b0",
+        "signature": "undefined4 __fastcall FUN_004c12b0(undefined4 * param_1)"
+      },
+      {
+        "address_count": 182,
+        "explicit_parameter_count": 1,
+        "function_entry": "004c2160",
+        "function_name": "FUN_004c2160",
+        "signature": "void * __thiscall FUN_004c2160(void * this, void * param_1)"
+      },
+      {
+        "address_count": 265,
+        "explicit_parameter_count": 1,
+        "function_entry": "004c2a40",
+        "function_name": "FUN_004c2a40",
+        "signature": "float10 __fastcall FUN_004c2a40(int param_1)"
+      },
+      {
+        "address_count": 350,
+        "explicit_parameter_count": 1,
+        "function_entry": "004c3169",
+        "function_name": "FUN_004c3169",
+        "signature": "undefined4 __fastcall FUN_004c3169(undefined4 param_1)"
+      },
+      {
+        "address_count": 127,
+        "explicit_parameter_count": 1,
+        "function_entry": "004c3f30",
+        "function_name": "FUN_004c3f30",
+        "signature": "undefined __thiscall FUN_004c3f30(void * this, char param_1)"
+      },
+      {
+        "address_count": 90,
+        "explicit_parameter_count": 9,
+        "function_entry": "004c6f50",
+        "function_name": "FUN_004c6f50",
+        "signature": "bool __thiscall FUN_004c6f50(void * this, int param_1, undefined4 param_2, undefined4 param_3, char param_4, undefined4 param_5, float * param_6, undefined4 * param_7, int param_8, int param_9)"
+      },
+      {
+        "address_count": 48,
+        "explicit_parameter_count": 1,
+        "function_entry": "004c7260",
+        "function_name": "FUN_004c7260",
+        "signature": "void * __thiscall FUN_004c7260(void * this, int param_1)"
+      },
+      {
+        "address_count": 96,
+        "explicit_parameter_count": 1,
+        "function_entry": "004c7c20",
+        "function_name": "FUN_004c7c20",
+        "signature": "int __fastcall FUN_004c7c20(int param_1)"
+      },
+      {
+        "address_count": 62,
+        "explicit_parameter_count": 1,
+        "function_entry": "004c8160",
+        "function_name": "FUN_004c8160",
+        "signature": "undefined4 * __fastcall FUN_004c8160(undefined4 * param_1)"
+      },
+      {
+        "address_count": 46,
+        "explicit_parameter_count": 1,
+        "function_entry": "004c86e0",
+        "function_name": "FUN_004c86e0",
+        "signature": "undefined4 * __fastcall FUN_004c86e0(undefined4 * param_1)"
+      },
+      {
+        "address_count": 99,
+        "explicit_parameter_count": 1,
+        "function_entry": "004c9680",
+        "function_name": "FUN_004c9680",
+        "signature": "undefined __fastcall FUN_004c9680(int param_1)"
+      },
+      {
+        "address_count": 404,
+        "explicit_parameter_count": 1,
+        "function_entry": "004c9e10",
+        "function_name": "FUN_004c9e10",
+        "signature": "undefined4 __fastcall FUN_004c9e10(void * param_1)"
+      },
+      {
+        "address_count": 446,
+        "explicit_parameter_count": 1,
+        "function_entry": "004cb300",
+        "function_name": "FUN_004cb300",
+        "signature": "undefined4 __fastcall FUN_004cb300(void * param_1)"
+      },
+      {
+        "address_count": 285,
+        "explicit_parameter_count": 1,
+        "function_entry": "004cbba0",
+        "function_name": "FUN_004cbba0",
+        "signature": "undefined __stdcall FUN_004cbba0(undefined4 * param_1)"
+      },
+      {
+        "address_count": 625,
+        "explicit_parameter_count": 1,
+        "function_entry": "004cd050",
+        "function_name": "FUN_004cd050",
+        "signature": "undefined __thiscall FUN_004cd050(void * this, int param_1)"
+      },
+      {
+        "address_count": 71,
+        "explicit_parameter_count": 1,
+        "function_entry": "004ce4c0",
+        "function_name": "FUN_004ce4c0",
+        "signature": "undefined __fastcall FUN_004ce4c0(int param_1)"
+      },
+      {
+        "address_count": 278,
+        "explicit_parameter_count": 1,
+        "function_entry": "004ce8b0",
+        "function_name": "FUN_004ce8b0",
+        "signature": "undefined4 __thiscall FUN_004ce8b0(void * this, char * param_1)"
+      },
+      {
+        "address_count": 136,
+        "explicit_parameter_count": 1,
+        "function_entry": "004cef20",
+        "function_name": "FUN_004cef20",
+        "signature": "undefined4 __fastcall FUN_004cef20(void * param_1)"
+      },
+      {
+        "address_count": 61,
+        "explicit_parameter_count": 1,
+        "function_entry": "004cf690",
+        "function_name": "FUN_004cf690",
+        "signature": "undefined __fastcall FUN_004cf690(int * param_1)"
+      },
+      {
+        "address_count": 71,
+        "explicit_parameter_count": 1,
+        "function_entry": "004cfe70",
+        "function_name": "FUN_004cfe70",
+        "signature": "undefined4 * __fastcall FUN_004cfe70(undefined4 * param_1)"
+      },
+      {
+        "address_count": 49,
+        "explicit_parameter_count": 1,
+        "function_entry": "004d0620",
+        "function_name": "FUN_004d0620",
+        "signature": "undefined4 * __fastcall FUN_004d0620(undefined4 * param_1)"
+      },
+      {
+        "address_count": 104,
+        "explicit_parameter_count": 1,
+        "function_entry": "004d1080",
+        "function_name": "FUN_004d1080",
+        "signature": "uint __thiscall FUN_004d1080(void * this, byte param_1)"
+      },
+      {
+        "address_count": 58,
+        "explicit_parameter_count": 3,
+        "function_entry": "004d13e0",
+        "function_name": "FUN_004d13e0",
+        "signature": "undefined __fastcall FUN_004d13e0(undefined4 param_1, char param_2, char param_3)"
+      },
+      {
+        "address_count": 67,
+        "explicit_parameter_count": 1,
+        "function_entry": "004d1b20",
+        "function_name": "FUN_004d1b20",
+        "signature": "undefined4 __fastcall FUN_004d1b20(int param_1)"
+      },
+      {
+        "address_count": 65,
+        "explicit_parameter_count": 1,
+        "function_entry": "004d22c0",
+        "function_name": "FUN_004d22c0",
+        "signature": "undefined4 __fastcall FUN_004d22c0(void * param_1)"
+      },
+      {
+        "address_count": 90,
+        "explicit_parameter_count": 1,
+        "function_entry": "004d2790",
+        "function_name": "FUN_004d2790",
+        "signature": "undefined4 __fastcall FUN_004d2790(int param_1)"
+      },
+      {
+        "address_count": 397,
+        "explicit_parameter_count": 1,
+        "function_entry": "004d2ff0",
+        "function_name": "FUN_004d2ff0",
+        "signature": "char __fastcall FUN_004d2ff0(int param_1)"
+      },
+      {
+        "address_count": 143,
+        "explicit_parameter_count": 1,
+        "function_entry": "004d38d0",
+        "function_name": "FUN_004d38d0",
+        "signature": "undefined __thiscall FUN_004d38d0(void * this, int param_1)"
+      },
+      {
+        "address_count": 111,
+        "explicit_parameter_count": 1,
+        "function_entry": "004d42e0",
+        "function_name": "FUN_004d42e0",
+        "signature": "undefined __fastcall FUN_004d42e0(undefined4 * param_1)"
+      },
+      {
+        "address_count": 69,
+        "explicit_parameter_count": 1,
+        "function_entry": "004d46c0",
+        "function_name": "FUN_004d46c0",
+        "signature": "undefined4 __fastcall FUN_004d46c0(int * param_1)"
+      },
+      {
+        "address_count": 105,
+        "explicit_parameter_count": 1,
+        "function_entry": "004d4d40",
+        "function_name": "FUN_004d4d40",
+        "signature": "undefined4 __fastcall FUN_004d4d40(int param_1)"
+      },
+      {
+        "address_count": 173,
+        "explicit_parameter_count": 1,
+        "function_entry": "004d5250",
+        "function_name": "FUN_004d5250",
+        "signature": "undefined __thiscall FUN_004d5250(void * this, uint param_1)"
+      },
+      {
+        "address_count": 73,
+        "explicit_parameter_count": 2,
+        "function_entry": "004d6130",
+        "function_name": "FUN_004d6130",
+        "signature": "undefined4 __thiscall FUN_004d6130(void * this, undefined4 param_1, char param_2)"
+      },
+      {
+        "address_count": 253,
+        "explicit_parameter_count": 1,
+        "function_entry": "004d6b20",
+        "function_name": "FUN_004d6b20",
+        "signature": "undefined __stdcall FUN_004d6b20(char param_1)"
+      },
+      {
+        "address_count": 179,
+        "explicit_parameter_count": 1,
+        "function_entry": "004d7650",
+        "function_name": "FUN_004d7650",
+        "signature": "undefined __fastcall FUN_004d7650(int param_1)"
+      },
+      {
+        "address_count": 76,
+        "explicit_parameter_count": 1,
+        "function_entry": "004d7f70",
+        "function_name": "FUN_004d7f70",
+        "signature": "undefined __fastcall FUN_004d7f70(int param_1)"
+      },
+      {
+        "address_count": 100,
+        "explicit_parameter_count": 1,
+        "function_entry": "004d8940",
+        "function_name": "FUN_004d8940",
+        "signature": "undefined4 __thiscall FUN_004d8940(void * this, int param_1)"
+      },
+      {
+        "address_count": 313,
+        "explicit_parameter_count": 1,
+        "function_entry": "004d90b0",
+        "function_name": "FUN_004d90b0",
+        "signature": "undefined __thiscall FUN_004d90b0(void * this, char param_1)"
+      },
+      {
+        "address_count": 120,
+        "explicit_parameter_count": 1,
+        "function_entry": "004da7c0",
+        "function_name": "FUN_004da7c0",
+        "signature": "undefined __fastcall FUN_004da7c0(int param_1)"
+      },
+      {
+        "address_count": 289,
+        "explicit_parameter_count": 1,
+        "function_entry": "004dbc10",
+        "function_name": "FUN_004dbc10",
+        "signature": "undefined4 __thiscall FUN_004dbc10(void * this, int * param_1)"
+      },
+      {
+        "address_count": 66,
+        "explicit_parameter_count": 1,
+        "function_entry": "004df010",
+        "function_name": "FUN_004df010",
+        "signature": "undefined4 __fastcall FUN_004df010(int * param_1)"
+      },
+      {
+        "address_count": 124,
+        "explicit_parameter_count": 1,
+        "function_entry": "004e0460",
+        "function_name": "FUN_004e0460",
+        "signature": "float10 __fastcall FUN_004e0460(int param_1)"
+      },
+      {
+        "address_count": 70,
+        "explicit_parameter_count": 1,
+        "function_entry": "004e1780",
+        "function_name": "FUN_004e1780",
+        "signature": "undefined4 * __fastcall FUN_004e1780(undefined4 * param_1)"
+      },
+      {
+        "address_count": 600,
+        "explicit_parameter_count": 1,
+        "function_entry": "004e34f0",
+        "function_name": "FUN_004e34f0",
+        "signature": "undefined __stdcall FUN_004e34f0(int param_1)"
+      },
+      {
+        "address_count": 160,
+        "explicit_parameter_count": 1,
+        "function_entry": "004e4ce0",
+        "function_name": "FUN_004e4ce0",
+        "signature": "undefined1 * __thiscall FUN_004e4ce0(void * this, undefined1 * param_1)"
+      },
+      {
+        "address_count": 168,
+        "explicit_parameter_count": 1,
+        "function_entry": "004e74d0",
+        "function_name": "FUN_004e74d0",
+        "signature": "undefined __fastcall FUN_004e74d0(float * param_1)"
+      },
+      {
+        "address_count": 381,
+        "explicit_parameter_count": 1,
+        "function_entry": "004e8330",
+        "function_name": "FUN_004e8330",
+        "signature": "undefined1 __fastcall FUN_004e8330(int param_1)"
+      },
+      {
+        "address_count": 90,
+        "explicit_parameter_count": 1,
+        "function_entry": "004e97b0",
+        "function_name": "FUN_004e97b0",
+        "signature": "undefined __thiscall FUN_004e97b0(void * this, double param_1)"
+      },
+      {
+        "address_count": 126,
+        "explicit_parameter_count": 1,
+        "function_entry": "004ea070",
+        "function_name": "FUN_004ea070",
+        "signature": "undefined1 * __thiscall FUN_004ea070(void * this, undefined1 * param_1)"
+      },
+      {
+        "address_count": 156,
+        "explicit_parameter_count": 1,
+        "function_entry": "004ea8e0",
+        "function_name": "FUN_004ea8e0",
+        "signature": "undefined4 * __thiscall FUN_004ea8e0(void * this, undefined4 * param_1)"
+      },
+      {
+        "address_count": 114,
+        "explicit_parameter_count": 1,
+        "function_entry": "004eb4c9",
+        "function_name": "FUN_004eb4c9",
+        "signature": "undefined __fastcall FUN_004eb4c9(undefined4 * param_1)"
+      },
+      {
+        "address_count": 516,
+        "explicit_parameter_count": 1,
+        "function_entry": "004ebde0",
+        "function_name": "FUN_004ebde0",
+        "signature": "undefined4 * __thiscall FUN_004ebde0(void * this, int param_1)"
+      },
+      {
+        "address_count": 43,
+        "explicit_parameter_count": 2,
+        "function_entry": "004ec610",
+        "function_name": "FUN_004ec610",
+        "signature": "undefined __fastcall FUN_004ec610(int * param_1, char param_2)"
+      },
+      {
+        "address_count": 46,
+        "explicit_parameter_count": 1,
+        "function_entry": "004ecbd0",
+        "function_name": "FUN_004ecbd0",
+        "signature": "undefined __fastcall FUN_004ecbd0(int * param_1)"
+      },
+      {
+        "address_count": 387,
+        "explicit_parameter_count": 1,
+        "function_entry": "004ee8d0",
+        "function_name": "FUN_004ee8d0",
+        "signature": "LONG * __fastcall FUN_004ee8d0(LONG * param_1)"
+      },
+      {
+        "address_count": 158,
+        "explicit_parameter_count": 1,
+        "function_entry": "004ef390",
+        "function_name": "FUN_004ef390",
+        "signature": "undefined __fastcall FUN_004ef390(int param_1)"
+      },
+      {
+        "address_count": 416,
+        "explicit_parameter_count": 1,
+        "function_entry": "004efc00",
+        "function_name": "FUN_004efc00",
+        "signature": "undefined __fastcall FUN_004efc00(void * param_1)"
+      },
+      {
+        "address_count": 329,
+        "explicit_parameter_count": 1,
+        "function_entry": "004f07e0",
+        "function_name": "FUN_004f07e0",
+        "signature": "undefined __fastcall FUN_004f07e0(int param_1)"
+      },
+      {
+        "address_count": 66,
+        "explicit_parameter_count": 2,
+        "function_entry": "004f3130",
+        "function_name": "FUN_004f3130",
+        "signature": "undefined4 __thiscall FUN_004f3130(void * this, int * param_1, void * param_2)"
+      },
+      {
+        "address_count": 205,
+        "explicit_parameter_count": 1,
+        "function_entry": "004f3910",
+        "function_name": "FUN_004f3910",
+        "signature": "undefined __thiscall FUN_004f3910(void * this, undefined4 * param_1)"
+      },
+      {
+        "address_count": 44,
+        "explicit_parameter_count": 3,
+        "function_entry": "004f6350",
+        "function_name": "FUN_004f6350",
+        "signature": "undefined4 __fastcall FUN_004f6350(uint param_1, undefined4 * param_2, int param_3)"
+      },
+      {
+        "address_count": 408,
+        "explicit_parameter_count": 1,
+        "function_entry": "004f6e70",
+        "function_name": "FUN_004f6e70",
+        "signature": "undefined __fastcall FUN_004f6e70(void * param_1)"
+      },
+      {
+        "address_count": 187,
+        "explicit_parameter_count": 1,
+        "function_entry": "004f7810",
+        "function_name": "FUN_004f7810",
+        "signature": "undefined4 * __fastcall FUN_004f7810(undefined4 * param_1)"
+      },
+      {
+        "address_count": 190,
+        "explicit_parameter_count": 1,
+        "function_entry": "004f8ad0",
+        "function_name": "FUN_004f8ad0",
+        "signature": "undefined __fastcall FUN_004f8ad0(int param_1)"
+      },
+      {
+        "address_count": 166,
+        "explicit_parameter_count": 1,
+        "function_entry": "004fb940",
+        "function_name": "FUN_004fb940",
+        "signature": "undefined __fastcall FUN_004fb940(int param_1)"
+      },
+      {
+        "address_count": 75,
+        "explicit_parameter_count": 2,
+        "function_entry": "004fc340",
+        "function_name": "FUN_004fc340",
+        "signature": "undefined __thiscall FUN_004fc340(void * this, undefined4 param_1, undefined4 param_2)"
+      },
+      {
+        "address_count": 43,
+        "explicit_parameter_count": 2,
+        "function_entry": "004fca90",
+        "function_name": "FUN_004fca90",
+        "signature": "undefined __thiscall FUN_004fca90(void * this, undefined4 param_1, uint param_2)"
+      },
+      {
+        "address_count": 43,
+        "explicit_parameter_count": 1,
+        "function_entry": "004fd540",
+        "function_name": "FUN_004fd540",
+        "signature": "undefined4 __fastcall FUN_004fd540(int param_1)"
+      },
+      {
+        "address_count": 245,
+        "explicit_parameter_count": 1,
+        "function_entry": "004fd8f0",
+        "function_name": "FUN_004fd8f0",
+        "signature": "undefined __fastcall FUN_004fd8f0(int * param_1)"
+      },
+      {
+        "address_count": 60,
+        "explicit_parameter_count": 2,
+        "function_entry": "004fe3f0",
+        "function_name": "FUN_004fe3f0",
+        "signature": "undefined __thiscall FUN_004fe3f0(void * this, undefined4 param_1, undefined4 param_2)"
+      },
+      {
+        "address_count": 77,
+        "explicit_parameter_count": 1,
+        "function_entry": "004ff9e0",
+        "function_name": "FUN_004ff9e0",
+        "signature": "int __fastcall FUN_004ff9e0(int param_1)"
+      }
+    ],
+    "eligible_population": 1457,
+    "filters": [
+      "Ghidra function inventory entry in address range",
+      "non-external function",
+      "function name does not begin with thunk_",
+      "at least one explicit param_n formal",
+      "body address_count between 40 and 800 inclusive",
+      "present as a direct-call caller in pinned call-edge export",
+      "not selected by scans25–28"
+    ],
+    "sampling": "256 address-ordered midpoint quantiles from the 1,457 remaining eligible functions",
+    "selected_functions": 256
+  },
+  "source": {
+    "call_edges": {
+      "path": "nfs-shift-mass-recovery-20261017-artifacts/p1b-full-program-index/shift.calls.tsv.gz",
+      "sha256": "68d06720c8c0cbd370338c6b4d322d84ef0c15f4474c1a3e522f3e3ea2b2d2fe"
+    },
+    "executable": {
+      "path": "SHIFT.exe",
+      "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+    },
+    "function_inventory": {
+      "path": "shift.functions.tsv.gz",
+      "sha256": "8b8b00d8493dba459edf186869ddf492dc26002af3b65d08b6988dc91a87fa24"
+    }
+  }
+}

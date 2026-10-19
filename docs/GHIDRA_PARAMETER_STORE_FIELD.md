@@ -13,7 +13,8 @@ strings, and destination offsets are signed hexadecimal strings.
 
 Run against an already analyzed program:
 
-    GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_parameter_store_field.sh       /path/to/projects project-name program-name 00401000 /tmp/parameter-stores.tsv
+    GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_parameter_store_field.sh \
+      /path/to/projects project-name program-name 00401000 /tmp/parameter-stores.tsv
 
 The runner uses read-only, no-analysis mode and an isolated script directory.
 The exporter follows bounded High-P-code address expressions and strips
@@ -21,8 +22,14 @@ value-preserving operations before matching the source and destination
 parameters. It requests the High-P-code syntax tree without generating unused
 C-code markup.
 
+For bounded screens, pass additional exact function entries with repeated
+`--function-entry` options. The exporter opens one decompiler and emits one
+combined TSV/JSONL set; every row retains its `function_entry`. Batches are
+capped at 256 functions, duplicate entries are rejected, and a failed
+decompilation fails the batch.
+
 It can additionally write `GhidraMemoryStoreAccess/1` JSONL facts for every
-High-P-code `STORE` in the selected function, including stores whose address
+High-P-code `STORE` in each selected function, including stores whose address
 cannot be resolved to a formal parameter. Give each invocation an opaque
 program id so the facts join to a matching `GhidraFunctionPcodeCFG` artifact:
 

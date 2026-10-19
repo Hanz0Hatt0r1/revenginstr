@@ -1,0 +1,54 @@
+openjdk version "21.0.12.1" 2026-08-18
+OpenJDK Runtime Environment (build 21.0.12.1+1)
+OpenJDK 64-Bit Server VM (build 21.0.12.1+1, mixed mode)
+INFO  Using log config file: jar:file:/opt/ghidra/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)
+INFO  Using log file: <LOCAL_HOME>/.config/ghidra/ghidra_12.1.2_DEV/application.log (LoggingInitialization)
+INFO  Loading user preferences: <LOCAL_HOME>/.config/ghidra/ghidra_12.1.2_DEV/preferences (Preferences)
+INFO  Searching for classes... (ClassSearcher)
+INFO  Class search complete (1641 ms) (ClassSearcher)
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)
+INFO  Initializing Random Number Generator... (SecureRandomFactory)
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)
+INFO  Headless startup complete (3311 ms) (AnalyzeHeadless)
+INFO  Class searcher loaded 59 extension points (21 false positives) (ClassSearcher)
+INFO  HEADLESS Script Paths:
+    /opt/ghidra/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/JVM/ghidra_scripts
+    <TEMP_DIR>
+    /opt/ghidra/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/VersionTracking/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/PyGhidra/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    <LOCAL_HOME>/.config/ghidra/ghidra_12.1.2_DEV/Extensions/Lisa/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/Atmel/ghidra_scripts
+    /opt/ghidra/Ghidra/Debug/Debugger/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/Decompiler/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/FunctionID/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/PIC/ghidra_scripts
+    <LOCAL_HOME>/.config/ghidra/ghidra_12.1.2_DEV/Extensions/SleighDevTools/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/BSim/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/BytePatterns/ghidra_scripts
+    <LOCAL_HOME>/.config/ghidra/ghidra_12.1.2_DEV/Extensions/Jython/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/SystemEmulation/ghidra_scripts
+    <LOCAL_HOME>/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/DATA/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/Base/ghidra_scripts
+    <LOCAL_HOME>/.config/ghidra/ghidra_12.1.2_DEV/Extensions/MachineLearning/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/PDB/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/8051/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/FileFormats/ghidra_scripts (HeadlessAnalyzer)
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)
+INFO  Opening existing project: <LOCAL_HOME>/ghidra_projects/shift/shift (HeadlessAnalyzer)
+INFO  Opening project: <LOCAL_HOME>/ghidra_projects/shift/shift (HeadlessProject)
+INFO  REPORT: Processing read-only project file: /SHIFT.exe (HeadlessAnalyzer)
+INFO  REPORT: Execute script: ExportFunctionPcodeCFG.java '<LOCAL_HOME>/.local/share/ghidra-decompiler/workspace/nfs-m23-scan36/outputs/function-pcode-cfg-v4.jsonl' 'nfs-shift:SHIFT.exe' '00429a30' '00469c80' '00469cb0' '00469df0' '0047f610' '00488d30' '004c0da0' '--indirect-effect-links'  (HeadlessAnalyzer)
+INFO  SCRIPT: <TEMP_DIR>/ExportFunctionPcodeCFG.java (HeadlessAnalyzer)
+INFO  ExportFunctionPcodeCFG.java> GHIDRA_FUNCTION_PCODE_CFG_FORMAT=REVENGINSTR.GhidraFunctionPcodeCFG/4 (GhidraScript)
+INFO  ExportFunctionPcodeCFG.java> GHIDRA_FUNCTION_PCODE_CFG_FUNCTIONS=7 (GhidraScript)
+INFO  ExportFunctionPcodeCFG.java> GHIDRA_FUNCTION_PCODE_CFG_EXPORTED_FUNCTIONS=7 (GhidraScript)
+INFO  ExportFunctionPcodeCFG.java> GHIDRA_FUNCTION_PCODE_CFG_SKIPPED_FUNCTIONS=0 (GhidraScript)
+INFO  ExportFunctionPcodeCFG.java> Ghidra function P-code CFG export -> <LOCAL_HOME>/.local/share/ghidra-decompiler/workspace/nfs-m23-scan36/outputs/function-pcode-cfg-v4.jsonl (GhidraScript)

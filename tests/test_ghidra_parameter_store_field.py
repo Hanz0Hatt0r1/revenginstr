@@ -68,4 +68,15 @@ def test_parameter_store_runner_is_read_only_and_isolated() -> None:
     assert "mktemp -d" in runner
     assert "ExportGhidraParameterStoreField.java" in runner
     assert "--load-output" in runner
+    assert "--function-entry" in runner
     assert '"${POST_SCRIPT_ARGS[@]}"' in runner
+
+
+def test_parameter_store_exporter_supports_bounded_exact_entry_batches() -> None:
+    source = (ROOT / "ghidra/ExportGhidraParameterStoreField.java").read_text(encoding="utf-8")
+    assert "MAX_FUNCTIONS = 256" in source
+    assert '"--function-entry".equals(option)' in source
+    assert "getFunctionAt(address)" in source
+    assert "functionEntries.add(entry)" in source
+    assert "for (Function function : functions)" in source
+    assert "GHIDRA_PARAMETER_STORE_FIELD_FUNCTIONS=" in source

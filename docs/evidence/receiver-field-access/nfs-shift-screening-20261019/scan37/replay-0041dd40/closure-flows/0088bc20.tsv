@@ -1,0 +1,12 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+0088bc20	0088bc26	17	INT_ADD	def:0088bc26:17:4	def:0088bc26:55:4;const:0xc:4	-	-
+0088bc20	0088bc26	20	LOAD	def:0088bc26:20:4	const:0x1a1:4;def:0088bc26:56:4	-	-
+0088bc20	0088bc26	21	INT_OR	def:0088bc26:21:4	def:0088bc26:20:4;const:0x20:4	-	-
+0088bc20	0088bc26	22	STORE	-	const:0x1a1:4;def:0088bc26:56:4;def:0088bc26:21:4	-	-
+0088bc20	0088bc26	55	CAST	def:0088bc26:55:4	register:register:00000004:4	-	-
+0088bc20	0088bc26	56	CAST	def:0088bc26:56:4	def:0088bc26:17:4	-	-
+0088bc20	0088bc2a	32	INT_ADD	def:0088bc2a:32:4	def:0088bc2a:57:4;const:0x670:4	-	-
+0088bc20	0088bc2a	35	STORE	-	const:0x1a1:4;def:0088bc2a:58:4;input:Stack[0x4]:4	-	-
+0088bc20	0088bc2a	57	CAST	def:0088bc2a:57:4	register:register:00000004:4	-	-
+0088bc20	0088bc2a	58	CAST	def:0088bc2a:58:4	def:0088bc2a:32:4	-	-
+0088bc20	0088bc31	50	RETURN	-	const:0x0:4	-	-

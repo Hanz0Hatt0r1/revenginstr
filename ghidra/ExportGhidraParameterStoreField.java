@@ -31,6 +31,7 @@ public class ExportGhidraParameterStoreField extends GhidraScript {
     private static final String FORMAT = "REVENGINSTR.GhidraParameterStoreField/1";
     private static final String MEMORY_ACCESS_FORMAT = "REVENGINSTR.GhidraMemoryStoreAccess/1";
     private static final int MAX_DEPTH = 12;
+    private static final int MAX_FUNCTIONS = 256;
 
     private static final class OperationRef {
         final String address;
@@ -100,6 +101,18 @@ public class ExportGhidraParameterStoreField extends GhidraScript {
         if (partialCount == 1) return partial;
         if (partialCount > 1) throw new IllegalArgumentException("Ambiguous function token: " + token);
         throw new IllegalArgumentException("Function not found: " + token);
+    }
+
+    private Function resolveFunctionEntry(String token) throws Exception {
+        Address address;
+        try {
+            address = toAddr(token);
+        } catch (Exception error) {
+            throw new IllegalArgumentException("Invalid function entry: " + token);
+        }
+        Function function = currentProgram.getFunctionManager().getFunctionAt(address);
+        if (function == null) throw new IllegalArgumentException("No function at entry: " + token);
+        return function;
     }
 
     private boolean transparent(PcodeOp op) {
@@ -331,18 +344,34 @@ public class ExportGhidraParameterStoreField extends GhidraScript {
         String[] args = getScriptArgs();
         if (args.length < 2) throw new IllegalArgumentException(
             "Usage: ExportGhidraParameterStoreField.java <function-address-or-name> <stores.tsv> " +
-            "[--load-output <loads.tsv>] [--memory-access-output <stores.jsonl> --program-id <id>]");
-        Function function = resolveFunction(args[0]);
+            "[--function-entry <entry> ...] [--load-output <loads.tsv>] " +
+            "[--memory-access-output <stores.jsonl> --program-id <id>]");
+        List<Function> functions = new ArrayList<Function>();
+        Set<String> functionEntries = new HashSet<String>();
+        Function firstFunction = resolveFunction(args[0]);
+        functions.add(firstFunction);
+        functionEntries.add(firstFunction.getEntryPoint().toString());
         File storeOutput = new File(args[1]);
         File loadOutput = null;
         File memoryAccessOutput = null;
         String programId = null;
         for (int i = 2; i < args.length; i++) {
             String option = args[i];
-            if ("--load-output".equals(option) || "--memory-access-output".equals(option) || "--program-id".equals(option)) {
+            if ("--function-entry".equals(option) || "--load-output".equals(option) ||
+                    "--memory-access-output".equals(option) || "--program-id".equals(option)) {
                 if (i + 1 >= args.length) throw new IllegalArgumentException("Missing value for " + option);
                 String value = args[++i];
-                if ("--load-output".equals(option)) {
+                if ("--function-entry".equals(option)) {
+                    Function function = resolveFunctionEntry(value);
+                    String entry = function.getEntryPoint().toString();
+                    if (!functionEntries.add(entry)) {
+                        throw new IllegalArgumentException("duplicate function entry: " + entry);
+                    }
+                    functions.add(function);
+                    if (functions.size() > MAX_FUNCTIONS) {
+                        throw new IllegalArgumentException("function batch exceeds " + MAX_FUNCTIONS);
+                    }
+                } else if ("--load-output".equals(option)) {
                     if (loadOutput != null) throw new IllegalArgumentException("Duplicate --load-output");
                     loadOutput = new File(value);
                 } else if ("--memory-access-output".equals(option)) {
@@ -373,12 +402,6 @@ public class ExportGhidraParameterStoreField extends GhidraScript {
             throw new IllegalStateException("Could not configure P-code-only decompilation");
         }
         if (!decompiler.openProgram(currentProgram)) throw new IllegalStateException("Could not open program");
-        DecompileResults results = decompiler.decompileFunction(function, 60, monitor);
-        if (results == null || !results.decompileCompleted() || results.getHighFunction() == null) {
-            decompiler.dispose();
-            throw new IllegalStateException("Could not decompile " + function.getEntryPoint());
-        }
-        HighFunction high = results.getHighFunction();
 
         if (storeOutput.getParentFile() != null) storeOutput.getParentFile().mkdirs();
         if (loadOutput != null && loadOutput.getParentFile() != null) loadOutput.getParentFile().mkdirs();
@@ -386,6 +409,7 @@ public class ExportGhidraParameterStoreField extends GhidraScript {
         int storeRows = 0;
         int loadRows = 0;
         int memoryAccessRows = 0;
+        int completedFunctions = 0;
         try (BufferedWriter storeOut = new BufferedWriter(new OutputStreamWriter(
                     new FileOutputStream(storeOutput), StandardCharsets.UTF_8));
              BufferedWriter loadOut = loadOutput == null ? null : new BufferedWriter(new OutputStreamWriter(
@@ -402,72 +426,92 @@ public class ExportGhidraParameterStoreField extends GhidraScript {
                 loadOut.newLine();
             }
 
-            Iterator<PcodeOpAST> ops = high.getPcodeOps();
-            while (ops.hasNext() && !monitor.isCancelled()) {
-                PcodeOpAST op = ops.next();
-                if (loadOut != null && op.getOpcode() == PcodeOp.LOAD && op.getNumInputs() >= 2) {
-                    AddressExpr address = decodeAddress(op.getInput(1));
-                    int baseParameter = parameterIndex(high, address.base);
-                    Varnode value = op.getOutput();
-                    if (baseParameter >= 0 && address.offset != null && value != null) {
-                        SequenceNumber sequence = op.getSeqnum();
-                        loadOut.write(String.join("\t",
-                            "REVENGINSTR.GhidraParameterLoadField/1",
-                            cell(function.getEntryPoint()),
-                            cell(function.getName(true)),
-                            cell(sequence == null ? null : sequence.getTarget()),
-                            sequence == null ? "-" : Integer.toString(sequence.getTime()),
-                            Integer.toString(baseParameter),
-                            hex(address.offset),
-                            address.pattern,
-                            Integer.toString(value.getSize()),
-                            valueToken(value),
-                            "parameter_field_load"));
-                        loadOut.newLine();
-                        loadRows++;
+            for (Function function : functions) {
+                if (monitor.isCancelled()) throw new IllegalStateException("Export cancelled before all functions were written");
+                DecompileResults results = decompiler.decompileFunction(function, 60, monitor);
+                if (results == null || !results.decompileCompleted() || results.getHighFunction() == null) {
+                    throw new IllegalStateException("Could not decompile " + function.getEntryPoint());
+                }
+                HighFunction high = results.getHighFunction();
+                int functionStoreRows = 0;
+                int functionLoadRows = 0;
+                int functionMemoryAccessRows = 0;
+                Iterator<PcodeOpAST> ops = high.getPcodeOps();
+                while (ops.hasNext() && !monitor.isCancelled()) {
+                    PcodeOpAST op = ops.next();
+                    if (loadOut != null && op.getOpcode() == PcodeOp.LOAD && op.getNumInputs() >= 2) {
+                        AddressExpr address = decodeAddress(op.getInput(1));
+                        int baseParameter = parameterIndex(high, address.base);
+                        Varnode value = op.getOutput();
+                        if (baseParameter >= 0 && address.offset != null && value != null) {
+                            SequenceNumber sequence = op.getSeqnum();
+                            loadOut.write(String.join("\t",
+                                "REVENGINSTR.GhidraParameterLoadField/1",
+                                cell(function.getEntryPoint()),
+                                cell(function.getName(true)),
+                                cell(sequence == null ? null : sequence.getTarget()),
+                                sequence == null ? "-" : Integer.toString(sequence.getTime()),
+                                Integer.toString(baseParameter),
+                                hex(address.offset),
+                                address.pattern,
+                                Integer.toString(value.getSize()),
+                                valueToken(value),
+                                "parameter_field_load"));
+                            loadOut.newLine();
+                            loadRows++;
+                            functionLoadRows++;
+                        }
                     }
-                }
-                if (op.getOpcode() != PcodeOp.STORE) continue;
-                AddressExpr destination = op.getNumInputs() >= 2
-                    ? decodeAddress(op.getInput(1)) : decodeAddress(null);
-                int destinationParameter = parameterIndex(high, destination.base);
-                if (memoryAccessOut != null) {
-                    memoryAccessOut.write(memoryStoreAccessJson(
-                        programId, function, op, destination, destinationParameter));
-                    memoryAccessOut.newLine();
-                    memoryAccessRows++;
-                }
-                if (op.getNumInputs() < 3) continue;
-                Varnode source = stripTransparent(op.getInput(2));
-                int sourceParameter = parameterIndex(high, source);
-                if (destinationParameter < 0 || destination.offset == null || sourceParameter < 0) continue;
+                    if (op.getOpcode() != PcodeOp.STORE) continue;
+                    AddressExpr destination = op.getNumInputs() >= 2
+                        ? decodeAddress(op.getInput(1)) : decodeAddress(null);
+                    int destinationParameter = parameterIndex(high, destination.base);
+                    if (memoryAccessOut != null) {
+                        memoryAccessOut.write(memoryStoreAccessJson(
+                            programId, function, op, destination, destinationParameter));
+                        memoryAccessOut.newLine();
+                        memoryAccessRows++;
+                        functionMemoryAccessRows++;
+                    }
+                    if (op.getNumInputs() < 3) continue;
+                    Varnode source = stripTransparent(op.getInput(2));
+                    int sourceParameter = parameterIndex(high, source);
+                    if (destinationParameter < 0 || destination.offset == null || sourceParameter < 0) continue;
 
-                SequenceNumber sequence = op.getSeqnum();
-                Varnode value = op.getInput(2);
-                storeOut.write(String.join("\t",
-                    FORMAT,
-                    cell(function.getEntryPoint()),
-                    cell(function.getName(true)),
-                    cell(sequence == null ? null : sequence.getTarget()),
-                    sequence == null ? "-" : Integer.toString(sequence.getTime()),
-                    Integer.toString(destinationParameter),
-                    hex(destination.offset),
-                    destination.pattern,
-                    Integer.toString(sourceParameter),
-                    value == null ? "-" : Integer.toString(value.getSize()),
-                    "parameter_to_parameter_field"));
-                storeOut.newLine();
-                storeRows++;
-            }
-            if (monitor.isCancelled()) {
-                throw new IllegalStateException("Export cancelled before all P-code operations were written");
+                    SequenceNumber sequence = op.getSeqnum();
+                    Varnode value = op.getInput(2);
+                    storeOut.write(String.join("\t",
+                        FORMAT,
+                        cell(function.getEntryPoint()),
+                        cell(function.getName(true)),
+                        cell(sequence == null ? null : sequence.getTarget()),
+                        sequence == null ? "-" : Integer.toString(sequence.getTime()),
+                        Integer.toString(destinationParameter),
+                        hex(destination.offset),
+                        destination.pattern,
+                        Integer.toString(sourceParameter),
+                        value == null ? "-" : Integer.toString(value.getSize()),
+                        "parameter_to_parameter_field"));
+                    storeOut.newLine();
+                    storeRows++;
+                    functionStoreRows++;
+                }
+                if (monitor.isCancelled()) {
+                    throw new IllegalStateException("Export cancelled before all P-code operations were written");
+                }
+                completedFunctions++;
+                println("GHIDRA_PARAMETER_STORE_FIELD_FUNCTION=" +
+                    function.getEntryPoint() + ":" + function.getName(true));
+                println("GHIDRA_PARAMETER_STORE_FIELD_FUNCTION_ROWS=" + functionStoreRows);
+                println("GHIDRA_PARAMETER_LOAD_FIELD_FUNCTION_ROWS=" + functionLoadRows);
+                println("GHIDRA_MEMORY_STORE_ACCESS_FUNCTION_ROWS=" + functionMemoryAccessRows);
             }
         } finally {
             decompiler.dispose();
         }
 
         println("GHIDRA_PARAMETER_STORE_FIELD_FORMAT=" + FORMAT);
-        println("GHIDRA_PARAMETER_STORE_FIELD_FUNCTION=" + function.getEntryPoint() + ":" + function.getName(true));
+        println("GHIDRA_PARAMETER_STORE_FIELD_FUNCTIONS=" + completedFunctions);
         println("GHIDRA_PARAMETER_STORE_FIELD_ROWS=" + storeRows);
         println("GHIDRA_PARAMETER_STORE_FIELD_OUTPUT=" + storeOutput.getAbsolutePath());
         if (loadOutput != null) {

@@ -1,0 +1,39 @@
+source_binary=armeabi-v7a/libcocos2dcpp.so
+source_sha256=94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e
+readelf_dynamic_symbol:
+  1552: 00296671    86 FUNC    GLOBAL DEFAULT    8 _ZN10CCJoyStick6createEiibbbb
+llvm_objdump_thumb_disassembly:
+00296670 <_ZN10CCJoyStick6createEiibbbb>:
+  296670: e92d 41ff    	push.w	{r0, r1, r2, r3, r4, r5, r6, r7, r8, lr}
+  296674: 4607         	mov	r7, r0
+  296676: f44f 70aa    	mov.w	r0, #0x154
+  29667a: 460e         	mov	r6, r1
+  29667c: 4615         	mov	r5, r2
+  29667e: 4698         	mov	r8, r3
+  296680: f067 f656    	bl	0x6fe330 <_Znwj>        @ imm = #0x467cac
+  296684: 4604         	mov	r4, r0
+  296686: f7ff fc0b    	bl	0x295ea0 <_ZN10CCJoyStickC2Ev> @ imm = #-0x7ea
+  29668a: b194         	cbz	r4, 0x2966b2 <_ZN10CCJoyStick6createEiibbbb+0x42> @ imm = #0x24
+  29668c: f89d 3028    	ldrb.w	r3, [sp, #0x28]
+  296690: 4620         	mov	r0, r4
+  296692: f8cd 8000    	str.w	r8, [sp]
+  296696: 4639         	mov	r1, r7
+  296698: 4632         	mov	r2, r6
+  29669a: 9301         	str	r3, [sp, #0x4]
+  29669c: f89d 302c    	ldrb.w	r3, [sp, #0x2c]
+  2966a0: 9302         	str	r3, [sp, #0x8]
+  2966a2: 462b         	mov	r3, r5
+  2966a4: f7ff ff6e    	bl	0x296584 <_ZN10CCJoyStick4initEiibbbb> @ imm = #-0x124
+  2966a8: 4605         	mov	r5, r0
+  2966aa: b120         	cbz	r0, 0x2966b6 <_ZN10CCJoyStick6createEiibbbb+0x46> @ imm = #0x8
+  2966ac: 4620         	mov	r0, r4
+  2966ae: f283 f914    	bl	0x5198da <_ZN7cocos2d8CCObject11autoreleaseEv> @ imm = #0x283228
+  2966b2: 4620         	mov	r0, r4
+  2966b4: e004         	b	0x2966c0 <_ZN10CCJoyStick6createEiibbbb+0x50> @ imm = #0x8
+  2966b6: 6823         	ldr	r3, [r4]
+  2966b8: 4620         	mov	r0, r4
+  2966ba: 689b         	ldr	r3, [r3, #0x8]
+  2966bc: 4798         	blx	r3
+  2966be: 4628         	mov	r0, r5
+  2966c0: b004         	add	sp, #0x10
+  2966c2: e8bd 81f0    	pop.w	{r4, r5, r6, r7, r8, pc}

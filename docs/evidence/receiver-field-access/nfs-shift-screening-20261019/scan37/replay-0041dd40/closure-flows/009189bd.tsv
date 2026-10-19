@@ -1,0 +1,4 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+009189bd	009189c1	8	CALL	-	input:Stack[0x4]:4	-	-
+009189bd	009189c9	19	COPY	def:009189c9:19:4	const:0x1:4	-	-
+009189bd	009189ca	29	RETURN	-	const:0x0:4;def:009189c9:19:4	-	-

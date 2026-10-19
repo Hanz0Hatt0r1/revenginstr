@@ -1,0 +1,16 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+00648d50	00648d50	0	INT_ADD	def:00648d50:0:4	register:register:00000004:4;const:0x1:4	-	-
+00648d50	00648d50	1	LOAD	def:00648d50:1:1	const:0x1a1:4;def:00648d50:57:4	-	-
+00648d50	00648d50	7	INT_EQUAL	def:00648d50:7:1	def:00648d50:1:1;const:0x3:1	-	-
+00648d50	00648d50	57	CAST	def:00648d50:57:4	def:00648d50:0:4	-	-
+00648d50	00648d54	13	CBRANCH	-	address:00648d5f:1;def:00648d50:7:1	-	-
+00648d50	00648d5b	26	INT_ADD	def:00648d5b:26:4	register:register:00000004:4;const:0x2:4	-	-
+00648d50	00648d5b	55	LOAD	def:00648d5b:55:2	const:0x1a1:4;def:00648d5b:59:4	-	-
+00648d50	00648d5b	59	CAST	def:00648d5b:59:4	def:00648d5b:26:4	-	-
+00648d50	00648d5e	31	RETURN	-	const:0x0:4;def:00648d5e:43:2	-	-
+00648d50	00648d5e	43	COPY	def:00648d5e:43:2	def:00648d5b:55:2	-	-
+00648d50	00648d5f	32	INT_ADD	def:00648d5f:32:4	register:register:00000004:4;const:0x2:4	-	-
+00648d50	00648d5f	33	LOAD	def:00648d5f:33:1	const:0x1a1:4;def:00648d5f:58:4	-	-
+00648d50	00648d5f	58	CAST	def:00648d5f:58:4	def:00648d5f:32:4	-	-
+00648d50	00648d63	37	RETURN	-	const:0x0:4;def:00648d63:44:2	-	-
+00648d50	00648d63	44	INT_ZEXT	def:00648d63:44:2	def:00648d5f:33:1	-	-

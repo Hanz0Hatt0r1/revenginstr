@@ -1,0 +1,28 @@
+format	row_type	plan_id	callee_entry	parameter_index	direct_caller_functions	caller_functions_decompiled	caller_functions_failed	callers_with_matched_calls	matched_caller_calls	caller_entry	caller_name	caller_call_site	node_id	parent_node_id	input_index	depth	edge_kind	node_token	type_display	pointer_depth	pointee_type_display	constant_value	defining_opcode	defining_address	defining_time	call_target_entry	call_target_name	truncation	status
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	root_0062e1a0_0	0062e1a0	0	-	-	-	-	-	0048e380	FUN_0048e380	0048e3d5	0	-1	-1	0	root	const:0x0:4	char *	1	char	0x0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	root_0062e1a0_0	0062e1a0	0	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	edge_00901179_0	00901179	0	-	-	-	-	-	0062e1a0	FUN_0062e1a0	0062e270	0	-1	-1	0	root	register:register:00000004:4	char *	1	char	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	edge_00901179_0	00901179	0	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	edge_00901179_1	00901179	1	-	-	-	-	-	0062e1a0	FUN_0062e1a0	0062e270	0	-1	-1	0	root	def:CAST@0062e26b:1059:4	char *	1	char	-	CAST	0062e26b	1059	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	edge_00901179_1	00901179	1	-	-	-	-	-	0062e1a0	FUN_0062e1a0	0062e270	1	0	0	1	value	def:INT_ADD@0062e26b:281:4	int	0	-	-	INT_ADD	0062e26b	281	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	edge_00901179_1	00901179	1	-	-	-	-	-	0062e1a0	FUN_0062e1a0	0062e270	2	1	0	2	base	def:MULTIEQUAL@0062e260:629:4	int	0	-	-	MULTIEQUAL	0062e260	629	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	edge_00901179_1	00901179	1	-	-	-	-	-	0062e1a0	FUN_0062e1a0	0062e270	3	2	0	3	value	def:INT_ADD@0062e27c:313:4	int	0	-	-	INT_ADD	0062e27c	313	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	edge_00901179_1	00901179	1	-	-	-	-	-	0062e1a0	FUN_0062e1a0	0062e270	4	3	0	4	base	def:MULTIEQUAL@0062e260:629:4	int	0	-	-	MULTIEQUAL	0062e260	629	-	-	cycle	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	edge_00901179_1	00901179	1	-	-	-	-	-	0062e1a0	FUN_0062e1a0	0062e270	5	3	1	4	offset	const:0x1e0:4	int	0	-	0x1e0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	edge_00901179_1	00901179	1	-	-	-	-	-	0062e1a0	FUN_0062e1a0	0062e270	6	2	1	3	value	def:LOAD@0062e246:227:4	int	0	-	-	LOAD	0062e246	227	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	edge_00901179_1	00901179	1	-	-	-	-	-	0062e1a0	FUN_0062e1a0	0062e270	7	6	1	4	load_address	def:CAST@0062e246:1057:4	int *	1	int	-	CAST	0062e246	1057	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	edge_00901179_1	00901179	1	-	-	-	-	-	0062e1a0	FUN_0062e1a0	0062e270	8	7	0	5	value	def:INT_ADD@0062e246:226:4	int	0	-	-	INT_ADD	0062e246	226	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	edge_00901179_1	00901179	1	-	-	-	-	-	0062e1a0	FUN_0062e1a0	0062e270	9	8	0	6	base	def:CALL@0062e241:225:4	int	0	-	-	CALL	0062e241	225	00586b40	FUN_00586b40	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	edge_00901179_1	00901179	1	-	-	-	-	-	0062e1a0	FUN_0062e1a0	0062e270	10	8	1	6	offset	const:0x4:4	int	0	-	0x4	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	edge_00901179_1	00901179	1	-	-	-	-	-	0062e1a0	FUN_0062e1a0	0062e270	11	1	1	2	offset	const:0x30:4	int	0	-	0x30	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	edge_00901179_1	00901179	1	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	edge_0090a62e_0	0090a62e	0	-	-	-	-	-	00901179	__stricmp	0090119c	0	-1	-1	0	root	const:0x0:4	wchar_t *	1	wchar_t	0x0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	edge_0090a62e_0	0090a62e	0	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	edge_0090a62e_1	0090a62e	1	-	-	-	-	-	00901179	__stricmp	0090119c	0	-1	-1	0	root	const:0x0:4	wchar_t *	1	wchar_t	0x0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	edge_0090a62e_1	0090a62e	1	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	edge_0090a62e_2	0090a62e	2	-	-	-	-	-	00901179	__stricmp	0090119c	0	-1	-1	0	root	const:0x0:4	wchar_t *	1	wchar_t	0x0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	edge_0090a62e_2	0090a62e	2	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	edge_0090a62e_3	0090a62e	3	-	-	-	-	-	00901179	__stricmp	0090119c	0	-1	-1	0	root	const:0x0:4	uint	0	-	0x0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	edge_0090a62e_3	0090a62e	3	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	edge_0090a62e_4	0090a62e	4	-	-	-	-	-	00901179	__stricmp	0090119c	0	-1	-1	0	root	const:0x0:4	uintptr_t	0	-	0x0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	edge_0090a62e_4	0090a62e	4	1	1	0	1	1	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees

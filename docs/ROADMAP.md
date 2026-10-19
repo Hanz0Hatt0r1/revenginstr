@@ -380,6 +380,33 @@ remain marked separately; 140 target expressions are depth-limited. All 203
 sites remain `unknown` because this unlabeled holdout does not support accuracy
 or recall claims for virtual dispatch. See the [hash-pinned consumer replay PR](https://github.com/Hanz0Hatt0r1/nevergone-recomp/pull/735).
 
+### Evidence-first Phase B: bounded pointer provenance
+
+This implements the next step in the
+[evidence-first analysis strategy](https://github.com/Hanz0Hatt0r1/revenginstr/blob/main/docs/EVIDENCE_FIRST_ANALYSIS_STRATEGY.md).
+[`PointerProvenance/1`](POINTER_PROVENANCE.md) follows exact High-P-code
+def-use tokens through width-preserving `COPY`/`CAST`, constant `PTRADD`,
+`PTRSUB`, `INT_ADD`/`INT_SUB`, and bounded `MULTIEQUAL` alternatives. Caller
+formal roots are joined only from exact `GhidraCallerArgumentParameterRoot/1`
+or `/2` keys. `LOAD` creates a memory-read anchor with a separate address
+expression; calls, side-effect-dependent `INDIRECT`, dynamic offsets, cycles,
+width mismatches, and unsupported operations remain explicit barriers or
+abstentions.
+
+The synthetic contract tests cover positive and negative offsets, dynamic
+indices, distinct PHI roots, cycles, depth and alternative budgets, overflow,
+width mismatch, exact call-root joins, and unrooted loads. Full suite: 511
+passed with the repository's test and ML extras enabled.
+
+On the pinned Nevergone unseen500-v10 replay, all 40,519 High-P-code rows from
+500 functions were analyzed and all 203 `CALLIND` targets joined by exact
+function/address/time and target-definition keys. The target provenance rows
+are 191 `memory_read_anchor`, one constant `address_anchor`, two ambiguous,
+eight side-effect barriers, and one unknown. The baseline inventory still
+classifies all 203 sites as `unknown`; these structural facts make no
+class/vtable identity, virtual-dispatch accuracy, or recall claim. See the
+[hash-pinned PointerProvenance consumer replay](https://github.com/Hanz0Hatt0r1/nevergone-recomp/pull/736).
+
 ### M2.1 Residual failure taxonomy
 
 The receiver inference CLI can emit a
@@ -421,6 +448,20 @@ Every unresolved receiver query receives one stable primary reason, including:
 
 **Graph contract v1 and receiver-anchor projection implemented:** [`ReceiverProvenanceGraph/1`](../schemas/receiver-provenance-graph-v1.schema.json) defines graph-local ids, the generic receiver-flow node/relation vocabulary, evidence classes, and source-record provenance. The generic validator rejects duplicate ids and dangling endpoints. `revenginstr-receiver-graph` projects typed receiver TSV rows with an observed receiver operand into receiver-to-call graphs, retaining source-record provenance and rejecting invalid joins/formats. The schema and synthetic contract test contain no consumer labels, addresses, or catalogs.
 
+`GhidraPointerTableSlots/1` now exports bounded caller-selected pointer tables
+without assuming an ABI or vtable role. Each slot records raw bytes, decoded
+pointer value, mapped target address, exact function-entry metadata when
+available, and an explicit unmapped/unreadable/null state. A SHIFT replay
+captures two tables and confirms the manually reviewed slots; it does not bind
+either table to arbitrary receiver values or a call site.
+
+`IndirectCallPointerSlot/1` joins exact `CALLIND` evidence to the matching
+`PointerProvenance/1` load definition and reports a pointer-slot candidate only
+when one resolved anchor, constant byte offset, and matching pointer width are
+present. It exposes a reusable boundary for caller-selected table scans while
+leaving vtable identity, receiver binding, and target resolution to additional
+evidence.
+
 `revenginstr-receiver-argument-store-flow` now joins bounded caller roots to
 parameter-store rows only on exact callee/function entry and formal parameter
 index. Both source rows remain explicit on their respective edges. The
@@ -431,7 +472,7 @@ receiver types are fallback joins.
 
 ### M2.3 Bounded interprocedural propagation
 
-**Bounded caller-argument, field-store, field-load, and return anchors implemented:** `revenginstr-receiver-argument-flow` projects bounded subtree roots into actual-argument-to-formal-parameter edges and captures generic call-result producers when explicit in P-code; `revenginstr-receiver-store-flow` projects parameter-to-field-store evidence into destination and stored-value edges. `revenginstr-receiver-argument-store-flow` and `revenginstr-receiver-argument-load-flow` join those artifacts by exact function/parameter keys with provenance from both inputs. `revenginstr-receiver-field-access-pairs` groups same-function stores and loads only when formal parameter and numeric field offset match. `revenginstr-receiver-load-return-flow` traces parameter-rooted loads through P-code def-use chains to `RETURN` operations without assigning getter semantics; `revenginstr-receiver-call-return-flow` traces call-result values through P-code to function returns as a generic factory-return anchor, without assigning factory semantics. The caller-argument exporter can optionally emit direct caller-formal roots; `revenginstr-receiver-argument-propagate` walks those exact links backward under depth and edge caps. `revenginstr-receiver-field-store-load-audit` now joins parameter/offset-compatible pairs to a program-pinned High-P-code CFG and reports bounded paths with no explicit intervening store/call; that status is a candidate path only, not proof of feasible execution or memory reaching-definition. The generic alias-aware interprocedural audit and `/5` consumer are implemented; positive consumer validation remains open.
+**Bounded caller-argument, field-store, field-load, and return anchors implemented:** `revenginstr-receiver-argument-flow` projects bounded subtree roots into actual-argument-to-formal-parameter edges and captures generic call-result producers when explicit in P-code; `revenginstr-receiver-store-flow` projects parameter-to-field-store evidence into destination and stored-value edges. `revenginstr-receiver-argument-store-flow` and `revenginstr-receiver-argument-load-flow` join those artifacts by exact function/parameter keys with provenance from both inputs. `revenginstr-receiver-field-access-pairs` groups same-function stores and loads only when formal parameter and numeric field offset match. `revenginstr-receiver-load-return-flow` traces parameter-rooted loads through P-code def-use chains to `RETURN` operations without assigning getter semantics; `revenginstr-receiver-call-return-flow` traces call-result values through P-code to function returns as a generic factory-return anchor, without assigning factory semantics. The caller-argument exporter can optionally emit direct caller-formal roots; `revenginstr-receiver-argument-propagate` walks those exact links backward under depth and edge caps. `revenginstr-receiver-field-store-load-audit` now joins parameter/offset-compatible pairs to a program-pinned High-P-code CFG and reports bounded paths with no explicit intervening store/call; that status is a candidate path only, not proof of feasible execution or memory reaching-definition. The generic alias-aware interprocedural audit and `/5` consumer are implemented. Positive consumer validation is recorded by the scan29 `/5` replay: one of four pairs becomes a unique structural candidate after the exact callee is shown to have no aliasing memory effect; three pairs remain possible.
 
 The NFS Shift replay in [PR #2074](https://github.com/Hanz0Hatt0r1/nfs-shift-decompilation/pull/2074)
 applies the generic call-result-to-return exporter to 64 frozen scan16–18
@@ -565,7 +606,7 @@ Remaining propagation work:
 
 1. consumer-validated factory hypotheses linked to call-result-to-return paths; the NFS replay validates structural paths only, so factory semantics and returned object identity remain open;
 2. consumer-validated getter/accessor hypotheses from load-to-return evidence; the NFS replay covers three structural paths, but does not label getter/accessor semantics or returned identity;
-3. validate `/5` with complete caller-root, callee-CFG, and callee-memory-access evidence; then extend alias-aware reaching definitions only if richer consumer evidence demonstrates a concrete gap, before treating paired field stores and loads as value flow;
+3. scan29 now validates `/5` with the exact caller root, complete three-operation callee flow/CFG, and hash-pinned memory-access input; it produces one unique structural candidate and leaves three pairs possible. Extend alias-aware reaching definitions only if richer consumer evidence demonstrates a concrete gap, before treating paired field stores and loads as value flow;
 4. constructor/vtable anchors.
 
 ### M2.4 Ambiguity handling
@@ -1084,6 +1125,34 @@ Recover candidates from repeated comparisons, masks, shifts, strides, size/capac
 
 Create synthetic exact-layout fixtures plus consumer-owned frozen objects with independently verified fields and prototypes. Report field-offset precision/recall, compatible-type accuracy, layout conflict rate, prototype compatibility and high-confidence reviewer acceptance.
 
+**Hypothesis contract and conservative builder implemented:**
+`TypeLayoutHypothesis/1` stores program-pinned candidate size bounds, field
+access/type observations, vtable anchors, candidate relationships, and
+evidence-backed conflicts. `revenginstr-type-layout-hypothesis` joins exact
+STORE rows and optional parameter-rooted LOAD TSV rows only through
+reviewer-supplied `TypeLayoutMemberMap/1` keys and retains both source hashes.
+Optional `TypeLayoutSizeReview/1` input adds exact size only with independently
+hash-pinned source evidence; disagreements with the observed extent or other
+size reviews become explicit conflicts. Its NFS SHIFT replay reproduces
+reviewed offsets and a 56-byte lower bound, with a four-byte `data_pointer`
+candidate at `+0x20` and the observed `0x00af0860` vtable anchor; the pointer's
+referent and exact object size remain unresolved. The Nevergone
+`CCJoyStick::init` projection has a 337-byte observed lower bound; symbolized
+factory code requests a 340-byte allocation and calls the exact constructor.
+Nine of its thirteen observed fields now have reviewer-pinned type candidates:
+three `cocos2d::CCSprite*` fields, two integers, and four booleans. The other
+four fields, containing-object vtable, ownership, and audit-acceptance metrics
+remain open. Both consumers exercise layout recovery, while broader
+independent field/type gold validation remains open. Synthetic fixtures
+validate the wire contract and fail-closed conflicts. `TypeLayoutGold/1` and
+`revenginstr-type-layout-evaluate` now score field offsets only inside explicit
+audited coverage, and report compatible reviewed-type accuracy, coverage,
+conflict rates, and review acceptance. Synthetic tests exercise partial-gold
+handling. The consumer gold sets, prototype compatibility input, and an
+independent confidence signal are still absent; prototype and high-confidence
+acceptance metrics are returned as not evaluated. M8.5 is therefore partial,
+not complete.
+
 ## Exit criteria
 
 - a stable versioned whole-program type/layout hypothesis schema;
@@ -1505,7 +1574,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 ## P3 — whole-program recovery and active evidence
 
 28. Function prototype hypothesis schema and compatibility evaluator.
-29. Object/type layout hypothesis schema and synthetic fixtures.
+29. 🟡 Object/type layout hypothesis schema, exact-size and field-type review inputs, synthetic fixtures, deterministic reviewer-keyed read/write builder, and NFS SHIFT plus Nevergone projections implemented; broader field/type gold validation remains open.
 30. Allocation/lifetime/ownership evidence projection.
 31. Bounded runtime probe-request and correlation contracts.
 32. Static/runtime differential replay and information-gain metrics.
@@ -1879,10 +1948,120 @@ monotone fixed point for cycles. Missing argument links, incomplete callee
 facts, unresolved stores, indirect calls, unknown operations and exhausted
 budgets remain barriers. `/1`–`/4` stay unchanged.
 
-**Next:** replay CFG/4 on further bounded x86-32 candidates from actual
-parameter-field `STORE` and `LOAD` rows. Compare `/5` and `/6` with the exact
-caller roots and complete memory facts pinned; keep aliasing and unresolved
-effects as barriers. Do not infer alias facts from decompiler text or
-instruction-level corpus labels. The current candidate family remains useful
-for checking that duplicate markers are deduplicated without changing a status
-when a separately classified possible write still lies on the witness.
+Ghidra screens (`scan25`–`scan27`) exercised the bounded batch
+parameter-field exporter on the retail x86-32 SHIFT executable. The function
+and call indexes only selected targets; the exporter determined all field and
+STORE facts from High P-code. Scan25 sampled 100 of 2,374 eligible functions
+and produced eight parameter-field stores, 271 loads, 282 memory STORE facts,
+and no exact pair. Scan26 sampled 256 of 561 higher-parameter candidates and
+produced 34 stores, 965 loads, 951 memory STORE facts, and eight pairs across
+four functions. Its `/6` screen reported six `possible_intervening_memory_effect`
+and two `store_not_dominating_load` rows, with no unique candidate. Scan27
+screened the remaining 305 functions in that candidate population and
+produced 64 stores, 1,302 loads, 1,180 memory STORE facts, and sixteen pairs
+across ten functions. `/6` reported five possible effects and eleven
+non-dominating stores, again with no unique candidate.
+
+Scan28 sampled 256 midpoint quantiles from 1,713 remaining functions in the
+broader one-or-more-parameter, 40–800-byte population. It produced six
+parameter-field stores, 583 loads, 848 memory STORE facts, and one exact pair
+in `004301a0`. The load at `004301a9` precedes its paired store at `004301b3`,
+so `/6` reports `store_not_dominating_load`; there is no `/5` candidate to
+replay.
+
+Scan29 sampled 256 midpoint quantiles from the 1,457 functions left in that
+broad population. It produced eight parameter-field stores, 689 loads, 991
+memory STORE facts, and five pairs in `00458170` and `004d90b0`. The initial
+`/6` screen reported four `possible_intervening_memory_effect` pairs and one
+`store_not_dominating_load`. A focused replay of the four pairs in `00458170`
+captured the exact root for the call at `0045818a` to `0067cbc0`: caller
+parameter 0 plus `0xc`. The callee's complete three-operation flow contains
+only `COPY`, `CAST`, and `RETURN`, so the interprocedural sidecar classifies
+that call as `no_aliasing_memory_effect`. Call-aware `/6` promotes the pair
+from store `00458187` to load `004581a7` to one `unique_cfg_store_candidate`;
+the other three pairs in that function remain possible because unresolved
+memory writes and calls remain on their paths. The fifth pair remains
+non-dominating. This is structural evidence, not a claim about branch
+feasibility or runtime value flow. Retained exports and replay inputs are in
+the [scan29 evidence bundle](evidence/receiver-field-access/nfs-shift-screening-20261019/README.md).
+
+The exact-root scan26 replay for `004d6700` formed two pairs at offset
+`0x334`. Five of eleven planned caller-argument slots had exact formal-plus-
+offset roots. Across the pairs, interprocedural effects contained six
+`unknown_effect` and two `no_aliasing_memory_effect` rows; both `/5` and `/6`
+remained `possible_intervening_memory_effect`. A bounded follow-up reached a
+`CALLIND` in `0065cd30` under `00637890`, so missing and indirect nested effects
+remain barriers.
+
+Scan27's narrowest candidate, `0048e380`, has a dominating `param0 + 0x4` store
+at `0048e3b1` and compatible load at `0048e3f2`. Every local intervening STORE
+has a complete exact memory fact at a disjoint offset. Its only remaining
+witness barrier is the call at `0048e3d5` to `0062e1a0`. The bounded closure
+reaches `CALLIND` through `0062e1a0 → 00901179 → 0090a62e`; the caller passes a
+constant to the root call and therefore has no formal-root mapping there. With
+the same pair, P-code, memory facts and root sidecar, `/5` and `/6` both retain
+`possible_intervening_memory_effect` and report zero unique candidates. CFG/4
+reduces the relevant call's unknown-operation identifiers from 57 to 27 by
+deduplicating linked markers, but the reachable indirect call and missing
+nested flows keep the effect unknown. The complete retained selections,
+exports, roots, effects, and audits are in the
+[scan25–27 evidence bundle](evidence/receiver-field-access/nfs-shift-screening-20261019/README.md).
+
+Scans30–34 exhausted the remaining 1,201 functions in the broad one-or-more-
+parameter population: four 256-function midpoint-quantile batches followed by
+the final 177 functions. Across these screens, seventeen of nineteen exact
+pairs have non-dominating stores. The two remaining pairs stay possible after
+focused call-effect replay: scan32's call closure reaches an indirect call and
+unknown effect, while scan33's callee has an unresolved STORE destination and
+only one exact caller-argument root. Neither case is promoted. Scan35 also
+screened the four remaining `this`-only direct-call callers with 40–800-byte
+bodies; the read-only exporter found no parameter-rooted field loads or
+stores and no P-code STORE facts. See the
+[scan25–37 evidence bundle](evidence/receiver-field-access/nfs-shift-screening-20261019/README.md).
+
+Scan36 screened all 295 remaining explicit-parameter functions with
+40–800-byte bodies which do not appear as direct-call callers in the pinned
+call-edge export. It produced fourteen exact pairs across seven functions;
+all stores are non-dominating, so no interprocedural replay is eligible. The
+index establishes only that these functions have no outgoing direct-call row
+in the selected call-edge export; it does not establish that they are invoked
+only indirectly. Scans25–35 and scan36 therefore cover both call-edge
+populations within the explicit-parameter, 40–800-byte filter.
+
+Scan37 screened all 161 explicit-parameter functions whose bodies exceed 800
+bytes (159 have outgoing direct-call rows and two do not). It produced 39
+exact pairs across two functions. `/6` found 33 non-dominating stores, five
+possible effects, and one unique candidate; a focused replay made one of the
+five possible pairs unique. The replay follows 97 reachable P-code flows and
+has CFG/4 for 95 of them. Two CFG boundaries remain (`006642a0` has no entry
+block; `0090e864` has multiple entry blocks), as does direct target `006642a5`
+outside the pinned function inventory. CFG/4 removed source-linked
+`INDIRECT` markers, but 22 reachable `CALLIND` operations in 13 functions
+leave four pairs possible. `PointerProvenance/1` classifies the 22 target
+expressions as six memory-read anchors, thirteen call barriers, and three
+ambiguous results; none resolves to an exact function entry. The receiver-
+type exporter matched all 22 sites but recovered only generic primitive
+labels, so it adds no target identity evidence. Across scans25–37, three
+unique candidates, 20 possible pairs, and 79 non-dominating pairs have been
+recorded. See the
+[scan25–37 evidence bundle](evidence/receiver-field-access/nfs-shift-screening-20261019/README.md).
+
+The four downstream memory-read anchors now have a generic structural
+projection: `IndirectCallPointerSlot/1` identifies aligned pointer-slot access
+shapes at `006657ed` (`+0x30`), `00665801` (`+0x8`), `0066582d` (`+0x34`), and
+`00665841` (`+0xc`). The exact target addresses remain unknown. A read-only
+Ghidra reference export confirms that `006657e0` and `00665820` are reached
+from the two wrapper functions, while their receiver comes from the runtime
+field at `AptCIH + 0x20`. The field is initialized to zero in `0066ee90` and
+copied by `00663f50`; an additional vtable write in `0043c792` is reached from
+the cleanup path `0066efc0`, not a new factory. These facts narrow the observed
+static construction path but do not bind the runtime field value to a table.
+
+**Next:** trace all exact writes and copy sources for the runtime `+0x20`
+field, or acquire bounded runtime evidence for those four receivers. Keep
+unknown targets and roots as barriers. The `/6` statuses still need a complete
+memory-effect replay, and the CFG gaps at `006642a0` and `0090e864` remain open;
+the bounded slice at `006642a5` is not a complete function flow or CFG. Assess
+bodies smaller than 40 bytes only if this unresolved set or new pair evidence
+gives a concrete reason to extend the population screen. Do not infer alias
+facts from decompiler text or instruction-level corpus labels.

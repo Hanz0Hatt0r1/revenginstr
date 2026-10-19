@@ -1,0 +1,7 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+0090e6ef	0090e6f5	9	LOAD	def:0090e6f5:9:4	const:0x1a1:4;def:0090e6f5:42:4	-	-
+0090e6ef	0090e6f5	40	PTRSUB	def:0090e6f5:40:4	const:0x0:4;const:0xb97610:4	-	-
+0090e6ef	0090e6f5	41	INT_MULT	def:0090e6f5:41:4	input:Stack[0x4]:4;const:0x2:4	-	-
+0090e6ef	0090e6f5	42	PTRADD	def:0090e6f5:42:4	def:0090e6f5:40:4;def:0090e6f5:41:4;const:0x4:4	-	-
+0090e6ef	0090e6fc	16	CALL	-	def:0090e6f5:9:4	-	-
+0090e6ef	0090e703	23	RETURN	-	const:0x0:4	-	-

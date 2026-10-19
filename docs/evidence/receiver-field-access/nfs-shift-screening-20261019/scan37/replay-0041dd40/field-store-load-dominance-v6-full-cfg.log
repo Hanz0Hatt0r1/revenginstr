@@ -1,0 +1,3 @@
+field-access pairs: 5
+unique CFG store candidates: 1
+output: docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field-store-load-dominance-v6-full-cfg.jsonl

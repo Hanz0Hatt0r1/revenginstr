@@ -1,0 +1,2 @@
+format	function_entry	function_name	load_address	load_time	base_parameter_index	field_offset	address_pattern	value_size	value_token	status
+REVENGINSTR.GhidraParameterLoadField/1	009d1880	AptCIH::GetAnimationInst	009d1880	1	0	0x20	ptradd	4	def:LOAD@009d1880:1:4	parameter_field_load

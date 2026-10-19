@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/indirect-call-pointer-slot-v1.schema.json",
+  "title": "REVENGINSTR.IndirectCallPointerSlot/1 JSONL row",
+  "description": "Exact structural evidence that an indirect-call target is loaded from a constant-offset pointer slot; it does not identify a vtable or target function.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "program_id", "binary_program", "function_entry", "call_address", "call_time",
+    "target_token", "target_expression", "status", "slot_access", "source"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.IndirectCallPointerSlot/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "binary_program": {"type": "string", "minLength": 1},
+    "function_entry": {"$ref": "#/$defs/address"},
+    "call_address": {"$ref": "#/$defs/address"},
+    "call_time": {"type": "integer", "minimum": 0},
+    "target_token": {"type": "string", "minLength": 1},
+    "target_expression": {"type": "string"},
+    "status": {
+      "enum": [
+        "slot_access_candidate", "missing_target_provenance", "non_load_target",
+        "missing_target_definition", "unsupported_target_operation", "missing_load_address",
+        "ambiguous_address", "unresolved_address", "unsupported_address_root",
+        "width_mismatch", "unaligned_slot_offset"
+      ]
+    },
+    "slot_access": {
+      "oneOf": [
+        {"$ref": "#/$defs/slotAccess"},
+        {"type": "null"}
+      ]
+    },
+    "source": {"$ref": "#/$defs/source"}
+  },
+  "$defs": {
+    "address": {
+      "type": "string",
+      "pattern": "^(?:[A-Za-z_$][\\w$]*:)?(?:0x)?[0-9a-fA-F]+$"
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_format", "artifact_path", "artifact_sha256", "record_index"],
+      "properties": {
+        "source_format": {"type": "string", "minLength": 1},
+        "artifact_path": {"type": "string", "minLength": 1},
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "record_index": {"type": "integer", "minimum": 1}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["indirect_call_evidence", "callind_target_provenance", "target_definition_provenance"],
+      "properties": {
+        "indirect_call_evidence": {"$ref": "#/$defs/evidenceRef"},
+        "callind_target_provenance": {
+          "oneOf": [{"$ref": "#/$defs/evidenceRef"}, {"type": "null"}]
+        },
+        "target_definition_provenance": {
+          "oneOf": [{"$ref": "#/$defs/evidenceRef"}, {"type": "null"}]
+        }
+      }
+    },
+    "slotAccess": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base_root_kind", "base_root_id", "offset_bytes", "pointer_size_bytes"],
+      "properties": {
+        "base_root_kind": {"enum": ["memory_read_anchor", "address_anchor"]},
+        "base_root_id": {"type": "string", "minLength": 1},
+        "offset_bytes": {"type": "integer"},
+        "pointer_size_bytes": {"type": "integer", "minimum": 1}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "slot_access_candidate"}}, "required": ["status"]},
+      "then": {"properties": {"slot_access": {"$ref": "#/$defs/slotAccess"}}}
+    },
+    {
+      "if": {"properties": {"status": {"not": {"const": "slot_access_candidate"}}}, "required": ["status"]},
+      "then": {"properties": {"slot_access": {"type": "null"}}}
+    }
+  ]
+}

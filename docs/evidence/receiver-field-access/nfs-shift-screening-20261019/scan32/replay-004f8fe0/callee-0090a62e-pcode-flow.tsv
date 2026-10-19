@@ -1,0 +1,16 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+0090a62e	0090a637	9	CALL	def:0090a637:9:4	address:00c31ec4:4	0090aa9e	FUN_0090aa9e
+0090a62e	0090a637	101	INDIRECT	def:0090a637:101:4	address:00c31ec4:4;const:0x9:4	-	-
+0090a62e	0090a637	140	CAST	def:0090a637:140:4	def:0090a637:9:4	-	-
+0090a62e	0090a63c	14	INT_NOTEQUAL	def:0090a63c:14:1	def:0090a637:140:4;const:0x0:4	-	-
+0090a62e	0090a63f	23	CBRANCH	-	address:0090a644:1;def:0090a63c:14:1	-	-
+0090a62e	0090a642	28	CALLIND	-	-	-	-
+0090a62e	0090a642	46	RETURN	-	const:0x1:4	-	-
+0090a62e	0090a642	104	INDIRECT	def:0090a642:104:4	def:0090a637:101:4;const:0x1c:4	-	-
+0090a62e	0090a642	106	COPY	def:0090a642:106:4	def:0090a642:104:4	-	-
+0090a62e	0090a646	34	CALL	-	-	0091c06b	FUN_0091c06b
+0090a62e	0090a646	102	INDIRECT	def:0090a646:102:4	def:0090a637:101:4;const:0x22:4	-	-
+0090a62e	0090a64d	43	CALL	-	input:Stack[0x4]:4;input:Stack[0x8]:4;input:Stack[0xc]:4;input:Stack[0x10]:4;input:Stack[0x14]:4	0090a532	__invoke_watson
+0090a62e	0090a64d	45	RETURN	-	const:0x1:4	-	-
+0090a62e	0090a64d	103	INDIRECT	def:0090a64d:103:4	def:0090a646:102:4;const:0x2b:4	-	-
+0090a62e	0090a64d	105	COPY	def:0090a64d:105:4	def:0090a64d:103:4	-	-

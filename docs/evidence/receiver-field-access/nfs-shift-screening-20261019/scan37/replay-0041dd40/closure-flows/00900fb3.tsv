@@ -1,0 +1,7 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+00900fb3	00900fb7	7	CALL	def:00900fb7:7:4	def:00900fb7:78:4	00900f77	__onexit
+00900fb3	00900fb7	78	CAST	def:00900fb7:78:4	input:Stack[0x4]:4	-	-
+00900fb3	00900fbc	8	INT_NOTEQUAL	def:00900fbc:8:1	def:00900fb7:7:4;const:0x0:4	-	-
+00900fb3	00900fbe	17	INT_ZEXT	def:00900fbe:17:4	def:00900fbc:8:1	-	-
+00900fb3	00900fc3	46	INT_SUB	def:00900fc3:46:4	def:00900fbe:17:4;const:0x1:4	-	-
+00900fb3	00900fc4	55	RETURN	-	const:0x0:4;def:00900fc3:46:4	-	-

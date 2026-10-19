@@ -1,0 +1,7 @@
+format	function_entry	function_name	store_address	store_time	destination_parameter_index	destination_offset	destination_pattern	source_parameter_index	value_size	status
+REVENGINSTR.GhidraParameterStoreField/1	0042d640	FUN_0042d640	0042d649	24	0	0x24	int_add	1	4	parameter_to_parameter_field
+REVENGINSTR.GhidraParameterStoreField/1	004301a0	FUN_004301a0	004301b3	35	0	0x11c	int_add	1	1	parameter_to_parameter_field
+REVENGINSTR.GhidraParameterStoreField/1	004396c0	FUN_004396c0	00439712	174	0	0x2e8	int_add	1	4	parameter_to_parameter_field
+REVENGINSTR.GhidraParameterStoreField/1	004759a0	FUN_004759a0	004759c0	23	0	0x104	int_add	1	4	parameter_to_parameter_field
+REVENGINSTR.GhidraParameterStoreField/1	004ecb40	FUN_004ecb40	004ecb47	12	0	0x300	int_add	1	4	parameter_to_parameter_field
+REVENGINSTR.GhidraParameterStoreField/1	004fe150	FUN_004fe150	004fe216	204	0	0x298	int_add	1	4	parameter_to_parameter_field
