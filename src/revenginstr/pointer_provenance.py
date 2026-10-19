@@ -11,9 +11,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .ghidra_indirect_call_evidence import FORMAT_V2, validate_row
+
 FORMAT = "REVENGINSTR.PointerProvenance/1"
 FLOW_FORMAT = "REVENGINSTR.GhidraFunctionPcodeFlow/1"
-CALL_EVIDENCE_FORMAT = "REVENGINSTR.GhidraIndirectCallEvidence/1"
 ROOT_V1 = "REVENGINSTR.GhidraCallerArgumentParameterRoot/1"
 ROOT_V2 = "REVENGINSTR.GhidraCallerArgumentParameterRoot/2"
 FLOW_HEADER = (
@@ -213,6 +214,7 @@ def read_callind_targets(
 ) -> dict[str, list[tuple[Operation, str, dict[str, Any]]]]:
     targets: dict[str, list[tuple[Operation, str, dict[str, Any]]]] = defaultdict(list)
     seen: set[tuple[str, str, int]] = set()
+    program_identity = None
     for path in paths:
         digest = _sha256(path)
         with path.open("r", encoding="utf-8", newline="") as handle:
@@ -224,29 +226,19 @@ def read_callind_targets(
                 except ValueError as error:
                     raise ValueError(f"{path}:{line_no}: invalid JSON: {error}") from error
                 where = f"{path}:{line_no}"
-                required = {
-                    "format", "program", "requested", "function_entry", "call_address",
-                    "call_time", "target", "target_expression", "arg_count",
-                }
-                if not isinstance(row, dict) or set(row) != required:
-                    raise ValueError(f"{where}: invalid {CALL_EVIDENCE_FORMAT} fields")
-                if row["format"] != CALL_EVIDENCE_FORMAT:
-                    raise ValueError(f"{where}: expected {CALL_EVIDENCE_FORMAT}")
-                if not isinstance(row["program"], str) or not isinstance(row["requested"], str) or not row["requested"]:
-                    raise ValueError(f"{where}: invalid program or requested function")
-                if not isinstance(row["call_time"], int) or isinstance(row["call_time"], bool) or row["call_time"] < 0:
-                    raise ValueError(f"{where}: call_time must be a non-negative integer")
-                if not isinstance(row["arg_count"], int) or isinstance(row["arg_count"], bool) or row["arg_count"] < 0:
-                    raise ValueError(f"{where}: arg_count must be a non-negative integer")
-                if not isinstance(row["target"], str) or not row["target"] or not isinstance(row["target_expression"], str):
-                    raise ValueError(f"{where}: invalid indirect-call target")
+                source_format = validate_row(row, where)
+                if source_format == FORMAT_V2:
+                    identity = (row["program"], row["program_sha256"], row["architecture"])
+                    if program_identity is not None and program_identity != identity:
+                        raise ValueError(f"{where}: mixed binary identities in indirect-call evidence")
+                    program_identity = identity
                 function_key = _address_key(row["function_entry"], f"{where}: function_entry")
                 call_key = _address_key(row["call_address"], f"{where}: call_address")
-                identity = (function_key, call_key, row["call_time"])
-                if identity in seen:
-                    raise ValueError(f"{where}: duplicate indirect-call target site {identity!r}")
-                seen.add(identity)
-                operation = operations.get(identity)
+                site_identity = (function_key, call_key, row["call_time"])
+                if site_identity in seen:
+                    raise ValueError(f"{where}: duplicate indirect-call target site {site_identity!r}")
+                seen.add(site_identity)
+                operation = operations.get(site_identity)
                 if operation is None or operation.opcode != "CALLIND":
                     raise ValueError(f"{where}: no exact CALLIND P-code operation")
                 if len(operation.inputs) != row["arg_count"]:
@@ -270,7 +262,7 @@ def read_callind_targets(
                     if size != int(def_match.group("size")):
                         raise ValueError(f"{where}: indirect-call target width disagrees with its definition")
                     token = definition.output
-                source = _source(path, digest, line_no, CALL_EVIDENCE_FORMAT)
+                source = _source(path, digest, line_no, source_format)
                 targets[function_key].append((operation, token, source))
     return targets
 

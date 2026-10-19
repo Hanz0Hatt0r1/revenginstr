@@ -10,6 +10,8 @@ import sys
 from pathlib import Path
 from typing import Any, TextIO
 
+from revenginstr.ghidra_indirect_call_evidence import FORMAT_V1 as CALL_EVIDENCE_FORMAT, validate_row
+
 from revenginstr.prototype_inference import (
     CALL_FORMAT,
     DECOMPILER_FORMAT,
@@ -166,32 +168,28 @@ def _read_flow_files(paths: list[Path]) -> tuple[
     return counts, calls, unresolved_direct_calls, indirect_calls, indirect_counts, source_rows, artifacts
 
 
-def _read_indirect_evidence(path: Path, program_id: str) -> tuple[dict[tuple[str, str, int], None], str]:
+def _read_indirect_evidence(
+    path: Path, program_id: str, program_sha256: str, architecture: dict[str, Any],
+) -> tuple[dict[tuple[str, str, int], None], str, str]:
     rows, digest = _read_jsonl(path)
     sites: dict[tuple[str, str, int], None] = {}
-    required = {
-        "format", "program", "requested", "function_entry", "call_address", "call_time",
-        "target", "target_expression", "arg_count",
-    }
+    source_format = None
     for line_no, row in rows:
         where = f"{path}:{line_no}"
-        if set(row) != required or row.get("format") != "REVENGINSTR.GhidraIndirectCallEvidence/1":
-            raise ValueError(f"{where}: expected GhidraIndirectCallEvidence/1 with exact fields")
-        if row["program"] != program_id:
-            raise ValueError(f"{where}: indirect-call program does not match {program_id!r}")
+        current_format = validate_row(
+            row, where, program_id=program_id, program_sha256=program_sha256,
+            expected_architecture=architecture,
+        )
+        if source_format is not None and source_format != current_format:
+            raise ValueError(f"{where}: mixed indirect-call evidence versions")
+        source_format = current_format
         function = _canonical_address(_address(row["function_entry"], f"{where}: function_entry"))
         call_address = _canonical_address(_address(row["call_address"], f"{where}: call_address"))
-        if type(row["call_time"]) is not int or row["call_time"] < 0:
-            raise ValueError(f"{where}: invalid call_time")
-        if type(row["arg_count"]) is not int or row["arg_count"] < 0:
-            raise ValueError(f"{where}: invalid arg_count")
-        if not isinstance(row["target"], str) or not row["target"] or not isinstance(row["target_expression"], str):
-            raise ValueError(f"{where}: invalid indirect target evidence")
         key = (function, call_address, row["call_time"])
         if key in sites:
             raise ValueError(f"{where}: duplicate indirect call site {key}")
         sites[key] = None
-    return sites, digest
+    return sites, digest, source_format or CALL_EVIDENCE_FORMAT
 
 
 def audit_prototype_coverage(
@@ -206,7 +204,9 @@ def audit_prototype_coverage(
     decompiler, program_id, program_sha, decompiler_sha, architecture = _read_decompiler(decompiler_path)
     acquisitions, acquisition_sha = _read_acquisition(acquisition_path, program_id)
     observations, observations_sha = _read_calls(observations_path, program_id, program_sha)
-    indirect_evidence, indirect_sha = _read_indirect_evidence(indirect_evidence_path, program_id)
+    indirect_evidence, indirect_sha, indirect_format = _read_indirect_evidence(
+        indirect_evidence_path, program_id, program_sha, architecture,
+    )
     flow_counts, expected_calls, unresolved_direct_calls, expected_indirect, indirect_counts, flow_source_rows, flow_artifacts = _read_flow_files(flow_paths)
 
     population = set(functions)
@@ -270,7 +270,7 @@ def audit_prototype_coverage(
         "acquisition": {"artifact_sha256": acquisition_sha, "source_format": "REVENGINSTR.GhidraPcodeFlowAcquisition/1"},
         "decompiler_parameters": {"artifact_sha256": decompiler_sha, "source_format": DECOMPILER_FORMAT},
         "call_observations": {"artifact_sha256": observations_sha, "source_format": CALL_FORMAT},
-        "indirect_call_evidence": {"artifact_sha256": indirect_sha, "source_format": "REVENGINSTR.GhidraIndirectCallEvidence/1"},
+        "indirect_call_evidence": {"artifact_sha256": indirect_sha, "source_format": indirect_format},
         "flows": flow_artifacts,
     }
     return {
@@ -315,7 +315,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("acquisition", type=Path, help="GhidraPcodeFlowAcquisition/1 JSONL")
     parser.add_argument("decompiler_parameters", type=Path, help="GhidraDecompilerParameters/1 JSONL")
     parser.add_argument("call_observations", type=Path, help="DirectCallArgumentObservation/1 JSONL")
-    parser.add_argument("indirect_call_evidence", type=Path, help="GhidraIndirectCallEvidence/1 JSONL")
+    parser.add_argument("indirect_call_evidence", type=Path, help="GhidraIndirectCallEvidence/1 or /2 JSONL")
     parser.add_argument("flows", nargs="+", type=Path, help="GhidraFunctionPcodeFlow/1 TSV files")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)

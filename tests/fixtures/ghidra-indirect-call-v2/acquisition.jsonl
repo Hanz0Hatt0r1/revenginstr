@@ -1,0 +1,2 @@
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"callind.elf","function_entry":"00401000","state":"complete","operation_count":3,"callind_count":0,"error":null}
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"callind.elf","function_entry":"0040100f","state":"complete","operation_count":5,"callind_count":1,"error":null}

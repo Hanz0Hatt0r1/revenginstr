@@ -239,6 +239,24 @@ def test_callind_target_joins_exact_site_and_definition(tmp_path: Path) -> None:
     assert target["target_source"]["source_format"] == "REVENGINSTR.GhidraIndirectCallEvidence/1"
 
 
+def test_callind_v2_evidence_keeps_executable_identity_source(tmp_path: Path) -> None:
+    rows = analyze(tmp_path, [flow_row("00401040", 8, "CALLIND", "-", "-")], callind_rows=[{
+        "format": "REVENGINSTR.GhidraIndirectCallEvidence/2",
+        "program": "synthetic.exe",
+        "program_sha256": "a" * 64,
+        "architecture": {"language_id": "x86:LE:32:default", "pointer_width_bytes": 4, "endianness": "little"},
+        "requested": FUNCTION,
+        "function_entry": FUNCTION,
+        "call_address": "00401040",
+        "call_time": 8,
+        "target": "const:0x401234:4",
+        "target_expression": "const:0x401234:4",
+        "arg_count": 0,
+    }])
+    target = next(row for row in rows if row["record_kind"] == "callind_target")
+    assert target["target_source"]["source_format"] == "REVENGINSTR.GhidraIndirectCallEvidence/2"
+
+
 def test_callind_evidence_must_match_an_exact_call_site(tmp_path: Path) -> None:
     callind = {
         "format": "REVENGINSTR.GhidraIndirectCallEvidence/1",

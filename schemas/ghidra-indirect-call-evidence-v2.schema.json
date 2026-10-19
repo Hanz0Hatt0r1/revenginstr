@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-indirect-call-evidence-v2.schema.json",
+  "title": "REVENGINSTR.GhidraIndirectCallEvidence/2 JSONL row",
+  "description": "Executable-hash- and ABI-pinned bounded High-P-code target expression evidence for one indirect call site.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program", "program_sha256", "architecture", "requested", "function_entry", "call_address", "call_time", "target", "target_expression", "arg_count"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraIndirectCallEvidence/2"},
+    "program": {"type": "string", "minLength": 1},
+    "program_sha256": {"$ref": "#/$defs/sha256"},
+    "architecture": {"$ref": "#/$defs/architecture"},
+    "requested": {"type": "string", "minLength": 1},
+    "function_entry": {"$ref": "#/$defs/address"},
+    "call_address": {"$ref": "#/$defs/address"},
+    "call_time": {"type": "integer", "minimum": 0},
+    "target": {"type": "string", "minLength": 1},
+    "target_expression": {"type": "string", "minLength": 1},
+    "arg_count": {"type": "integer", "minimum": 0}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "address": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"},
+    "architecture": {
+      "type": "object", "additionalProperties": false,
+      "required": ["language_id", "pointer_width_bytes", "endianness"],
+      "properties": {
+        "language_id": {"type": "string", "minLength": 1},
+        "pointer_width_bytes": {"type": "integer", "minimum": 1},
+        "endianness": {"enum": ["little", "big"]}
+      }
+    }
+  }
+}

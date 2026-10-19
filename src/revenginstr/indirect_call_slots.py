@@ -9,8 +9,10 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Iterator
 
+from .ghidra_indirect_call_evidence import FORMAT_V1, FORMAT_V2, validate_row
+
 FORMAT = "REVENGINSTR.IndirectCallPointerSlot/1"
-CALL_EVIDENCE_FORMAT = "REVENGINSTR.GhidraIndirectCallEvidence/1"
+CALL_EVIDENCE_FORMAT = FORMAT_V1
 PROVENANCE_FORMAT = "REVENGINSTR.PointerProvenance/1"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 ADDRESS_RE = re.compile(r"^(?:(?P<space>[A-Za-z_$][\w$]*):)?(?:0x)?(?P<offset>[0-9a-fA-F]+)$")
@@ -114,6 +116,7 @@ def _read_callind_evidence(
         raise ValueError("at least one indirect-call evidence JSONL is required")
     rows: dict[tuple[str, str, int], tuple[dict[str, Any], dict[str, Any]]] = {}
     total_rows = 0
+    program_identity = None
     for path in paths:
         digest = _sha256(path)
         for line_no, row in _read_jsonl(path, max_rows=max_rows):
@@ -121,21 +124,13 @@ def _read_callind_evidence(
             if total_rows > max_rows:
                 raise ValueError(f"combined indirect-call evidence row budget exceeded: {max_rows}")
             where = f"{path}:{line_no}"
-            if set(row) != {
-                "format", "program", "requested", "function_entry", "call_address",
-                "call_time", "target", "target_expression", "arg_count",
-            } or row.get("format") != CALL_EVIDENCE_FORMAT:
-                raise ValueError(f"{where}: expected exact {CALL_EVIDENCE_FORMAT} fields")
-            if not isinstance(row["program"], str) or not row["program"]:
-                raise ValueError(f"{where}: program must be non-empty")
-            if not isinstance(row["requested"], str) or not row["requested"]:
-                raise ValueError(f"{where}: requested must be non-empty")
-            if not isinstance(row["target"], str) or not row["target"]:
-                raise ValueError(f"{where}: target must be non-empty")
-            if not isinstance(row["target_expression"], str):
-                raise ValueError(f"{where}: target_expression must be a string")
-            call_time = _positive_int(row["call_time"], f"{where}: call_time", allow_zero=True)
-            _positive_int(row["arg_count"], f"{where}: arg_count", allow_zero=True)
+            source_format = validate_row(row, where)
+            if source_format == FORMAT_V2:
+                identity = (row["program"], row["program_sha256"], row["architecture"])
+                if program_identity is not None and program_identity != identity:
+                    raise ValueError(f"{where}: mixed binary identities in indirect-call evidence")
+                program_identity = identity
+            call_time = row["call_time"]
             key = (
                 _address_key(row["function_entry"], f"{where}: function_entry"),
                 _address_key(row["call_address"], f"{where}: call_address"),
@@ -143,7 +138,7 @@ def _read_callind_evidence(
             )
             if key in rows:
                 raise ValueError(f"{where}: duplicate indirect-call site {key!r}")
-            rows[key] = (row, _source_ref(path, digest, line_no, CALL_EVIDENCE_FORMAT))
+            rows[key] = (row, _source_ref(path, digest, line_no, source_format))
     return rows
 
 
@@ -269,7 +264,7 @@ def build_indirect_call_pointer_slots(
             if source is None or (
                 source.get("artifact_sha256"), source.get("record_index"), source.get("source_format")
             ) != (
-                call_source["artifact_sha256"], call_source["record_index"], CALL_EVIDENCE_FORMAT
+                call_source["artifact_sha256"], call_source["record_index"], call_source["source_format"]
             ):
                 raise ValueError("CALLIND provenance row is not linked to the supplied exact target evidence")
 

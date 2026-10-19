@@ -9,6 +9,7 @@ from jsonschema import Draft202012Validator
 
 from revenginstr.indirect_call_slots import (
     CALL_EVIDENCE_FORMAT,
+    FORMAT_V2 as CALL_EVIDENCE_FORMAT_V2,
     FORMAT,
     PROVENANCE_FORMAT,
     build_indirect_call_pointer_slots,
@@ -34,10 +35,12 @@ def write_inputs(
     target: str | None = None,
     target_opcode: str = "LOAD",
     target_output_token: str | None = None,
+    format_version: int = 1,
 ) -> tuple[Path, Path]:
     callind_path = tmp_path / "callind.jsonl"
+    source_format = CALL_EVIDENCE_FORMAT_V2 if format_version == 2 else CALL_EVIDENCE_FORMAT
     callind = {
-        "format": CALL_EVIDENCE_FORMAT,
+        "format": source_format,
         "program": "SYNTH.exe",
         "requested": FUNCTION,
         "function_entry": FUNCTION,
@@ -47,6 +50,11 @@ def write_inputs(
         "target_expression": "LOAD(CAST(INT_ADD(LOAD(this),const:0x10)))",
         "arg_count": 1,
     }
+    if format_version == 2:
+        callind.update({
+            "program_sha256": "a" * 64,
+            "architecture": {"language_id": "x86:LE:32:default", "pointer_width_bytes": 4, "endianness": "little"},
+        })
     callind_path.write_text(json.dumps(callind) + "\n", encoding="utf-8")
     callind_hash = hashlib.sha256(callind_path.read_bytes()).hexdigest()
     flow_source = {
@@ -56,7 +64,7 @@ def write_inputs(
         "record_index": 4,
     }
     callind_source = {
-        "source_format": CALL_EVIDENCE_FORMAT,
+        "source_format": source_format,
         "artifact_path": str(callind_path),
         "artifact_sha256": target_source_hash or callind_hash,
         "record_index": 1,
@@ -133,6 +141,12 @@ def test_exact_load_provenance_emits_aligned_slot_candidate(tmp_path: Path) -> N
     }
     assert row["source"]["callind_target_provenance"]["record_index"] == 1
     assert row["source"]["target_definition_provenance"]["record_index"] == 2
+
+
+def test_program_pinned_indirect_call_evidence_is_joined(tmp_path: Path) -> None:
+    row = analyze(tmp_path, format_version=2)
+    assert row["status"] == "slot_access_candidate"
+    assert row["source"]["indirect_call_evidence"]["source_format"] == CALL_EVIDENCE_FORMAT_V2
 
 
 def test_signed_aligned_slot_offset_is_preserved(tmp_path: Path) -> None:

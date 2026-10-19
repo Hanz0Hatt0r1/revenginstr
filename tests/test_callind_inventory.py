@@ -71,6 +71,22 @@ def test_inventory_schemas_accept_fixture_and_output_rows() -> None:
     Draft202012Validator(summary_schema).validate(summary)
 
 
+def test_inventory_accepts_pinned_v2_evidence(tmp_path: Path) -> None:
+    row = json.loads((FIXTURES / "evidence.jsonl").read_text(encoding="utf-8"))
+    row.update({
+        "format": "REVENGINSTR.GhidraIndirectCallEvidence/2",
+        "program_sha256": "a" * 64,
+        "architecture": {"language_id": "x86:LE:32:default", "pointer_width_bytes": 4, "endianness": "little"},
+    })
+    evidence = tmp_path / "evidence-v2.jsonl"
+    evidence.write_text(json.dumps(row) + "\n", encoding="utf-8")
+    rows, _ = inventory(
+        FIXTURES / "population.jsonl", [FIXTURES / "flow.tsv"], [evidence],
+    )
+    sites = [item for item in rows if item["record_kind"] == "callind_site"]
+    assert sites[0]["target"] == row["target"]
+
+
 def test_inventory_rejects_evidence_with_wrong_argument_count(tmp_path: Path) -> None:
     evidence = tmp_path / "evidence.jsonl"
     row = json.loads((FIXTURES / "evidence.jsonl").read_text())

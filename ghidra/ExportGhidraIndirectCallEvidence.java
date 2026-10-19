@@ -21,11 +21,15 @@ import java.util.Set;
 
 /** Export bounded High-P-code target expressions for indirect calls in one function. */
 public class ExportGhidraIndirectCallEvidence extends GhidraScript {
-    private static final String FORMAT = "REVENGINSTR.GhidraIndirectCallEvidence/1";
+    private static final String FORMAT = "REVENGINSTR.GhidraIndirectCallEvidence/2";
     private static final int MAX_DEPTH = 6;
 
     @Override
     protected void run() throws Exception {
+        String executableSha256 = currentProgram.getExecutableSHA256();
+        if (executableSha256 == null || !executableSha256.matches("[0-9a-f]{64}")) {
+            throw new IllegalStateException("Current program has no valid executable SHA-256");
+        }
         String[] args = getScriptArgs();
         if (args.length != 2) {
             throw new IllegalArgumentException(
@@ -111,6 +115,8 @@ public class ExportGhidraIndirectCallEvidence extends GhidraScript {
             Varnode target, int inputCount) {
         return "{\"format\":" + q(FORMAT) +
             ",\"program\":" + q(currentProgram.getName()) +
+            ",\"program_sha256\":" + q(currentProgram.getExecutableSHA256()) +
+            ",\"architecture\":" + architectureJson() +
             ",\"requested\":" + q(requested) +
             ",\"function_entry\":" + q(addr(function.getEntryPoint())) +
             ",\"call_address\":" + q(addr(seq.getTarget())) +
@@ -118,6 +124,12 @@ public class ExportGhidraIndirectCallEvidence extends GhidraScript {
             ",\"target\":" + q(nodeToken(target)) +
             ",\"target_expression\":" + q(expression(target, 0, new HashSet<String>())) +
             ",\"arg_count\":" + Math.max(0, inputCount - 1) + "}";
+    }
+
+    private String architectureJson() {
+        return "{\"language_id\":" + q(currentProgram.getLanguageID().toString()) +
+            ",\"pointer_width_bytes\":" + currentProgram.getDefaultPointerSize() +
+            ",\"endianness\":" + q(currentProgram.getLanguage().isBigEndian() ? "big" : "little") + "}";
     }
 
     private String nodeToken(Varnode node) {
