@@ -10,14 +10,15 @@ from typing import Any
 from revenginstr.semantic_program_graph import (
     FORMAT_V1,
     FORMAT_V2,
+    FORMAT_V3,
     _read_jsonl,
     validate_graph_references,
 )
 
 FORMAT = "REVENGINSTR.SemanticProgramQueryResult/1"
 VIEWS = ("exact-only", "accepted-high-confidence", "exploratory")
-NODE_KINDS = ("program", "function", "operation", "field", "receiver_observation")
-RELATIONS = ("contains", "calls", "reads", "writes", "observes_receiver")
+NODE_KINDS = ("program", "function", "operation", "field", "receiver_observation", "type", "layout_field")
+RELATIONS = ("contains", "calls", "reads", "writes", "observes_receiver", "has_field")
 CALL_STATES = ("not_applicable", "resolved", "unresolved", "indirect", "conflicted")
 
 
@@ -60,6 +61,12 @@ def _matches_node(row: dict[str, Any], filters: dict[str, Any]) -> bool:
     if filters["operation_addresses"] and row.get("operation_address") not in filters["operation_addresses"]:
         return False
     if filters["field_offsets"] and row.get("field_offset") not in filters["field_offsets"]:
+        if not (
+            isinstance(row.get("offset_bytes"), int)
+            and f"0x{row['offset_bytes']:x}" in filters["field_offsets"]
+        ):
+            return False
+    if filters["type_ids"] and row.get("type_id") not in filters["type_ids"]:
         return False
     return _supports(row, filters["support_id"])
 
@@ -85,6 +92,7 @@ def query_graphs(
     function_entries: list[str] | None = None,
     operation_addresses: list[str] | None = None,
     field_offsets: list[str] | None = None,
+    type_ids: list[str] | None = None,
     support_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """Return matching graph facts and endpoint context with source provenance."""
@@ -112,18 +120,19 @@ def query_graphs(
         "function_entries": sorted(set(function_entries or [])),
         "operation_addresses": sorted(set(operation_addresses or [])),
         "field_offsets": sorted(set(field_offsets or [])),
+        "type_ids": sorted(set(type_ids or [])),
         "support_id": support_id,
     }
     node_filters_active = any((
         filters["kinds"], filters["call_target_states"],
         filters["function_entries"], filters["operation_addresses"],
-        filters["field_offsets"], filters["support_id"],
+        filters["field_offsets"], filters["type_ids"], filters["support_id"],
     ))
 
     results = []
     seen_graph_ids: set[str] = set()
     for graph in graphs:
-        if graph.get("format") not in {FORMAT_V1, FORMAT_V2}:
+        if graph.get("format") not in {FORMAT_V1, FORMAT_V2, FORMAT_V3}:
             raise ValueError(f"unsupported graph format: {graph.get('format')!r}")
         if graph["graph_id"] in seen_graph_ids:
             raise ValueError(f"duplicate semantic program graph id: {graph['graph_id']!r}")
@@ -209,6 +218,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--function-entry", action="append", default=[])
     parser.add_argument("--operation-address", action="append", default=[])
     parser.add_argument("--field-offset", action="append", default=[])
+    parser.add_argument("--type-id", action="append", default=[])
     parser.add_argument("--support-id")
     args = parser.parse_args(argv)
     try:
@@ -225,6 +235,7 @@ def main(argv: list[str] | None = None) -> int:
             function_entries=args.function_entry,
             operation_addresses=args.operation_address,
             field_offsets=args.field_offset,
+            type_ids=args.type_id,
             support_id=args.support_id,
         )
     except ValueError as error:

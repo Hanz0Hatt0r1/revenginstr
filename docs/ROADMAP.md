@@ -1348,14 +1348,24 @@ target. A captured Ghidra replay for GT5 Prologue function `00032830` validates
 one `CALLIND` join from exported data; see
 [`SemanticProgramGraph/2 replay`](evidence/semantic-program-graph-v2/gt5-prologue-00032830/README.md).
 
+`SemanticProgramGraph/3` now accepts hash-pinned `TypeLayoutHypothesis/1`
+inputs and emits explicit type and layout-field nodes with `has_field`
+ownership edges. It preserves review status, nested field evidence, candidate
+types, vtable anchors, relationships, and conflicts; confidence stays null,
+and identity joins require exact `program_id` equality. A Nevergone replay
+connects the reviewed 340-byte `CCJoyStick` layout and its 13 observed offsets
+to the program graph; a query selects `+0x104` and returns the owner type as
+context. This is a projection of consumer-reviewed hypotheses, not independent
+layout accuracy evidence or a semantic class-identity claim.
+
 The graph families are still structural slices of M10.1–M10.3. Dispatch
-recovery, recovered layouts, roles, states, resources, callbacks, execution
-contexts, broadly scoped semantic gold graphs, and M10 exit criteria remain
-open.
+recovery, object identity across functions, roles, states, resources,
+callbacks, execution contexts, broadly scoped semantic gold graphs, and M10
+exit criteria remain open.
 
 `revenginstr-semantic-program-query` now selects nodes and edges by kind,
 relation, indirect-call state, conflict state, function entry, operation
-address, field offset, and provenance id. It emits a hash-pinned
+address, field offset, type id, and provenance id. It emits a hash-pinned
 `SemanticProgramQueryResult/1` with endpoint context and supports exact-only,
 accepted-high-confidence, and exploratory views. A replay over the captured
 Ghidra graph returns its `CALLIND` and exact receiver observation; the same

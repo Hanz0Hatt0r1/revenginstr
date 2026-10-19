@@ -13,8 +13,10 @@ from revenginstr.structured_summary import validate_function_effect_ir
 
 FORMAT_V1 = "REVENGINSTR.SemanticProgramGraph/1"
 FORMAT_V2 = "REVENGINSTR.SemanticProgramGraph/2"
+FORMAT_V3 = "REVENGINSTR.SemanticProgramGraph/3"
 FORMAT = FORMAT_V1
 RECEIVER_TYPE_FORMAT = "REVENGINSTR.GhidraIndirectReceiverType/1"
+TYPE_LAYOUT_FORMAT = "REVENGINSTR.TypeLayoutHypothesis/1"
 RECEIVER_COLUMNS = (
     "format", "source_id", "function_entry", "call_index", "call_address",
     "call_time", "arg_count", "receiver_present", "receiver_storage_kind",
@@ -30,6 +32,7 @@ EFFECT_FORMATS = {
 _EDGE_ENDPOINTS = {
     "contains": {
         ("program", "function"),
+        ("program", "type"),
         ("function", "operation"),
         ("function", "receiver_observation"),
     },
@@ -37,6 +40,7 @@ _EDGE_ENDPOINTS = {
     "reads": {("operation", "field")},
     "writes": {("operation", "field")},
     "observes_receiver": {("operation", "receiver_observation")},
+    "has_field": {("type", "layout_field")},
 }
 
 
@@ -45,6 +49,10 @@ def _valid_edge_endpoints(graph_format: str) -> dict[str, set[tuple[str, str]]]:
     if graph_format == FORMAT_V1:
         endpoints["contains"].discard(("function", "receiver_observation"))
         endpoints.pop("observes_receiver")
+    if graph_format != FORMAT_V3:
+        endpoints.pop("has_field")
+        endpoints["contains"].discard(("program", "type"))
+        endpoints["contains"].discard(("type", "layout_field"))
     return endpoints
 
 
@@ -77,6 +85,74 @@ def _receiver_support(
             "record_index": record_index,
         },
     }
+
+
+def _layout_support(
+    row: dict[str, Any], *, source_sha256: str, record_index: int
+) -> dict[str, Any]:
+    return {
+        "source_record_id": f"{row['type_id']}#{record_index}",
+        "evidence_class": "derived_structural",
+        "provenance": {
+            "source_format": TYPE_LAYOUT_FORMAT,
+            "artifact_sha256": source_sha256,
+            "record_index": record_index,
+        },
+    }
+
+
+def _validate_type_layout_rows(
+    rows: list[dict[str, Any]], *, known_programs: set[str],
+) -> dict[str, list[dict[str, Any]]]:
+    if not rows:
+        raise ValueError("TypeLayoutHypothesis input is empty")
+    by_program: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    seen_types: set[tuple[str, str]] = set()
+    for record_index, row in enumerate(rows, 1):
+        where = f"type-layout record {record_index}"
+        if not isinstance(row, dict) or set(row) != {
+            "format", "program_id", "program_sha256", "type_id", "architecture",
+            "status", "object_size", "fields", "vtable_anchors", "relationships",
+            "conflicts",
+        }:
+            raise ValueError(f"{where}: malformed TypeLayoutHypothesis/1 fields")
+        if row.get("format") != TYPE_LAYOUT_FORMAT:
+            raise ValueError(f"{where}: unsupported format")
+        program_id, type_id = row.get("program_id"), row.get("type_id")
+        if not isinstance(program_id, str) or program_id not in known_programs:
+            raise ValueError(f"{where}: program_id is absent from Function Effect IR")
+        if not isinstance(type_id, str) or not type_id:
+            raise ValueError(f"{where}: type_id must be a non-empty string")
+        if not _is_sha256(row.get("program_sha256", "")):
+            raise ValueError(f"{where}: invalid program_sha256")
+        if row.get("status") not in {"candidate", "review", "conflicted"}:
+            raise ValueError(f"{where}: invalid status")
+        if not isinstance(row.get("architecture"), dict) or not isinstance(row.get("object_size"), dict):
+            raise ValueError(f"{where}: missing architecture or object_size")
+        for collection in ("fields", "vtable_anchors", "relationships", "conflicts"):
+            if not isinstance(row.get(collection), list):
+                raise ValueError(f"{where}: {collection} must be an array")
+        identity = (program_id, type_id)
+        if identity in seen_types:
+            raise ValueError(f"{where}: duplicate type hypothesis {type_id!r}")
+        seen_types.add(identity)
+        offsets: set[int] = set()
+        for field_index, field in enumerate(row["fields"], 1):
+            field_where = f"{where}: field {field_index}"
+            if not isinstance(field, dict) or set(field) != {
+                "offset_bytes", "status", "accesses", "type_candidates", "conflicts",
+            }:
+                raise ValueError(f"{field_where}: malformed layout field")
+            offset = field.get("offset_bytes")
+            if type(offset) is not int or offset < 0 or offset in offsets:
+                raise ValueError(f"{field_where}: invalid or duplicate offset_bytes")
+            offsets.add(offset)
+            if field.get("status") not in {"candidate", "review", "conflicted"}:
+                raise ValueError(f"{field_where}: invalid status")
+            if not all(isinstance(field.get(name), list) for name in ("accesses", "type_candidates", "conflicts")):
+                raise ValueError(f"{field_where}: malformed evidence collections")
+        by_program[program_id].append({**row, "_record_index": record_index})
+    return by_program
 
 
 def _support_key(support: dict[str, Any]) -> tuple[Any, ...]:
@@ -124,7 +200,7 @@ def _add_edge(edges: dict[str, dict[str, Any]], edge: dict[str, Any]) -> None:
 
 def validate_graph_references(graph: dict[str, Any]) -> None:
     graph_format = graph.get("format")
-    if graph_format not in {FORMAT_V1, FORMAT_V2}:
+    if graph_format not in {FORMAT_V1, FORMAT_V2, FORMAT_V3}:
         raise ValueError(f"unsupported semantic program graph format: {graph_format!r}")
     node_ids = [node["id"] for node in graph["nodes"]]
     edge_ids = [edge["id"] for edge in graph["edges"]]
@@ -161,7 +237,7 @@ def validate_graph_references(graph: dict[str, Any]) -> None:
             if observation["id"] in observations_with_edges:
                 raise ValueError("receiver observation has multiple CALLIND joins")
             observations_with_edges.add(observation["id"])
-    if graph_format == FORMAT_V2:
+    if graph_format in {FORMAT_V2, FORMAT_V3}:
         for node in graph["nodes"]:
             if node["kind"] != "receiver_observation":
                 continue
@@ -169,6 +245,37 @@ def validate_graph_references(graph: dict[str, Any]) -> None:
             expects_edge = node["join_state"] in {"matched", "matched_contested"}
             if has_edge != expects_edge:
                 raise ValueError("receiver observation join_state disagrees with graph edges")
+    if graph_format == FORMAT_V3:
+        layout_sha256 = graph.get("source_type_layout_hypotheses_sha256")
+        if (
+            graph.get("source_type_layout_hypotheses_format") != TYPE_LAYOUT_FORMAT
+            or not isinstance(layout_sha256, str)
+            or not _is_sha256(layout_sha256)
+        ):
+            raise ValueError("SemanticProgramGraph/3 requires pinned TypeLayoutHypothesis input")
+        type_nodes = {node["id"]: node for node in graph["nodes"] if node["kind"] == "type"}
+        field_nodes = {node["id"]: node for node in graph["nodes"] if node["kind"] == "layout_field"}
+        if not type_nodes:
+            raise ValueError("SemanticProgramGraph/3 requires at least one layout type")
+        attached_fields: set[str] = set()
+        for edge in graph["edges"]:
+            if edge["relation"] != "has_field":
+                continue
+            field = field_nodes[edge["to"]]
+            owner = type_nodes[edge["from"]]
+            if field["type_id"] != owner["type_id"] or field["id"] in attached_fields:
+                raise ValueError("layout field ownership edge does not match its type")
+            attached_fields.add(field["id"])
+        if attached_fields != set(field_nodes):
+            raise ValueError("layout field must have exactly one owner type")
+        for node in (*type_nodes.values(), *field_nodes.values()):
+            if node["hypothesis_record_index"] < 1 or not any(
+                support.get("provenance", {}).get("source_format") == TYPE_LAYOUT_FORMAT
+                and support.get("provenance", {}).get("artifact_sha256") == layout_sha256
+                and support.get("provenance", {}).get("record_index") == node["hypothesis_record_index"]
+                for support in node["support"]
+            ):
+                raise ValueError("layout graph node does not reference its pinned hypothesis row")
 
 
 def _read_receiver_types(path: Path) -> tuple[list[dict[str, Any]], str]:
@@ -228,8 +335,10 @@ def build_semantic_program_graphs(
     records: list[dict[str, Any]], *, source_sha256: str,
     receiver_rows: list[dict[str, Any]] | None = None,
     receiver_sha256: str | None = None,
+    type_layout_rows: list[dict[str, Any]] | None = None,
+    type_layout_sha256: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Project effects and optionally exact-call-site receiver observations."""
+    """Project effects, receiver observations, and optional object layouts."""
     if not records:
         raise ValueError("Function Effect IR input is empty")
     if any(not isinstance(record, dict) for record in records):
@@ -242,6 +351,13 @@ def build_semantic_program_graphs(
     by_program: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for record in records:
         by_program[record["program_id"]].append(record)
+    layout_by_program: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    if type_layout_rows is not None:
+        if type_layout_sha256 is None or not _is_sha256(type_layout_sha256):
+            raise ValueError("type-layout hypotheses require their source SHA-256")
+        layout_by_program = _validate_type_layout_rows(
+            type_layout_rows, known_programs=set(by_program)
+        )
     receiver_by_program: dict[str, list[dict[str, Any]]] = defaultdict(list)
     if receiver_rows is not None:
         if receiver_sha256 is None or not _is_sha256(receiver_sha256):
@@ -500,6 +616,66 @@ def build_semantic_program_graphs(
                     "conflict_reasons": conflict_reasons,
                 })
 
+        for row in layout_by_program.get(program_id, []):
+            record_index = row["_record_index"]
+            support = _layout_support(
+                row, source_sha256=type_layout_sha256, record_index=record_index
+            )
+            all_support.append(support)
+            type_node = _stable_id("type", [program_id, row["type_id"]])
+            type_conflicted = row["status"] == "conflicted" or bool(row["conflicts"])
+            _add_node(nodes, {
+                "id": type_node,
+                "kind": "type",
+                "type_id": row["type_id"],
+                "status": row["status"],
+                "conflict_reasons": ["type_layout_conflict"] if type_conflicted else [],
+                "architecture": row["architecture"],
+                "object_size": row["object_size"],
+                "vtable_anchors": row["vtable_anchors"],
+                "relationships": row["relationships"],
+                "conflicts": row["conflicts"],
+                "hypothesis_record_index": record_index,
+                "evidence_class": "derived_structural",
+                "support": [support],
+                "confidence": None,
+                "conflict_state": "contested" if type_conflicted else "uncontested",
+            })
+            for field in row["fields"]:
+                field_conflicted = field["status"] == "conflicted" or bool(field["conflicts"])
+                field_node = _stable_id(
+                    "layout_field", [program_id, row["type_id"], field["offset_bytes"]]
+                )
+                field_support = {
+                    **support,
+                    "source_record_id": f"{row['type_id']}+0x{field['offset_bytes']:x}#{record_index}",
+                }
+                _add_node(nodes, {
+                    "id": field_node,
+                    "kind": "layout_field",
+                    "type_id": row["type_id"],
+                    "offset_bytes": field["offset_bytes"],
+                    "status": field["status"],
+                    "conflict_reasons": ["field_layout_conflict"] if field_conflicted else [],
+                    "accesses": field["accesses"],
+                    "type_candidates": field["type_candidates"],
+                    "conflicts": field["conflicts"],
+                    "hypothesis_record_index": record_index,
+                    "evidence_class": "derived_structural",
+                    "support": [field_support],
+                    "confidence": None,
+                    "conflict_state": "contested" if field_conflicted else "uncontested",
+                })
+                _add_edge(edges, {
+                    "from": type_node,
+                    "to": field_node,
+                    "relation": "has_field",
+                    "evidence_class": "derived_structural",
+                    "support": [field_support],
+                    "confidence": None,
+                    "conflict_state": "uncontested",
+                })
+
         _add_node(nodes, {
             "id": program_node,
             "kind": "program",
@@ -509,7 +685,9 @@ def build_semantic_program_graphs(
             "conflict_state": "uncontested",
         })
         for node in list(nodes.values()):
-            if node["kind"] == "function":
+            if node["kind"] == "function" or (
+                node["kind"] == "type" and type_layout_rows is not None
+            ):
                 _add_edge(edges, {
                     "from": program_node,
                     "to": node["id"],
@@ -521,7 +699,11 @@ def build_semantic_program_graphs(
                 })
 
         graph = {
-            "format": FORMAT_V2 if receiver_rows is not None else FORMAT_V1,
+            "format": (
+                FORMAT_V3 if type_layout_rows is not None
+                else FORMAT_V2 if receiver_rows is not None
+                else FORMAT_V1
+            ),
             "graph_id": _stable_id("program", [program_id]),
             "program_id": program_id,
             "source_effect_ir_format": effect_format,
@@ -532,12 +714,16 @@ def build_semantic_program_graphs(
         if receiver_rows is not None:
             graph["source_receiver_types_format"] = RECEIVER_TYPE_FORMAT
             graph["source_receiver_types_sha256"] = receiver_sha256
+        if type_layout_rows is not None:
+            graph["source_type_layout_hypotheses_format"] = TYPE_LAYOUT_FORMAT
+            graph["source_type_layout_hypotheses_sha256"] = type_layout_sha256
         graph = {
             key: graph[key]
             for key in (
                 "format", "graph_id", "program_id", "source_effect_ir_format",
                 "source_effect_ir_sha256", "source_receiver_types_format",
-                "source_receiver_types_sha256", "nodes", "edges",
+                "source_receiver_types_sha256", "source_type_layout_hypotheses_format",
+                "source_type_layout_hypotheses_sha256", "nodes", "edges",
             )
             if key in graph
         }
@@ -589,6 +775,10 @@ def main(argv: list[str] | None = None) -> int:
         "--receiver-types", type=Path,
         help="optional GhidraIndirectReceiverType/1 TSV; joins only exact CALLIND function/address/time",
     )
+    parser.add_argument(
+        "--type-layout-hypotheses", type=Path,
+        help="optional TypeLayoutHypothesis/1 JSONL; adds candidate type and field nodes",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     records, source_sha256 = _read_jsonl(args.function_effect_ir)
@@ -596,11 +786,17 @@ def main(argv: list[str] | None = None) -> int:
     receiver_sha256 = None
     if args.receiver_types is not None:
         receiver_rows, receiver_sha256 = _read_receiver_types(args.receiver_types)
+    type_layout_rows = None
+    type_layout_sha256 = None
+    if args.type_layout_hypotheses is not None:
+        type_layout_rows, type_layout_sha256 = _read_jsonl(args.type_layout_hypotheses)
     graphs = build_semantic_program_graphs(
         records,
         source_sha256=source_sha256,
         receiver_rows=receiver_rows,
         receiver_sha256=receiver_sha256,
+        type_layout_rows=type_layout_rows,
+        type_layout_sha256=type_layout_sha256,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", encoding="utf-8") as handle:
@@ -615,6 +811,14 @@ def main(argv: list[str] | None = None) -> int:
         print("receiver observations:", sum(
             node["kind"] == "receiver_observation"
             for graph in graphs for node in graph["nodes"]
+        ))
+    if type_layout_sha256 is not None:
+        print("source type-layout hypotheses SHA-256:", type_layout_sha256)
+        print("layout types:", sum(
+            node["kind"] == "type" for graph in graphs for node in graph["nodes"]
+        ))
+        print("layout fields:", sum(
+            node["kind"] == "layout_field" for graph in graphs for node in graph["nodes"]
         ))
     print("output:", args.output)
     return 0

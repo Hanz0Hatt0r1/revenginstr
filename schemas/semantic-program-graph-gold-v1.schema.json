@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/semantic-program-graph-gold-v1.schema.json",
   "title": "REVENGINSTR.SemanticProgramGraphGold/1 JSONL row",
-  "description": "One consumer-owned, adjudicated gold subgraph with explicitly complete relations and references to source evidence outside the graph output.",
+  "description": "One consumer-owned, adjudicated gold subgraph with explicitly complete relations and references to source evidence outside the graph output. Layout hypotheses can be scored through SemanticProgramGraph/3 has_field edges.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -26,14 +26,14 @@
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
-      "items": {"enum": ["contains", "calls", "reads", "writes", "observes_receiver"]}
+      "items": {"enum": ["contains", "calls", "reads", "writes", "observes_receiver", "has_field"]}
     },
     "edges": {"type": "array", "items": {"$ref": "#/$defs/gold_edge"}},
     "adjudication_status": {"const": "adjudicated"}
   },
   "$defs": {
     "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-    "node_id": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation):[0-9a-f]{64}$"},
+    "node_id": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation|type|layout_field):[0-9a-f]{64}$"},
     "evidence_ref": {
       "type": "object",
       "additionalProperties": false,
@@ -52,7 +52,7 @@
       "properties": {
         "from": {"$ref": "#/$defs/node_id"},
         "to": {"$ref": "#/$defs/node_id"},
-        "relation": {"enum": ["contains", "calls", "reads", "writes", "observes_receiver"]},
+        "relation": {"enum": ["contains", "calls", "reads", "writes", "observes_receiver", "has_field"]},
         "evidence_refs": {
           "type": "array",
           "minItems": 1,
@@ -100,6 +100,13 @@
             "relation": {"const": "observes_receiver"},
             "from": {"pattern": "^operation:"},
             "to": {"pattern": "^receiver_observation:"}
+          }
+        },
+        {
+          "properties": {
+            "relation": {"const": "has_field"},
+            "from": {"pattern": "^type:"},
+            "to": {"pattern": "^layout_field:"}
           }
         }
       ]

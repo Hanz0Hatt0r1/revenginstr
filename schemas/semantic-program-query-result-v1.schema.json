@@ -10,7 +10,7 @@
     "format": {"const": "REVENGINSTR.SemanticProgramQueryResult/1"},
     "query_id": {"type": "string", "pattern": "^query:[0-9a-f]{64}$"},
     "source_graph_id": {"type": "string", "pattern": "^program:[0-9a-f]{64}$"},
-    "source_graph_format": {"enum": ["REVENGINSTR.SemanticProgramGraph/1", "REVENGINSTR.SemanticProgramGraph/2"]},
+    "source_graph_format": {"enum": ["REVENGINSTR.SemanticProgramGraph/1", "REVENGINSTR.SemanticProgramGraph/2", "REVENGINSTR.SemanticProgramGraph/3"]},
     "program_id": {"type": "string", "minLength": 1},
     "source_graph_sha256": {"$ref": "#/$defs/sha256"},
     "view": {"enum": ["exact-only", "accepted-high-confidence", "exploratory"]},
@@ -27,13 +27,14 @@
       "additionalProperties": false,
       "required": ["kinds", "relations", "call_target_states", "conflict_state", "function_entries", "operation_addresses", "field_offsets", "support_id"],
       "properties": {
-        "kinds": {"type": "array", "uniqueItems": true, "items": {"enum": ["program", "function", "operation", "field", "receiver_observation"]}},
-        "relations": {"type": "array", "uniqueItems": true, "items": {"enum": ["contains", "calls", "reads", "writes", "observes_receiver"]}},
+        "kinds": {"type": "array", "uniqueItems": true, "items": {"enum": ["program", "function", "operation", "field", "receiver_observation", "type", "layout_field"]}},
+        "relations": {"type": "array", "uniqueItems": true, "items": {"enum": ["contains", "calls", "reads", "writes", "observes_receiver", "has_field"]}},
         "call_target_states": {"type": "array", "uniqueItems": true, "items": {"enum": ["not_applicable", "resolved", "unresolved", "indirect", "conflicted"]}},
         "conflict_state": {"enum": ["any", "uncontested", "contested"]},
         "function_entries": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
         "operation_addresses": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
         "field_offsets": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "type_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
         "support_id": {"type": ["string", "null"]}
       }
     },
@@ -41,8 +42,8 @@
       "type": "object",
       "required": ["id", "kind"],
       "properties": {
-        "id": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation):[0-9a-f]{64}$"},
-        "kind": {"enum": ["program", "function", "operation", "field", "receiver_observation"]}
+        "id": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation|type|layout_field):[0-9a-f]{64}$"},
+        "kind": {"enum": ["program", "function", "operation", "field", "receiver_observation", "type", "layout_field"]}
       },
       "additionalProperties": true
     },
@@ -51,9 +52,9 @@
       "required": ["id", "from", "to", "relation"],
       "properties": {
         "id": {"type": "string", "pattern": "^edge:[0-9a-f]{64}$"},
-        "from": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation):[0-9a-f]{64}$"},
-        "to": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation):[0-9a-f]{64}$"},
-        "relation": {"enum": ["contains", "calls", "reads", "writes", "observes_receiver"]}
+        "from": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation|type|layout_field):[0-9a-f]{64}$"},
+        "to": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation|type|layout_field):[0-9a-f]{64}$"},
+        "relation": {"enum": ["contains", "calls", "reads", "writes", "observes_receiver", "has_field"]}
       },
       "additionalProperties": true
     }
