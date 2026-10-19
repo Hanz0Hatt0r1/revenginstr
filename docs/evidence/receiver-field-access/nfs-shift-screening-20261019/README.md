@@ -247,6 +247,11 @@ roots and adds those origins to the nested candidate rows. Selector values
 remain dynamic, unobserved writers remain possible, and the `/6` results remain
 unchanged. See
 [`field20-selector1-resolution.md`](scan37/replay-0041dd40/field20-selector1-resolution.md).
+An additional CFG/5 replay added exact bodies for `006642a5` and its direct
+callee `00664140`, together with nine store facts. The five `/6` statuses remain
+unchanged; the bounded closure now exposes five further unresolved calls from
+`00664140`. See
+[`cfg-v5-seeded-callee-extension.md`](scan37/replay-0041dd40/cfg-v5-seeded-callee-extension.md).
 The replay also includes the 32-row, read-only generic Ghidra pointer-table
 export at [`ghidra-pointer-table-slots.jsonl`](scan37/replay-0041dd40/ghidra-pointer-table-slots.jsonl);
 its schema and invocation are documented in

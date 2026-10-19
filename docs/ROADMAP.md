@@ -2247,11 +2247,19 @@ possible. The field writer/copy inventory and replay chains are documented in
 the [manual static review](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/manual-static-vtable-review.md)
 and the [selector-1 replay](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-selector1-resolution.md).
 
-**Next:** refresh the CFG/5 interprocedural memory-effect replay for the five
-focused candidate pairs using the newly seeded `006642a5` flow and CFG. Four
-pairs remain possible and one is unique while `CALLIND` and `STORE` effects
-remain unresolved. Keep selector and receiver conclusions conditional until
-runtime evidence binds them. Assess bodies smaller than 40 bytes only when a
-remaining target or pair provides a concrete reason to extend the population
-screen. Do not infer alias facts from decompiler text or instruction-level
-corpus labels.
+The refreshed CFG/5 memory-effect replay now includes exact flows for
+`006642a5` and `00664140`, plus nine stores relative to `00664140` parameter 0.
+The extended closures contain 95 functions and expose five more unresolved
+direct calls from `00664140`; its caller passes global address `00bfc728`, whose
+possible alias with tracked fields is not established. The four possible `/6`
+pairs and one unique candidate are unchanged. See the
+[seeded-callee extension](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/cfg-v5-seeded-callee-extension.md)
+for the inputs and retained outputs.
+
+**Next:** prioritize the five newly exposed direct targets from `00664140` for
+bounded flow/CFG and memory-store acquisition, then refresh the closure only
+when those records add exact effect evidence. Keep selector and receiver
+conclusions conditional until runtime evidence binds them. Assess bodies
+smaller than 40 bytes only when a remaining target or pair gives a concrete
+reason to extend the population screen. Do not infer alias facts from
+decompiler text or instruction-level corpus labels.
