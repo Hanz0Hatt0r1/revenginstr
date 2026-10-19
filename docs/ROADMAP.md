@@ -1906,10 +1906,46 @@ monotone fixed point for cycles. Missing argument links, incomplete callee
 facts, unresolved stores, indirect calls, unknown operations and exhausted
 budgets remain barriers. `/1`–`/4` stay unchanged.
 
-**Next:** replay CFG/4 on further bounded x86-32 candidates from actual
-parameter-field `STORE` and `LOAD` rows. Compare `/5` and `/6` with the exact
-caller roots and complete memory facts pinned; keep aliasing and unresolved
-effects as barriers. Do not infer alias facts from decompiler text or
-instruction-level corpus labels. The current candidate family remains useful
-for checking that duplicate markers are deduplicated without changing a status
-when a separately classified possible write still lies on the witness.
+Three fresh Ghidra screens (`scan25`–`scan27`) exercised the bounded batch
+parameter-field exporter on the retail x86-32 SHIFT executable. The function
+and call indexes only selected targets; the exporter determined all field and
+STORE facts from High P-code. Scan25 sampled 100 of 2,374 eligible functions
+and produced eight parameter-field stores, 271 loads, 282 memory STORE facts,
+and no exact pair. Scan26 sampled 256 of 561 higher-parameter candidates and
+produced 34 stores, 965 loads, 951 memory STORE facts, and eight pairs across
+four functions. Its `/6` screen reported six `possible_intervening_memory_effect`
+and two `store_not_dominating_load` rows, with no unique candidate. Scan27
+screened the remaining 305 functions in that candidate population and
+produced 64 stores, 1,302 loads, 1,180 memory STORE facts, and sixteen pairs
+across ten functions. `/6` reported five possible effects and eleven
+non-dominating stores, again with no unique candidate.
+
+The exact-root scan26 replay for `004d6700` formed two pairs at offset
+`0x334`. Five of eleven planned caller-argument slots had exact formal-plus-
+offset roots. Across the pairs, interprocedural effects contained six
+`unknown_effect` and two `no_aliasing_memory_effect` rows; both `/5` and `/6`
+remained `possible_intervening_memory_effect`. A bounded follow-up reached a
+`CALLIND` in `0065cd30` under `00637890`, so missing and indirect nested effects
+remain barriers.
+
+Scan27's narrowest candidate, `0048e380`, has a dominating `param0 + 0x4` store
+at `0048e3b1` and compatible load at `0048e3f2`. Every local intervening STORE
+has a complete exact memory fact at a disjoint offset. Its only remaining
+witness barrier is the call at `0048e3d5` to `0062e1a0`. The bounded closure
+reaches `CALLIND` through `0062e1a0 → 00901179 → 0090a62e`; the caller passes a
+constant to the root call and therefore has no formal-root mapping there. With
+the same pair, P-code, memory facts and root sidecar, `/5` and `/6` both retain
+`possible_intervening_memory_effect` and report zero unique candidates. CFG/4
+reduces the relevant call's unknown-operation identifiers from 57 to 27 by
+deduplicating linked markers, but the reachable indirect call and missing
+nested flows keep the effect unknown. The complete retained selections,
+exports, roots, effects, and audits are in the
+[scan25–27 evidence bundle](evidence/receiver-field-access/nfs-shift-screening-20261019/README.md).
+
+**Next:** screen a new bounded family selected from exact parameter-field
+`STORE`/`LOAD` rows. Prioritize pairs whose witness contains few direct calls,
+then collect the full reachable call closure, exact caller roots, and complete
+memory facts before comparing `/5` and `/6`. The 561-function higher-parameter
+population used by scan26 and scan27 is exhausted. Keep missing callees,
+indirect calls, unknown roots, and possible aliases as barriers; do not infer
+alias facts from decompiler text or instruction-level corpus labels.

@@ -1,0 +1,1 @@
+{"format":"REVENGINSTR.GhidraIndirectCallEvidence/1","program":"SHIFT.exe","requested":"0065cd30","function_entry":"0x0065cd30","call_address":"0x0065cd4e","call_time":45,"target":"def:LOAD@0065cd4a:37:4","target_expression":"LOAD(CAST(LOAD(address:00bfbc0c:4)))","arg_count":1}

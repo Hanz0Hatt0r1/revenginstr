@@ -1,0 +1,956 @@
+{
+  "format": "NFS.M23ScreeningSelection/1",
+  "limits": [
+    "Function inventory and call edges are selection aids only. Actual parameter-field and memory facts come from read-only Ghidra High-P-code exports; no instruction-level labels or semantic claims are used."
+  ],
+  "program_id": "nfs-shift:SHIFT.exe",
+  "selection": {
+    "address_range": [
+      "00401000",
+      "004fffff"
+    ],
+    "candidate_entries": [
+      {
+        "function_entry": "00402770"
+      },
+      {
+        "function_entry": "00403a00"
+      },
+      {
+        "function_entry": "004049e0"
+      },
+      {
+        "function_entry": "004065d0"
+      },
+      {
+        "function_entry": "004068e0"
+      },
+      {
+        "function_entry": "004075af"
+      },
+      {
+        "function_entry": "004077e0"
+      },
+      {
+        "function_entry": "00408470"
+      },
+      {
+        "function_entry": "00408f10"
+      },
+      {
+        "function_entry": "0040a260"
+      },
+      {
+        "function_entry": "0040b8b0"
+      },
+      {
+        "function_entry": "0040c4c0"
+      },
+      {
+        "function_entry": "0040c750"
+      },
+      {
+        "function_entry": "0040ca80"
+      },
+      {
+        "function_entry": "0040fe10"
+      },
+      {
+        "function_entry": "00410090"
+      },
+      {
+        "function_entry": "00414a80"
+      },
+      {
+        "function_entry": "004175b9"
+      },
+      {
+        "function_entry": "00417ea0"
+      },
+      {
+        "function_entry": "004185a0"
+      },
+      {
+        "function_entry": "0041b7e0"
+      },
+      {
+        "function_entry": "0041d7c0"
+      },
+      {
+        "function_entry": "00420ae0"
+      },
+      {
+        "function_entry": "004210a0"
+      },
+      {
+        "function_entry": "00427de0"
+      },
+      {
+        "function_entry": "00428060"
+      },
+      {
+        "function_entry": "00428e90"
+      },
+      {
+        "function_entry": "0042bd60"
+      },
+      {
+        "function_entry": "0042ca10"
+      },
+      {
+        "function_entry": "0042ee30"
+      },
+      {
+        "function_entry": "0042f130"
+      },
+      {
+        "function_entry": "0042f270"
+      },
+      {
+        "function_entry": "0042f560"
+      },
+      {
+        "function_entry": "0042ff60"
+      },
+      {
+        "function_entry": "00430de0"
+      },
+      {
+        "function_entry": "004318f0"
+      },
+      {
+        "function_entry": "00432c90"
+      },
+      {
+        "function_entry": "00432d30"
+      },
+      {
+        "function_entry": "00433c80"
+      },
+      {
+        "function_entry": "004366d0"
+      },
+      {
+        "function_entry": "00437f10"
+      },
+      {
+        "function_entry": "004394a0"
+      },
+      {
+        "function_entry": "00439910"
+      },
+      {
+        "function_entry": "0043a1b0"
+      },
+      {
+        "function_entry": "0043a500"
+      },
+      {
+        "function_entry": "0043ad90"
+      },
+      {
+        "function_entry": "0043b500"
+      },
+      {
+        "function_entry": "0043c1e0"
+      },
+      {
+        "function_entry": "0043c4c0"
+      },
+      {
+        "function_entry": "0043cf00"
+      },
+      {
+        "function_entry": "0043d4b0"
+      },
+      {
+        "function_entry": "0043dde0"
+      },
+      {
+        "function_entry": "0043e670"
+      },
+      {
+        "function_entry": "0043eb80"
+      },
+      {
+        "function_entry": "0043f7d0"
+      },
+      {
+        "function_entry": "0043fb30"
+      },
+      {
+        "function_entry": "0043fbd0"
+      },
+      {
+        "function_entry": "004400a0"
+      },
+      {
+        "function_entry": "00440420"
+      },
+      {
+        "function_entry": "004417a0"
+      },
+      {
+        "function_entry": "00442b90"
+      },
+      {
+        "function_entry": "00443500"
+      },
+      {
+        "function_entry": "00443580"
+      },
+      {
+        "function_entry": "00443700"
+      },
+      {
+        "function_entry": "00443940"
+      },
+      {
+        "function_entry": "00445370"
+      },
+      {
+        "function_entry": "00445fc0"
+      },
+      {
+        "function_entry": "00446590"
+      },
+      {
+        "function_entry": "00448e20"
+      },
+      {
+        "function_entry": "0044a3d0"
+      },
+      {
+        "function_entry": "00453a90"
+      },
+      {
+        "function_entry": "00454450"
+      },
+      {
+        "function_entry": "00454a10"
+      },
+      {
+        "function_entry": "00455510"
+      },
+      {
+        "function_entry": "00455ba0"
+      },
+      {
+        "function_entry": "00455dc0"
+      },
+      {
+        "function_entry": "00456090"
+      },
+      {
+        "function_entry": "004563c0"
+      },
+      {
+        "function_entry": "004566c0"
+      },
+      {
+        "function_entry": "004582d0"
+      },
+      {
+        "function_entry": "00458d80"
+      },
+      {
+        "function_entry": "00458ee0"
+      },
+      {
+        "function_entry": "00459180"
+      },
+      {
+        "function_entry": "00459510"
+      },
+      {
+        "function_entry": "0045b480"
+      },
+      {
+        "function_entry": "0045b8f0"
+      },
+      {
+        "function_entry": "0045bc60"
+      },
+      {
+        "function_entry": "0045cc60"
+      },
+      {
+        "function_entry": "0045df20"
+      },
+      {
+        "function_entry": "00460a50"
+      },
+      {
+        "function_entry": "00460fe0"
+      },
+      {
+        "function_entry": "00462e20"
+      },
+      {
+        "function_entry": "00463780"
+      },
+      {
+        "function_entry": "00463fc0"
+      },
+      {
+        "function_entry": "00464390"
+      },
+      {
+        "function_entry": "00464c60"
+      },
+      {
+        "function_entry": "00466210"
+      },
+      {
+        "function_entry": "0046a360"
+      },
+      {
+        "function_entry": "0046a4f0"
+      },
+      {
+        "function_entry": "0046b930"
+      },
+      {
+        "function_entry": "0046bb50"
+      },
+      {
+        "function_entry": "0046ce80"
+      },
+      {
+        "function_entry": "0046ecd0"
+      },
+      {
+        "function_entry": "0046f1e0"
+      },
+      {
+        "function_entry": "004700b0"
+      },
+      {
+        "function_entry": "00470b00"
+      },
+      {
+        "function_entry": "00470c90"
+      },
+      {
+        "function_entry": "004734c0"
+      },
+      {
+        "function_entry": "004748e0"
+      },
+      {
+        "function_entry": "00474df0"
+      },
+      {
+        "function_entry": "004751b0"
+      },
+      {
+        "function_entry": "004754b0"
+      },
+      {
+        "function_entry": "004758c0"
+      },
+      {
+        "function_entry": "00475d40"
+      },
+      {
+        "function_entry": "00476310"
+      },
+      {
+        "function_entry": "004764f0"
+      },
+      {
+        "function_entry": "004768e0"
+      },
+      {
+        "function_entry": "00476fa0"
+      },
+      {
+        "function_entry": "004772b0"
+      },
+      {
+        "function_entry": "00477f60"
+      },
+      {
+        "function_entry": "00478480"
+      },
+      {
+        "function_entry": "00478990"
+      },
+      {
+        "function_entry": "0047bc90"
+      },
+      {
+        "function_entry": "0047c6a0"
+      },
+      {
+        "function_entry": "0047c800"
+      },
+      {
+        "function_entry": "0047db60"
+      },
+      {
+        "function_entry": "0047ebb0"
+      },
+      {
+        "function_entry": "00480ab0"
+      },
+      {
+        "function_entry": "00481420"
+      },
+      {
+        "function_entry": "00481be0"
+      },
+      {
+        "function_entry": "00488840"
+      },
+      {
+        "function_entry": "00488970"
+      },
+      {
+        "function_entry": "00489700"
+      },
+      {
+        "function_entry": "0048c420"
+      },
+      {
+        "function_entry": "0048ca20"
+      },
+      {
+        "function_entry": "0048d3a0"
+      },
+      {
+        "function_entry": "0048e380"
+      },
+      {
+        "function_entry": "0048ef20"
+      },
+      {
+        "function_entry": "0048fd40"
+      },
+      {
+        "function_entry": "00490110"
+      },
+      {
+        "function_entry": "004903c0"
+      },
+      {
+        "function_entry": "00490b50"
+      },
+      {
+        "function_entry": "004911dc"
+      },
+      {
+        "function_entry": "00491450"
+      },
+      {
+        "function_entry": "00491840"
+      },
+      {
+        "function_entry": "00493020"
+      },
+      {
+        "function_entry": "00493520"
+      },
+      {
+        "function_entry": "00495290"
+      },
+      {
+        "function_entry": "00495c30"
+      },
+      {
+        "function_entry": "004961c0"
+      },
+      {
+        "function_entry": "00496ba7"
+      },
+      {
+        "function_entry": "00496f40"
+      },
+      {
+        "function_entry": "00498140"
+      },
+      {
+        "function_entry": "00498360"
+      },
+      {
+        "function_entry": "00498f20"
+      },
+      {
+        "function_entry": "0049adf0"
+      },
+      {
+        "function_entry": "0049bf70"
+      },
+      {
+        "function_entry": "0049cfa0"
+      },
+      {
+        "function_entry": "0049db60"
+      },
+      {
+        "function_entry": "0049f428"
+      },
+      {
+        "function_entry": "004a15f0"
+      },
+      {
+        "function_entry": "004a25a0"
+      },
+      {
+        "function_entry": "004a3b40"
+      },
+      {
+        "function_entry": "004a3ff0"
+      },
+      {
+        "function_entry": "004a5bc0"
+      },
+      {
+        "function_entry": "004a60d0"
+      },
+      {
+        "function_entry": "004a63f0"
+      },
+      {
+        "function_entry": "004a6a80"
+      },
+      {
+        "function_entry": "004a6f10"
+      },
+      {
+        "function_entry": "004a7d90"
+      },
+      {
+        "function_entry": "004a83d0"
+      },
+      {
+        "function_entry": "004a8d50"
+      },
+      {
+        "function_entry": "004a9050"
+      },
+      {
+        "function_entry": "004a9260"
+      },
+      {
+        "function_entry": "004aa030"
+      },
+      {
+        "function_entry": "004aa8c0"
+      },
+      {
+        "function_entry": "004ac1dc"
+      },
+      {
+        "function_entry": "004ac970"
+      },
+      {
+        "function_entry": "004acf40"
+      },
+      {
+        "function_entry": "004ad740"
+      },
+      {
+        "function_entry": "004adc40"
+      },
+      {
+        "function_entry": "004aea10"
+      },
+      {
+        "function_entry": "004afaf0"
+      },
+      {
+        "function_entry": "004b0710"
+      },
+      {
+        "function_entry": "004b1000"
+      },
+      {
+        "function_entry": "004b1860"
+      },
+      {
+        "function_entry": "004b27d0"
+      },
+      {
+        "function_entry": "004b4270"
+      },
+      {
+        "function_entry": "004b4580"
+      },
+      {
+        "function_entry": "004b4890"
+      },
+      {
+        "function_entry": "004b4ce0"
+      },
+      {
+        "function_entry": "004b70e0"
+      },
+      {
+        "function_entry": "004b78f1"
+      },
+      {
+        "function_entry": "004b79c0"
+      },
+      {
+        "function_entry": "004b82a0"
+      },
+      {
+        "function_entry": "004b8b30"
+      },
+      {
+        "function_entry": "004b8ef0"
+      },
+      {
+        "function_entry": "004ba520"
+      },
+      {
+        "function_entry": "004ba750"
+      },
+      {
+        "function_entry": "004ba980"
+      },
+      {
+        "function_entry": "004bab80"
+      },
+      {
+        "function_entry": "004bad20"
+      },
+      {
+        "function_entry": "004bb820"
+      },
+      {
+        "function_entry": "004bbfa0"
+      },
+      {
+        "function_entry": "004bcd00"
+      },
+      {
+        "function_entry": "004bd0c0"
+      },
+      {
+        "function_entry": "004bd9b0"
+      },
+      {
+        "function_entry": "004be4b0"
+      },
+      {
+        "function_entry": "004bef40"
+      },
+      {
+        "function_entry": "004bf480"
+      },
+      {
+        "function_entry": "004bfe80"
+      },
+      {
+        "function_entry": "004c0180"
+      },
+      {
+        "function_entry": "004c07c0"
+      },
+      {
+        "function_entry": "004c1a50"
+      },
+      {
+        "function_entry": "004c1fc0"
+      },
+      {
+        "function_entry": "004c2740"
+      },
+      {
+        "function_entry": "004c37b0"
+      },
+      {
+        "function_entry": "004c4640"
+      },
+      {
+        "function_entry": "004c4970"
+      },
+      {
+        "function_entry": "004c7150"
+      },
+      {
+        "function_entry": "004c73b0"
+      },
+      {
+        "function_entry": "004c7590"
+      },
+      {
+        "function_entry": "004c7760"
+      },
+      {
+        "function_entry": "004c7ea0"
+      },
+      {
+        "function_entry": "004c8290"
+      },
+      {
+        "function_entry": "004c9710"
+      },
+      {
+        "function_entry": "004ca3f0"
+      },
+      {
+        "function_entry": "004ca9a0"
+      },
+      {
+        "function_entry": "004cb900"
+      },
+      {
+        "function_entry": "004cbda0"
+      },
+      {
+        "function_entry": "004cbec0"
+      },
+      {
+        "function_entry": "004cc220"
+      },
+      {
+        "function_entry": "004ccc00"
+      },
+      {
+        "function_entry": "004cd340"
+      },
+      {
+        "function_entry": "004ce390"
+      },
+      {
+        "function_entry": "004cf6d0"
+      },
+      {
+        "function_entry": "004cfb80"
+      },
+      {
+        "function_entry": "004d05a0"
+      },
+      {
+        "function_entry": "004d08f0"
+      },
+      {
+        "function_entry": "004d39e0"
+      },
+      {
+        "function_entry": "004d53a0"
+      },
+      {
+        "function_entry": "004d63f0"
+      },
+      {
+        "function_entry": "004d6e20"
+      },
+      {
+        "function_entry": "004d7540"
+      },
+      {
+        "function_entry": "004d8790"
+      },
+      {
+        "function_entry": "004d91f0"
+      },
+      {
+        "function_entry": "004d96f0"
+      },
+      {
+        "function_entry": "004da8d0"
+      },
+      {
+        "function_entry": "004dbb60"
+      },
+      {
+        "function_entry": "004dc1e0"
+      },
+      {
+        "function_entry": "004dd480"
+      },
+      {
+        "function_entry": "004ddbb0"
+      },
+      {
+        "function_entry": "004dea10"
+      },
+      {
+        "function_entry": "004df100"
+      },
+      {
+        "function_entry": "004df6b0"
+      },
+      {
+        "function_entry": "004df860"
+      },
+      {
+        "function_entry": "004dfc00"
+      },
+      {
+        "function_entry": "004dffc0"
+      },
+      {
+        "function_entry": "004e07b0"
+      },
+      {
+        "function_entry": "004e16c0"
+      },
+      {
+        "function_entry": "004e1ea0"
+      },
+      {
+        "function_entry": "004e21f0"
+      },
+      {
+        "function_entry": "004e2640"
+      },
+      {
+        "function_entry": "004e2d40"
+      },
+      {
+        "function_entry": "004e3310"
+      },
+      {
+        "function_entry": "004e3e60"
+      },
+      {
+        "function_entry": "004e4d90"
+      },
+      {
+        "function_entry": "004e5dc0"
+      },
+      {
+        "function_entry": "004e5f60"
+      },
+      {
+        "function_entry": "004e73e0"
+      },
+      {
+        "function_entry": "004e81c0"
+      },
+      {
+        "function_entry": "004e89e0"
+      },
+      {
+        "function_entry": "004e8c50"
+      },
+      {
+        "function_entry": "004e9ae0"
+      },
+      {
+        "function_entry": "004e9c10"
+      },
+      {
+        "function_entry": "004ea450"
+      },
+      {
+        "function_entry": "004eab70"
+      },
+      {
+        "function_entry": "004eb320"
+      },
+      {
+        "function_entry": "004ed070"
+      },
+      {
+        "function_entry": "004ed4a0"
+      },
+      {
+        "function_entry": "004ef957"
+      },
+      {
+        "function_entry": "004f09e0"
+      },
+      {
+        "function_entry": "004f0c20"
+      },
+      {
+        "function_entry": "004f10a0"
+      },
+      {
+        "function_entry": "004f16b0"
+      },
+      {
+        "function_entry": "004f2200"
+      },
+      {
+        "function_entry": "004f23e0"
+      },
+      {
+        "function_entry": "004f36f0"
+      },
+      {
+        "function_entry": "004f5750"
+      },
+      {
+        "function_entry": "004f5ee0"
+      },
+      {
+        "function_entry": "004f60e0"
+      },
+      {
+        "function_entry": "004f6940"
+      },
+      {
+        "function_entry": "004f7da0"
+      },
+      {
+        "function_entry": "004f7fa0"
+      },
+      {
+        "function_entry": "004f8640"
+      },
+      {
+        "function_entry": "004f9080"
+      },
+      {
+        "function_entry": "004f9230"
+      },
+      {
+        "function_entry": "004f9600"
+      },
+      {
+        "function_entry": "004fb1e0"
+      },
+      {
+        "function_entry": "004fb670"
+      },
+      {
+        "function_entry": "004fc1a0"
+      },
+      {
+        "function_entry": "004fc710"
+      },
+      {
+        "function_entry": "004fd9f0"
+      },
+      {
+        "function_entry": "004ffb70"
+      },
+      {
+        "function_entry": "004ffef0"
+      }
+    ],
+    "eligible_population": 561,
+    "filters": [
+      "Ghidra function inventory entry in address range",
+      "non-external function",
+      "function name does not begin with thunk_",
+      "at least two explicit param_n formals",
+      "body address_count between 100 and 800 inclusive",
+      "present as a direct-call caller in pinned call-edge export",
+      "not selected by scan25 or scan26"
+    ],
+    "sampling": "all 305 previously unselected functions in the eligible population",
+    "selected_functions": 305
+  },
+  "source": {
+    "call_edges": {
+      "path": "/home/pes/work/nfs-shift-mass-recovery-20261017-artifacts/p1b-full-program-index/shift.calls.tsv.gz",
+      "sha256": "68d06720c8c0cbd370338c6b4d322d84ef0c15f4474c1a3e522f3e3ea2b2d2fe"
+    },
+    "executable": {
+      "path": "SHIFT.exe",
+      "sha256": "eca479aa2d8dbb88bc55709d91ae5c7159ae1b00fc9555d6701000c26de8aee1"
+    },
+    "function_inventory": {
+      "path": "/home/pes/work/nfs-shift-mass-recovery-20261017-artifacts/p1b-full-program-index/shift.functions.tsv.gz",
+      "sha256": "8b8b00d8493dba459edf186869ddf492dc26002af3b65d08b6988dc91a87fa24"
+    }
+  }
+}

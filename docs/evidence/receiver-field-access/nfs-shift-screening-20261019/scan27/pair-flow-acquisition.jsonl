@@ -1,0 +1,10 @@
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"SHIFT.exe","function_entry":"00432c90","state":"complete","operation_count":74,"callind_count":3,"error":null}
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"SHIFT.exe","function_entry":"0043c4c0","state":"complete","operation_count":58,"callind_count":0,"error":null}
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"SHIFT.exe","function_entry":"0046f1e0","state":"complete","operation_count":100,"callind_count":3,"error":null}
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"SHIFT.exe","function_entry":"0048e380","state":"complete","operation_count":48,"callind_count":0,"error":null}
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"SHIFT.exe","function_entry":"0048ef20","state":"complete","operation_count":255,"callind_count":0,"error":null}
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"SHIFT.exe","function_entry":"0049adf0","state":"complete","operation_count":50,"callind_count":0,"error":null}
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"SHIFT.exe","function_entry":"004a3b40","state":"complete","operation_count":180,"callind_count":1,"error":null}
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"SHIFT.exe","function_entry":"004c0180","state":"complete","operation_count":228,"callind_count":0,"error":null}
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"SHIFT.exe","function_entry":"004c7ea0","state":"complete","operation_count":48,"callind_count":0,"error":null}
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"SHIFT.exe","function_entry":"004d96f0","state":"complete","operation_count":97,"callind_count":0,"error":null}
