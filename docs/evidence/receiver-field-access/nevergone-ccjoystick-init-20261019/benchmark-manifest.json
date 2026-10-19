@@ -1,0 +1,160 @@
+{
+  "artifacts": {
+    "dominance_audit_expected": {
+      "content": "jsonl",
+      "format": "REVENGINSTR.FieldStoreLoadDominanceAudit/2",
+      "kind": "file",
+      "path": "field-store-load-dominance-audit-v2.expected.jsonl",
+      "role": "input",
+      "schema": "dominance_audit_v2",
+      "sha256": "0bf48e0f06f7afbf918044718e12b3b72b47a83c316ac6aeb9547d1d9da5e911"
+    },
+    "dominance_audit_replay": {
+      "content": "jsonl",
+      "format": "REVENGINSTR.FieldStoreLoadDominanceAudit/2",
+      "kind": "file",
+      "path": "frozen-replay/field-store-load-dominance-audit-v2.jsonl",
+      "role": "output",
+      "schema": "dominance_audit_v2"
+    },
+    "field_access_pairs": {
+      "content": "jsonl",
+      "format": "REVENGINSTR.ReceiverProvenanceGraph/1",
+      "kind": "file",
+      "path": "field-access-pairs.jsonl",
+      "role": "input",
+      "schema": "receiver_graph",
+      "sha256": "a914bacb54e8b0996091e443184ac456bb5c3ce93bc400759764a66e7d604e43"
+    },
+    "function_pcode_cfg_v3": {
+      "content": "jsonl",
+      "format": "REVENGINSTR.GhidraFunctionPcodeCFG/3",
+      "kind": "file",
+      "path": "function-pcode-cfg-v3.jsonl",
+      "role": "input",
+      "schema": "pcode_cfg_v3",
+      "sha256": "38c640ebdd387aa99f0a27f8b28d374267080d18117ee396e96bc4ba26901cb3"
+    },
+    "memory_store_access": {
+      "content": "jsonl",
+      "format": "REVENGINSTR.GhidraMemoryStoreAccess/1",
+      "kind": "file",
+      "path": "memory-store-access.jsonl",
+      "role": "input",
+      "schema": "memory_store_access",
+      "sha256": "391c0444194daa95b554670f8c29a112ca17625549290129c521c13f52311eda"
+    },
+    "parameter_loads": {
+      "content": "tsv",
+      "format": "REVENGINSTR.GhidraParameterLoadField/1",
+      "kind": "file",
+      "path": "parameter-loads.tsv",
+      "role": "input",
+      "sha256": "b96a464135852bc16474bb3e9e6d127b07527330a8e128b67b4907be999df134"
+    },
+    "parameter_stores": {
+      "content": "tsv",
+      "format": "REVENGINSTR.GhidraParameterStoreField/1",
+      "kind": "file",
+      "path": "parameter-stores.tsv",
+      "role": "input",
+      "sha256": "308a90c88b719f1bb0bdbd3f605dd18968a2fe4e284b51cde6ac2a4c63749bc0"
+    }
+  },
+  "benchmark": {
+    "dataset_artifact": "field_access_pairs",
+    "dataset_id": "nevergone-ccjoystick-init-field-access",
+    "description": "Exact replay of the consumer-owned CCJoyStick::init CFG/3 and memory-store evidence audit against current RevEngInstr.",
+    "family_set_id": null,
+    "id": "nevergone-ccjoystick-field-memory-v2-current-replay",
+    "split_id": "read-only-cfg3-memory-v2-frozen-2026-10"
+  },
+  "configs": {
+    "function": "CCJoyStick::init@002a6584",
+    "memory_policy": "Possible intervening STOREs remain effects except for known different physical spaces or proven same-root disjoint byte ranges.",
+    "program_id": "nevergone:libcocos2dcpp.so",
+    "source_binary_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e"
+  },
+  "format": "REVENGINSTR.BenchmarkManifest/1",
+  "projections": [
+    {
+      "artifact": "dominance_audit_replay",
+      "exact_evidence": {
+        "compare_fields": [
+          "status",
+          "store",
+          "load",
+          "store_reachable_from_entry",
+          "store_dominates_load",
+          "clean_store_to_load_path_exists",
+          "memory_effect_path_exists",
+          "witnesses",
+          "claim_scope",
+          "provenance"
+        ],
+        "expected_artifact": "dominance_audit_expected",
+        "key_fields": [
+          "program_id",
+          "function_entry",
+          "parameter_index",
+          "field_offset",
+          "source_parameter_index"
+        ],
+        "maximum_mismatches": 0
+      },
+      "id": "cfg3_memory_exact_evidence",
+      "kind": "receiver",
+      "resolved_statuses": [],
+      "status_field": "status"
+    }
+  ],
+  "schemas": {
+    "dominance_audit_v2": {
+      "path": "../../../../schemas/field-store-load-dominance-audit-v2.schema.json",
+      "sha256": "140b4d6804bde36c077b5ea5eb2c8ca2311eee9f22ff5c6f7c51cf5759e8786e",
+      "version": "field store load dominance audit v2 schema"
+    },
+    "memory_store_access": {
+      "path": "../../../../schemas/ghidra-memory-store-access-v1.schema.json",
+      "sha256": "bf53e4abc2d85609b23f831c85b0aa4b2bdb155bf2bc82ff7c5443a8c8c6b05d",
+      "version": "ghidra memory store access v1 schema"
+    },
+    "pcode_cfg_v3": {
+      "path": "../../../../schemas/ghidra-function-pcode-cfg-v3.schema.json",
+      "sha256": "7f31902f44288fffa6c6c806241219f461c387afcc5d726c85bf4f6ba5012ccb",
+      "version": "ghidra function pcode cfg v3 schema"
+    },
+    "receiver_graph": {
+      "path": "../../../../schemas/receiver-provenance-graph-v1.schema.json",
+      "sha256": "43cb888633ef724846361d6bcf67f32fa80b11272cd211be8e296d05178814de",
+      "version": "receiver provenance graph v1 schema"
+    }
+  },
+  "stages": [
+    {
+      "args": [
+        "${artifact:field_access_pairs}",
+        "${artifact:function_pcode_cfg_v3}",
+        "--memory-store-access-jsonl",
+        "${artifact:memory_store_access}",
+        "--output",
+        "${artifact:dominance_audit_replay}"
+      ],
+      "id": "replay_current_cfg3_memory_audit",
+      "inputs": [
+        "field_access_pairs",
+        "function_pcode_cfg_v3",
+        "memory_store_access"
+      ],
+      "outputs": [
+        "dominance_audit_replay"
+      ],
+      "tool": "receiver-field-store-load-dominance-audit"
+    }
+  ],
+  "toolchain": {
+    "ghidra_version": "12.1.2_DEV",
+    "revenginstr_version": "0.5.2",
+    "source_revision": "fa8df4d5921bd91fa32d5bdb55e49955cb2472ae"
+  }
+}
