@@ -380,6 +380,33 @@ remain marked separately; 140 target expressions are depth-limited. All 203
 sites remain `unknown` because this unlabeled holdout does not support accuracy
 or recall claims for virtual dispatch. See the [hash-pinned consumer replay PR](https://github.com/Hanz0Hatt0r1/nevergone-recomp/pull/735).
 
+### Evidence-first Phase B: bounded pointer provenance
+
+This implements the next step in the
+[evidence-first analysis strategy](https://github.com/Hanz0Hatt0r1/revenginstr/blob/main/docs/EVIDENCE_FIRST_ANALYSIS_STRATEGY.md).
+[`PointerProvenance/1`](POINTER_PROVENANCE.md) follows exact High-P-code
+def-use tokens through width-preserving `COPY`/`CAST`, constant `PTRADD`,
+`PTRSUB`, `INT_ADD`/`INT_SUB`, and bounded `MULTIEQUAL` alternatives. Caller
+formal roots are joined only from exact `GhidraCallerArgumentParameterRoot/1`
+or `/2` keys. `LOAD` creates a memory-read anchor with a separate address
+expression; calls, side-effect-dependent `INDIRECT`, dynamic offsets, cycles,
+width mismatches, and unsupported operations remain explicit barriers or
+abstentions.
+
+The synthetic contract tests cover positive and negative offsets, dynamic
+indices, distinct PHI roots, cycles, depth and alternative budgets, overflow,
+width mismatch, exact call-root joins, and unrooted loads. Full suite: 511
+passed with the repository's test and ML extras enabled.
+
+On the pinned Nevergone unseen500-v10 replay, all 40,519 High-P-code rows from
+500 functions were analyzed and all 203 `CALLIND` targets joined by exact
+function/address/time and target-definition keys. The target provenance rows
+are 191 `memory_read_anchor`, one constant `address_anchor`, two ambiguous,
+eight side-effect barriers, and one unknown. The baseline inventory still
+classifies all 203 sites as `unknown`; these structural facts make no
+class/vtable identity, virtual-dispatch accuracy, or recall claim. See the
+[hash-pinned PointerProvenance consumer replay](https://github.com/Hanz0Hatt0r1/nevergone-recomp/pull/736).
+
 ### M2.1 Residual failure taxonomy
 
 The receiver inference CLI can emit a
