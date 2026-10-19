@@ -30,9 +30,9 @@ direct target reuse the computed summary.
 
 ## Join reviewed indirect-target observations
 
-For reviewed `GhidraStaticIndirectCallTarget/1` or
-`GhidraIndirectCallVtableCandidates/1` evidence, pass the relevant JSONL file
-and the analyzed binary SHA-256:
+For reviewed `GhidraStaticIndirectCallTarget/1`,
+`GhidraIndirectCallVtableCandidates/1`, or `IndirectCallTargetTriage/1`
+evidence, pass the relevant JSONL file and the analyzed binary SHA-256:
 
 ```sh
 revenginstr-direct-call-memory-effect-closure caller.tsv \
@@ -43,8 +43,10 @@ revenginstr-direct-call-memory-effect-closure caller.tsv \
 ```
 
 Pass `--indirect-call-vtable-candidates vtable-candidates.jsonl` for bounded or
-partial constructor-derived target sets. Both evidence files can be supplied
-to the same invocation.
+partial constructor-derived target sets. Pass
+`--indirect-call-target-triage callind-target-triage.jsonl` to join candidates
+derived from resolved constant address-anchor paths. These inputs can be
+combined in one invocation.
 
 The join requires an exact `function_entry`, call address, and P-code time, and
 rejects evidence for another program identity or binary hash. Matching rows

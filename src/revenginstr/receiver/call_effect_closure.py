@@ -21,9 +21,12 @@ FORMAT_V1 = "REVENGINSTR.GhidraDirectCallMemoryEffectClosure/1"
 FORMAT_V2 = "REVENGINSTR.GhidraDirectCallMemoryEffectClosure/2"
 FORMAT = FORMAT_V1
 STATIC_TARGET_FORMAT = "REVENGINSTR.GhidraStaticIndirectCallTarget/1"
+TARGET_TRIAGE_FORMAT = "REVENGINSTR.IndirectCallTargetTriage/1"
 STATIC_TARGET_SCOPE = "observed_global_singleton_initializer"
+TARGET_TRIAGE_SCOPE = "observed_constant_address_anchor_paths"
 _ADDRESS = re.compile(r"(?:0x)?([0-9a-fA-F]{8})\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+_CONST_ANCHOR = re.compile(r"^const:(0x[0-9a-fA-F]+):([0-9]+)$")
 MAX_FUNCTIONS = 10_000
 MAX_CLOSURE_VISITS = 1_000_000
 MAX_TARGET_EVIDENCE_BYTES = 16 * 1024 * 1024
@@ -260,6 +263,106 @@ def _read_vtable_candidates(
     return artifact_sha256, by_site
 
 
+def _read_target_triage(
+    path: Path, *, program_id: str, program_sha256: str,
+) -> tuple[str, dict[tuple[int, int, int], list[dict[str, Any]]]]:
+    artifact_sha256, rows = _read_jsonl_records(path)
+    by_site: dict[tuple[int, int, int], list[dict[str, Any]]] = {}
+    seen: set[tuple[int, int, int, int]] = set()
+    required = {
+        "format", "program_id", "program_sha256", "function_entry", "call_address", "call_time",
+        "provenance_status", "classification", "bounded_path_count", "dynamic_barrier_count",
+        "limited_path_count", "alternatives", "static_target_candidate_scope", "static_target_candidates",
+        "pcode_operation", "callind_evidence", "source",
+    }
+    evidence_state_by_scope = {
+        "bounded_static_target_candidates": "bounded_static_target_candidates",
+        "partial_static_target_candidates": "partial_static_target_candidates",
+    }
+    for record_index, row in enumerate(rows, 1):
+        where = f"{path}: record {record_index}"
+        if set(row) != required or row["format"] != TARGET_TRIAGE_FORMAT:
+            raise ValueError(f"{where}: malformed {TARGET_TRIAGE_FORMAT} fields")
+        if row["program_id"] != program_id or row["program_sha256"] != program_sha256:
+            raise ValueError(f"{where}: analyzed-program identity does not match the closure inputs")
+        entry = _address_value(row["function_entry"], where=f"{where}.function_entry")
+        address = _address_value(row["call_address"], where=f"{where}.call_address")
+        call_time = row["call_time"]
+        if type(call_time) is not int or call_time < 0:
+            raise ValueError(f"{where}: call_time must be a non-negative integer")
+        candidate_scope = row["static_target_candidate_scope"]
+        candidates = row["static_target_candidates"]
+        if not isinstance(candidates, list):
+            raise ValueError(f"{where}: static_target_candidates must be an array")
+        if candidate_scope == "none":
+            if candidates:
+                raise ValueError(f"{where}: candidate scope disagrees with empty candidates")
+            continue
+        evidence_state = evidence_state_by_scope.get(candidate_scope)
+        if evidence_state is None or not candidates:
+            raise ValueError(f"{where}: unsupported static target candidate scope")
+        alternatives = row["alternatives"]
+        if not isinstance(alternatives, list) or not alternatives:
+            raise ValueError(f"{where}: alternatives must be a non-empty array")
+        site = (entry, address, call_time)
+        for candidate_index, candidate in enumerate(candidates, 1):
+            if not isinstance(candidate, dict) or set(candidate) != {"target_address", "alternative_indexes"}:
+                raise ValueError(f"{where}: malformed static target candidate {candidate_index}")
+            target = _address_value(candidate["target_address"], where=f"{where}.candidate[{candidate_index}]")
+            indexes = candidate["alternative_indexes"]
+            if (
+                not isinstance(indexes, list) or not indexes
+                or any(type(index) is not int for index in indexes)
+                or len(indexes) != len(set(indexes))
+            ):
+                raise ValueError(f"{where}: malformed candidate alternative indexes")
+            for index in indexes:
+                if not 1 <= index <= len(alternatives):
+                    raise ValueError(f"{where}: candidate alternative index is out of range")
+                alternative = alternatives[index - 1]
+                if not isinstance(alternative, dict) or alternative.get("status") != "resolved" or alternative.get("root_kind") != "address_anchor":
+                    raise ValueError(f"{where}: candidate does not reference a resolved address anchor")
+                root = _CONST_ANCHOR.fullmatch(alternative.get("root_id", ""))
+                size = alternative.get("pointer_size_bytes")
+                offset = alternative.get("offset_bytes")
+                if root is None or size != 4 or type(offset) is not int or int(root.group(2)) != size:
+                    raise ValueError(f"{where}: candidate source is not a 32-bit constant address anchor")
+                if (int(root.group(1), 16) + offset) % (1 << 32) != target:
+                    raise ValueError(f"{where}: candidate target disagrees with its address anchor")
+            identity = (*site, target)
+            if identity in seen:
+                raise ValueError(f"{where}: duplicate triage target for one CALLIND site")
+            seen.add(identity)
+            by_site.setdefault(site, []).append({
+                "target_address": f"0x{target:08x}",
+                "resolution_scope": TARGET_TRIAGE_SCOPE,
+                "evidence_state": evidence_state,
+                "program_sha256": program_sha256,
+                "source": {
+                    "artifact_path": path.as_posix(),
+                    "artifact_sha256": artifact_sha256,
+                    "record_index": record_index,
+                    "target_candidate_index": candidate_index,
+                    "source_format": TARGET_TRIAGE_FORMAT,
+                },
+            })
+        covered = {
+            index
+            for candidate in candidates
+            for index in candidate["alternative_indexes"]
+        }
+        expected_scope = (
+            "bounded_static_target_candidates"
+            if covered == set(range(1, len(alternatives) + 1))
+            else "partial_static_target_candidates"
+        )
+        if candidate_scope != expected_scope:
+            raise ValueError(f"{where}: candidate scope disagrees with covered provenance alternatives")
+    for observations in by_site.values():
+        observations.sort(key=_target_observation_key)
+    return artifact_sha256, by_site
+
+
 def build_direct_call_memory_effect_closure(
     program_id: str,
     caller_flow_tsv: Path,
@@ -272,6 +375,7 @@ def build_direct_call_memory_effect_closure(
     max_closure_visits: int = MAX_CLOSURE_VISITS,
     static_indirect_call_targets: Path | None = None,
     indirect_call_vtable_candidates: list[Path] | None = None,
+    indirect_call_target_triage: Path | None = None,
     program_sha256: str | None = None,
 ) -> list[dict[str, Any]]:
     """Summarize each caller call using a closed, cycle-safe direct-call graph.
@@ -291,6 +395,7 @@ def build_direct_call_memory_effect_closure(
     target_evidence_paths = [
         *([static_indirect_call_targets] if static_indirect_call_targets is not None else []),
         *(indirect_call_vtable_candidates or []),
+        *([indirect_call_target_triage] if indirect_call_target_triage is not None else []),
     ]
     if len({path.resolve() for path in target_evidence_paths}) != len(target_evidence_paths):
         raise ValueError("duplicate indirect target evidence input")
@@ -309,6 +414,15 @@ def build_direct_call_memory_effect_closure(
         if static_indirect_call_targets is not None:
             evidence_sha256, targets = _read_static_targets(
                 static_indirect_call_targets,
+                program_id=program_id,
+                program_sha256=program_sha256,
+            )
+            target_evidence_hashes.append(evidence_sha256)
+            for site, observations in targets.items():
+                target_observations_by_site.setdefault(site, []).extend(observations)
+        if indirect_call_target_triage is not None:
+            evidence_sha256, targets = _read_target_triage(
+                indirect_call_target_triage,
                 program_id=program_id,
                 program_sha256=program_sha256,
             )
@@ -478,6 +592,10 @@ def main(argv: list[str] | None = None) -> int:
         help="GhidraIndirectCallVtableCandidates/1 JSONL; repeat to join multiple candidate artifacts at exact CALLIND sites",
     )
     parser.add_argument(
+        "--indirect-call-target-triage", type=Path,
+        help="IndirectCallTargetTriage/1 JSONL; joins constant-address provenance candidates at exact CALLIND sites",
+    )
+    parser.add_argument(
         "--program-sha256",
         help="required with indirect target evidence; SHA-256 of the analyzed binary",
     )
@@ -494,6 +612,7 @@ def main(argv: list[str] | None = None) -> int:
         max_closure_visits=args.max_closure_visits,
         static_indirect_call_targets=args.static_indirect_call_targets,
         indirect_call_vtable_candidates=args.indirect_call_vtable_candidates,
+        indirect_call_target_triage=args.indirect_call_target_triage,
         program_sha256=args.program_sha256,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -505,7 +624,7 @@ def main(argv: list[str] | None = None) -> int:
         counts[row["status"]] = counts.get(row["status"], 0) + 1
     print("call sites:", len(rows))
     print("status counts:", json.dumps(counts, sort_keys=True))
-    if args.static_indirect_call_targets is not None or args.indirect_call_vtable_candidates:
+    if args.static_indirect_call_targets is not None or args.indirect_call_vtable_candidates or args.indirect_call_target_triage is not None:
         observations = [
             observation
             for row in rows

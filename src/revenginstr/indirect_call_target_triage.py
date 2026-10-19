@@ -11,7 +11,9 @@ from typing import Any, Iterator
 
 FORMAT = "REVENGINSTR.IndirectCallTargetTriage/1"
 PROVENANCE_FORMAT = "REVENGINSTR.PointerProvenance/1"
+SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 ADDRESS_RE = re.compile(r"^(?:(?P<space>[A-Za-z_$][\w$]*):)?(?:0x)?(?P<offset>[0-9a-fA-F]+)$")
+CONSTANT_ANCHOR_RE = re.compile(r"^const:(0x[0-9a-fA-F]+):(?P<size>[0-9]+)$")
 MAX_ROWS = 1_000_000
 STRUCTURAL_STATUSES = {"resolved", "load_anchor"}
 DYNAMIC_BARRIERS = {"call_barrier", "indirect_barrier"}
@@ -106,12 +108,42 @@ def _classify(alternatives: list[dict[str, Any]]) -> tuple[str, int, int, int]:
     return classification, bounded, blocked, limited
 
 
+def _static_target_candidates(alternatives: list[dict[str, Any]]) -> tuple[str, list[dict[str, Any]]]:
+    by_target: dict[str, list[int]] = {}
+    for index, alternative in enumerate(alternatives, 1):
+        if alternative["status"] != "resolved" or alternative["root_kind"] != "address_anchor":
+            continue
+        root = CONSTANT_ANCHOR_RE.fullmatch(alternative["root_id"])
+        size = alternative["pointer_size_bytes"]
+        offset = alternative["offset_bytes"]
+        if root is None or isinstance(size, bool) or not isinstance(size, int) or size < 1:
+            continue
+        if int(root.group("size")) != size or isinstance(offset, bool) or not isinstance(offset, int):
+            continue
+        target = (int(root.group(1), 16) + offset) % (1 << (size * 8))
+        if target == 0:
+            continue
+        address = f"0x{target:0{size * 2}x}"
+        by_target.setdefault(address, []).append(index)
+    if not by_target:
+        return "none", []
+    candidates = [
+        {"target_address": address, "alternative_indexes": indexes}
+        for address, indexes in sorted(by_target.items())
+    ]
+    covered = {index for indexes in by_target.values() for index in indexes}
+    scope = "bounded_static_target_candidates" if len(covered) == len(alternatives) else "partial_static_target_candidates"
+    return scope, candidates
+
+
 def build_indirect_call_target_triage(
-    paths: list[Path], *, program_id: str, max_rows: int = MAX_ROWS,
+    paths: list[Path], *, program_id: str, program_sha256: str, max_rows: int = MAX_ROWS,
 ) -> list[dict[str, Any]]:
     """Create a source-pinned diagnosis for each exact CALLIND provenance record."""
     if not program_id:
         raise ValueError("program_id must be non-empty")
+    if not isinstance(program_sha256, str) or SHA256_RE.fullmatch(program_sha256) is None:
+        raise ValueError("program_sha256 must be a lowercase SHA-256")
     if isinstance(max_rows, bool) or not isinstance(max_rows, int) or max_rows < 1:
         raise ValueError("max_rows must be positive")
     if not paths:
@@ -171,9 +203,11 @@ def build_indirect_call_target_triage(
                 raise ValueError(f"{where}: duplicate CALLIND provenance site {identity!r}")
             seen.add(identity)
             classification, bounded_count, barrier_count, limited_count = _classify(alternatives)
+            candidate_scope, target_candidates = _static_target_candidates(alternatives)
             rows.append({
                 "format": FORMAT,
                 "program_id": program_id,
+                "program_sha256": program_sha256,
                 "function_entry": function_entry,
                 "call_address": call_address,
                 "call_time": call_time,
@@ -183,6 +217,8 @@ def build_indirect_call_target_triage(
                 "dynamic_barrier_count": barrier_count,
                 "limited_path_count": limited_count,
                 "alternatives": alternatives,
+                "static_target_candidate_scope": candidate_scope,
+                "static_target_candidates": target_candidates,
                 "pcode_operation": _evidence_ref(row["source"], f"{where}: source"),
                 "callind_evidence": _evidence_ref(row["target_source"], f"{where}: target_source"),
                 "source": {
@@ -200,12 +236,14 @@ def build_indirect_call_target_triage(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--program-id", required=True)
+    parser.add_argument("--program-sha256", required=True)
     parser.add_argument("--pointer-provenance", type=Path, action="append", required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--max-rows", type=int, default=MAX_ROWS)
     args = parser.parse_args(argv)
     rows = build_indirect_call_target_triage(
-        args.pointer_provenance, program_id=args.program_id, max_rows=args.max_rows,
+        args.pointer_provenance, program_id=args.program_id,
+        program_sha256=args.program_sha256, max_rows=args.max_rows,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", encoding="utf-8", newline="") as handle:

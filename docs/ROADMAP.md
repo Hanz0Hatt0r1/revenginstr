@@ -2196,7 +2196,9 @@ outside the pinned function inventory. CFG/4 removed source-linked
 `INDIRECT` markers, but 22 reachable `CALLIND` operations in 13 functions
 leave four pairs possible. `PointerProvenance/1` classifies the 22 target
 expressions as six memory-read anchors, thirteen call barriers, and three
-ambiguous results; none resolves to an exact function entry. The receiver-
+ambiguous results. Correct `PTRSUB` handling exposes candidate `0x009189bd`
+on one ambiguous path, but two call barriers remain at that site, so no
+complete target set is available. The receiver-
 type exporter matched all 22 sites but recovered only generic primitive
 labels, so it adds no target identity evidence. Across scans25–37, three
 unique candidates, 20 possible pairs, and 79 non-dominating pairs have been
@@ -2266,16 +2268,19 @@ SHA-256, and pins each source artifact row in its output. The singleton
 wrapper sites are visible with their initializer scope; the four field-20
 dispatch sites can carry bounded or partial constructor-derived candidates.
 All 22 `CALLIND` sites remain effect barriers and none of their target flows
-is treated as part of the closed graph. Six sites now carry scoped target
-observations; 16 have no target observations yet.
+is treated as part of the closed graph. Six sites carry constructor/singleton
+target observations, and a seventh has the partial constant-address candidate
+`0x009189bd`; 15 sites still have no target observations.
 See the [closure replay](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/static-call-target-closure-replay.md).
 The new source-pinned [CALLIND provenance triage](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/callind-target-triage-replay.md)
-classifies the 16 remaining sites as 13 dynamic-barrier-only and three mixed
-bounded/dynamic paths.
+classifies the 16 sites beyond the six prior observations as 13
+dynamic-barrier-only and three mixed bounded/dynamic paths. One mixed path now
+has a partial static target candidate; its two dynamic alternatives remain
+unresolved.
 
-**Next:** prioritize runtime observations for the three mixed-path sites, then
-the 13 dynamic-barrier-only sites, and bind runtime state for the six scoped
-candidate sets.
+**Next:** acquire runtime observations for the two remaining mixed paths and
+the 13 dynamic-barrier-only sites, then bind runtime state for the seven
+scoped candidate sets, including the partial candidate at `00918a4c`.
 Preserve unresolved target and alias barriers; keep selector and receiver
 conclusions conditional until runtime evidence binds them. Assess bodies
 smaller than 40 bytes only when a remaining target or pair gives a concrete

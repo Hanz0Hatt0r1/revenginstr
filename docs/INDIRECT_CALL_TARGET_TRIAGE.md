@@ -4,11 +4,16 @@
 `PointerProvenance/1` `callind_target` rows into one source-pinned row per
 `CALLIND`. It distinguishes bounded provenance paths from dynamic call/dispatch
 barriers and from analysis limits such as cycles or depth limits. The original
-alternatives and their evidence references remain in the output.
+alternatives and their evidence references remain in the output. A resolved
+constant address-anchor alternative also produces a target-address candidate;
+the candidate is bounded only when it covers every retained alternative.
+Partial candidates leave uncovered paths visible. The analyzed binary SHA-256
+is required and carried into every output row.
 
 ```sh
 revenginstr-indirect-call-target-triage \
   --program-id sample:program \
+  --program-sha256 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef \
   --pointer-provenance pointer-provenance.jsonl \
   --output callind-target-triage.jsonl
 ```
@@ -24,7 +29,8 @@ or indirect dispatch. `analysis_limited` means at least one path hit a declared
 provenance limit; its bounded and barrier counts still show any other paths.
 `unresolved` covers alternatives that fit none of those cases.
 
-The report is for acquisition planning. It does not infer target functions,
-execute probes, treat candidate paths as a complete target set, or remove the
-`CALLIND` effect barrier. Consumer-collected runtime observations must be
-separately pinned and joined before a target can be considered observed.
+The report is for acquisition planning. A candidate is an address derived
+from a resolved constant anchor; it does not verify a function identity,
+establish runtime selection, treat uncovered alternatives as resolved, or
+remove the `CALLIND` effect barrier. Consumer-collected runtime observations
+must be separately pinned before a runtime target can be considered observed.

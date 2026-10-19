@@ -460,7 +460,8 @@
           "enum": [
             "observed_global_singleton_initializer",
             "observed_cached_field_constructor_variants",
-            "observed_returned_subobject_constructor_variants"
+            "observed_returned_subobject_constructor_variants",
+            "observed_constant_address_anchor_paths"
           ]
         },
         "program_sha256": {
@@ -492,7 +493,8 @@
             "source_format": {
               "enum": [
                 "REVENGINSTR.GhidraStaticIndirectCallTarget/1",
-                "REVENGINSTR.GhidraIndirectCallVtableCandidates/1"
+                "REVENGINSTR.GhidraIndirectCallVtableCandidates/1",
+                "REVENGINSTR.IndirectCallTargetTriage/1"
               ]
             },
             "target_candidate_index": {
@@ -588,6 +590,38 @@
                 "properties": {
                   "source_format": {
                     "const": "REVENGINSTR.GhidraIndirectCallVtableCandidates/1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "resolution_scope": {
+                "const": "observed_constant_address_anchor_paths"
+              }
+            },
+            "required": [
+              "resolution_scope"
+            ]
+          },
+          "then": {
+            "properties": {
+              "evidence_state": {
+                "enum": [
+                  "bounded_static_target_candidates",
+                  "partial_static_target_candidates"
+                ]
+              },
+              "source": {
+                "required": [
+                  "target_candidate_index"
+                ],
+                "properties": {
+                  "source_format": {
+                    "const": "REVENGINSTR.IndirectCallTargetTriage/1"
                   }
                 }
               }

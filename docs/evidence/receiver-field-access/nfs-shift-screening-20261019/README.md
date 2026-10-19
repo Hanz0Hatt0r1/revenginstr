@@ -23,9 +23,12 @@ scope. See the
 [closure replay](scan37/replay-0041dd40/static-call-target-closure-replay.md).
 The generic `IndirectCallTargetTriage/1` report groups the 22 retained
 CALLIND provenance paths: six have bounded provenance, 13 have only dynamic
-barriers, and three mix bounded and blocked paths. It records where further
-runtime acquisition can add information without claiming target resolution;
-see the [triage replay](scan37/replay-0041dd40/callind-target-triage-replay.md).
+barriers, and three mix bounded and blocked paths. Correct P-code handling of
+`PTRSUB` exposes one partial static candidate (`0x009189bd`) at
+`009189cd:00918a4c`; two alternative paths at that site remain call barriers.
+This adds a target observation without removing its `CALLIND` effect barrier.
+See the [triage replay](scan37/replay-0041dd40/callind-target-triage-replay.md)
+and [closure replay](scan37/replay-0041dd40/static-call-target-closure-replay.md).
 
 ## Screens
 
@@ -156,12 +159,13 @@ but their `CALLIND` and `STORE` barriers remain. The `/6` results stay at four
 possible effects and one unique candidate, matching the earlier CFG/4 statuses.
 The two boundary functions are not field-pair candidates in this replay.
 
-`closure-pointer-provenance.jsonl` applies `PointerProvenance/1` to the same
-98 flows, 22 exact `CALLIND` rows, and retained v2 parameter-root mappings.
-Among the 22 target records, six stop at memory-read anchors, thirteen at
-call barriers, and three are ambiguous. None resolves to an exact function
-entry through `PointerProvenance/1` alone, so its output does not reduce the
-call-effect barriers.
+`closure-pointer-provenance.jsonl` applies `PointerProvenance/1` to the
+retained caller and closure P-code flows, 22 exact `CALLIND` rows, and v2
+parameter-root mappings. Six target records stop at memory-read anchors,
+thirteen at call barriers, and three are ambiguous. Correct `PTRSUB`
+handling exposes `0x009189bd` on one ambiguous path at `00918a4c`; two call
+barriers remain there, so no complete target set is available. The call
+effect barrier therefore remains.
 
 The read-only receiver-type export also matched all 22 sites across 13
 functions, with no failed functions or count mismatches. Five sites have no
