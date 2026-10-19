@@ -2239,19 +2239,19 @@ records retain the parent candidate, selector case, member offset, helper-call
 path, exact vtable stores, and raw table bytes. A pinned-disassembly trace
 adds the selector-3 result of `00663030` at parent `+0x7c`, initialized with
 vtable `00af0628`; its `+0x8/+0xc` slots add origins for `007091d0` and
-`00677210`. The rows remain partial because runtime selector values, the
-selector-1 returns at parent `+0x74`, and unobserved writers are unresolved.
-The field writer/copy inventory and replay chains are documented in the
-[manual static review](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/manual-static-vtable-review.md).
+`00677210`. The selector-1 cases at parent `+0x74` are now tied to vtable `00af7394`
+across four observed constructor roots; its slots add the already-known
+`007091d0`/`00677210` target pair to each nested call. The rows remain partial
+because the runtime selector is data-dependent and unobserved writers remain
+possible. The field writer/copy inventory and replay chains are documented in
+the [manual static review](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/manual-static-vtable-review.md)
+and the [selector-1 replay](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-selector1-resolution.md).
 
-**Next:** trace the nested receiver at parent `+0x74` and capture bounded
-runtime selector/receiver values. Keep
-unresolved targets and roots as barriers. The five focused candidate pairs
-still need a fresh CFG/5 memory-effect replay: four remain possible and one
-remains unique because `CALLIND` and `STORE` effects are unresolved. The
-`006642a5` function-flow and CFG acquisition gap is closed; focus the next
-replay on the remaining indirect-call targets and the runtime receiver at
-parent `+0x74`. Assess bodies smaller than 40 bytes only if this unresolved
-set or new pair evidence gives a concrete reason to extend the population
+**Next:** refresh the CFG/5 interprocedural memory-effect replay for the five
+focused candidate pairs using the newly seeded `006642a5` flow and CFG. Four
+pairs remain possible and one is unique while `CALLIND` and `STORE` effects
+remain unresolved. Keep selector and receiver conclusions conditional until
+runtime evidence binds them. Assess bodies smaller than 40 bytes only when a
+remaining target or pair provides a concrete reason to extend the population
 screen. Do not infer alias facts from decompiler text or instruction-level
 corpus labels.

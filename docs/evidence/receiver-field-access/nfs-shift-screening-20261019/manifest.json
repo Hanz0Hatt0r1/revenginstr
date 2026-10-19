@@ -2284,10 +2284,81 @@
       "rows": 5
     },
     {
+      "path": "scan37/replay-0041dd40/field20-006642a5-acquisition.jsonl",
+      "bytes": 175,
+      "sha256": "b1d680d8aafc9af5d9d8a03a5e7b681c4c7df4a0e785863ae67b9a580107d50e",
+      "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-006642a5-callind.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "rows": 0
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-006642a5-functions.txt",
+      "bytes": 9,
+      "sha256": "eb42b1b25f332ac69e40bb534627fc6b04661daa2380c85c1f3203c796e5c685",
+      "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-006642a5-pcode-cfg-v5.jsonl",
+      "bytes": 4020,
+      "sha256": "64d6e8ad20b569f81aff608e3b75301a9b7d6ca606065a624539e2294a9a2a88",
+      "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-006642a5-pcode-flow.tsv",
+      "bytes": 1480,
+      "sha256": "e5d413fd05e231ccd95be31a2bb50bae02629884a830a79218997c1442f219b8",
+      "rows": 18
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-006642a5-replay.md",
+      "bytes": 3209,
+      "sha256": "a0357c61c3397e4e9d609157810b876e9921c5df5e3b5732c67b59e89293b0ae"
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-63030-selector-disassembly.md",
+      "bytes": 710,
+      "sha256": "d66abe16a8a68252d97efdf54e42ea21acf541d66c0ffc46857e4071520475fd",
+      "rows": 17
+    },
+    {
       "path": "scan37/replay-0041dd40/field20-acquisition.jsonl",
       "bytes": 1752,
       "sha256": "fe831974a20737b81b4bb9a4de9a00fe91935f8a31123293c3708b1f90654379",
       "rows": 10
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-base-subobject-init-acquisition.jsonl",
+      "bytes": 351,
+      "sha256": "21231e2b362df75dbd22883f7fbd59c6dffbed94bbe10b1f41a9af7f2c623a5e",
+      "rows": 2
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-base-subobject-init-callind.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "rows": 0
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-base-subobject-init-export.log",
+      "bytes": 5091,
+      "sha256": "61e4df071c7a3e94a163cf838b8733d902a22e28bdfaa7480ad99350b6018c95",
+      "rows": 59
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-base-subobject-init-functions.txt",
+      "bytes": 18,
+      "sha256": "34b339e00204938887017f14acc701685efc56d4332cfd7b536561f27bd956cf",
+      "rows": 2
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-base-subobject-init-pcode-flow.tsv",
+      "bytes": 15294,
+      "sha256": "00d6707bfd425857d0f08f8ed30729f73d6b54b3df5d3b4bfc37e44ce622f0c4",
+      "rows": 185
     },
     {
       "path": "scan37/replay-0041dd40/field20-call-store-flow.jsonl",
@@ -2302,6 +2373,18 @@
       "rows": 21
     },
     {
+      "path": "scan37/replay-0041dd40/field20-field74-00678b90-pcode-flow.tsv",
+      "bytes": 239,
+      "sha256": "6f8d93be1c38b7501720965428ed82d3a2a6aa8637c5fda90d4050c90734a44b",
+      "rows": 3
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-field74-vtable-slots.jsonl",
+      "bytes": 7372,
+      "sha256": "36a47496b7f21c5a41ca98504abb3456fe9fa3bcfa08dfbfe8ae6567b2a4fdb7",
+      "rows": 16
+    },
+    {
       "path": "scan37/replay-0041dd40/field20-functions.txt",
       "bytes": 90,
       "sha256": "f7f3596201eff42157b194aaa109dc70ad5b0d3514bd4d0e3d50b5074ce50e6d",
@@ -2312,6 +2395,12 @@
       "bytes": 33586,
       "sha256": "ca95f6c849e38276adab6c78e489a0a7594bf30b700ee761ff52792f20038d1b",
       "rows": 58
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-nested-vtable-call-candidates.jsonl",
+      "bytes": 148700,
+      "sha256": "942bdf309ca2b91172536b9da8e948a0d607643ea109c4c709e1d99fdf11bc04",
+      "rows": 2
     },
     {
       "path": "scan37/replay-0041dd40/field20-parameter-loads.tsv",
@@ -2336,6 +2425,86 @@
       "bytes": 2546482,
       "sha256": "14ee8006e4fda980813054cf36fcb044740f7f5695b473b47408947733f55f28",
       "rows": 1393
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-selector1-address-references.jsonl",
+      "bytes": 7718,
+      "sha256": "9b1efeaf15215c4b66d3d7b6866cc104d05e28aae339807112e04263817033b6",
+      "rows": 7
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-selector1-instruction-slices.jsonl",
+      "bytes": 68031,
+      "sha256": "1069b94b9825dd5156829673938f8202eac982b06719a1ca967b9814c04d5570",
+      "rows": 9
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-selector1-resolution.md",
+      "bytes": 4217,
+      "sha256": "c8fbbdf2a76a6b88f396961eef92354b4ff50b18612300666d7291a665bea171"
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-constructor-acquisition.jsonl",
+      "bytes": 1404,
+      "sha256": "38cca8943d07f097fc192afeb46138507dfce4659c61085b88a8c3e1a6908dd8",
+      "rows": 8
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-constructor-callind.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "rows": 0
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-constructor-export.log",
+      "bytes": 5107,
+      "sha256": "b995a42c8897a37dab255a006c2602523409bd5e9042898d6c56ab6f908f2cad"
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-constructor-functions.txt",
+      "bytes": 72,
+      "sha256": "7dd25297965585738d1eeac80d76e2b123dc45dcab6ee6513680be7a369dccdd",
+      "rows": 8
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-constructor-pcode-flow.tsv",
+      "bytes": 210701,
+      "sha256": "6f52c33fda106cf4e9a71a235b13679342816221e8e3530d047db3504db589cc",
+      "rows": 2402
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-acquisition.jsonl",
+      "bytes": 1046,
+      "sha256": "a9d74faf702ecc40e388d86f9c1ab6ecd320267fa4bce9179cdab7bc3121c274",
+      "rows": 6
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-callind.jsonl",
+      "bytes": 1236,
+      "sha256": "eb7c25dca4b672d75ff3e850fa56cd1d2cd376db0805f5b1fcc62cda986a9186",
+      "rows": 2
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-cases.md",
+      "bytes": 1235,
+      "sha256": "757141e02193713435787f48579a23cc465ab4e17b75ab0eb57b73d978298a3c"
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-export.log",
+      "bytes": 5084,
+      "sha256": "7d9068fd066bbc9c4a83d678806a29574eddce5f9afb5ba8eb2d9ad12955bd0b"
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-functions.txt",
+      "bytes": 54,
+      "sha256": "af66588fb25771e67638a3ee0e2126dbeca3c5464b4ffc0beefcf8b9fa0e4263",
+      "rows": 6
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-pcode-flow.tsv",
+      "bytes": 4169,
+      "sha256": "bd531a61f945e97189274448fa468e4c84b925807d878fe072701b06a84614d0",
+      "rows": 56
     },
     {
       "path": "scan37/replay-0041dd40/field20-type-layout-hypothesis.jsonl",
@@ -2416,8 +2585,8 @@
     },
     {
       "path": "scan37/replay-0041dd40/manual-static-vtable-review.md",
-      "bytes": 18435,
-      "sha256": "4f494179b680ea366352346bc9786081888646b6469005154b8980c2cbfd0aab"
+      "bytes": 19155,
+      "sha256": "882f98bc3a672680036118132cd946f9588597016d682bf7f67ab79b9a1904de"
     },
     {
       "path": "scan37/replay-0041dd40/memory-store-access-full-closure-scope.jsonl",
@@ -2516,146 +2685,6 @@
       "path": "scan37/selection-source.json",
       "bytes": 48272,
       "sha256": "03e05add901088bfb566abdc8f40703e2c5c76f636125d41fb87f10681a68e85"
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-subobject-constructor-functions.txt",
-      "bytes": 72,
-      "sha256": "7dd25297965585738d1eeac80d76e2b123dc45dcab6ee6513680be7a369dccdd",
-      "rows": 8
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-subobject-constructor-pcode-flow.tsv",
-      "bytes": 210701,
-      "sha256": "6f52c33fda106cf4e9a71a235b13679342816221e8e3530d047db3504db589cc",
-      "rows": 2402
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-subobject-constructor-callind.jsonl",
-      "bytes": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "rows": 0
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-subobject-constructor-acquisition.jsonl",
-      "bytes": 1404,
-      "sha256": "38cca8943d07f097fc192afeb46138507dfce4659c61085b88a8c3e1a6908dd8",
-      "rows": 8
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-subobject-constructor-export.log",
-      "bytes": 5107,
-      "sha256": "b995a42c8897a37dab255a006c2602523409bd5e9042898d6c56ab6f908f2cad"
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-functions.txt",
-      "bytes": 54,
-      "sha256": "af66588fb25771e67638a3ee0e2126dbeca3c5464b4ffc0beefcf8b9fa0e4263",
-      "rows": 6
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-pcode-flow.tsv",
-      "bytes": 4169,
-      "sha256": "bd531a61f945e97189274448fa468e4c84b925807d878fe072701b06a84614d0",
-      "rows": 56
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-callind.jsonl",
-      "bytes": 1236,
-      "sha256": "eb7c25dca4b672d75ff3e850fa56cd1d2cd376db0805f5b1fcc62cda986a9186",
-      "rows": 2
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-acquisition.jsonl",
-      "bytes": 1046,
-      "sha256": "a9d74faf702ecc40e388d86f9c1ab6ecd320267fa4bce9179cdab7bc3121c274",
-      "rows": 6
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-export.log",
-      "bytes": 5084,
-      "sha256": "7d9068fd066bbc9c4a83d678806a29574eddce5f9afb5ba8eb2d9ad12955bd0b"
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-cases.md",
-      "bytes": 1235,
-      "sha256": "757141e02193713435787f48579a23cc465ab4e17b75ab0eb57b73d978298a3c"
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-nested-vtable-call-candidates.jsonl",
-      "bytes": 98168,
-      "sha256": "02571ce5a079c94cbac3d2c544d9a686e61d7de88ee51e9c8fcbe21361505209",
-      "rows": 2
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-base-subobject-init-pcode-flow.tsv",
-      "bytes": 15294,
-      "sha256": "00d6707bfd425857d0f08f8ed30729f73d6b54b3df5d3b4bfc37e44ce622f0c4",
-      "rows": 185
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-63030-selector-disassembly.md",
-      "bytes": 710,
-      "sha256": "d66abe16a8a68252d97efdf54e42ea21acf541d66c0ffc46857e4071520475fd",
-      "rows": null
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-base-subobject-init-export.log",
-      "bytes": 5091,
-      "sha256": "61e4df071c7a3e94a163cf838b8733d902a22e28bdfaa7480ad99350b6018c95",
-      "rows": null
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-base-subobject-init-functions.txt",
-      "bytes": 18,
-      "sha256": "34b339e00204938887017f14acc701685efc56d4332cfd7b536561f27bd956cf",
-      "rows": 2
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-base-subobject-init-callind.jsonl",
-      "bytes": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "rows": 0
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-base-subobject-init-acquisition.jsonl",
-      "bytes": 351,
-      "sha256": "21231e2b362df75dbd22883f7fbd59c6dffbed94bbe10b1f41a9af7f2c623a5e",
-      "rows": 2
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-006642a5-functions.txt",
-      "bytes": 9,
-      "sha256": "eb42b1b25f332ac69e40bb534627fc6b04661daa2380c85c1f3203c796e5c685",
-      "rows": 1
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-006642a5-pcode-flow.tsv",
-      "bytes": 1480,
-      "sha256": "e5d413fd05e231ccd95be31a2bb50bae02629884a830a79218997c1442f219b8",
-      "rows": 18
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-006642a5-callind.jsonl",
-      "bytes": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "rows": 0
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-006642a5-acquisition.jsonl",
-      "bytes": 175,
-      "sha256": "b1d680d8aafc9af5d9d8a03a5e7b681c4c7df4a0e785863ae67b9a580107d50e",
-      "rows": 1
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-006642a5-pcode-cfg-v5.jsonl",
-      "bytes": 4020,
-      "sha256": "64d6e8ad20b569f81aff608e3b75301a9b7d6ca606065a624539e2294a9a2a88",
-      "rows": 1
-    },
-    {
-      "path": "scan37/replay-0041dd40/field20-006642a5-replay.md",
-      "bytes": 3209,
-      "sha256": "a0357c61c3397e4e9d609157810b876e9921c5df5e3b5732c67b59e89293b0ae"
     }
   ]
 }

@@ -241,9 +241,12 @@ records partial target candidates for `00665801` (`00674f10`, `007091d0`) and
 subobjects. Those rows retain the parent call, selector case, member offset,
 constructor path, and exact P-code store references. A pinned-disassembly
 case also traces `00663030` selector 3 to vtable `00af0628`, adding
-`007091d0`/`00677210` as another origin pair. The rows remain partial because
-runtime selector values, selector-1 returns at `+0x74`, and unobserved writers
-remain unresolved. The `/6` results remain unchanged.
+`007091d0`/`00677210` as another origin pair. A follow-up selector-1 replay
+resolves the `+0x74` member to vtable `00af7394` for four observed constructor
+roots and adds those origins to the nested candidate rows. Selector values
+remain dynamic, unobserved writers remain possible, and the `/6` results remain
+unchanged. See
+[`field20-selector1-resolution.md`](scan37/replay-0041dd40/field20-selector1-resolution.md).
 The replay also includes the 32-row, read-only generic Ghidra pointer-table
 export at [`ghidra-pointer-table-slots.jsonl`](scan37/replay-0041dd40/ghidra-pointer-table-slots.jsonl);
 its schema and invocation are documented in

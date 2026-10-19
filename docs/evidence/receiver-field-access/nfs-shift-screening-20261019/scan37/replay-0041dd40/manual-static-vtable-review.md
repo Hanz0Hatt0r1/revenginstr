@@ -174,20 +174,25 @@ The returned-object getters expose these static cases:
 | `006770b0` | 4 | parent `+0x128` | index `< 10`, stride `0x5c` |
 | `006770b0` | 5 | parent `+0x550` | singleton |
 
-The existing first-level rows do not bind the runtime selector register. The
-known getters at `00676040` and `006770b0` also return parent `+0x74` for
-selector 1; that member's vtable is still unresolved. A separate selector-3
-path through `00663030` returns parent `+0x7c`. Base constructor `006634a0`
-writes vtable `00af0628` there. The exact getter instructions are retained in
+The existing first-level rows do not bind the runtime selector register. For
+selector 1, both `00676040` and `006770b0` return parent `+0x74`. A focused
+constructor replay now resolves that member's vtable for the four observed
+root constructors: each initializes `+0x74` through `00678b90`, which writes
+vtable `00af7394`. Slots `+0x8/+0xc` then target `007091d0` and `00677210`.
+The selector remains data-dependent, so this is a conditional static path; see
+[`field20-selector1-resolution.md`](field20-selector1-resolution.md). A
+separate selector-3 path through `00663030` returns parent `+0x7c`. Base
+constructor `006634a0` writes vtable `00af0628` there. The exact getter
+instructions are retained in
 [`field20-63030-selector-disassembly.md`](field20-63030-selector-disassembly.md);
 they do not prove selector 3 is supplied at runtime.
 
 The bounded constructor replay also shows `006634a0` storing zero to its own
 `this + 0x74` at `006634cd` (P-code flow rows 13–14 in
 [`field20-base-subobject-init-pcode-flow.tsv`](field20-base-subobject-init-pcode-flow.tsv)).
-That is a null initialization in this constructor, not a vtable for the
-selector-1 results of `00676040` or `006770b0`; later writers and those results
-remain unresolved.
+That is a null initialization in a different observed object; it does not
+contradict the four constructor paths for the selector-1 `+0x74` member above.
+Other writers and runtime mutations remain unbounded.
 
 The constructor helpers write vtables `00af6b38` at `+0x128`, `00af7050` at
 `+0x4c0`, and `00af723c` at `+0x550`. The getter conditions above therefore
@@ -197,12 +202,12 @@ bytes:
 | Later `CALLIND` | Slot on returned object | Static target | Returned-object vtable origins | Origin paths |
 | --- | ---: | --- | --- | ---: |
 | `00665801` | `+0x8` | `00674f10` | `00af6b38`, `00af7050` | 7 |
-| `00665801` | `+0x8` | `007091d0` | `00af723c` | 3 |
+| `00665801` | `+0x8` | `007091d0` | `00af723c`, `00af0628`, `00af7394` | 8 |
 | `00665841` | `+0xc` | `00674f30` | `00af6b38`, `00af7050` | 7 |
-| `00665841` | `+0xc` | `00677210` | `00af723c` | 3 |
+| `00665841` | `+0xc` | `00677210` | `00af723c`, `00af0628`, `00af7394` | 8 |
 
 The PE `.rdata` mapping used for these slots has virtual base `00aa6000` and
-raw file offset `006a4a00`. The six little-endian entries are:
+raw file offset `006a4a00`. The ten little-endian entries are:
 
 | Vtable | Slot | File offset | Bytes | Target |
 | --- | ---: | --- | --- | --- |
@@ -214,18 +219,22 @@ raw file offset `006a4a00`. The six little-endian entries are:
 | `00af723c` | `+0xc` | `006f5c48` | `10 72 67 00` | `00677210` |
 | `00af0628` | `+0x8` | `006ef030` | `d0 91 70 00` | `007091d0` |
 | `00af0628` | `+0xc` | `006ef034` | `10 72 67 00` | `00677210` |
+| `00af7394` | `+0x8` | `006f5d9c` | `d0 91 70 00` | `007091d0` |
+| `00af7394` | `+0xc` | `006f5da0` | `10 72 67 00` | `00677210` |
 
-The seven paths for the first two vtables retain each applicable parent
-constructor, including `006749e0` calling base constructor `006747b0`; the
-three `00af723c` paths are the applicable `006747b0`, `006749e0`, and
-`00675040` constructor roots. The `00af0628` origin adds the `00673150` parent
-constructor path through `006634a0`. Each vtable origin in
+The seven paths for `00af6b38`/`00af7050` retain each applicable parent
+constructor, including `006749e0` calling base constructor `006747b0`. The
+`00af723c` entries retain three constructor roots, `00af0628` adds the
+`00673150` path through `006634a0`, and `00af7394` adds four selector-1 paths
+through roots `00672320`, `006747b0`, `006749e0`, and `00675040`. Each vtable origin in
 [`field20-nested-vtable-call-candidates.jsonl`](field20-nested-vtable-call-candidates.jsonl)
 links back to its first-level candidate row, the selector case, the
 constructor call path, the exact helper STORE/PTRSUB rows, and the raw slot
 address and bytes. The schema labels these rows
-`partial_static_target_candidates` because runtime selector values, the
-selector-1 `+0x74` member, and unobserved writers remain unresolved.
+`partial_static_target_candidates` because runtime selector values remain
+unbound and unobserved writers or later mutations remain possible. The
+selector-1 `+0x74` vtable is resolved for the observed constructor paths in
+[`field20-selector1-resolution.md`](field20-selector1-resolution.md).
 
 The new generic [`IndirectCallPointerSlot/1` replay](indirect-call-pointer-slots.jsonl)
 joins all 22 closure targets to their exact `PointerProvenance/1` rows. It
