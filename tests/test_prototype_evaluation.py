@@ -70,6 +70,27 @@ def test_prototype_evaluation_rejects_architecture_mismatch(tmp_path: Path) -> N
         evaluate_prototypes(hypotheses, GOLD)
 
 
+def test_conflicted_hypothesis_does_not_count_as_high_confidence(tmp_path: Path) -> None:
+    hypotheses = tmp_path / "hypotheses.jsonl"
+    row = read_jsonl(HYPOTHESES)[0]
+    row["status"] = "conflicted"
+    row["conflicts"] = [{
+        "reason": "calling_convention_conflict",
+        "evidence_refs": [{
+            "artifact_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "record_index": 1,
+            "source_format": "REVENGINSTR.SyntheticCallingConventionConflict/1",
+        }],
+    }]
+    hypotheses.write_text(json.dumps(row) + "\n", encoding="utf-8")
+
+    report = evaluate_prototypes(hypotheses, GOLD)
+
+    assert report["conflicted_hypotheses"] == 1
+    assert report["high_confidence_candidate_count"] == 0
+    assert report["high_confidence_candidate_compatibility"] is None
+
+
 def test_prototype_cli_writes_evaluation(tmp_path: Path, capsys) -> None:
     output = tmp_path / "nested" / "evaluation.json"
     assert main([str(HYPOTHESES), str(GOLD), "--output", str(output)]) == 0

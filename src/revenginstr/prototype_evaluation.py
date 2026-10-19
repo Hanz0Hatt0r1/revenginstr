@@ -17,6 +17,10 @@ _RETURN_KINDS = _PARAMETER_KINDS | {"void"}
 _GOLD_PROPERTIES = {
     "parameter_count", "calling_convention", "return_value", "receiver_parameter_index",
 }
+_CONFLICT_REASONS = {
+    "incompatible_parameter_counts", "calling_convention_conflict", "return_shape_conflict",
+    "receiver_identity_conflict", "evidence_conflict", "other",
+}
 
 
 def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -269,6 +273,22 @@ def evaluate_prototypes(
             raise ValueError(f"{where}: invalid status")
         if not isinstance(row.get("candidates"), list):
             raise ValueError(f"{where}: candidates must be an array")
+        conflicts = row.get("conflicts")
+        if not isinstance(conflicts, list) or (row["status"] == "conflicted" and not conflicts):
+            raise ValueError(f"{where}: conflicted status requires conflict evidence")
+        for conflict_index, conflict in enumerate(conflicts, 1):
+            conflict_where = f"{where}: conflict {conflict_index}"
+            if (
+                not isinstance(conflict, dict)
+                or set(conflict) != {"reason", "evidence_refs"}
+                or not isinstance(conflict["reason"], str)
+                or conflict["reason"] not in _CONFLICT_REASONS
+            ):
+                raise ValueError(f"{conflict_where}: invalid conflict")
+            _validate_evidence_refs(
+                conflict["evidence_refs"], conflict_where,
+                {hypotheses_sha256, gold_sha256},
+            )
         candidate_ids = set()
         for candidate_index, candidate in enumerate(row["candidates"], 1):
             candidate_where = f"{where}: candidate {candidate_index}"
@@ -323,7 +343,10 @@ def evaluate_prototypes(
                 for compatible in gold["compatible_prototypes"]
             ]
             accepted = any(candidate_matches)
-            if candidate["confidence"] >= minimum_confidence:
+            if (
+                hypothesis["status"] != "conflicted"
+                and candidate["confidence"] >= minimum_confidence
+            ):
                 high_confidence_count += 1
                 compatible_count += accepted
                 function_high_confidence.append((candidate, accepted))

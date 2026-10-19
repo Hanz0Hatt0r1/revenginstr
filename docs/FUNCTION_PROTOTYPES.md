@@ -28,8 +28,9 @@ revenginstr-function-prototype-evaluate hypotheses.jsonl gold.jsonl \
 The report includes high-confidence candidate compatibility, per-function
 coverage, top-candidate compatibility, per-property accuracy, and conflict
 rate. Property metrics use all candidates; acceptance metrics apply the stated
-confidence threshold. A tied top-confidence choice is conservatively counted as
-not compatible for the top-candidate metric.
+confidence threshold, and a conflicted function is not accepted at any
+confidence. A tied top-confidence choice is conservatively counted as not
+compatible for the top-candidate metric.
 
 `tests/fixtures/function-prototype-{hypothesis,gold}/synthetic.jsonl` is an exact
 synthetic replay whose gold cites a separate hash-pinned source observation.
