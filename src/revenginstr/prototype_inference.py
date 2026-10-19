@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from .ghidra_indirect_call_evidence import FORMAT_V3 as INDIRECT_CALL_EVIDENCE_FORMAT, validate_row
+from .ghidra_indirect_call_evidence import FORMAT_V3, FORMAT_V4, validate_row
 
 DECOMPILER_FORMAT = "REVENGINSTR.GhidraDecompilerParameters/1"
 CALL_FORMAT = "REVENGINSTR.DirectCallArgumentObservation/1"
@@ -223,7 +223,7 @@ def _read_indirect_calls(
     program_sha: str,
     architecture: dict[str, Any],
     functions: dict[str, dict[str, Any]],
-) -> tuple[list[dict[str, Any]], str]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], str]:
     rows, digest = _read_jsonl(path)
     functions_by_key = {}
     for entry in functions:
@@ -232,6 +232,7 @@ def _read_indirect_calls(
             raise ValueError(f"{path}: duplicate normalized decompiler function entry {entry!r}")
         functions_by_key[key] = entry
     calls = []
+    root_edges = []
     seen = set()
     for line_no, row in rows:
         where = f"{path}:{line_no}"
@@ -239,8 +240,8 @@ def _read_indirect_calls(
             row, where, program_id=program_id, program_sha256=program_sha,
             expected_architecture=architecture,
         )
-        if source_format != INDIRECT_CALL_EVIDENCE_FORMAT:
-            raise ValueError(f"{where}: indirect-call prototype constraints require {INDIRECT_CALL_EVIDENCE_FORMAT}")
+        if source_format not in {FORMAT_V3, FORMAT_V4}:
+            raise ValueError(f"{where}: indirect-call prototype constraints require v3 or v4 evidence")
         site = (
             _address_key(row["function_entry"]),
             _address_key(row["call_address"]),
@@ -255,15 +256,37 @@ def _read_indirect_calls(
         callee = functions_by_key.get(_address_key(callee_address))
         if callee is None:
             raise ValueError(f"{where}: resolved indirect target is absent from the decompiler snapshot")
+        evidence_ref = _evidence(digest, line_no, source_format)
         calls.append({
             "caller_entry": row["function_entry"],
             "callee_entry": callee,
             "call_address": row["call_address"],
             "call_time": row["call_time"],
             "argument_count": row["arg_count"],
-            "_evidence_ref": _evidence(digest, line_no, source_format),
+            "_evidence_ref": evidence_ref,
         })
-    return calls, digest
+        if source_format == FORMAT_V4:
+            caller = functions_by_key.get(_address_key(row["function_entry"]))
+            if caller is None:
+                continue
+            caller_function = functions[caller]
+            callee_function = functions[callee]
+            for root in row["parameter_roots"]:
+                callee_index = root["parameter_index"]
+                caller_index = root["caller_parameter_index"]
+                if caller_function["status"] != "complete" or callee_function["status"] != "complete":
+                    continue
+                if callee_index >= callee_function["parameter_count"]:
+                    continue
+                if caller_index >= caller_function["parameter_count"]:
+                    raise ValueError(f"{where}: caller parameter root is outside the decompiler prototype")
+                root_edges.append({
+                    "source": (callee, callee_index),
+                    "target": (caller, caller_index),
+                    "root_ref": evidence_ref,
+                    "call_ref": evidence_ref,
+                })
+    return calls, root_edges, digest
 
 
 def _read_caller_parameter_roots(
@@ -445,8 +468,9 @@ def infer_prototypes(
     functions, program_id, program_sha, decompiler_sha, architecture = _read_decompiler(decompiler_path)
     calls, calls_sha = _read_calls(calls_path, program_id, program_sha)
     indirect_calls = []
+    indirect_root_edges = []
     if indirect_call_evidence_path is not None:
-        indirect_calls, _ = _read_indirect_calls(
+        indirect_calls, indirect_root_edges, _ = _read_indirect_calls(
             indirect_call_evidence_path, program_id, program_sha, architecture, functions,
         )
     missing_callees = sorted({call["callee_entry"] for call in calls} - set(functions))
@@ -454,11 +478,11 @@ def infer_prototypes(
         preview = ", ".join(missing_callees[:5])
         raise ValueError(f"decompiler plan omits {len(missing_callees)} observed callees: {preview}")
 
-    root_edges = []
+    root_edges = list(indirect_root_edges)
     if caller_parameter_roots_path is not None:
-        root_edges = _read_caller_parameter_roots(
+        root_edges.extend(_read_caller_parameter_roots(
             caller_parameter_roots_path, calls, calls_sha, functions, program_id, program_sha,
-        )
+        ))
     parameter_states, parameter_conflicts = _propagate_parameter_kinds(
         functions, decompiler_sha, root_edges,
     )
@@ -571,7 +595,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--indirect-call-evidence", type=Path,
-        help="optional GhidraIndirectCallEvidence/3 JSONL; only exact static function targets constrain arity",
+        help="optional GhidraIndirectCallEvidence/3 or /4; exact targets constrain arity, /4 roots also propagate shape",
     )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)

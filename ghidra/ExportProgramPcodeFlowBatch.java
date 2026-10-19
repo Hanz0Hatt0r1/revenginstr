@@ -4,6 +4,9 @@ import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.pcode.HighFunction;
+import ghidra.program.model.pcode.HighVariable;
+import ghidra.program.model.pcode.HighSymbol;
+import ghidra.program.model.pcode.LocalSymbolMap;
 import ghidra.program.model.pcode.PcodeOp;
 import ghidra.program.model.pcode.PcodeOpAST;
 import ghidra.program.model.pcode.SequenceNumber;
@@ -28,7 +31,7 @@ import java.util.Set;
 public class ExportProgramPcodeFlowBatch extends GhidraScript {
     private static final String FLOW_HEADER =
         "function_entry\top_address\top_time\topcode\toutput\tinputs\tcallee_entry\tcallee_name";
-    private static final String EVIDENCE_FORMAT = "REVENGINSTR.GhidraIndirectCallEvidence/3";
+    private static final String EVIDENCE_FORMAT = "REVENGINSTR.GhidraIndirectCallEvidence/4";
     private static final String ACQUISITION_FORMAT = "REVENGINSTR.GhidraPcodeFlowAcquisition/1";
     private static final int DEFAULT_MAX_FUNCTIONS = 1000;
     private static final int DEFAULT_MAX_TOTAL_SECONDS = 3600;
@@ -205,7 +208,8 @@ public class ExportProgramPcodeFlowBatch extends GhidraScript {
         out.newLine();
     }
 
-    private void writeEvidence(BufferedWriter out, String requested, Function function, PcodeOpAST op) throws Exception {
+    private void writeEvidence(BufferedWriter out, String requested, Function function,
+            PcodeOpAST op, HighFunction high) throws Exception {
         SequenceNumber sequence = op.getSeqnum();
         Varnode target = op.getNumInputs() > 0 ? op.getInput(0) : null;
         TargetResolution resolution = resolveTarget(target, 0);
@@ -222,8 +226,41 @@ public class ExportProgramPcodeFlowBatch extends GhidraScript {
             ",\"target\":" + json(nodeToken(target)) +
             ",\"target_expression\":" + json(expression(target, 0, new HashSet<String>())) +
             ",\"target_resolution\":" + targetResolutionJson(resolution) +
+            ",\"parameter_roots\":" + parameterRootsJson(high, op, resolution.functionEntry != null) +
             ",\"arg_count\":" + Math.max(0, op.getNumInputs() - 1) + "}");
         out.newLine();
+    }
+
+    private String parameterRootsJson(HighFunction high, PcodeOp op, boolean targetResolved) {
+        if (!targetResolved) return "[]";
+        StringBuilder roots = new StringBuilder("[");
+        for (int argumentIndex = 0; argumentIndex + 1 < op.getNumInputs(); argumentIndex++) {
+            Varnode argument = op.getInput(argumentIndex + 1);
+            if (argument == null || argument.getDef() != null) continue;
+            int callerParameterIndex = parameterIndex(high, argument);
+            if (callerParameterIndex < 0) continue;
+            if (roots.length() > 1) roots.append(',');
+            roots.append("{\"parameter_index\":").append(argumentIndex)
+                .append(",\"caller_parameter_index\":").append(callerParameterIndex)
+                .append(",\"argument_token\":").append(json(nodeToken(argument))).append('}');
+        }
+        return roots.append(']').toString();
+    }
+
+    private int parameterIndex(HighFunction high, Varnode node) {
+        if (high == null || node == null || node.getHigh() == null) return -1;
+        LocalSymbolMap map = high.getLocalSymbolMap();
+        if (map == null) return -1;
+        HighVariable target = node.getHigh();
+        for (int index = 0; index < map.getNumParams(); index++) {
+            HighSymbol symbol = map.getParamSymbol(index);
+            if (symbol == null || symbol.getHighVariable() == null) continue;
+            HighVariable parameter = symbol.getHighVariable();
+            if (parameter == target) return index;
+            if (parameter.getRepresentative() != null && target.getRepresentative() != null &&
+                    parameter.getRepresentative().equals(target.getRepresentative())) return index;
+        }
+        return -1;
     }
 
     private String targetResolutionJson(TargetResolution resolution) {
@@ -402,7 +439,7 @@ public class ExportProgramPcodeFlowBatch extends GhidraScript {
                     operationCount++;
                     if (op.getOpcode() == PcodeOp.CALLIND) {
                         callindCount++;
-                        if (op.getNumInputs() > 0) writeEvidence(evidence, request, function, op);
+                        if (op.getNumInputs() > 0) writeEvidence(evidence, request, function, op, high);
                     }
                 }
                 if (monitor.isCancelled()) throw new IllegalStateException("cancelled during function export");

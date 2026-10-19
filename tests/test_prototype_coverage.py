@@ -118,7 +118,7 @@ def test_indirect_call_evidence_uses_batch_address_spelling(tmp_path: Path) -> N
     assert report["full_program_coverage"] is True
 
 
-def test_v3_indirect_call_evidence_is_pinned_to_decompiler_program(tmp_path: Path) -> None:
+def test_v4_indirect_call_evidence_is_pinned_to_decompiler_program(tmp_path: Path) -> None:
     flow = tmp_path / "flow.tsv"
     flow.write_text(
         (FIXTURES / "whole-program-flow.tsv").read_text(encoding="utf-8")
@@ -138,7 +138,7 @@ def test_v3_indirect_call_evidence_is_pinned_to_decompiler_program(tmp_path: Pat
     observations.write_text(json.dumps(call_row) + "\n", encoding="utf-8")
     decompiler_row = json.loads((FIXTURES / "decompiler-parameters.jsonl").read_text().splitlines()[0])
     indirect_row = {
-        "format": "REVENGINSTR.GhidraIndirectCallEvidence/3",
+        "format": "REVENGINSTR.GhidraIndirectCallEvidence/4",
         "program": decompiler_row["program_id"],
         "program_sha256": decompiler_row["program_sha256"],
         "architecture": decompiler_row["architecture"],
@@ -151,6 +151,7 @@ def test_v3_indirect_call_evidence_is_pinned_to_decompiler_program(tmp_path: Pat
         "target_resolution": {
             "status": "unsupported_target_expression", "slot_address": None, "function_entry": None,
         },
+        "parameter_roots": [],
         "arg_count": 1,
     }
     indirect = tmp_path / "indirect.jsonl"

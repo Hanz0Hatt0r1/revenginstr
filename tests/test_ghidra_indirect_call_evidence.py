@@ -7,16 +7,20 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
+from revenginstr.indirect_call_slots import build_indirect_call_pointer_slots
+from revenginstr.pointer_provenance import build_pointer_provenance
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_indirect_call_evidence_contract() -> None:
     source = (ROOT / "ghidra/ExportGhidraIndirectCallEvidence.java").read_text(encoding="utf-8")
     for required in (
-        '"REVENGINSTR.GhidraIndirectCallEvidence/3"',
+        '"REVENGINSTR.GhidraIndirectCallEvidence/4"',
         "getExecutableSHA256()",
         "architectureJson()",
         "resolveFunctionPointer",
+        "parameterRootsJson",
         "resolved_static_function_pointer",
         "PcodeOp.CALLIND",
         "target_expression",
@@ -90,6 +94,33 @@ def test_indirect_call_evidence_contract() -> None:
         "arg_count": 1,
     })
 
+    schema_v4 = json.loads(
+        (ROOT / "schemas/ghidra-indirect-call-evidence-v4.schema.json").read_text(encoding="utf-8")
+    )
+    Draft202012Validator.check_schema(schema_v4)
+    Draft202012Validator(schema_v4).validate({
+        "format": "REVENGINSTR.GhidraIndirectCallEvidence/4",
+        "program": "sample",
+        "program_sha256": "a" * 64,
+        "architecture": {
+            "language_id": "x86:LE:32:default", "pointer_width_bytes": 4, "endianness": "little",
+        },
+        "requested": "00401000",
+        "function_entry": "0x00401000",
+        "call_address": "0x00401008",
+        "call_time": 12,
+        "target": "def:CAST@00401008:4:4",
+        "target_expression": "CAST(address:00402000:4)",
+        "target_resolution": {
+            "status": "resolved_static_function_pointer",
+            "slot_address": "0x00402000", "function_entry": "0x00401000",
+        },
+        "parameter_roots": [{
+            "parameter_index": 0, "caller_parameter_index": 2, "argument_token": "register:EAX:4",
+        }],
+        "arg_count": 1,
+    })
+
 
 def test_indirect_call_runner_is_read_only_and_isolated() -> None:
     runner = (ROOT / "scripts/run_ghidra_indirect_call_evidence.sh").read_text(encoding="utf-8")
@@ -99,12 +130,12 @@ def test_indirect_call_runner_is_read_only_and_isolated() -> None:
     assert "ExportGhidraIndirectCallEvidence.java" in runner
 
 
-def test_real_ghidra_v3_replay_pins_callind_and_resolves_static_function_pointer() -> None:
-    fixture = ROOT / "tests/fixtures/ghidra-indirect-call-v3"
+def test_real_ghidra_v4_replay_pins_callind_and_exact_parameter_root() -> None:
+    fixture = ROOT / "tests/fixtures/ghidra-indirect-call-v4"
     binary = fixture / "callind.elf"
     call_rows = [json.loads(line) for line in (fixture / "callind.jsonl").read_text().splitlines()]
     acquisition_rows = [json.loads(line) for line in (fixture / "acquisition.jsonl").read_text().splitlines()]
-    schema = json.loads((ROOT / "schemas/ghidra-indirect-call-evidence-v3.schema.json").read_text())
+    schema = json.loads((ROOT / "schemas/ghidra-indirect-call-evidence-v4.schema.json").read_text())
     validator = Draft202012Validator(schema)
     binary_sha256 = hashlib.sha256(binary.read_bytes()).hexdigest()
 
@@ -119,6 +150,11 @@ def test_real_ghidra_v3_replay_pins_callind_and_resolves_static_function_pointer
             "status": "resolved_static_function_pointer",
             "slot_address": "0x00403000", "function_entry": "0x00401000",
         }
+        assert row["parameter_roots"] == [{
+            "parameter_index": 0,
+            "caller_parameter_index": 0,
+            "argument_token": "register:register:00000038:4",
+        }]
     for row in acquisition_rows:
         assert row["state"] == "complete"
         if row["function_entry"] == "0040100f":
@@ -148,3 +184,15 @@ def test_real_ghidra_v3_replay_pins_callind_and_resolves_static_function_pointer
     ).hexdigest()
     assert slots[0]["source"]["indirect_call_evidence"]["source_format"] == call["format"]
     assert slots[0]["status"] == "unsupported_target_operation"
+
+    live_provenance = build_pointer_provenance(
+        [fixture / "flow.tsv"], program_id="callind.elf",
+        callind_evidence_paths=[fixture / "callind.jsonl"],
+    )
+    target_row = next(row for row in live_provenance if row["record_kind"] == "callind_target")
+    assert target_row["target_source"]["source_format"] == call["format"]
+    live_slots = build_indirect_call_pointer_slots(
+        [fixture / "pointer-provenance.jsonl"], [fixture / "callind.jsonl"],
+        program_id="callind.elf",
+    )
+    assert live_slots[0]["source"]["indirect_call_evidence"]["source_format"] == call["format"]

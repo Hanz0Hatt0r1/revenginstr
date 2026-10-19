@@ -65,7 +65,7 @@ one `GhidraPcodeFlowAcquisition/1` row for every request, including
 the completion marker and makes the runner fail. A function with no P-code has
 no flow rows, so callers use the acquisition sidecar rather than interpreting
 an empty file as a successful function export.
-The batch target-expression sidecar is `GhidraIndirectCallEvidence/3`; each
+The batch target-expression sidecar is `GhidraIndirectCallEvidence/4`; each
 row pins the executable SHA-256 and ABI, while flow TSV records retain their
 existing metadata-only format.
 

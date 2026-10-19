@@ -7,3 +7,5 @@ function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
 0040100f	00401026	66	CAST	def:00401026:66:8	address:00403000:8	-	-
 0040100f	00401029	32	RETURN	-	const:0x0:8	-	-
 0040100f	00401029	61	COPY	def:00401029:61:8	def:00401026:60:8	-	-
+0040102a	00401033	7	CALL	-	const:0x3:8	0040100f	call_callback
+0040102a	00401039	14	RETURN	-	const:0x0:8	-	-
