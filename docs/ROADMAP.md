@@ -1239,10 +1239,14 @@ feasibility or runtime execution.
 relation-specific recall only where labels declare completeness. The evaluator
 also reports unsupported candidate-edge rate and provenance-field coverage.
 Reviewer-curated raw P-code projection audits match 2/2 GT5 and 7/7 NFS SHIFT
-direct-call edges; all nine have complete provenance fields. These small
-checks are not independent subsystem gold. The captures have no calibrated
-accepted edges, so the accepted-edge precision gate and independent consumer
-gold sets remain open.
+direct-call edges; the Nevergone consumer-owned player-facing subgraph matches
+all 3 documented calls (see the
+[replay](evidence/semantic-program-graph-evaluation/nevergone-player-horizontal-facing/README.md)).
+All twelve edges have complete provenance fields. The
+Nevergone note and P-code export describe the same binary, so this is a
+consumer-adjudicated interpretation, not independent binary or runtime
+corroboration. A second consumer-owned subsystem gold set and calibrated
+accepted edges remain open; M10.5 and its exit criteria are not complete.
 
 ---
 
@@ -1480,7 +1484,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 31. Bounded runtime probe-request and correlation contracts.
 32. Static/runtime differential replay and information-gain metrics.
 33. Semantic Program Graph schema and deterministic builder.
-34. 🟡 Scoped graph-gold schema/evaluator and two raw P-code projection audits implemented; independent consumer gold sets and the accepted-edge precision gate remain open.
+34. 🟡 Scoped graph-gold schema/evaluator, two raw P-code projection audits, and the first narrow Nevergone consumer-owned gold subgraph implemented; a second consumer subsystem and the accepted-edge precision gate remain open.
 35. Feedback quarantine, adjudication and leakage-gated training promotion.
 
 ## P4 — architecture and integration
