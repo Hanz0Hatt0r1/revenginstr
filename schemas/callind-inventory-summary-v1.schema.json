@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/callind-inventory-summary-v1.schema.json",
+  "title": "REVENGINSTR.CallindInventorySummary/1 JSON",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "program_id", "population_functions", "functions_with_flow", "canonical_truncated_functions", "callind_sites",
+    "sites_with_expression_evidence", "sites_missing_expression_evidence",
+    "expected_callind_count_known_functions", "expected_callind_count_total",
+    "observed_callind_count_functions", "observed_callind_count_total", "site_classification_counts",
+    "sites_with_cycle_marker", "sites_with_depth_limit_marker",
+    "acquisition_state_counts", "count_reconciliation_counts", "population_manifest_sha256",
+    "flow_artifacts", "indirect_call_evidence_artifacts"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.CallindInventorySummary/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "population_functions": {"type": "integer", "minimum": 0},
+    "functions_with_flow": {"type": "integer", "minimum": 0},
+    "canonical_truncated_functions": {"type": "integer", "minimum": 0},
+    "callind_sites": {"type": "integer", "minimum": 0},
+    "sites_with_expression_evidence": {"type": "integer", "minimum": 0},
+    "sites_missing_expression_evidence": {"type": "integer", "minimum": 0},
+    "expected_callind_count_known_functions": {"type": "integer", "minimum": 0},
+    "expected_callind_count_total": {"type": "integer", "minimum": 0},
+    "observed_callind_count_functions": {"type": "integer", "minimum": 0},
+    "observed_callind_count_total": {"type": "integer", "minimum": 0},
+    "site_classification_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "sites_with_cycle_marker": {"type": "integer", "minimum": 0},
+    "sites_with_depth_limit_marker": {"type": "integer", "minimum": 0},
+    "acquisition_state_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "count_reconciliation_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "population_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "flow_artifacts": {"type": "array", "items": {"$ref": "#/$defs/artifact"}},
+    "indirect_call_evidence_artifacts": {"type": "array", "items": {"$ref": "#/$defs/artifact"}}
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_path", "artifact_sha256", "record_count"],
+      "properties": {
+        "artifact_path": {"type": "string", "minLength": 1},
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "record_count": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

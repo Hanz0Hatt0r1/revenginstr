@@ -369,6 +369,17 @@ Increase hard unseen receiver coverage without weakening exact evidence safety.
 
 ## Work
 
+**Program-wide indirect-call acquisition inventory implemented:**
+[`CallindInventory/1`](CALLIND_INVENTORY.md) joins exact High-P-code flow rows
+to bounded target expressions and reconciles them against a hash-linked
+function population. The read-only batch exporter preserves per-function
+completion, failure, and no-P-code states. On the frozen Nevergone unseen500
+holdout, all 500 flow exports completed and all 203 observed `CALLIND` sites
+matched the canonical P-code counts. The 24 canonical model text truncations
+remain marked separately; 140 target expressions are depth-limited. All 203
+sites remain `unknown` because this unlabeled holdout does not support accuracy
+or recall claims for virtual dispatch. See the [hash-pinned consumer replay PR](https://github.com/Hanz0Hatt0r1/nevergone-recomp/pull/735).
+
 ### M2.1 Residual failure taxonomy
 
 The receiver inference CLI can emit a

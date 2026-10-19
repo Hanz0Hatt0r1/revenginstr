@@ -1,0 +1,1 @@
+{"format":"REVENGINSTR.GhidraIndirectCallEvidence/1","program":"sample-program","requested":"00401000","function_entry":"0x00401000","call_address":"0x00401008","call_time":5,"target":"def:LOAD@00401004:4:4","target_expression":"LOAD(register:0008:4){depth-limit}","arg_count":1}

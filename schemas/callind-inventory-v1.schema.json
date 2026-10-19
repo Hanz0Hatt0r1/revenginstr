@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/callind-inventory-v1.schema.json",
+  "title": "REVENGINSTR.CallindInventory/1 JSONL row",
+  "description": "A function acquisition/reconciliation row or an exact High-P-code CALLIND site observation.",
+  "oneOf": [
+    {"$ref": "#/$defs/function"},
+    {"$ref": "#/$defs/site"}
+  ],
+  "$defs": {
+    "address": {"type": "string", "pattern": "^(?:[A-Za-z_$][\\w$]*:)?(?:0x)?[0-9a-fA-F]+$"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_path", "artifact_sha256", "record_index"],
+      "properties": {
+        "artifact_path": {"type": "string", "minLength": 1},
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "record_index": {"type": "integer", "minimum": 1}
+      }
+    },
+    "canonicalSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_format", "artifact_sha256", "record_index"],
+      "properties": {
+        "source_format": {"type": "string", "minLength": 1},
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "record_index": {"type": "integer", "minimum": 1}
+      }
+    },
+    "flowSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_path", "artifact_sha256", "record_count"],
+      "properties": {
+        "artifact_path": {"type": "string", "minLength": 1},
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "record_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "acquisitionState": {
+      "enum": ["complete", "truncated", "no_pcode", "decompile_failed", "export_failed", "not_exported", "unknown", "export_missing"]
+    },
+    "function": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format", "record_kind", "program_id", "function_entry", "acquisition_state",
+        "declared_acquisition_state", "observed_callind_count", "expected_callind_count",
+        "count_reconciliation", "canonical_truncated", "population_source", "canonical_source", "flow_sources"
+      ],
+      "properties": {
+        "format": {"const": "REVENGINSTR.CallindInventory/1"},
+        "record_kind": {"const": "function"},
+        "program_id": {"type": "string", "minLength": 1},
+        "function_entry": {"$ref": "#/$defs/address"},
+        "acquisition_state": {"$ref": "#/$defs/acquisitionState"},
+        "declared_acquisition_state": {"enum": ["complete", "truncated", "no_pcode", "decompile_failed", "export_failed", "not_exported", "unknown"]},
+        "observed_callind_count": {"type": ["integer", "null"], "minimum": 0},
+        "expected_callind_count": {"type": ["integer", "null"], "minimum": 0},
+        "count_reconciliation": {"enum": ["matched", "mismatch", "lower_bound", "not_comparable", "export_missing", "not_exported", "failed", "unknown"]},
+        "canonical_truncated": {"type": "boolean"},
+        "population_source": {"$ref": "#/$defs/source"},
+        "canonical_source": {"$ref": "#/$defs/canonicalSource"},
+        "flow_sources": {"type": "array", "items": {"$ref": "#/$defs/flowSource"}}
+      }
+    },
+    "site": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format", "record_kind", "program_id", "function_entry", "call_address", "call_time",
+        "acquisition_state", "target", "target_expression", "expression_status", "expression_markers",
+        "classification", "classification_basis", "pcode_source", "indirect_call_evidence_source"
+      ],
+      "properties": {
+        "format": {"const": "REVENGINSTR.CallindInventory/1"},
+        "record_kind": {"const": "callind_site"},
+        "program_id": {"type": "string", "minLength": 1},
+        "function_entry": {"$ref": "#/$defs/address"},
+        "call_address": {"$ref": "#/$defs/address"},
+        "call_time": {"type": "integer", "minimum": 0},
+        "acquisition_state": {"$ref": "#/$defs/acquisitionState"},
+        "target": {"type": ["string", "null"]},
+        "target_expression": {"type": ["string", "null"]},
+        "expression_status": {"enum": ["present", "missing"]},
+        "expression_markers": {"type": "array", "uniqueItems": true, "items": {"enum": ["cycle", "depth-limit"]}},
+        "classification": {"enum": ["virtual_candidate", "other_indirect_candidate", "unknown"]},
+        "classification_basis": {"type": "array", "items": {"type": "string"}},
+        "pcode_source": {"$ref": "#/$defs/source"},
+        "indirect_call_evidence_source": {"oneOf": [{"$ref": "#/$defs/source"}, {"type": "null"}]}
+      }
+    }
+  }
+}

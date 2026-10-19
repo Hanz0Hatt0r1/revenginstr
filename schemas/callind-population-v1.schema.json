@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/callind-population-v1.schema.json",
+  "title": "REVENGINSTR.CallindPopulation/1 JSONL row",
+  "description": "One function in a canonical P-code population, with an explicit acquisition state and lineage to its source row.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "program_id", "function_entry", "acquisition_state",
+    "expected_callind_count", "canonical_source"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.CallindPopulation/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "function_entry": {"$ref": "#/$defs/address"},
+    "acquisition_state": {"$ref": "#/$defs/acquisitionState"},
+    "expected_callind_count": {"type": ["integer", "null"], "minimum": 0},
+    "canonical_truncated": {"type": "boolean"},
+    "canonical_source": {"$ref": "#/$defs/canonicalSource"}
+  },
+  "$defs": {
+    "address": {"type": "string", "pattern": "^(?:[A-Za-z_$][\\w$]*:)?(?:0x)?[0-9a-fA-F]+$"},
+    "acquisitionState": {
+      "enum": ["complete", "truncated", "no_pcode", "decompile_failed", "export_failed", "not_exported", "unknown"]
+    },
+    "canonicalSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_format", "artifact_sha256", "record_index"],
+      "properties": {
+        "source_format": {"type": "string", "minLength": 1},
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "record_index": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}
