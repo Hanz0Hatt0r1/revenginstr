@@ -89,10 +89,11 @@ hash-pinned instruction excerpt in
 The binary hash is
 `94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e`.
 The new field-type review records `data_pointer` candidates, width 4, targeting
-`cocos2d::CCSprite` at `+0x104`, `+0x108`, and `+0x10c`, based on the pinned
-Nevergone initializer evidence. Other field types, vtable anchors, and class
-identity of the containing object remain unresolved. Raw Nevergone store/load
-rows stay in that consumer repository. The complete review bundle is retained in
+`cocos2d::CCSprite` at `+0x104`, `+0x108`, and `+0x10c`, two integer candidates
+copied from the `int` parameters, and four boolean candidates copied from the
+`bool` parameters of `CCJoyStick::init`. Other field types, vtable anchors, and
+class identity of the containing object remain unresolved. Raw Nevergone
+store/load rows stay in that consumer repository. The complete review bundle is retained in
 [`nevergone-ccjoystick-20261019`](evidence/type-layout-review/nevergone-ccjoystick-20261019/README.md).
 The reviewer-map row used for this smoke was:
 

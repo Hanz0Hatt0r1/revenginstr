@@ -20,7 +20,7 @@ FIELD_TYPE_REVIEW_FORMAT = "REVENGINSTR.TypeLayoutFieldTypeReview/1"
 LOAD_FORMAT = "REVENGINSTR.GhidraParameterLoadField/1"
 OUTPUT_FORMAT = "REVENGINSTR.TypeLayoutHypothesis/1"
 TYPE_KINDS = {
-    "integer", "floating_point", "data_pointer", "function_pointer",
+    "boolean", "integer", "floating_point", "data_pointer", "function_pointer",
     "aggregate", "bitfield", "opaque_bytes",
 }
 LOAD_COLUMNS = (

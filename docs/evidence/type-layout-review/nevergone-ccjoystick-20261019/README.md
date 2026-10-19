@@ -17,8 +17,8 @@ leaves three unobserved bytes.
 
 The map retains opaque type ID `nevergone:opaque-object-002a6584`. A separate
 review records three four-byte `data_pointer` candidates targeting
-`cocos2d::CCSprite` at `+0x104`, `+0x108`, and `+0x10c`; its source commit and
-evidence boundary are described in
+`cocos2d::CCSprite`, two four-byte integer candidates, and four one-byte
+boolean candidates. The source commit and evidence boundary are described in
 [`field-type-evidence.md`](field-type-evidence.md). Vtable identity for the
 containing object and ownership remain unresolved.
 Raw memory-store and parameter-load rows stay in the
@@ -53,6 +53,6 @@ revenginstr-type-layout-hypothesis \
 ```
 
 The retained hypothesis contains 13 field offsets, a 337-byte minimum
-observed extent, the reviewer-evidenced 340-byte exact size, and three
-reviewed pointer target candidates. The type ID remains opaque; other field
-types and a full class-layout claim remain unresolved.
+observed extent, the reviewer-evidenced 340-byte exact size, and nine reviewed
+field type candidates. The type ID remains opaque; other field types and a
+full class-layout claim remain unresolved.

@@ -108,6 +108,7 @@
       "properties": {
         "kind": {
           "enum": [
+            "boolean",
             "integer",
             "floating_point",
             "data_pointer",
