@@ -44,5 +44,9 @@ revenginstr-prototype-infer "$REPLAY/decompiler-parameters.jsonl" \
 
 The checked-in `decompiler-parameters.jsonl`, `forward-flow.tsv`,
 `call-observations.jsonl`, and `hypotheses.jsonl` are the captured outputs.
-The source is included for reproducibility; the object and Ghidra project are
-not.
+`gold.jsonl` records both prototypes from the two C definitions, and
+`evaluation.json` scores the three emitted candidates. Return-shape coverage is
+2/3 with 100% accuracy among the two known predictions; no candidate reaches
+the 0.95 acceptance threshold. This is a source-backed fixture, not confidence
+calibration. The source is included for reproducibility; the object and Ghidra
+project are not.

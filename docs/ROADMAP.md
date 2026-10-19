@@ -1141,7 +1141,10 @@ before M8.1 is complete. The stripped fixture now also has source-backed
 functions: parameter counts and shapes score 2/2, returns score 1/2, and neither
 hypothesis reaches the default 0.95 acceptance threshold. This isolates return
 shape inference as a measured gap without presenting the micro-fixture as
-consumer accuracy. The new
+consumer accuracy. A second source-backed replay for a possible tail return has
+2/3 return-shape coverage and 100% accuracy among its known predictions across
+three candidates; none reaches the 0.95 acceptance threshold, and the two
+function sample is not a calibration set. The new
 `FunctionPrototypeEvidenceCoverage/1` audit now checks population, P-code row
 counts, decompiler result status, and direct/indirect call-site capture against
 the exact supplied artifacts. A complete report means evidence capture covers
