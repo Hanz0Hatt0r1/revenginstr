@@ -16,9 +16,12 @@ The exporter accepts hexadecimal function entry addresses, optionally prefixed
 with 0x or FUN_. `entry:<address>` explicitly exports an entrypoint even when
 Ghidra has not created a Function record there. Such rows use an `ENTRY_`
 function name and a null calling convention; a bounded pseudo-disassembly
-follows direct control flow without modifying the project. Missing ordinary or
-entrypoint targets produce a found: false row and make the headless command
-fail. Validate each JSONL row against
+follows direct control flow without modifying the project. When the requested
+entry lies inside a Ghidra function, traversal stays within that containing
+function, so interior jump-table blocks can be exported without crossing into
+another function. Unowned entrypoints remain bounded to unowned code. Missing
+ordinary or entrypoint targets produce a found: false row and make the headless
+command fail. Validate each JSONL row against
 schemas/ghidra-function-instructions-v1.schema.json.
 
 For defined functions, the exporter also repairs one conservative CFG case:

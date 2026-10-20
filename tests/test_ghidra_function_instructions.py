@@ -79,6 +79,14 @@ def test_exporter_restores_only_verified_returning_call_fallthroughs() -> None:
         assert consumer_term not in source
 
 
+def test_entrypoint_export_stays_within_the_containing_function() -> None:
+    source = (ROOT / "ghidra/ExportGhidraFunctionInstructions.java").read_text(encoding="utf-8")
+    assert "Function entryOwner = functions.getFunctionContaining(entry);" in source
+    assert "isSafeEntrypointAddress(entry, address, entryOwner)" in source
+    assert "owner.getEntryPoint().equals(entryOwner.getEntryPoint())" in source
+    assert "return owner == null && functions.getFunctionAt(address) == null;" in source
+
+
 def test_function_instruction_runner_is_read_only_and_isolated() -> None:
     runner = (ROOT / "scripts/run_ghidra_function_instructions.sh").read_text(encoding="utf-8")
     assert "-readOnly" in runner
