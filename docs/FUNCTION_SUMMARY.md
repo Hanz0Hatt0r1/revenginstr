@@ -13,6 +13,9 @@ Each claim retains its evidence class, structural attributes, supporting
 effect IDs, and original artifact SHA-256/record ordinals. The output also
 pins the exact Effect IR file hash. Ordering is deterministic; identical
 claims are coalesced while retaining every support reference.
+For a parameter-rooted store whose value is computed rather than copied from
+a formal parameter, `source_parameter_index` is null; the summary preserves
+the proven write location without claiming its value source.
 
 When the input uses `FunctionEffectIR/2`, the same command emits
 `FunctionSummary/2`. It groups generic `memory_read` and `memory_write` effects

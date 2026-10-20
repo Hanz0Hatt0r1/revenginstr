@@ -47,6 +47,7 @@
                   "enum": [
                     "REVENGINSTR.GhidraParameterStoreField/1",
                     "REVENGINSTR.GhidraParameterLoadField/1",
+                    "REVENGINSTR.GhidraMemoryStoreAccess/1",
                     "REVENGINSTR.GhidraFunctionPcodeFlow/1"
                   ]
                 },

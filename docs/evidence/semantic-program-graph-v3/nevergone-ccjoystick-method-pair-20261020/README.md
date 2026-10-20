@@ -1,0 +1,48 @@
+# Nevergone `CCJoyStick` method-pair field graph
+
+This replay combines structural effects from `CCJoyStick::init` at `0x002a6584`
+and `CCJoyStick::updateTouchPoint` at `0x002a5f00`. Both use program id
+`nevergone:libcocos2dcpp.so` and executable SHA-256
+`94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e`.
+
+The `updateTouchPoint` export contains 12 parameter-rooted field loads at
+`0x104`, `0x108`, `0x110`, `0x114`, and `0x140`. Its memory-store sidecar
+contains two exact parameter-rooted STORE locations at `0x13c` and `0x140`,
+each four bytes wide. The new Effect IR projection retains those writes as
+structural facts and leaves `source_parameter_index` null because the exporter
+does not identify their value source.
+
+The member map manually associates root parameter 0 of each exact function
+entry with the same opaque CCJoyStick type record, based on the Ghidra method
+owner identity. The mapping is retained as `human_review` evidence. The graph
+has 61 nodes, 89 edges, and 15 type-to-field joins. The selected-offset query
+returns 10 method-specific field nodes and the shared type as context; all
+derived links keep null confidence. These artifacts do not assign field
+meanings, establish runtime aliasing, or claim that any store supplies a later
+load.
+
+The REA MCP Ghidra provider reported `cleanup_incomplete` for an old analysis
+session, so this replay was exported with the repository's standard Ghidra
+parameter-store-field tool in `-readOnly -noanalysis` mode. The checked-in
+inputs are the exact exporter outputs; no Ghidra analysis was run or modified
+for this replay.
+
+Regenerate `update-touchpoint-effects.jsonl` with:
+
+```sh
+revenginstr-effect-ir \
+  --program-id 'nevergone:libcocos2dcpp.so' \
+  --parameter-loads docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick-method-pair-20261020/update-touchpoint-loads.tsv \
+  --memory-store-access docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick-method-pair-20261020/update-touchpoint-memory-stores.jsonl \
+  --output docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick-method-pair-20261020/update-touchpoint-effects.jsonl
+```
+
+The replay test rebuilds the Effect IR, combined function artifact, graph, and
+query and checks each result byte-for-byte against its pinned output:
+
+```sh
+pytest -q tests/test_semantic_program_graph_layout.py -k method_pair
+```
+
+The manifest pins both source exports, the manually reviewed member map,
+intermediate and final outputs, schemas, and this README.

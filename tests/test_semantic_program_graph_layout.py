@@ -7,6 +7,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 import pytest
 
+from revenginstr.effect_ir import build_function_effect_ir
 from revenginstr.semantic_program_graph import (
     FORMAT_V3,
     _read_jsonl,
@@ -276,6 +277,114 @@ def test_nevergone_member_map_joins_function_fields_to_reviewed_layout(tmp_path:
             type_layout_member_map_rows=wrong_map,
             type_layout_member_map_sha256=member_map_sha256,
         )
+
+
+def test_nevergone_ccjoystick_method_pair_replay_is_reproducible() -> None:
+    replay_dir = ROOT / (
+        "docs/evidence/semantic-program-graph-v3/"
+        "nevergone-ccjoystick-method-pair-20261020"
+    )
+    manifest = json.loads((replay_dir / "replay-manifest.json").read_text(encoding="utf-8"))
+    for artifact in manifest["artifacts"]:
+        raw = (replay_dir / artifact["path"]).resolve().read_bytes()
+        assert len(raw) == artifact["bytes"]
+        assert hashlib.sha256(raw).hexdigest() == artifact["sha256"]
+
+    program_id = "nevergone:libcocos2dcpp.so"
+    update_loads = replay_dir / "update-touchpoint-loads.tsv"
+    update_stores = replay_dir / "update-touchpoint-memory-stores.jsonl"
+    update_effects = build_function_effect_ir(
+        program_id,
+        parameter_load_tsv=update_loads,
+        memory_store_access_jsonl=update_stores,
+    )
+    update_effects_bytes = "".join(
+        json.dumps(record, sort_keys=True) + "\n" for record in update_effects
+    ).encode()
+    assert update_effects_bytes == (replay_dir / "update-touchpoint-effects.jsonl").read_bytes()
+    [update_record] = update_effects
+    assert update_record["function_entry"] == "002a5f00"
+    assert len(update_record["effects"]) == 14
+    writes = [effect for effect in update_record["effects"] if effect["kind"] == "parameter_field_write"]
+    assert {(effect["field_offset"], effect["value_size"]) for effect in writes} == {
+        ("0x13c", 4), ("0x140", 4),
+    }
+    assert all(
+        effect["source_parameter_index"] is None
+        and effect["provenance"]["source_format"] == "REVENGINSTR.GhidraMemoryStoreAccess/1"
+        for effect in writes
+    )
+
+    memory_store_schema = _schema("ghidra-memory-store-access-v1.schema.json")
+    memory_rows = [
+        json.loads(line)
+        for line in update_stores.read_text(encoding="utf-8").splitlines()
+    ]
+    assert len(memory_rows) == 2
+    for row in memory_rows:
+        memory_store_schema.validate(row)
+
+    init_dir = ROOT / "docs/evidence/receiver-field-access/nevergone-ccjoystick-init-20261019"
+    init_effects = build_function_effect_ir(
+        program_id,
+        parameter_store_tsv=init_dir / "parameter-stores.tsv",
+        parameter_load_tsv=init_dir / "parameter-loads.tsv",
+    )
+    init_bytes = "".join(json.dumps(record, sort_keys=True) + "\n" for record in init_effects).encode()
+    assert init_bytes == (init_dir / "function-effects.jsonl").read_bytes()
+    combined = sorted(init_effects + update_effects, key=lambda row: (row["program_id"], row["function_entry"]))
+    combined_bytes = "".join(json.dumps(record, sort_keys=True) + "\n" for record in combined).encode()
+    assert combined_bytes == (replay_dir / "function-effects.jsonl").read_bytes()
+
+    effects, effects_sha256 = _read_jsonl(replay_dir / "function-effects.jsonl")
+    layouts, layout_sha256 = _read_jsonl(
+        ROOT / "docs/evidence/type-layout-review/nevergone-ccjoystick-20261019/type-layout-hypothesis.jsonl"
+    )
+    member_maps, member_map_sha256 = _read_jsonl(replay_dir / "type-layout-member-map.jsonl")
+    graph = build_semantic_program_graphs(
+        effects,
+        source_sha256=effects_sha256,
+        type_layout_rows=layouts,
+        type_layout_sha256=layout_sha256,
+        type_layout_member_map_rows=member_maps,
+        type_layout_member_map_sha256=member_map_sha256,
+    )[0]
+    _schema("semantic-program-graph-v3.schema.json").validate(graph)
+    assert len(graph["nodes"]) == 61
+    assert len(graph["edges"]) == 89
+    joined = [
+        edge for edge in graph["edges"]
+        if edge["relation"] == "has_field" and edge["to"].startswith("field:")
+    ]
+    assert len(joined) == 15
+    assert all(
+        any(
+            support.get("provenance", {}).get("source_format") == "REVENGINSTR.TypeLayoutMemberMap/1"
+            and support.get("provenance", {}).get("artifact_sha256") == member_map_sha256
+            for support in edge["support"]
+        )
+        for edge in joined
+    )
+    graph_path = replay_dir / "semantic-program-graph.jsonl"
+    graph_bytes = (json.dumps(graph, sort_keys=True) + "\n").encode()
+    assert graph_bytes == graph_path.read_bytes()
+
+    result = query_graphs(
+        [graph],
+        source_sha256=hashlib.sha256(graph_path.read_bytes()).hexdigest(),
+        view="exploratory",
+        kinds=["field"],
+        function_entries=["002a6584", "002a5f00"],
+        relations=["has_field"],
+        field_offsets=["0x104", "0x108", "0x110", "0x114", "0x13c", "0x140"],
+    )[0]
+    _schema("semantic-program-query-result-v1.schema.json").validate(result)
+    assert len(result["nodes"]) == len(result["edges"]) == 10
+    assert len(result["related_nodes"]) == 1
+    assert {node["kind"] for node in result["related_nodes"]} == {"type"}
+    assert (json.dumps(result, sort_keys=True) + "\n").encode() == (
+        replay_dir / "field-access-query.jsonl"
+    ).read_bytes()
 
 
 def test_nevergone_runtime_resource_calls_match_independent_instruction_references() -> None:

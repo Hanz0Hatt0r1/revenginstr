@@ -95,6 +95,52 @@ def test_structured_summary_v2_groups_generic_memory_ops_by_kind(tmp_path: Path)
     )
 
 
+def test_structured_summary_preserves_unknown_store_value_source(tmp_path: Path) -> None:
+    stores = tmp_path / "memory-stores.jsonl"
+    stores.write_text(json.dumps({
+        "format": "REVENGINSTR.GhidraMemoryStoreAccess/1",
+        "program_id": "synthetic:analysis",
+        "function_entry": "00401000",
+        "address": "00401024",
+        "time": 8,
+        "opcode": "STORE",
+        "memory_space": "ram",
+        "memory_physical_space": "ram",
+        "memory_width_bytes": 4,
+        "memory_pointer_width_bytes": 4,
+        "memory_space_size_bits": 32,
+        "memory_addressable_unit_bytes": 1,
+        "pointer_token": "def:00401024:8:4",
+        "root_parameter_index": 0,
+        "offset_bytes": 316,
+        "location_status": "parameter_rooted_constant_offset",
+        "destination_pattern": "ptradd",
+        "address_expression_ops": [{
+            "address": "00401024", "time": 8, "opcode": "PTRADD",
+        }],
+    }) + "\n", encoding="utf-8")
+    [record] = build_function_effect_ir(
+        "synthetic:analysis", memory_store_access_jsonl=stores,
+    )
+    serialized = (json.dumps(record, sort_keys=True) + "\n").encode()
+    [summary] = build_function_summaries(
+        [record], source_sha256=hashlib.sha256(serialized).hexdigest(),
+    )
+
+    Draft202012Validator.check_schema(SCHEMA)
+    Draft202012Validator(SCHEMA).validate(summary)
+    [claim] = summary["claims"]
+    assert claim["attributes"] == {
+        "parameter_index": 0,
+        "field_offset": "0x13c",
+        "value_size": 4,
+        "source_parameter_index": None,
+    }
+    assert claim["support"][0]["provenance"]["source_format"] == (
+        "REVENGINSTR.GhidraMemoryStoreAccess/1"
+    )
+
+
 def test_structured_summary_rejects_bad_effects_and_duplicate_functions() -> None:
     record = _effect_records()[0]
     bad = json.loads(json.dumps(record))

@@ -36,8 +36,8 @@
     {
       "id": "function_effect_ir_schema",
       "path": "../../../../schemas/function-effect-ir-v1.schema.json",
-      "bytes": 5991,
-      "sha256": "d7e92fd6504c758fa4bc25f9a74c017f52aed9e4e61f11d0367a64db48cc721e"
+      "bytes": 6052,
+      "sha256": "67ecb001d47a6d4ecc273b257bc62f7f6c6d06e286faf924c91c4ef925784779"
     },
     {
       "id": "type_layout_schema",
@@ -54,8 +54,8 @@
     {
       "id": "semantic_graph_schema_v3",
       "path": "../../../../schemas/semantic-program-graph-v3.schema.json",
-      "bytes": 19590,
-      "sha256": "587dfeb129ff13ec8ab8940b17fa7541db05a4e850cb484fbc769551d466e9d7"
+      "bytes": 19651,
+      "sha256": "674ea89ab173734971cb6206870064a71b4047fcbddf7a7e9f20d921bace4f5f"
     },
     {
       "id": "query_result_schema",

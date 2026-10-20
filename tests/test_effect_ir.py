@@ -102,6 +102,85 @@ def test_function_effect_ir_v2_includes_exact_generic_memory_operations(tmp_path
         build_function_effect_ir("p", parameter_store_tsv=STORE_FIXTURE, include_generic_memory_ops=True)
 
 
+def test_function_effect_ir_projects_parameter_rooted_memory_store_accesses(tmp_path: Path) -> None:
+    source = tmp_path / "memory-stores.jsonl"
+    common = {
+        "format": "REVENGINSTR.GhidraMemoryStoreAccess/1",
+        "program_id": "sample:analysis",
+        "function_entry": "00401000",
+        "address": "00401024",
+        "time": 8,
+        "opcode": "STORE",
+        "memory_space": "ram",
+        "memory_physical_space": "ram",
+        "memory_width_bytes": 4,
+        "memory_pointer_width_bytes": 4,
+        "memory_space_size_bits": 32,
+        "memory_addressable_unit_bytes": 1,
+        "pointer_token": "def:00401024:8:4",
+        "root_parameter_index": None,
+        "offset_bytes": None,
+        "location_status": "unresolved",
+        "destination_pattern": "unresolved",
+        "address_expression_ops": [{
+            "address": "00401024", "time": 8, "opcode": "PTRADD",
+        }],
+    }
+    rooted = {
+        **common,
+        "address": "00401028",
+        "time": 12,
+        "pointer_token": "def:00401028:12:4",
+        "root_parameter_index": 0,
+        "offset_bytes": 316,
+        "location_status": "parameter_rooted_constant_offset",
+        "destination_pattern": "ptradd",
+        "address_expression_ops": [{
+            "address": "00401028", "time": 12, "opcode": "PTRADD",
+        }],
+    }
+    source.write_text(
+        "\n".join(json.dumps(row) for row in (common, rooted)) + "\n",
+        encoding="utf-8",
+    )
+
+    [record] = build_function_effect_ir(
+        "sample:analysis", memory_store_access_jsonl=source,
+    )
+    Draft202012Validator(SCHEMA).validate(record)
+    [effect] = record["effects"]
+    assert record["format"] == "REVENGINSTR.FunctionEffectIR/1"
+    assert effect["kind"] == "parameter_field_write"
+    assert effect["parameter_index"] == 0
+    assert effect["field_offset"] == "0x13c"
+    assert effect["value_size"] == 4
+    assert effect["source_parameter_index"] is None
+    assert effect["provenance"] == {
+        "source_format": "REVENGINSTR.GhidraMemoryStoreAccess/1",
+        "artifact_sha256": sha256(source.read_bytes()).hexdigest(),
+        "record_index": 2,
+    }
+    output = tmp_path / "effects.jsonl"
+    assert main([
+        "--program-id", "sample:analysis",
+        "--memory-store-access", str(source),
+        "--output", str(output),
+    ]) == 0
+    assert json.loads(output.read_text(encoding="utf-8")) == record
+
+    with pytest.raises(ValueError, match="program_id does not match"):
+        build_function_effect_ir("another-program", memory_store_access_jsonl=source)
+
+    for field in (
+        "memory_space", "memory_width_bytes", "memory_pointer_width_bytes",
+        "memory_space_size_bits", "memory_addressable_unit_bytes",
+    ):
+        malformed_root = {**rooted, field: None}
+        source.write_text(json.dumps(malformed_root) + "\n", encoding="utf-8")
+        with pytest.raises(ValueError, match=f"invalid {field}"):
+            build_function_effect_ir("sample:analysis", memory_store_access_jsonl=source)
+
+
 def test_function_effect_ir_fails_closed_on_bad_inputs_and_budget(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="at least one input"):
         build_function_effect_ir("p")
