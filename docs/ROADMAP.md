@@ -1558,6 +1558,19 @@ accepted types are inferred, and no graph edge is accepted. This does not
 establish direct-versus-inherited ownership or close M10.5. See
 [`CCJoyStick` owner-method field replay](evidence/semantic-program-graph-v3/nevergone-ccjoystick-owner-methods-20261020/README.md).
 
+A combined touch-pipeline replay now includes the two vtable callback methods
+and the three touch helpers beside those eight owner methods. Read-only P-code
+produces exact paths from `ccTouchBegan` to `containsTouchLocation` and
+`onTouchBegan`, and from `ccTouchEnded` to `onTouchEnd`; a field query connects
+the reviewed `+0x11c`–`+0x128` rectangle components and `+0x12c` threshold
+accesses to the exploratory graph. The 13-function graph has 276 nodes, 407
+edges, and 53 provenance-linked field-to-type joins; none is accepted, and all
+unresolved `CALLIND` frontiers remain barriers. The exported graph and queries
+rebuild byte-for-byte from the pinned evidence. This broadens one consumer
+subsystem's structural reconstruction without proving runtime touch behavior
+or closing M10.5. See the
+[`CCJoyStick` touch-pipeline replay](evidence/semantic-program-graph-v3/nevergone-ccjoystick-touch-pipeline-20261020/README.md).
+
 `revenginstr-semantic-program-query` now selects nodes and edges by kind,
 relation, indirect-call state, conflict state, function entry, operation
 address, field offset, type id, and provenance id. It emits a hash-pinned
