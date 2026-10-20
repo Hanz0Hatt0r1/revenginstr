@@ -2021,13 +2021,23 @@ exact pairs. There are no recovered parameter-value stores. `/7` yields 12
 `store_not_dominating_load` rows. For one representative, `STORE@0041e466`
 (`param0+0x3f4`, 4 bytes) reaches `LOAD@0041e4ae` on blocks `[76,78,79,80]`;
 the STORE's value parameter remains unknown. Repeated analyzer replay was
-byte-identical. This validates the same-function memory-only store path, but
-does not establish interprocedural alias filtering, runtime execution, or
-memory reaching-definition. The full capture and hashes are in
+byte-identical. This validates the same-function memory-only store path. A
+targeted Parameter ID replay on a disposable project copy then traced the
+`0041eda4` to `0041edb2` pair across the `0041edad` call to `0088bc20`. Its
+exact caller root maps callee parameter 0 to caller parameter 0 plus `0x7b0`;
+the callee's two rooted STOREs resolve to caller offsets `0x7bc` and `0xe20`,
+disjoint from the tracked four-byte field at `0x1240`. The effect builder
+classifies that call `no_aliasing_memory_effect`, and the targeted `/7` audit
+moves the pair from `possible_intervening_memory_effect` to
+`unique_cfg_store_candidate`. The other 133 call-site rows retain conservative
+missing-flow or possible-alias statuses. Repeated analyzer replay was
+byte-identical. This is one structural interprocedural result; it does not
+establish branch feasibility, runtime execution, or memory reaching-definition.
+The full capture and hashes are in
 [`field-store-load-shift-0041dd40`](evidence/field-store-load-shift-0041dd40/README.md).
 
-**Next:** continue bounded CFG/4 replays, especially for witnesses that cross
-calls. Prefer cases with exact caller roots for every written callee formal;
-prove byte-range disjointness only from those roots and memory facts. Keep the
-incomplete `0064bb70` effects as barriers, and do not infer alias facts from
-decompiler text or instruction-level corpus labels.
+**Next:** expand positive CFG/4 replays to other call targets and caller-root
+shapes, while retaining fail-closed behavior for incomplete closures such as
+`0064bb70`. Prove byte-range disjointness only from exact roots and memory
+facts; do not infer alias facts from decompiler text or instruction-level
+corpus labels.

@@ -63,6 +63,7 @@ uv run revenginstr-receiver-field-store-load-dominance-audit \
   --output "$CAPTURE/dominance-v7.jsonl"
 ```
 
-This validates the single-function, memory-only store boundary. It does not
-close the separate roadmap gap for positive interprocedural call-effect
-filtering.
+This validates the single-function, memory-only store boundary. A separate
+Parameter ID replay checks one positive interprocedural call-effect case using
+fresh caller roots and callee memory facts; see
+[`interprocedural-parameter-id-capture`](interprocedural-parameter-id-capture/README.md).

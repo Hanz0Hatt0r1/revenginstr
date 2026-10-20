@@ -177,8 +177,16 @@ closures whose every STORE is proven outside the tracked byte range can remove
 a direct-call barrier. Run `revenginstr-interprocedural-memory-effects` with
 one `--pcode-flow ENTRY TSV` argument per function in the bounded closure, then
 pass its JSONL output to the dominance audit with
-`--interprocedural-memory-effect-jsonl`. Freeze complete sidecar inputs and
-`/5` output before adopting positive alias filtering in a consumer.
+`--interprocedural-memory-effect-jsonl`. RevEngInstr PR #185 now freezes one
+positive exact-root replay: the memory-only pair in Shift `0041dd40` crosses a
+call to `0088bc20`, whose two rooted STORE ranges both resolve disjoint from
+the tracked field. The call is classified `no_aliasing_memory_effect`, and
+dominance `/7` moves the targeted pair from
+`possible_intervening_memory_effect` to `unique_cfg_store_candidate`. Other
+call-site rows retain their missing-flow and possible-alias barriers; the
+result does not establish runtime execution or memory value flow. See
+[`field-store-load-shift-0041dd40`](evidence/field-store-load-shift-0041dd40/README.md)
+for the frozen inputs, outputs, and hashes.
 
 `GhidraInterproceduralMemoryEffect/2` adds source-linked `INDIRECT` handling
 from CFG/4. `/3` additionally models the standard three-argument `_memset`
@@ -237,6 +245,7 @@ reports 12 unique structural candidates, 10 possible intervening effects, and
 65 non-dominating stores. Its representative `STORE@0041e466` to
 `LOAD@0041e4ae` pair is rooted at parameter 0 plus `0x3f4`; the STORE has no
 recovered value parameter, and its witness crosses no memory effect. This
-validates the same-function `/7` boundary only. See
+validates the same-function `/7` boundary. A targeted interprocedural capture
+for the same function validates one exact-root call-effect filter; see
 [`field-store-load-shift-0041dd40`](evidence/field-store-load-shift-0041dd40/README.md)
 for the capture and deterministic replay.

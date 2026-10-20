@@ -1,0 +1,58 @@
+openjdk version "21.0.12.1" 2026-08-18
+OpenJDK Runtime Environment (build 21.0.12.1+1)
+OpenJDK 64-Bit Server VM (build 21.0.12.1+1, mixed mode)
+INFO  Using log config file: jar:file:/opt/ghidra/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)
+INFO  Using log file: /home/pes/.config/ghidra/ghidra_12.1.2_DEV/application.log (LoggingInitialization)
+INFO  Loading user preferences: /home/pes/.config/ghidra/ghidra_12.1.2_DEV/preferences (Preferences)
+INFO  Searching for classes... (ClassSearcher)
+INFO  Class search complete (1499 ms) (ClassSearcher)
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)
+INFO  Initializing Random Number Generator... (SecureRandomFactory)
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)
+INFO  Headless startup complete (3230 ms) (AnalyzeHeadless)
+INFO  Class searcher loaded 59 extension points (21 false positives) (ClassSearcher)
+INFO  HEADLESS Script Paths:
+    /tmp/tmp.0IeKvE9n6S
+    /opt/ghidra/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/JVM/ghidra_scripts
+    /opt/ghidra/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/VersionTracking/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/PyGhidra/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /home/pes/.config/ghidra/ghidra_12.1.2_DEV/Extensions/Lisa/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/Atmel/ghidra_scripts
+    /opt/ghidra/Ghidra/Debug/Debugger/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/Decompiler/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/FunctionID/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/PIC/ghidra_scripts
+    /home/pes/.config/ghidra/ghidra_12.1.2_DEV/Extensions/SleighDevTools/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/BSim/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/BytePatterns/ghidra_scripts
+    /home/pes/.config/ghidra/ghidra_12.1.2_DEV/Extensions/Jython/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /home/pes/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/DATA/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/Base/ghidra_scripts
+    /home/pes/.config/ghidra/ghidra_12.1.2_DEV/Extensions/MachineLearning/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/PDB/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/8051/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/FileFormats/ghidra_scripts (HeadlessAnalyzer)
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)
+INFO  Opening existing project: /home/pes/ghidra_projects/revenginstr-paramid-shift-0041dd40/nfs_shift_vulkan_runtime_20261018 (HeadlessAnalyzer)
+INFO  Opening project: /home/pes/ghidra_projects/revenginstr-paramid-shift-0041dd40/nfs_shift_vulkan_runtime_20261018 (HeadlessProject)
+INFO  REPORT: Processing project file: /SHIFT.exe (HeadlessAnalyzer)
+INFO  REPORT: Execute script: ApplyDecompilerParameterId.java '0088bc20' '0041dd40'  (HeadlessAnalyzer)
+INFO  SCRIPT: /tmp/tmp.0IeKvE9n6S/ApplyDecompilerParameterId.java (HeadlessAnalyzer)
+INFO  ApplyDecompilerParameterId.java> GHIDRA_PARAMETER_ID_FUNCTION=0088bc20 (GhidraScript)
+INFO  ApplyDecompilerParameterId.java> GHIDRA_PARAMETER_ID_SIGNATURE_BEFORE=undefined FUN_0088bc20(void) (GhidraScript)
+INFO  ApplyDecompilerParameterId.java> GHIDRA_PARAMETER_ID_SIGNATURE_AFTER=undefined __thiscall FUN_0088bc20(void * this, undefined4 param_1) (GhidraScript)
+INFO  ApplyDecompilerParameterId.java> GHIDRA_PARAMETER_ID_FUNCTION=0041dd40 (GhidraScript)
+INFO  ApplyDecompilerParameterId.java> GHIDRA_PARAMETER_ID_SIGNATURE_BEFORE=undefined FUN_0041dd40(void) (GhidraScript)
+INFO  ApplyDecompilerParameterId.java> GHIDRA_PARAMETER_ID_SIGNATURE_AFTER=undefined __thiscall FUN_0041dd40(void * this, float param_1) (GhidraScript)
+INFO  ApplyDecompilerParameterId.java> GHIDRA_PARAMETER_ID_FUNCTION_COUNT=2 (GhidraScript)
+INFO  ApplyDecompilerParameterId.java> GHIDRA_PARAMETER_ID_COMPLETE=true (GhidraScript)
+INFO  REPORT: Save succeeded for processed file: /SHIFT.exe (HeadlessAnalyzer)
