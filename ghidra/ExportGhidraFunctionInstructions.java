@@ -1,4 +1,5 @@
 import ghidra.app.script.GhidraScript;
+import ghidra.app.util.PseudoDisassembler;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.listing.FunctionManager;
@@ -19,14 +20,35 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.security.MessageDigest;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.zip.GZIPOutputStream;
 
 /** Export targeted or address-ordered corpus instruction and machine-P-code evidence. */
 public class ExportGhidraFunctionInstructions extends GhidraScript {
     private static final String FORMAT = "REVENGINSTR.GhidraFunctionInstructions/1";
     private static final String CORPUS_FORMAT = "REVENGINSTR.GhidraFunctionInstructionCorpus/1";
+    private static final long MAX_RECOVERED_BYTES = 0x1000;
     private Listing listing;
     private FunctionManager functions;
+    private PseudoDisassembler pseudoDisassembler;
+    private final Map<Address, Boolean> returningFunctionCache = new HashMap<>();
+
+    private static class FunctionInstructions {
+        final List<Instruction> ordered;
+        final Set<Address> restoredCalls;
+
+        FunctionInstructions(TreeMap<Address, Instruction> instructions, Set<Address> restoredCalls) {
+            this.ordered = new ArrayList<>(instructions.values());
+            this.restoredCalls = restoredCalls;
+        }
+    }
 
     @Override
     protected void run() throws Exception {
@@ -45,6 +67,7 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
 
         listing = currentProgram.getListing();
         functions = currentProgram.getFunctionManager();
+        pseudoDisassembler = new PseudoDisassembler(currentProgram);
         if ("--all".equals(args[1])) {
             if (args.length > 4) throw new IllegalArgumentException("--all accepts only offset and limit");
             long offset = args.length > 2 ? parseBound(args[2], "offset") : 0;
@@ -62,9 +85,15 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
             for (int i = 1; i < args.length; i++) {
                 monitor.checkCancelled();
                 String token = args[i];
+                boolean entrypoint = isEntrypointToken(token);
                 Address address = parseTargetAddress(token);
                 Function function = address == null ? null : functions.getFunctionAt(address);
-                if (function == null) {
+                if (function == null && entrypoint && address != null) {
+                    if (writeEntrypointRow(out, token, address) == 0) {
+                        missing.add(token);
+                        out.write(missingRow(token, address));
+                    }
+                } else if (function == null) {
                     missing.add(token);
                     out.write(missingRow(token, address));
                 } else {
@@ -163,6 +192,7 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
     private Address parseTargetAddress(String token) {
         if (token == null) return null;
         String value = token.trim();
+        if (value.regionMatches(true, 0, "entry:", 0, 6)) value = value.substring(6).trim();
         if (value.startsWith("FUN_") || value.startsWith("fun_")) value = value.substring(4);
         if (value.startsWith("0x") || value.startsWith("0X")) value = value.substring(2);
         try {
@@ -172,7 +202,12 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
         }
     }
 
+    private boolean isEntrypointToken(String token) {
+        return token != null && token.trim().regionMatches(true, 0, "entry:", 0, 6);
+    }
+
     private int writeFunctionRow(BufferedWriter out, String requested, Function function) throws Exception {
+        FunctionInstructions exported = collectFunctionInstructions(function);
         out.write("{\"format\":" + q(FORMAT) +
             ",\"program\":" + q(currentProgram.getName()) +
             ",\"requested\":" + q(requested) +
@@ -183,24 +218,207 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
             ",\"size\":" + function.getBody().getNumAddresses() +
             ",\"calling_convention\":" + q(function.getCallingConventionName()) +
             "},\"instruction_count\":");
-        int count = 0;
-        InstructionIterator iterator = listing.getInstructions(function.getBody(), true);
-        while (iterator.hasNext()) { monitor.checkCancelled(); iterator.next(); count++; }
+        int count = exported.ordered.size();
         out.write(Integer.toString(count));
         out.write(",\"instructions\":[");
-        iterator = listing.getInstructions(function.getBody(), true);
         boolean first = true;
         int written = 0;
-        while (iterator.hasNext()) {
+        for (Instruction instruction : exported.ordered) {
             monitor.checkCancelled();
             if (!first) out.write(',');
             first = false;
-            out.write(instructionJson(iterator.next()));
+            out.write(instructionJson(instruction,
+                exported.restoredCalls.contains(instruction.getAddress())));
             written++;
         }
         if (written != count) throw new IllegalStateException("function instruction count changed during export");
         out.write("]}");
         return count;
+    }
+
+    private FunctionInstructions collectFunctionInstructions(Function function) throws Exception {
+        TreeMap<Address, Instruction> instructions = new TreeMap<>();
+        InstructionIterator iterator = listing.getInstructions(function.getBody(), true);
+        while (iterator.hasNext()) {
+            monitor.checkCancelled();
+            Instruction instruction = iterator.next();
+            instructions.put(instruction.getAddress(), instruction);
+        }
+
+        Set<Address> restoredCalls = new HashSet<>();
+        ArrayDeque<Instruction> pending = new ArrayDeque<>();
+        for (Instruction instruction : instructions.values()) {
+            if (isReturningDirectCall(instruction)) pending.addLast(instruction);
+        }
+
+        while (!pending.isEmpty()) {
+            monitor.checkCancelled();
+            Instruction call = pending.removeFirst();
+            Address nextAddress = call.getAddress().add(call.getLength());
+            Instruction next = instructionAt(nextAddress);
+            if (next == null || !isSafeRecoveryAddress(function, nextAddress, nextAddress)) continue;
+
+            restoredCalls.add(call.getAddress());
+            ArrayDeque<Address> work = new ArrayDeque<>();
+            Set<Address> visited = new HashSet<>();
+            work.addLast(nextAddress);
+            long recoveredBytes = 0;
+            while (!work.isEmpty()) {
+                monitor.checkCancelled();
+                Address address = work.removeFirst();
+                if (instructions.containsKey(address) || !visited.add(address) ||
+                        !isSafeRecoveryAddress(function, address, nextAddress)) continue;
+                Instruction instruction = instructionAt(address);
+                if (instruction == null) continue;
+                recoveredBytes += instruction.getLength();
+                if (recoveredBytes > MAX_RECOVERED_BYTES) break;
+                instructions.put(address, instruction);
+
+                if (isReturningDirectCall(instruction)) {
+                    pending.addLast(instruction);
+                    continue;
+                }
+                addRecoverySuccessors(instruction, work);
+            }
+        }
+        return new FunctionInstructions(instructions, restoredCalls);
+    }
+
+    private int writeEntrypointRow(BufferedWriter out, String requested, Address entry) throws Exception {
+        FunctionInstructions exported = collectEntrypointInstructions(entry);
+        if (exported.ordered.isEmpty()) return 0;
+        int size = 0;
+        for (Instruction instruction : exported.ordered) size += instruction.getLength();
+        out.write("{\"format\":" + q(FORMAT) +
+            ",\"program\":" + q(currentProgram.getName()) +
+            ",\"requested\":" + q(requested) +
+            ",\"resolved_address\":" + q(addr(entry)) +
+            ",\"found\":true,\"function\":{\"address\":" + q(addr(entry)) +
+            ",\"name\":" + q("ENTRY_" + entry.toString(false, false)) +
+            ",\"size\":" + size + ",\"calling_convention\":null},\"instruction_count\":" +
+            exported.ordered.size() + ",\"instructions\":[");
+        boolean first = true;
+        for (Instruction instruction : exported.ordered) {
+            monitor.checkCancelled();
+            if (!first) out.write(',');
+            first = false;
+            out.write(instructionJson(instruction,
+                exported.restoredCalls.contains(instruction.getAddress())));
+        }
+        out.write("]}");
+        return exported.ordered.size();
+    }
+
+    private FunctionInstructions collectEntrypointInstructions(Address entry) throws Exception {
+        TreeMap<Address, Instruction> instructions = new TreeMap<>();
+        Set<Address> restoredCalls = new HashSet<>();
+        ArrayDeque<Address> work = new ArrayDeque<>();
+        Set<Address> visited = new HashSet<>();
+        work.addLast(entry);
+        long recoveredBytes = 0;
+        while (!work.isEmpty()) {
+            monitor.checkCancelled();
+            Address address = work.removeFirst();
+            if (instructions.containsKey(address) || !visited.add(address) ||
+                    !isSafeEntrypointAddress(entry, address)) continue;
+            Instruction instruction = instructionAt(address);
+            if (instruction == null) continue;
+            recoveredBytes += instruction.getLength();
+            if (recoveredBytes > MAX_RECOVERED_BYTES) break;
+            instructions.put(address, instruction);
+            if (isReturningDirectCall(instruction)) {
+                Address fallthrough = instruction.getAddress().add(instruction.getLength());
+                if (instructionAt(fallthrough) != null &&
+                        isSafeEntrypointAddress(entry, fallthrough)) {
+                    restoredCalls.add(instruction.getAddress());
+                    work.addLast(fallthrough);
+                }
+            } else {
+                addRecoverySuccessors(instruction, work);
+            }
+        }
+        return new FunctionInstructions(instructions, restoredCalls);
+    }
+
+    private boolean isSafeEntrypointAddress(Address entry, Address address) {
+        long distance;
+        try {
+            distance = address.subtract(entry);
+        } catch (RuntimeException exc) {
+            return false;
+        }
+        if (distance < -MAX_RECOVERED_BYTES || distance > MAX_RECOVERED_BYTES) return false;
+        Function owner = functions.getFunctionContaining(address);
+        if (owner != null) return owner.getEntryPoint().equals(entry);
+        return functions.getFunctionAt(address) == null;
+    }
+
+    private Instruction instructionAt(Address address) {
+        Instruction instruction = listing.getInstructionAt(address);
+        if (instruction != null) return instruction;
+        try {
+            return pseudoDisassembler.disassemble(address);
+        } catch (Exception exc) {
+            return null;
+        }
+    }
+
+    private boolean isSafeRecoveryAddress(Function function, Address address, Address origin) {
+        long distance;
+        try {
+            distance = address.subtract(origin);
+        } catch (RuntimeException exc) {
+            return false;
+        }
+        if (distance < -MAX_RECOVERED_BYTES || distance > MAX_RECOVERED_BYTES) return false;
+        Function owner = functions.getFunctionContaining(address);
+        if (owner != null && !owner.getEntryPoint().equals(function.getEntryPoint())) return false;
+        Function entry = functions.getFunctionAt(address);
+        return entry == null || entry.getEntryPoint().equals(function.getEntryPoint());
+    }
+
+    private void addRecoverySuccessors(Instruction instruction, ArrayDeque<Address> work) {
+        String flow = instruction.getFlowType().toString();
+        if ("TERMINATOR".equals(flow) || "CALL_TERMINATOR".equals(flow) ||
+                "COMPUTED_CALL_TERMINATOR".equals(flow)) return;
+        if ("UNCONDITIONAL_JUMP".equals(flow) || "COMPUTED_JUMP".equals(flow) ||
+                "CONDITIONAL_JUMP".equals(flow)) {
+            for (Address target : instruction.getFlows()) work.addLast(target);
+            if (!"CONDITIONAL_JUMP".equals(flow)) return;
+        }
+        if ("UNCONDITIONAL_CALL".equals(flow) || "COMPUTED_CALL".equals(flow) ||
+                "FALL_THROUGH".equals(flow) || "CONDITIONAL_JUMP".equals(flow)) {
+            Address fallthrough = instruction.getAddress().add(instruction.getLength());
+            work.addLast(fallthrough);
+        }
+    }
+
+    private boolean isReturningDirectCall(Instruction instruction) throws Exception {
+        if (!"CALL_TERMINATOR".equals(instruction.getFlowType().toString()) ||
+                !"CALL".equalsIgnoreCase(instruction.getMnemonicString())) return false;
+        Address[] targets = instruction.getFlows();
+        if (targets.length != 1) return false;
+        Function target = functions.getFunctionAt(targets[0]);
+        if (target == null) target = functions.getFunctionContaining(targets[0]);
+        return target != null && functionHasReturn(target);
+    }
+
+    private boolean functionHasReturn(Function function) throws Exception {
+        Address entry = function.getEntryPoint();
+        Boolean cached = returningFunctionCache.get(entry);
+        if (cached != null) return cached;
+        InstructionIterator iterator = listing.getInstructions(function.getBody(), true);
+        while (iterator.hasNext()) {
+            monitor.checkCancelled();
+            for (PcodeOp operation : iterator.next().getPcode()) {
+                if (operation.getOpcode() == PcodeOp.RETURN) {
+                    returningFunctionCache.put(entry, true);
+                    return true;
+                }
+            }
+        }
+        returningFunctionCache.put(entry, false);
+        return false;
     }
 
     private String missingRow(String requested, Address address) {
@@ -211,7 +429,7 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
             ",\"found\":false,\"function\":null,\"instruction_count\":0,\"instructions\":[]}";
     }
 
-    private String instructionJson(Instruction instruction) throws MemoryAccessException {
+    private String instructionJson(Instruction instruction, boolean restoredCall) throws MemoryAccessException {
         StringBuilder operands = new StringBuilder("[");
         for (int i = 0; i < instruction.getNumOperands(); i++) {
             if (i > 0) operands.append(',');
@@ -253,13 +471,16 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
         }
         pcode.append(']');
 
+        Address fallthrough = restoredCall ? instruction.getAddress().add(instruction.getLength()) :
+            instruction.getFallThrough();
+        String flowType = restoredCall ? "UNCONDITIONAL_CALL" : instruction.getFlowType().toString();
         return "{\"address\":" + q(addr(instruction.getAddress())) +
             ",\"bytes\":" + q(hex(instruction.getBytes())) +
             ",\"mnemonic\":" + q(instruction.getMnemonicString()) +
             ",\"text\":" + q(instruction.toString()) +
             ",\"operands\":" + operands +
-            ",\"flow_type\":" + q(instruction.getFlowType().toString()) +
-            ",\"fallthrough\":" + q(addr(instruction.getFallThrough())) +
+            ",\"flow_type\":" + q(flowType) +
+            ",\"fallthrough\":" + q(addr(fallthrough)) +
             ",\"flows\":" + flows +
             ",\"references\":" + references +
             ",\"pcode\":" + pcode + "}";

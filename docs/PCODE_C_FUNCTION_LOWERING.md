@@ -43,6 +43,13 @@ width per logical argument. For a wide result, the callback writes
 independent of target endianness. This keeps existing scalar callbacks and the
 context layout unchanged.
 
+For little-endian x86-32, ordinary `CALL` and `CALLIND` lowerings reuse the
+instruction's fallthrough slot when its P-code has already pushed it onto guest
+`ESP`; simplified inputs without that slot get one from the lowerer. A guest
+callee's P-code `RET` consumes the slot. If an import handler leaves `ESP` on
+it, the lowerer consumes just that slot. Tail calls reuse the caller's return
+slot. Import-specific argument cleanup remains the consumer's responsibility.
+
 The current subset covers scalar varnodes up to 8 bytes; raw 10-byte and
 16-byte copy, memory, bitwise, extension, shift, and extraction operations;
 binary80 conversions and arithmetic on hosts whose `long double` can represent
@@ -53,7 +60,8 @@ and 8-byte floating arithmetic/conversions, `LOAD`,
 `STORE`, direct conditional and unconditional branches within the function,
 same-instruction conditional repeat branches, P-code-relative branches within
 one instruction, computed jumps, direct
-and indirect calls through the host `RviPcodeContext.call` callback, tail calls,
+and indirect calls through the host `RviPcodeContext.call` callback, x86-32
+guest return-slot handling for ordinary calls, tail calls,
 raw `RETURN`, x86 `WAIT` instructions with no P-code, and `CALLOTHER` through
 the host `RviPcodeContext.userop` callback, keyed by Ghidra's language userop
 index. Function-local P-code unique
