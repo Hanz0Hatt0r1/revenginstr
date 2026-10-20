@@ -230,3 +230,13 @@ allow `source_parameter_index: null`; dominance requires the same operation,
 root, and offset in its hash-pinned memory-store sidecar. Without that
 corroboration, the audit returns `incomplete_evidence`. Calls and all other
 effects keep the existing conservative treatment.
+
+The fresh Shift `0041dd40` replay in RevEngInstr PR #185 exercises this
+memory-only path with 53 exact operation facts and 87 same-field pairs. `/7`
+reports 12 unique structural candidates, 10 possible intervening effects, and
+65 non-dominating stores. Its representative `STORE@0041e466` to
+`LOAD@0041e4ae` pair is rooted at parameter 0 plus `0x3f4`; the STORE has no
+recovered value parameter, and its witness crosses no memory effect. This
+validates the same-function `/7` boundary only. See
+[`field-store-load-shift-0041dd40`](evidence/field-store-load-shift-0041dd40/README.md)
+for the capture and deterministic replay.

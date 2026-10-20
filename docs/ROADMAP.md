@@ -2013,6 +2013,19 @@ is byte-identical across repeated replay. Full inputs, outputs, and hashes are
 in
 [`field-store-load-shift-00a3dda0`](evidence/field-store-load-shift-00a3dda0/README.md).
 
+**Eighth CFG/4 replay:** Shift function `0041dd40` was freshly exported from
+the saved project in read-only mode. The 53 memory-store facts include 51
+parameter-rooted constant-offset locations; the 76 parameter loads form 87
+exact pairs. There are no recovered parameter-value stores. `/7` yields 12
+`unique_cfg_store_candidate`, 10 `possible_intervening_memory_effect`, and 65
+`store_not_dominating_load` rows. For one representative, `STORE@0041e466`
+(`param0+0x3f4`, 4 bytes) reaches `LOAD@0041e4ae` on blocks `[76,78,79,80]`;
+the STORE's value parameter remains unknown. Repeated analyzer replay was
+byte-identical. This validates the same-function memory-only store path, but
+does not establish interprocedural alias filtering, runtime execution, or
+memory reaching-definition. The full capture and hashes are in
+[`field-store-load-shift-0041dd40`](evidence/field-store-load-shift-0041dd40/README.md).
+
 **Next:** continue bounded CFG/4 replays, especially for witnesses that cross
 calls. Prefer cases with exact caller roots for every written callee formal;
 prove byte-range disjointness only from those roots and memory facts. Keep the
