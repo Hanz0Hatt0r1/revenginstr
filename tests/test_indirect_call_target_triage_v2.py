@@ -118,14 +118,36 @@ def test_retained_shift_replay_rebuilds_exact_symbolic_rows(monkeypatch: pytest.
         for row in rebuilt if row["symbolic_target_candidates"]
     }
     assert annotated == {
+        ("00907467", "00907485"): [("SHIFT.exe", "__exit", [1])],
+        ("0090748b", "009074ae"): [("mscoree.dll", "CorExitProcess", [1])],
         ("0090aa27", "0090aa89"): [("KERNEL32.DLL", "EncodePointer", [2])],
         ("0090aa9e", "0090ab00"): [("KERNEL32.DLL", "DecodePointer", [2])],
         ("009189cd", "00918a4c"): [
             ("KERNEL32.DLL", "InitializeCriticalSectionAndSpinCount", [2, 3]),
             ("SHIFT.exe", "___crtInitCritSecNoSpinCount@8", [1, 2]),
         ],
+        ("0091c073", "0091c17c"): [("USER32.DLL", "GetProcessWindowStation", [1])],
+        ("0091c073", "0091c18f"): [("USER32.DLL", "GetUserObjectInformationA", [1])],
+        ("0091c073", "0091c1e3"): [("USER32.DLL", "GetActiveWindow", [1])],
+        ("0091c073", "0091c204"): [("USER32.DLL", "GetLastActivePopup", [1])],
+        ("0091c073", "0091c225"): [("USER32.DLL", "MessageBoxA", [1])],
     }
     assert len(rebuilt) == 22
-    assert all(row["classification"] == "mixed_bounded_and_blocked" for row in rebuilt if row["symbolic_target_candidates"])
+    classifications = {
+        (row["function_entry"], row["call_address"]): row["classification"]
+        for row in rebuilt if row["symbolic_target_candidates"]
+    }
+    assert classifications == {
+        ("00907467", "00907485"): "dynamic_barrier_only",
+        ("0090748b", "009074ae"): "dynamic_barrier_only",
+        ("0090aa27", "0090aa89"): "mixed_bounded_and_blocked",
+        ("0090aa9e", "0090ab00"): "mixed_bounded_and_blocked",
+        ("009189cd", "00918a4c"): "mixed_bounded_and_blocked",
+        ("0091c073", "0091c17c"): "dynamic_barrier_only",
+        ("0091c073", "0091c18f"): "dynamic_barrier_only",
+        ("0091c073", "0091c1e3"): "dynamic_barrier_only",
+        ("0091c073", "0091c204"): "dynamic_barrier_only",
+        ("0091c073", "0091c225"): "dynamic_barrier_only",
+    }
     for row in rebuilt:
         Draft202012Validator(SCHEMA).validate(row)

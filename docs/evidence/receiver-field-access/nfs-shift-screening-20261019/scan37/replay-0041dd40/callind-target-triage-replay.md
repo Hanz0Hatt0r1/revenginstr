@@ -60,10 +60,11 @@ partial `KERNEL32.DLL!EncodePointer` and `KERNEL32.DLL!DecodePointer` paths at
 `0090aa89` and `0090ab00`. The helper candidates cover only alternative 2;
 unresolved cache loads remain visible.
 
-A second static pass adds six exact dynamic-call identities:
+The second static pass adds seven exact dynamic-call identities:
 
 | Function | CALLIND | Symbolic target | Alternative |
 | --- | --- | --- | ---: |
+| `00907467` | `00907485` | `SHIFT.exe!__exit` (`0x00907708`) | 1 |
 | `0090748b` | `009074ae` | `mscoree.dll!CorExitProcess` | 1 |
 | `0091c073` | `0091c17c` | `USER32.DLL!GetProcessWindowStation` | 1 |
 | `0091c073` | `0091c18f` | `USER32.DLL!GetUserObjectInformationA` | 1 |
@@ -81,21 +82,30 @@ address-reference export shows only the expected initialization/read uses for
 those five globals in this program image. Static aliases and runtime writes
 cannot be excluded, and no runtime target was observed.
 
+The same pass resolves `__amsg_exit`'s cached target conditionally: the global
+`PTR___exit` has one writer in `__init_pointers`, which passes address
+`0x00907708` to `EncodePointer` and stores the result; `__amsg_exit` later
+loads, decodes, and calls it. Ghidra identifies `0x00907708` as internal
+function `__exit`. The candidate depends on the initializer having run, which
+is not established by this static capture.
+
 The sidecar pins each identity to instruction, defined-string, address-metadata,
 P-code-flow, CALLIND, and (for encoded globals) address-reference rows. The
 retained captures are `callind-blocker-functions.jsonl` (8 functions),
 `callind-blocker-defined-strings.tsv` (11 strings),
 `callind-blocker-api-address-metadata.jsonl` (3 addresses), and
-`callind-blocker-cache-address-references.jsonl` (5 globals). These candidates
-name the statically requested API if the relevant pointer is resolved; they do
-not establish runtime execution, runtime address, or complete target sets.
+`callind-blocker-cache-address-references.jsonl` (5 globals). The `__exit`
+review adds a target-function listing, the initializer's cache write, and a
+reader/writer xref for `PTR___exit`. The API candidates do not establish
+runtime execution, external API addresses, or complete target sets; `__exit`
+remains conditional on initializer execution.
 
 The `/2` replay is
 [`callind-target-triage-v2.jsonl`](callind-target-triage-v2.jsonl), SHA-256
-`b18d7768f6ca525b960c36343ee0b7b722386dd421faf93ea542f90c04ea1272` (22
-rows; nine annotated sites and ten symbolic candidates). Its input sidecar is
+`97f6faf007ddd898179babfea6a85cd30f439bf9541a863a30d0dbd798ddd028` (22
+rows; ten annotated sites and eleven symbolic candidates). Its input sidecar is
 [`callind-symbol-candidates.jsonl`](callind-symbol-candidates.jsonl), SHA-256
-`424dde69fcfd6dc683f31f9f2f08f3a6595202928be4c98e9d67f5af47cd4b27` (9
+`aa1c6fad685e117f001f2a860322417d54d4d75799e92b29d7747adc34b24c25` (10
 rows). Reproduce it from the repository root:
 
 ```sh
