@@ -15,8 +15,9 @@ parameter-rooted memory stores, and 302 retained P-code rows. All six new
 function-flow acquisitions completed. The layout hypothesis grows from 13 to
 19 observed offsets by adding `0xe0`, `0xe4`, `0xe8`, `0x12c`, `0x138`, and
 `0x14c`; its 337-byte observed extent and 340-byte allocation size do not
-change. The other added offsets (`0xe0`, `0xe4`, `0xe8`, `0x12c`, and `0x14c`)
-remain untyped.
+change. The fields at `0xe0`, `0xe4`, and `0xe8` now have reviewed 32-bit
+`data_pointer` candidates from the constructor/destructor vtable writes;
+`0x12c` and `0x14c` remain untyped.
 
 The graph has 168 nodes, 240 edges, and 36 type-to-field joins across the eight
 methods. The scoped gold uses the separate method prototypes, the rebuilt
@@ -29,14 +30,20 @@ runtime behavior. M10.5 remains open.
 
 ## Manually reviewed type candidates
 
-The access traces support four conservative type candidates. The byte at
+The access traces support four conservative scalar type candidates. The byte at
 `+0x138` is cleared by `resetJoyStick` and gates the `onTouchMoved` path; the
 byte at `+0x150` also gates that path. Both are recorded as boolean candidates.
 The values at `+0x13c` and `+0x140` are stored from `FLOAT_DIV` and
 `FLOAT2FLOAT` results in `updateTouchPoint`; `getPower` returns the value loaded
 from `+0x13c`. They are recorded as 32-bit floating-point candidates. The
 review rows pin these interpretations to exact P-code or memory-access records.
-No member names, accepted types, or runtime behavior are inferred.
+Three more fields, `+0xe0`, `+0xe4`, and `+0xe8`, are recorded as 32-bit
+`data_pointer` candidates. The constructor and destructor each write offsets
+`0x1ec`, `0x21c`, and `0x228` within `_ZTV10CCJoyStick` to those fields; the
+symbol and relocation details are pinned in
+[`vtable-pointer-evidence.md`](vtable-pointer-evidence.md). These candidates do
+not identify pointed-to subobject types. No member names, accepted types, or
+runtime behavior are inferred.
 
 ## Reproduce the read-only exports
 

@@ -610,6 +610,10 @@ def test_nevergone_ccjoystick_owner_methods_replay_is_reproducible() -> None:
         raw = paths[artifact_id].read_bytes()
         assert len(raw) == artifact["bytes"]
         assert hashlib.sha256(raw).hexdigest() == artifact["sha256"]
+    vtable_review = paths["vtable_pointer_evidence"].read_text(encoding="utf-8")
+    assert "_ZTV10CCJoyStick` at `0x008e4220` with size" in vtable_review
+    assert "GOT slot `0x0092edfc`" in vtable_review
+    assert "0x008e440c" in vtable_review and "0x008e443c" in vtable_review
 
     def merged_tsv(artifact_ids: list[str]) -> bytes:
         source_rows = [paths[artifact_id].read_text(encoding="utf-8").splitlines() for artifact_id in artifact_ids]
@@ -691,7 +695,7 @@ def test_nevergone_ccjoystick_owner_methods_replay_is_reproducible() -> None:
         assert row["program_id"] == program_id
         assert row["program_sha256"] == manifest["program_sha256"]
         assert row["type_id"] == "nevergone:opaque-object-002a6584"
-    assert len(field_type_rows) == 7
+    assert len(field_type_rows) == 16
     assert {
         (row["offset_bytes"], row["kind"], row["width_bytes"])
         for row in field_type_rows
@@ -700,6 +704,9 @@ def test_nevergone_ccjoystick_owner_methods_replay_is_reproducible() -> None:
         (0x13C, "floating_point", 4),
         (0x140, "floating_point", 4),
         (0x150, "boolean", 1),
+        (0x0E0, "data_pointer", 4),
+        (0x0E4, "data_pointer", 4),
+        (0x0E8, "data_pointer", 4),
     }
     review_pcode_sha = artifacts["pcode_flow"]["sha256"]
     review_memory_sha = artifacts["memory_store_access"]["sha256"]
@@ -736,8 +743,7 @@ def test_nevergone_ccjoystick_owner_methods_replay_is_reproducible() -> None:
                 assert source_row["opcode"] == "FLOAT2FLOAT"
                 store_row = combined_pcode_by_key[("002a5f00", "002a5f88", "147", "STORE")]
                 assert store_row["inputs"].endswith(";" + source_row["output"])
-        else:
-            assert evidence["source_format"] == "REVENGINSTR.GhidraMemoryStoreAccess/1"
+        elif evidence["source_format"] == "REVENGINSTR.GhidraMemoryStoreAccess/1":
             assert evidence["source_sha256"] == review_memory_sha
             key = dict(part.split("=", 1) for part in key_parts[:4])
             source_row = combined_memory_by_key[(
@@ -745,6 +751,11 @@ def test_nevergone_ccjoystick_owner_methods_replay_is_reproducible() -> None:
             )]
             assert source_row["offset_bytes"] == row["offset_bytes"]
             assert source_row["memory_width_bytes"] == row["width_bytes"]
+        else:
+            assert evidence["source_format"] == "Nevergone.CCJoyStickVtablePointerReview/1"
+            assert evidence["evidence_class"] == "human_review"
+            assert evidence["source_sha256"] == artifacts["vtable_pointer_evidence"]["sha256"]
+            assert evidence["source_pointer"] == "vtable-pointer-evidence.md#secondary-address-points"
     keys_by_offset = {
         offset: [row["evidence"]["record_key"] for row in field_type_rows if row["offset_bytes"] == offset]
         for offset in {row["offset_bytes"] for row in field_type_rows}
@@ -756,6 +767,13 @@ def test_nevergone_ccjoystick_owner_methods_replay_is_reproducible() -> None:
     assert "FLOAT2FLOAT" in keys_by_offset[0x140][0]
     assert any("002a65ca" in key for key in keys_by_offset[0x150])
     assert any("002a6058" in key for key in keys_by_offset[0x150])
+    for offset in (0x0E0, 0x0E4, 0x0E8):
+        assert any("function=002a5ea0" in key for key in keys_by_offset[offset])
+        assert any("function=002a5e08" in key for key in keys_by_offset[offset])
+        assert any(
+            row["evidence"]["source_format"] == "Nevergone.CCJoyStickVtablePointerReview/1"
+            for row in field_type_rows if row["offset_bytes"] == offset
+        )
 
     load_schema = _schema("ghidra-parameter-load-field-v1.schema.json")
     raw_loads = list(csv.DictReader(paths["raw_parameter_loads"].open(encoding="utf-8"), delimiter="\t"))
@@ -819,6 +837,9 @@ def test_nevergone_ccjoystick_owner_methods_replay_is_reproducible() -> None:
         (0x13C, "floating_point", 4),
         (0x140, "floating_point", 4),
         (0x150, "boolean", 1),
+        (0x0E0, "data_pointer", 4),
+        (0x0E4, "data_pointer", 4),
+        (0x0E8, "data_pointer", 4),
     }:
         assert any(
             candidate["kind"] == kind and candidate["width_bytes"] == width
