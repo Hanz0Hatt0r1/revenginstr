@@ -1882,10 +1882,24 @@ became a unique CFG candidate. This validates memory-only provenance and
 continued fail-closed call handling; it does not establish memory
 reaching-definition or alias safety.
 
+The same candidate now has a bounded direct-call closure and `/2`
+interprocedural-memory replay. The two calls on the `00689e0a` to `00689e49`
+path reach `0067db80` and `004f5eb0`; both contain STOREs. The latter also
+calls `0042eff7`, whose flow was not exported, so its closure retains the
+unknown `CALL` effect. Exact caller roots map callee parameter 0 to caller
+parameter 0 at `+0x34`, while the observed callee STOREs are rooted at
+parameter 1. The alias audit therefore reports a possible alias for the first
+call and an unknown effect for the second; it proves no non-aliasing writes.
+For the 20 pairs, the 120 call-effect rows contain 20 possible-alias writes,
+40 unknown effects, and 60 calls without callee flow. The `/7` statuses match
+the direct-call-closure replay: 16 stores do not dominate their loads and four
+retain possible intervening effects. No pair becomes a unique candidate.
+This exercises the real nested-call and missing-root barriers without
+weakening the memory-only result.
+
 **Next:** replay CFG/4 on further bounded x86-32 candidates from actual
-parameter-field `STORE` and `LOAD` rows. Compare `/5` and `/6` with the exact
-caller roots and complete memory facts pinned; keep aliasing and unresolved
-effects as barriers. Do not infer alias facts from decompiler text or
-instruction-level corpus labels. The current candidate family remains useful
-for checking that duplicate markers are deduplicated without changing a status
-when a separately classified possible write still lies on the witness.
+parameter-field `STORE` and `LOAD` rows. Prefer a candidate where the tracked
+store dominates a later load and at least one exact callee root maps the
+written formal parameter; this can exercise a supported non-alias proof. Keep
+aliasing and unresolved effects as barriers. Do not infer alias facts from
+decompiler text or instruction-level corpus labels.
