@@ -1438,7 +1438,7 @@ Build consumer-owned gold subgraphs for independently understood subsystems and 
 
 Stretch: accepted-edge precision >=0.98 with useful cross-function/state/object graph coverage across multiple projects.
 
-### Current implementation status (2026-10-19)
+### Current implementation status (2026-10-20)
 
 `SemanticProgramGraph/1` projects `FunctionEffectIR/1` and `/2` into
 deterministic program, function, operation, and parameter-rooted field
@@ -1499,6 +1499,14 @@ The `SemanticProgramGraphGold/1` endpoint contract now also accepts
 member-map associations can be evaluated. The Nevergone member map used by
 the current graph replay is also a graph-construction input; it is not
 independent accuracy evidence, and no field-join evaluation metric is claimed.
+
+A second Nevergone `CCJoyStick` replay now combines `init` and
+`updateTouchPoint`. FunctionEffectIR accepts `GhidraMemoryStoreAccess/1` only
+when it carries an exact parameter root, constant byte offset, and STORE width;
+computed value sources remain unknown. The two-method graph contains 15
+member-map joins and is fully hash-pinned and reproducible. The map remains
+human-review evidence, so this expands queryable structural coverage without
+adding independent field-accuracy evidence or closing M10.5.
 
 `revenginstr-semantic-program-query` now selects nodes and edges by kind,
 relation, indirect-call state, conflict state, function entry, operation
