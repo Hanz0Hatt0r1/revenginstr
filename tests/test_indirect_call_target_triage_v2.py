@@ -122,6 +122,7 @@ def test_retained_shift_replay_rebuilds_exact_symbolic_rows(monkeypatch: pytest.
         ("0090748b", "009074ae"): [("mscoree.dll", "CorExitProcess", [1])],
         ("0090aa27", "0090aa89"): [("KERNEL32.DLL", "EncodePointer", [2])],
         ("0090aa9e", "0090ab00"): [("KERNEL32.DLL", "DecodePointer", [2])],
+        ("0090ac77", "0090ac8c"): [("KERNEL32.DLL", "TlsGetValue", [1])],
         ("0090ac77", "0090acbb"): [("KERNEL32.DLL", "TlsSetValue", [1])],
         ("009189cd", "00918a4c"): [
             ("KERNEL32.DLL", "InitializeCriticalSectionAndSpinCount", [2, 3]),
@@ -143,6 +144,7 @@ def test_retained_shift_replay_rebuilds_exact_symbolic_rows(monkeypatch: pytest.
         ("0090748b", "009074ae"): "dynamic_barrier_only",
         ("0090aa27", "0090aa89"): "mixed_bounded_and_blocked",
         ("0090aa9e", "0090ab00"): "mixed_bounded_and_blocked",
+        ("0090ac77", "0090ac8c"): "dynamic_barrier_only",
         ("0090ac77", "0090acbb"): "dynamic_barrier_only",
         ("009189cd", "00918a4c"): "mixed_bounded_and_blocked",
         ("0091c073", "0091c17c"): "dynamic_barrier_only",

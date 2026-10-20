@@ -1525,19 +1525,19 @@
     },
     {
       "path": "scan37/replay-0041dd40/callind-symbol-candidates.jsonl",
-      "bytes": 36056,
-      "sha256": "14c465bedb02f406409e10b69ea1e21364fe405a14ac30c4f01d43a8a0239cf7",
-      "rows": 11
+      "bytes": 40589,
+      "sha256": "9e1124579118d391cda565647edc402ddda302be7a88e1e72f1eb29621176bc8",
+      "rows": 12
     },
     {
       "path": "scan37/replay-0041dd40/callind-target-triage-replay.md",
-      "bytes": 7281,
-      "sha256": "9c6e3b03d788ba0371d7c6bd68fcaa6e624e5f4b113cb84946d95d3568d57eec"
+      "bytes": 7660,
+      "sha256": "d6b574a0c021e7bd214a01c5e7b921af70d9430c660f1532ac0d5134c4c29883"
     },
     {
       "path": "scan37/replay-0041dd40/callind-target-triage-v2.jsonl",
-      "bytes": 94712,
-      "sha256": "657d80244186842c80698eb4d2ec7b465014b1b9109a2b6aeae3616f56ce78a8",
+      "bytes": 99411,
+      "sha256": "e76ce18d247ce93bc8796efb3f1d5aac95f30ea6bbcab52a1bc1a26d99994b52",
       "rows": 22
     },
     {
@@ -1563,6 +1563,12 @@
       "bytes": 11271,
       "sha256": "d6bbd1344d55099cc5b85a7ab55a4dfba79f7e9542a78421f44604112896c928",
       "rows": 6
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-tls-helper-functions.jsonl",
+      "bytes": 24788,
+      "sha256": "01ce8809fd8128fef39dc45046d8359eb701d69f104335e53f6fe4e16856d015",
+      "rows": 1
     },
     {
       "path": "scan37/replay-0041dd40/cfg-v5-entry-block-replay.md",

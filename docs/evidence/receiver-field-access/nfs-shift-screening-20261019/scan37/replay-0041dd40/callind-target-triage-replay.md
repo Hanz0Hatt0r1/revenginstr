@@ -60,12 +60,13 @@ partial `KERNEL32.DLL!EncodePointer` and `KERNEL32.DLL!DecodePointer` paths at
 `0090aa89` and `0090ab00`. The helper candidates cover only alternative 2;
 unresolved cache loads remain visible.
 
-The second static pass adds eight exact dynamic-call identities:
+The second static pass adds nine exact dynamic-call identities:
 
 | Function | CALLIND | Symbolic target | Alternative |
 | --- | --- | --- | ---: |
 | `00907467` | `00907485` | `SHIFT.exe!__exit` (`0x00907708`) | 1 |
 | `0090748b` | `009074ae` | `mscoree.dll!CorExitProcess` | 1 |
+| `0090ac77` | `0090ac8c` | `KERNEL32.DLL!TlsGetValue` (partial) | 1 |
 | `0090ac77` | `0090acbb` | `KERNEL32.DLL!TlsSetValue` | 1 |
 | `0091c073` | `0091c17c` | `USER32.DLL!GetProcessWindowStation` | 1 |
 | `0091c073` | `0091c18f` | `USER32.DLL!GetUserObjectInformationA` | 1 |
@@ -90,11 +91,16 @@ loads, decodes, and calls it. Ghidra identifies `0x00907708` as internal
 function `__exit`. The candidate depends on the initializer having run, which
 is not established by this static capture.
 
+At `0090ac8c`, helper `0090ab30` reads a TLS slot. If the slot is empty, it
+decodes cached `KERNEL32.DLL!TlsGetValue` from `0x00c321e0`, stores that
+function pointer in the slot through `TlsSetValue`, and returns it; a
+non-empty slot supplies a runtime-specific value instead. The `TlsGetValue`
+annotation is therefore partial, with the slot value unresolved.
+
 At `0090acbb`, `__mtinit` resolves `KERNEL32.DLL!TlsSetValue` through
 `GetProcAddress`, has the direct imported pointer as a fallback, then encodes
 and stores the pointer in `0x00c321e4`. `0090ac77` decodes that global before
-the exact CALLIND. Its sibling call at `0090ac8c` uses a thread-local value and
-remains unresolved.
+the exact CALLIND.
 
 The sidecar pins each identity to instruction, defined-string, address-metadata,
 P-code-flow, CALLIND, and (for encoded globals) address-reference rows. The
@@ -104,17 +110,17 @@ retained captures are `callind-blocker-functions.jsonl` (8 functions),
 `callind-blocker-cache-address-references.jsonl` (5 globals). The `__exit`
 review adds a target-function listing, the initializer's cache write, and a
 reader/writer xref for `PTR___exit`. The TLS review adds three writer/helper
-functions, 356 P-code rows, five defined strings, 12 address-metadata rows,
-and six global-reference rows. The API candidates do not establish
+functions, the `0090ab30` TLS helper, 356 P-code rows, five defined strings,
+12 address-metadata rows, and six global-reference rows. The API candidates do not establish
 runtime execution, external API addresses, or complete target sets; `__exit`
 remains conditional on initializer execution.
 
 The `/2` replay is
 [`callind-target-triage-v2.jsonl`](callind-target-triage-v2.jsonl), SHA-256
-`657d80244186842c80698eb4d2ec7b465014b1b9109a2b6aeae3616f56ce78a8` (22
-rows; eleven annotated sites and twelve symbolic candidates). Its input sidecar is
+`e76ce18d247ce93bc8796efb3f1d5aac95f30ea6bbcab52a1bc1a26d99994b52` (22
+rows; twelve annotated sites and thirteen symbolic candidates). Its input sidecar is
 [`callind-symbol-candidates.jsonl`](callind-symbol-candidates.jsonl), SHA-256
-`14c465bedb02f406409e10b69ea1e21364fe405a14ac30c4f01d43a8a0239cf7` (11
+`9e1124579118d391cda565647edc402ddda302be7a88e1e72f1eb29621176bc8` (12
 rows). Reproduce it from the repository root:
 
 ```sh
