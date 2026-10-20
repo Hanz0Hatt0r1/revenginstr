@@ -1938,9 +1938,24 @@ adds a negative exact-pair example but no new store-to-load candidate; captured
 inputs and outputs are in
 [`field-store-load-shift-00d83f90`](evidence/field-store-load-shift-00d83f90/README.md).
 
-**Next:** continue bounded CFG/4 replays until a dominating store/load witness
-has complete evidence for every intervening write and call. Prefer cases with
-exact caller roots for every written callee formal; prove byte-range
-disjointness only from those roots and memory facts. Keep the incomplete
-`0064bb70` effects as barriers, and do not infer alias facts from decompiler
-text or instruction-level corpus labels.
+**Fourth CFG/4 replay:** Shift function `00a45b50` adds two positive structural
+candidates. A parameter-value store `STORE@00a45b69` (time 33, `param1+0x4`,
+value from param 3) maps to `LOAD@00a45b75` (time 44), and `/6` reports
+`unique_cfg_store_candidate`. A later memory-only store
+`STORE@00a45b75` (time 46, same root and offset, value parameter unresolved)
+maps to `LOAD@00a45b78` (time 57), and `/7` reports the same status without
+inventing a value-source edge. Reusing the first store for the second load
+remains `possible_intervening_memory_effect` because the time-46 STORE touches
+the tracked range. Across the nine generated pairs, six other stores do not
+dominate their loads. Both direct calls are explicit writes but occur after
+the two positive load witnesses. The read-only CFG/4 and field-access capture,
+pair builder output, `/6`–`/7` audits, and replay commands are frozen in
+[`field-store-load-shift-00a45b50`](evidence/field-store-load-shift-00a45b50/README.md).
+These are structural candidates only; they do not prove runtime execution or
+memory reaching-definition.
+
+**Next:** continue bounded CFG/4 replays, especially for witnesses that cross
+calls. Prefer cases with exact caller roots for every written callee formal;
+prove byte-range disjointness only from those roots and memory facts. Keep the
+incomplete `0064bb70` effects as barriers, and do not infer alias facts from
+decompiler text or instruction-level corpus labels.
