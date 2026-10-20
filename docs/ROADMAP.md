@@ -1984,6 +1984,20 @@ recovered; it does not prove runtime execution, alias disjointness, or memory
 reaching-definition. Full inputs, hashes, and commands are in
 [`field-store-load-shift-00689db0`](evidence/field-store-load-shift-00689db0/README.md).
 
+**Seventh CFG/4 replay:** Shift function `00a3dda0` adds three exact
+`param0+0x4` pairs for one STORE and three loads. A disposable Ghidra project
+copy needed three callee-before-caller Parameter ID passes to stabilize the
+root return type. Caller-root export maps the intervening `_memset` call's
+first argument to `param0+0x98`; the call also receives zero and `0x44`.
+However, the four-function CFG/4 closure contains 13 callee STORE facts whose
+destinations remain unresolved through `MULTIEQUAL`. `/2` therefore reports
+three `possible_aliasing_write` rows and proves no disjoint writes. Both
+dominance replays keep all three pairs at
+`possible_intervening_memory_effect`, despite the root STORE dominating each
+load. The exact base mapping does not recover byte offsets for these callee
+stores. The complete captures and byte-identical replay are in
+[`field-store-load-shift-00a3dda0`](evidence/field-store-load-shift-00a3dda0/README.md).
+
 **Next:** continue bounded CFG/4 replays, especially for witnesses that cross
 calls. Prefer cases with exact caller roots for every written callee formal;
 prove byte-range disjointness only from those roots and memory facts. Keep the

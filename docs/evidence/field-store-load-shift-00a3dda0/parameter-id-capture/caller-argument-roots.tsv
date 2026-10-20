@@ -1,0 +1,5 @@
+format	plan_id	callee_entry	parameter_index	caller_entry	caller_call_site	caller_parameter_index	argument_node_id	status
+REVENGINSTR.GhidraCallerArgumentParameterRoot/1	vec-from-memset-param0	0090e50d	0	009015b0	009015d7	0	0	direct_parameter_root
+REVENGINSTR.GhidraCallerArgumentParameterRoot/1	vec-from-memset-param1	0090e50d	1	009015b0	009015d7	1	0	direct_parameter_root
+REVENGINSTR.GhidraCallerArgumentParameterRoot/1	vec-from-memset-param2	0090e50d	2	009015b0	009015d7	2	0	direct_parameter_root
+REVENGINSTR.GhidraCallerArgumentParameterRoot/1	fastzero-param0	0090e4b6	0	0090e50d	0090e53e	0	0	direct_parameter_root
