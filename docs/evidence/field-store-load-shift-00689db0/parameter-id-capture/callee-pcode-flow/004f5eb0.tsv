@@ -1,0 +1,10 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+004f5eb0	004f5eb0	0	LOAD	def:004f5eb0:0:4	const:0x1a1:4;register:register:00000004:4	-	-
+004f5eb0	004f5eb0	6	INT_EQUAL	def:004f5eb0:6:1	def:004f5eb0:0:4;const:0x0:4	-	-
+004f5eb0	004f5eb5	13	CBRANCH	-	address:004f5ebe:1;def:004f5eb0:6:1	-	-
+004f5eb0	004f5eb7	14	CALL	-	-	0042eff7	FUN_0042eff7
+004f5eb0	004f5eb7	15	RETURN	-	const:0x0:8	-	-
+004f5eb0	004f5ebe	17	LOAD	def:004f5ebe:17:4	const:0x1a1:4;def:004f5ebe:40:4	-	-
+004f5eb0	004f5ebe	40	PTRADD	def:004f5ebe:40:4	register:register:00000004:4;const:0x5:4;const:0x4:4	-	-
+004f5eb0	004f5ec1	20	STORE	-	const:0x1a1:4;register:register:00000008:4;def:004f5ebe:17:4	-	-
+004f5eb0	004f5ec3	23	RETURN	-	const:0x0:4	-	-

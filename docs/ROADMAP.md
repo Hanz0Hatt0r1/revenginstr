@@ -1967,6 +1967,23 @@ write barriers. `/7` also keeps a memory-only store at time 109 as
 byte-for-byte analyzer replay are in
 [`field-store-load-shift-00a45520`](evidence/field-store-load-shift-00a45520/README.md).
 
+**Sixth CFG/4 replay:** Shift function `00689db0` was re-exported from a
+disposable project copy after two stable callee-before-caller Parameter ID
+passes. This added the previously absent actual call arguments. The caller
+passes stack-local pointers to the second parameters of `0067db80` and
+`004f5eb0`; those values do not resolve to caller-formal roots. Nested
+`0042eff7` remains a no-argument function with an unresolved STORE destination.
+The fresh four-function CFG/4 capture has 20 exact memory-only field pairs.
+Across those pairs, path audit reports 16 `intervening_store_or_call` and 4
+`no_cfg_path`; `/7` reports 16 `store_not_dominating_load` and 4
+`possible_intervening_memory_effect`. The `/2` result has 40
+`possible_aliasing_write`, 20 `unknown_effect`, and 60 `missing_callee_flow`
+rows. No candidate is promoted, and the direct-call closure and `/2` dominance
+audits agree. This captures the call-root gap after the signatures were
+recovered; it does not prove runtime execution, alias disjointness, or memory
+reaching-definition. Full inputs, hashes, and commands are in
+[`field-store-load-shift-00689db0`](evidence/field-store-load-shift-00689db0/README.md).
+
 **Next:** continue bounded CFG/4 replays, especially for witnesses that cross
 calls. Prefer cases with exact caller roots for every written callee formal;
 prove byte-range disjointness only from those roots and memory facts. Keep the

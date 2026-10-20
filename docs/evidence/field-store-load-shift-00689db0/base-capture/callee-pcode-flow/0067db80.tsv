@@ -1,0 +1,13 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+0067db80	0067db80	0	LOAD	def:0067db80:0:4	const:0x1a1:4;register:register:00000004:4	-	-
+0067db80	0067db80	6	INT_EQUAL	def:0067db80:6:1	def:0067db80:0:4;const:0x0:4	-	-
+0067db80	0067db85	13	CBRANCH	-	address:0067db8e:1;def:0067db80:6:1	-	-
+0067db80	0067db87	15	STORE	-	const:0x1a1:4;register:register:00000008:4;const:0x0:4	-	-
+0067db80	0067db8d	18	RETURN	-	const:0x0:4	-	-
+0067db80	0067db8e	20	LOAD	def:0067db8e:20:4	const:0x1a1:4;def:0067db8e:34:4	-	-
+0067db80	0067db8e	34	PTRADD	def:0067db8e:34:4	register:register:00000004:4;const:0x4:4;const:0x4:4	-	-
+0067db80	0067db91	22	INT_ADD	def:0067db91:22:4	def:0067db8e:20:4;const:0x4:4	-	-
+0067db80	0067db91	23	LOAD	def:0067db91:23:4	const:0x1a1:4;def:0067db91:35:4	-	-
+0067db80	0067db91	35	CAST	def:0067db91:35:4	def:0067db91:22:4	-	-
+0067db80	0067db94	26	STORE	-	const:0x1a1:4;register:register:00000008:4;def:0067db91:23:4	-	-
+0067db80	0067db96	29	RETURN	-	const:0x0:4	-	-
