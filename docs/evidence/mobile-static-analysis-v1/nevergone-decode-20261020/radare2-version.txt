@@ -1,0 +1,4 @@
+radare2 6.2.4 +0 abi:152 @ linux-arm_64
+birth: git.6.2.4 2026-10-06__01:12:18
+commit: 6.2.4
+options: gpl release -Os cs:5 cl:2 make
