@@ -1494,6 +1494,12 @@ recovery, object identity across functions, roles, states, resources,
 callbacks, execution contexts, broadly scoped semantic gold graphs, and M10
 exit criteria remain open.
 
+The `SemanticProgramGraphGold/1` endpoint contract now also accepts
+`has_field` edges to parameter-rooted field nodes, so independently reviewed
+member-map associations can be evaluated. The Nevergone member map used by
+the current graph replay is also a graph-construction input; it is not
+independent accuracy evidence, and no field-join evaluation metric is claimed.
+
 `revenginstr-semantic-program-query` now selects nodes and edges by kind,
 relation, indirect-call state, conflict state, function entry, operation
 address, field offset, type id, and provenance id. It emits a hash-pinned

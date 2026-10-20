@@ -165,7 +165,7 @@ def test_nevergone_layout_joins_graph_and_remains_queryable(tmp_path: Path) -> N
         )
 
 
-def test_nevergone_member_map_joins_function_fields_to_reviewed_layout() -> None:
+def test_nevergone_member_map_joins_function_fields_to_reviewed_layout(tmp_path: Path) -> None:
     replay_dir = ROOT / (
         "docs/evidence/semantic-program-graph-v3/"
         "nevergone-ccjoystick-init-layout-join-20261020"
@@ -230,6 +230,41 @@ def test_nevergone_member_map_joins_function_fields_to_reviewed_layout() -> None
     assert [node["kind"] for node in result["related_nodes"]] == ["type"]
     assert len(result["edges"]) == 2
     assert (json.dumps(result, sort_keys=True) + "\n").encode() == query_path.read_bytes()
+
+    type_node_id = joined_edges[0]["from"]
+    # Exercise the gold/evaluator endpoint contract only. The member map also
+    # built these graph edges, so this is not an independent accuracy result.
+    gold = {
+        "format": "REVENGINSTR.SemanticProgramGraphGold/1",
+        "subgraph_id": "nevergone-member-map-endpoint-contract",
+        "dataset_id": "member-map-contract-smoke",
+        "split_id": "construction-input-not-independent-gold",
+        "program_id": graph["program_id"],
+        "graph_id": graph["graph_id"],
+        "scope_node_ids": [type_node_id, *sorted(edge["to"] for edge in joined_edges)],
+        "complete_relations": ["has_field"],
+        "edges": [
+            {
+                "from": type_node_id,
+                "to": edge["to"],
+                "relation": "has_field",
+                "evidence_refs": [{
+                    "artifact_sha256": member_map_sha256,
+                    "record_index": 1,
+                    "source_format": "REVENGINSTR.TypeLayoutMemberMap/1",
+                }],
+            }
+            for edge in joined_edges
+        ],
+        "adjudication_status": "adjudicated",
+    }
+    _schema("semantic-program-graph-gold-v1.schema.json").validate(gold)
+    gold_path = tmp_path / "member-map-gold-contract.jsonl"
+    gold_path.write_text(json.dumps(gold) + "\n", encoding="utf-8")
+    evaluation = evaluate_semantic_program_graph(
+        graph_path, gold_path, view="exploratory",
+    )
+    assert evaluation["per_relation"]["has_field"]["candidate_edges"] == 9
 
     wrong_map = [{**member_maps[0], "program_sha256": "0" * 64}]
     with pytest.raises(ValueError, match="program_sha256 does not match type-layout hypothesis"):

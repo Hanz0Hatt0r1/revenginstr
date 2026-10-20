@@ -25,10 +25,10 @@
       "sha256": "b4faba9464e9a25dfa67aec221fd35b6558f1d3903d0720d2b52511f23ecbec4"
     },
     {
-      "bytes": 4207,
+      "bytes": 4265,
       "id": "gold_schema",
       "path": "../../../../schemas/semantic-program-graph-gold-v1.schema.json",
-      "sha256": "29b066a9d6b7692712c36ab5870175c1fdf46582242c52cd7b7200bb538ddf8b"
+      "sha256": "886fc1635f594eba5f2a669bf1179cde310053a88e2f33d139b9cac572280b78"
     },
     {
       "bytes": 2931,

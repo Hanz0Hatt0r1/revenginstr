@@ -15,6 +15,12 @@ present in the evaluated graph, the evaluator also checks the expected opcode
 score as recall misses. Reviewers must assess source records independently of
 the graph projection.
 Unknown or incomplete relations are excluded from recall and edge precision.
+For `has_field`, the gold contract accepts both `type → layout_field` edges
+from reviewed layout hypotheses and `type → field` edges from exact member-map
+joins in SemanticProgramGraph/3 or /4. If a member map was also used to build
+the graph, it is construction evidence and cannot serve as an independent
+accuracy label for that same join; use separate adjudication evidence for an
+evaluation claim.
 
 Run the hash-pinned evaluator with:
 
