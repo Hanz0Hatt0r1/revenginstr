@@ -20,6 +20,11 @@ RECEIVER_TYPE_FORMAT = "REVENGINSTR.GhidraIndirectReceiverType/1"
 TYPE_LAYOUT_FORMAT = "REVENGINSTR.TypeLayoutHypothesis/1"
 CALL_ARGUMENT_FORMAT = "REVENGINSTR.DirectCallArgumentObservation/1"
 CALL_ARGUMENT_DEFINITION_FORMAT = "REVENGINSTR.DirectCallArgumentDefinition/1"
+CALL_ARGUMENT_TRACE_FORMAT = "REVENGINSTR.DirectCallArgumentOperandTrace/1"
+CALL_ARGUMENT_TRACE_STATES = {
+    "closed", "boundary_reached", "cycle_present", "partial", "depth_limit", "node_limit",
+    "definition_not_found", "ambiguous_definition", "non_definition_token",
+}
 RECEIVER_COLUMNS = (
     "format", "source_id", "function_entry", "call_index", "call_address",
     "call_time", "arg_count", "receiver_present", "receiver_storage_kind",
@@ -336,6 +341,162 @@ def _validate_call_argument_definition_rows(
     return by_program
 
 
+def _validate_call_argument_trace_rows(
+    rows: list[dict[str, Any]], *,
+    call_arguments_by_program: dict[str, list[dict[str, Any]]],
+    call_argument_sha256: str,
+    definitions_by_program: dict[str, dict[tuple[int, int], dict[str, Any]]],
+    definitions_sha256: str,
+) -> dict[str, dict[tuple[int, int], dict[str, Any]]]:
+    if not rows:
+        raise ValueError("DirectCallArgumentOperandTrace input is empty")
+    expected: dict[tuple[str, int, int], tuple[dict[str, Any], dict[str, Any]]] = {}
+    for program_id, observations in call_arguments_by_program.items():
+        definitions = definitions_by_program.get(program_id, {})
+        for observation in observations:
+            for argument in observation["arguments"]:
+                key = (program_id, observation["_record_index"], argument["index"])
+                if (observation["_record_index"], argument["index"]) not in definitions:
+                    raise ValueError("argument trace input requires a complete definition sidecar")
+                expected[key] = (observation, argument)
+
+    fields = {
+        "format", "program_id", "program_sha256", "caller_entry", "callee_entry", "call_address",
+        "call_time", "argument_index", "argument_count", "value_token", "width_bytes",
+        "call_observation_ref", "call_pcode_evidence_ref", "definition_analysis_ref",
+        "definition_resolution_state", "trace_state", "max_depth", "max_nodes_per_argument",
+        "root_use", "root_definition_refs", "nodes", "operand_edges", "leaf_operands",
+        "unresolved_operands", "boundary_rows", "cycle_edges",
+    }
+
+    def validate_pcode_ref(reference: Any, artifact_sha256: str, where: str) -> None:
+        if not isinstance(reference, dict) or set(reference) != {
+            "artifact_sha256", "record_index", "source_format",
+        } or (
+            reference.get("artifact_sha256") != artifact_sha256
+            or type(reference.get("record_index")) is not int
+            or reference["record_index"] < 1
+            or reference.get("source_format") != "REVENGINSTR.GhidraFunctionPcodeFlow/1"
+        ):
+            raise ValueError(f"{where}: invalid P-code trace reference")
+
+    by_program: dict[str, dict[tuple[int, int], dict[str, Any]]] = defaultdict(dict)
+    seen: set[tuple[str, int, int]] = set()
+    for trace_index, row in enumerate(rows, 1):
+        where = f"call-argument operand trace record {trace_index}"
+        if not isinstance(row, dict) or set(row) != fields or row.get("format") != CALL_ARGUMENT_TRACE_FORMAT:
+            raise ValueError(f"{where}: malformed DirectCallArgumentOperandTrace/1 fields")
+        call_ref = row.get("call_observation_ref")
+        if not isinstance(call_ref, dict):
+            raise ValueError(f"{where}: malformed call_observation_ref")
+        observation_index = call_ref.get("record_index")
+        argument_index = row.get("argument_index")
+        program_id = row.get("program_id")
+        if (
+            type(observation_index) is not int or observation_index < 1
+            or type(argument_index) is not int or argument_index < 0
+            or not isinstance(program_id, str) or not program_id
+        ):
+            raise ValueError(f"{where}: invalid program or record index")
+        key = (program_id, observation_index, argument_index)
+        if key not in expected:
+            raise ValueError(f"{where}: trace does not identify an input call argument")
+        if key in seen:
+            raise ValueError(f"{where}: duplicate trace for input call argument")
+        seen.add(key)
+        observation, argument = expected[key]
+        definition = definitions_by_program[program_id][(observation_index, argument_index)]
+        if (
+            row.get("program_sha256") != observation["program_sha256"]
+            or row.get("caller_entry") != observation["caller_entry"]
+            or row.get("callee_entry") != observation["callee_entry"]
+            or row.get("call_address") != observation["call_address"]
+            or row.get("call_time") != observation["call_time"]
+            or row.get("argument_count") != observation["argument_count"]
+            or row.get("value_token") != argument["value_token"]
+            or row.get("width_bytes") != argument["width_bytes"]
+        ):
+            raise ValueError(f"{where}: call or argument identity does not match input observations")
+        if call_ref != {
+            "artifact_sha256": call_argument_sha256,
+            "record_index": observation_index,
+            "source_format": CALL_ARGUMENT_FORMAT,
+        }:
+            raise ValueError(f"{where}: call_observation_ref does not pin supplied observations")
+        call_pcode_ref = observation["evidence_ref"]
+        if row.get("call_pcode_evidence_ref") != call_pcode_ref:
+            raise ValueError(f"{where}: call P-code ref does not match observation")
+        if row.get("definition_analysis_ref") != {
+            "artifact_sha256": definitions_sha256,
+            "record_index": definition["_record_index"],
+            "source_format": CALL_ARGUMENT_DEFINITION_FORMAT,
+        }:
+            raise ValueError(f"{where}: definition_analysis_ref does not pin matching definition row")
+        if row.get("definition_resolution_state") != definition["resolution_state"]:
+            raise ValueError(f"{where}: definition resolution state does not match sidecar")
+        if row.get("root_definition_refs") != definition["definition_evidence_refs"]:
+            raise ValueError(f"{where}: root definition refs do not match definition sidecar")
+        root_use = row.get("root_use")
+        if not isinstance(root_use, dict) or set(root_use) != {
+            "consumer_ref", "input_index", "value_token",
+        } or (
+            root_use.get("consumer_ref") != call_pcode_ref
+            or root_use.get("input_index") != argument_index
+            or root_use.get("value_token") != argument["value_token"]
+        ):
+            raise ValueError(f"{where}: root use does not match exact call argument")
+        trace_state = row.get("trace_state")
+        if not isinstance(trace_state, str) or trace_state not in CALL_ARGUMENT_TRACE_STATES:
+            raise ValueError(f"{where}: unsupported trace state")
+        if definition["resolution_state"] != "exact_definition" and trace_state != definition["resolution_state"]:
+            raise ValueError(f"{where}: trace state does not match root definition state")
+        if definition["resolution_state"] == "exact_definition" and trace_state not in {
+            "closed", "boundary_reached", "cycle_present", "partial", "depth_limit", "node_limit",
+        }:
+            raise ValueError(f"{where}: exact definition has an invalid trace state")
+        if type(row.get("max_depth")) is not int or not 1 <= row["max_depth"] <= 128:
+            raise ValueError(f"{where}: invalid max_depth")
+        if type(row.get("max_nodes_per_argument")) is not int or not 1 <= row["max_nodes_per_argument"] <= 100000:
+            raise ValueError(f"{where}: invalid max_nodes_per_argument")
+        pcode_sha256 = call_pcode_ref["artifact_sha256"]
+        for field_name in (
+            "nodes", "operand_edges", "leaf_operands", "unresolved_operands", "boundary_rows", "cycle_edges",
+        ):
+            if not isinstance(row.get(field_name), list):
+                raise ValueError(f"{where}: {field_name} must be an array")
+        for node in row["nodes"]:
+            if not isinstance(node, dict) or node.get("function_entry") != observation["caller_entry"]:
+                raise ValueError(f"{where}: producer node belongs to a different caller")
+            validate_pcode_ref(node.get("evidence_ref"), pcode_sha256, where)
+        for edge in (*row["operand_edges"], *row["cycle_edges"]):
+            if not isinstance(edge, dict):
+                raise ValueError(f"{where}: malformed operand edge")
+            validate_pcode_ref(edge.get("consumer_ref"), pcode_sha256, where)
+            validate_pcode_ref(edge.get("producer_ref"), pcode_sha256, where)
+        for field_name in ("leaf_operands", "unresolved_operands"):
+            for operand in row[field_name]:
+                if not isinstance(operand, dict):
+                    raise ValueError(f"{where}: malformed operand record")
+                validate_pcode_ref(operand.get("consumer_ref"), pcode_sha256, where)
+                candidates = operand.get("candidate_refs", [])
+                if field_name == "unresolved_operands" and not isinstance(candidates, list):
+                    raise ValueError(f"{where}: unresolved candidate_refs must be an array")
+                for candidate in candidates:
+                    validate_pcode_ref(candidate, pcode_sha256, where)
+        for boundary in row["boundary_rows"]:
+            if not isinstance(boundary, dict):
+                raise ValueError(f"{where}: malformed boundary row")
+            validate_pcode_ref(boundary.get("evidence_ref"), pcode_sha256, where)
+        by_program[program_id][(observation_index, argument_index)] = {
+            **row, "_record_index": trace_index,
+        }
+
+    if seen != set(expected):
+        missing = len(set(expected) - seen)
+        raise ValueError(f"DirectCallArgumentOperandTrace input omits {missing} call arguments")
+    return by_program
+
+
 def _support_key(support: dict[str, Any]) -> tuple[Any, ...]:
     if "effect_id" in support:
         return ("effect", support["effect_id"])
@@ -479,7 +640,20 @@ def validate_graph_references(graph: dict[str, Any]) -> None:
             or not _is_sha256(definition_sha256)
         ):
             raise ValueError("invalid pinned DirectCallArgumentDefinition input")
+        trace_format = graph.get("source_call_argument_traces_format")
+        trace_sha256 = graph.get("source_call_argument_traces_sha256")
+        has_trace_format = trace_format is not None
+        has_trace_sha256 = trace_sha256 is not None
+        if has_trace_format != has_trace_sha256:
+            raise ValueError("call-argument trace pins must include format and SHA-256")
+        if has_trace_format and (
+            trace_format != CALL_ARGUMENT_TRACE_FORMAT
+            or not _is_sha256(trace_sha256)
+            or not has_definition_format
+        ):
+            raise ValueError("invalid pinned DirectCallArgumentOperandTrace input")
         seen_definition_record_indices: set[int] = set()
+        seen_trace_record_indices: set[int] = set()
         annotation_fields = {
             "call_argument_count", "call_arguments", "call_argument_callee_entry",
             "call_argument_observation_record_index", "call_argument_source_evidence_ref",
@@ -519,10 +693,16 @@ def validate_graph_references(graph: dict[str, Any]) -> None:
                     "definition_resolution_state", "definition_analysis_record_index",
                     "definition_evidence_refs",
                 }
+                trace_argument_fields = {
+                    "operand_trace_state", "operand_trace_analysis_record_index",
+                    "operand_trace_evidence_ref",
+                }
                 required_argument_fields = (
                     base_argument_fields | definition_argument_fields
                     if has_definition_format else base_argument_fields
                 )
+                if has_trace_format:
+                    required_argument_fields |= trace_argument_fields
                 if (
                     not isinstance(argument, dict)
                     or set(argument) != required_argument_fields
@@ -575,6 +755,35 @@ def validate_graph_references(graph: dict[str, Any]) -> None:
                         if reference_key in seen_definition_refs:
                             raise ValueError("duplicate call-argument definition evidence ref")
                         seen_definition_refs.add(reference_key)
+                if has_trace_format:
+                    trace_state = argument["operand_trace_state"]
+                    trace_record_index = argument["operand_trace_analysis_record_index"]
+                    trace_ref = argument["operand_trace_evidence_ref"]
+                    if (
+                        not isinstance(trace_state, str)
+                        or trace_state not in CALL_ARGUMENT_TRACE_STATES
+                        or type(trace_record_index) is not int
+                        or trace_record_index < 1
+                        or not isinstance(trace_ref, dict)
+                        or set(trace_ref) != {"artifact_sha256", "record_index", "source_format"}
+                        or trace_ref != {
+                            "artifact_sha256": trace_sha256,
+                            "record_index": trace_record_index,
+                            "source_format": CALL_ARGUMENT_TRACE_FORMAT,
+                        }
+                    ):
+                        raise ValueError("call-argument trace annotation is malformed")
+                    if has_definition_format and (
+                        state != "exact_definition" and trace_state != state
+                    ):
+                        raise ValueError("call-argument trace state disagrees with root definition state")
+                    if has_definition_format and state == "exact_definition" and trace_state not in {
+                        "closed", "boundary_reached", "cycle_present", "partial", "depth_limit", "node_limit",
+                    }:
+                        raise ValueError("exact call-argument definition has an invalid trace state")
+                    if trace_record_index in seen_trace_record_indices:
+                        raise ValueError("duplicate call-argument trace analysis record index")
+                    seen_trace_record_indices.add(trace_record_index)
             if (
                 source_ref.get("source_format") != "REVENGINSTR.GhidraFunctionPcodeFlow/1"
                 or not _is_sha256(source_ref.get("artifact_sha256", ""))
@@ -595,6 +804,8 @@ def validate_graph_references(graph: dict[str, Any]) -> None:
         or "call_arguments" in node
         or "source_call_argument_definitions_format" in graph
         or "source_call_argument_definitions_sha256" in graph
+        or "source_call_argument_traces_format" in graph
+        or "source_call_argument_traces_sha256" in graph
         for node in graph["nodes"]
     ):
         raise ValueError("call-argument observations require SemanticProgramGraph/4")
@@ -663,6 +874,8 @@ def build_semantic_program_graphs(
     call_argument_sha256: str | None = None,
     call_argument_definition_rows: list[dict[str, Any]] | None = None,
     call_argument_definition_sha256: str | None = None,
+    call_argument_trace_rows: list[dict[str, Any]] | None = None,
+    call_argument_trace_sha256: str | None = None,
 ) -> list[dict[str, Any]]:
     """Project effects, optional receiver/layout evidence, and call arguments."""
     if not records:
@@ -721,11 +934,32 @@ def build_semantic_program_graphs(
         )
     elif call_argument_definition_sha256 is not None:
         raise ValueError("call-argument definition SHA-256 supplied without definition rows")
+    call_argument_traces_by_program: dict[str, dict[tuple[int, int], dict[str, Any]]] = defaultdict(dict)
+    if call_argument_trace_rows is not None:
+        if (
+            call_argument_rows is None
+            or call_argument_sha256 is None
+            or call_argument_definition_rows is None
+            or call_argument_definition_sha256 is None
+        ):
+            raise ValueError("call-argument traces require pinned observations and definition rows")
+        if call_argument_trace_sha256 is None or not _is_sha256(call_argument_trace_sha256):
+            raise ValueError("call-argument traces require their source SHA-256")
+        call_argument_traces_by_program = _validate_call_argument_trace_rows(
+            call_argument_trace_rows,
+            call_arguments_by_program=call_arguments_by_program,
+            call_argument_sha256=call_argument_sha256,
+            definitions_by_program=call_argument_definitions_by_program,
+            definitions_sha256=call_argument_definition_sha256,
+        )
+    elif call_argument_trace_sha256 is not None:
+        raise ValueError("call-argument trace SHA-256 supplied without trace rows")
 
     graphs: list[dict[str, Any]] = []
     for program_id, functions in sorted(by_program.items()):
         program_call_arguments = call_arguments_by_program.get(program_id, [])
         program_call_argument_definitions = call_argument_definitions_by_program.get(program_id, {})
+        program_call_argument_traces = call_argument_traces_by_program.get(program_id, {})
         nodes: dict[str, dict[str, Any]] = {}
         edges: dict[str, dict[str, Any]] = {}
         all_support: list[dict[str, Any]] = []
@@ -907,6 +1141,17 @@ def build_semantic_program_graphs(
                         "definition_resolution_state": definition["resolution_state"],
                         "definition_analysis_record_index": definition["_record_index"],
                         "definition_evidence_refs": definition["definition_evidence_refs"],
+                    })
+                if call_argument_trace_rows is not None:
+                    trace = program_call_argument_traces[(row["_record_index"], argument["index"])]
+                    graph_argument.update({
+                        "operand_trace_state": trace["trace_state"],
+                        "operand_trace_analysis_record_index": trace["_record_index"],
+                        "operand_trace_evidence_ref": {
+                            "artifact_sha256": call_argument_trace_sha256,
+                            "record_index": trace["_record_index"],
+                            "source_format": CALL_ARGUMENT_TRACE_FORMAT,
+                        },
                     })
                 operation["call_arguments"].append(graph_argument)
             operation["call_argument_callee_entry"] = row["callee_entry"]
@@ -1120,6 +1365,9 @@ def build_semantic_program_graphs(
         if call_argument_definition_rows is not None and program_call_arguments:
             graph["source_call_argument_definitions_format"] = CALL_ARGUMENT_DEFINITION_FORMAT
             graph["source_call_argument_definitions_sha256"] = call_argument_definition_sha256
+        if call_argument_trace_rows is not None and program_call_arguments:
+            graph["source_call_argument_traces_format"] = CALL_ARGUMENT_TRACE_FORMAT
+            graph["source_call_argument_traces_sha256"] = call_argument_trace_sha256
         graph = {
             key: graph[key]
             for key in (
@@ -1129,6 +1377,7 @@ def build_semantic_program_graphs(
                 "source_type_layout_hypotheses_sha256", "source_call_arguments_format",
                 "source_call_arguments_sha256", "source_call_arguments_program_sha256",
                 "source_call_argument_definitions_format", "source_call_argument_definitions_sha256",
+                "source_call_argument_traces_format", "source_call_argument_traces_sha256",
                 "nodes", "edges",
             )
             if key in graph
@@ -1193,6 +1442,10 @@ def main(argv: list[str] | None = None) -> int:
         "--call-argument-definitions", type=Path,
         help="optional DirectCallArgumentDefinition/1 JSONL; pins exact argument definition rows",
     )
+    parser.add_argument(
+        "--call-argument-traces", type=Path,
+        help="optional DirectCallArgumentOperandTrace/1 JSONL; pins bounded operand traces per argument",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     records, source_sha256 = _read_jsonl(args.function_effect_ir)
@@ -1212,6 +1465,10 @@ def main(argv: list[str] | None = None) -> int:
     call_argument_definition_sha256 = None
     if args.call_argument_definitions is not None:
         call_argument_definition_rows, call_argument_definition_sha256 = _read_jsonl(args.call_argument_definitions)
+    call_argument_trace_rows = None
+    call_argument_trace_sha256 = None
+    if args.call_argument_traces is not None:
+        call_argument_trace_rows, call_argument_trace_sha256 = _read_jsonl(args.call_argument_traces)
     graphs = build_semantic_program_graphs(
         records,
         source_sha256=source_sha256,
@@ -1223,6 +1480,8 @@ def main(argv: list[str] | None = None) -> int:
         call_argument_sha256=call_argument_sha256,
         call_argument_definition_rows=call_argument_definition_rows,
         call_argument_definition_sha256=call_argument_definition_sha256,
+        call_argument_trace_rows=call_argument_trace_rows,
+        call_argument_trace_sha256=call_argument_trace_sha256,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", encoding="utf-8") as handle:
@@ -1254,6 +1513,8 @@ def main(argv: list[str] | None = None) -> int:
         ))
     if call_argument_definition_sha256 is not None:
         print("source call-argument definitions SHA-256:", call_argument_definition_sha256)
+    if call_argument_trace_sha256 is not None:
+        print("source call-argument traces SHA-256:", call_argument_trace_sha256)
     print("output:", args.output)
     return 0
 

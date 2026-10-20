@@ -53,6 +53,7 @@ revenginstr-semantic-program-graph function-effects.jsonl \
   --type-layout-hypotheses type-layout-hypotheses.jsonl \
   --call-arguments direct-call-arguments.jsonl \
   --call-argument-definitions direct-call-argument-definitions.jsonl \
+  --call-argument-traces direct-call-argument-traces.jsonl \
   --output program-graphs.jsonl
 ```
 
@@ -71,6 +72,14 @@ record, callsite identity, P-code artifact, argument index, token, and width.
 It attaches the resolution state and exact definition evidence references to
 each argument and pins the definition-analysis artifact hash. This remains a
 single-row definition link and does not chase transitive data flow.
+
+Optionally supply `DirectCallArgumentOperandTrace/1` alongside the observation
+and definition sidecars. The graph pins the trace artifact and records each
+argument's trace state and exact trace-row reference. Trace states summarize a
+bounded syntactic operand walk; inspect the sidecar for producer rows,
+boundaries, unresolved operands, and cycle edges. The graph builder requires
+one trace row for every observed argument and checks that its call, definition,
+token, and P-code references agree with the pinned inputs.
 
 This first projection emits program, function, operation, and
 parameter-rooted field nodes. It emits `contains` edges for observed program,

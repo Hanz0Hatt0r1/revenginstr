@@ -36,6 +36,7 @@
         "field_offsets": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
         "call_argument_tokens": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
         "call_argument_definition_states": {"type": "array", "uniqueItems": true, "items": {"enum": ["exact_definition", "definition_not_found", "ambiguous_definition", "non_definition_token"]}},
+        "call_argument_trace_states": {"type": "array", "uniqueItems": true, "items": {"enum": ["closed", "boundary_reached", "cycle_present", "partial", "depth_limit", "node_limit", "definition_not_found", "ambiguous_definition", "non_definition_token"]}},
         "type_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
         "support_id": {"type": ["string", "null"]}
       }

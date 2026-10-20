@@ -1573,6 +1573,13 @@ observation and that its token and width agree. This makes the bounded
 definition evidence queryable alongside the callsite without upgrading it to
 a semantic or runtime value-flow claim.
 
+It can also consume the bounded operand-trace sidecar, pin its artifact hash,
+and attach each trace state and sidecar-row reference to the corresponding
+call argument. Semantic queries can select trace states while requiring token,
+definition, and trace selectors to match the same argument. This exposes the
+trace inventory in the graph without copying the full operand closure into
+every graph node.
+
 `revenginstr-direct-call-argument-traces` emits a bounded operand-use closure
 for each observed direct-call argument. On the Nevergone replay, 56 exact
 definitions expand to 87 producer rows and 33 exact operand references; 28

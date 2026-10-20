@@ -31,16 +31,16 @@
       "sha256": "3ea5e756a606d8ff0b4d9e10eda79df51326013a4f67e84a989ef0b3316d1546"
     },
     {
-      "bytes": 247099,
+      "bytes": 267349,
       "id": "semantic_graph",
       "path": "semantic-program-graph.jsonl",
-      "sha256": "47fff022e3396bc2d515d0c7b5e801b4e02b4c971d8465dda56290bcb8599463"
+      "sha256": "04c223505df90987014c1732c0707cc6e5576b7a380cbcf1dc9c485a91610e4c"
     },
     {
-      "bytes": 23483,
+      "bytes": 26890,
       "id": "graph_schema_v4",
       "path": "../../../../schemas/semantic-program-graph-v4.schema.json",
-      "sha256": "727eb34c57d7af57a68eacb6aa172e8fc98f9812cb4cbfafb7b8e2d8f9588aaa"
+      "sha256": "c51f2976e955f012661cbf670a387ffc07efd02a6eeb58449a39f5a5c12e1446"
     },
     {
       "bytes": 2069,
@@ -49,10 +49,10 @@
       "sha256": "b421ac10ba2c172bbda2e05abb6f6481e0ee9ef75af99a3588b71f85a06303a0"
     },
     {
-      "bytes": 4281,
+      "bytes": 4539,
       "id": "query_result_schema",
       "path": "../../../../schemas/semantic-program-query-result-v1.schema.json",
-      "sha256": "50a8d51ea1954983003b08960f7ca02304dad95a9c84f7cec2807b5b10f18ffb"
+      "sha256": "1cc14f26ec8ba74650ef072a5e57acead9d51fde7dcd5935e770edbe2a18e138"
     },
     {
       "id": "path_query_result_schema",

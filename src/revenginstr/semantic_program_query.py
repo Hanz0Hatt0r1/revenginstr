@@ -24,6 +24,10 @@ CALL_STATES = ("not_applicable", "resolved", "unresolved", "indirect", "conflict
 CALL_ARGUMENT_DEFINITION_STATES = (
     "exact_definition", "definition_not_found", "ambiguous_definition", "non_definition_token",
 )
+CALL_ARGUMENT_TRACE_STATES = (
+    "closed", "boundary_reached", "cycle_present", "partial", "depth_limit", "node_limit",
+    "definition_not_found", "ambiguous_definition", "non_definition_token",
+)
 
 
 def _in_view(row: dict[str, Any], view: str, minimum_confidence: float) -> bool:
@@ -77,7 +81,8 @@ def _matches_node(row: dict[str, Any], filters: dict[str, Any]) -> bool:
         return False
     call_argument_tokens = filters.get("call_argument_tokens", [])
     call_argument_definition_states = filters.get("call_argument_definition_states", [])
-    if call_argument_tokens or call_argument_definition_states:
+    call_argument_trace_states = filters.get("call_argument_trace_states", [])
+    if call_argument_tokens or call_argument_definition_states or call_argument_trace_states:
         arguments = row.get("call_arguments")
         if not isinstance(arguments, list) or not any(
             isinstance(argument, dict)
@@ -85,6 +90,10 @@ def _matches_node(row: dict[str, Any], filters: dict[str, Any]) -> bool:
             and (
                 not call_argument_definition_states
                 or argument.get("definition_resolution_state") in call_argument_definition_states
+            )
+            and (
+                not call_argument_trace_states
+                or argument.get("operand_trace_state") in call_argument_trace_states
             )
             for argument in arguments
         ):
@@ -116,6 +125,7 @@ def query_graphs(
     type_ids: list[str] | None = None,
     call_argument_tokens: list[str] | None = None,
     call_argument_definition_states: list[str] | None = None,
+    call_argument_trace_states: list[str] | None = None,
     support_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """Return matching graph facts and endpoint context with source provenance."""
@@ -137,6 +147,8 @@ def query_graphs(
         raise ValueError("call argument tokens must be non-empty strings")
     if set(call_argument_definition_states or []) - set(CALL_ARGUMENT_DEFINITION_STATES):
         raise ValueError("unsupported call argument definition state filter")
+    if set(call_argument_trace_states or []) - set(CALL_ARGUMENT_TRACE_STATES):
+        raise ValueError("unsupported call argument trace state filter")
     if not graphs:
         raise ValueError("Semantic Program Graph input is empty")
     filters = {
@@ -154,11 +166,14 @@ def query_graphs(
         filters["call_argument_tokens"] = sorted(set(call_argument_tokens))
     if call_argument_definition_states:
         filters["call_argument_definition_states"] = sorted(set(call_argument_definition_states))
+    if call_argument_trace_states:
+        filters["call_argument_trace_states"] = sorted(set(call_argument_trace_states))
     node_filters_active = any((
         filters["kinds"], filters["call_target_states"],
         filters["function_entries"], filters["operation_addresses"],
         filters["field_offsets"], filters["type_ids"], filters.get("call_argument_tokens", []),
         filters.get("call_argument_definition_states", []),
+        filters.get("call_argument_trace_states", []),
         filters["support_id"],
     ))
 
@@ -257,6 +272,10 @@ def main(argv: list[str] | None = None) -> int:
         "--call-argument-definition-state", action="append",
         choices=CALL_ARGUMENT_DEFINITION_STATES, default=[],
     )
+    parser.add_argument(
+        "--call-argument-trace-state", action="append",
+        choices=CALL_ARGUMENT_TRACE_STATES, default=[],
+    )
     parser.add_argument("--support-id")
     args = parser.parse_args(argv)
     try:
@@ -276,6 +295,7 @@ def main(argv: list[str] | None = None) -> int:
             type_ids=args.type_id,
             call_argument_tokens=args.call_argument_token,
             call_argument_definition_states=args.call_argument_definition_state,
+            call_argument_trace_states=args.call_argument_trace_state,
             support_id=args.support_id,
         )
     except ValueError as error:

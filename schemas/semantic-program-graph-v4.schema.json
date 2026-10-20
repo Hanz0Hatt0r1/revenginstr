@@ -33,7 +33,9 @@
     "source_call_arguments_sha256": {"$ref": "#/$defs/sha256"},
     "source_call_arguments_program_sha256": {"$ref": "#/$defs/sha256"},
     "source_call_argument_definitions_format": {"const": "REVENGINSTR.DirectCallArgumentDefinition/1"},
-    "source_call_argument_definitions_sha256": {"$ref": "#/$defs/sha256"}
+    "source_call_argument_definitions_sha256": {"$ref": "#/$defs/sha256"},
+    "source_call_argument_traces_format": {"const": "REVENGINSTR.DirectCallArgumentOperandTrace/1"},
+    "source_call_argument_traces_sha256": {"$ref": "#/$defs/sha256"}
   },
   "allOf": [
     {"if": {"required": ["source_receiver_types_format"]}, "then": {"required": ["source_receiver_types_sha256"]}},
@@ -42,6 +44,8 @@
     {"if": {"required": ["source_type_layout_hypotheses_sha256"]}, "then": {"required": ["source_type_layout_hypotheses_format"]}},
     {"if": {"required": ["source_call_argument_definitions_format"]}, "then": {"required": ["source_call_argument_definitions_sha256"]}},
     {"if": {"required": ["source_call_argument_definitions_sha256"]}, "then": {"required": ["source_call_argument_definitions_format"]}},
+    {"if": {"required": ["source_call_argument_traces_format"]}, "then": {"required": ["source_call_argument_traces_sha256", "source_call_argument_definitions_format"]}},
+    {"if": {"required": ["source_call_argument_traces_sha256"]}, "then": {"required": ["source_call_argument_traces_format", "source_call_argument_definitions_format"]}},
     {
       "if": {"required": ["source_call_argument_definitions_format"]},
       "then": {
@@ -66,6 +70,31 @@
           }
         }
       }
+    },
+    {
+      "if": {"required": ["source_call_argument_traces_format"]},
+      "then": {
+        "properties": {
+          "nodes": {
+            "items": {
+              "if": {"required": ["call_argument_observation_record_index"]},
+              "then": {
+                "properties": {
+                  "call_arguments": {
+                    "items": {
+                      "required": [
+                        "operand_trace_state",
+                        "operand_trace_analysis_record_index",
+                        "operand_trace_evidence_ref"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   ],
   "$defs": {
@@ -78,6 +107,16 @@
         "artifact_sha256": {"$ref": "#/$defs/sha256"},
         "record_index": {"type": "integer", "minimum": 1},
         "source_format": {"const": "REVENGINSTR.GhidraFunctionPcodeFlow/1"}
+      }
+    },
+    "operand_trace_evidence_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_sha256", "record_index", "source_format"],
+      "properties": {
+        "artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "record_index": {"type": "integer", "minimum": 1},
+        "source_format": {"const": "REVENGINSTR.DirectCallArgumentOperandTrace/1"}
       }
     },
     "support": {
@@ -187,7 +226,10 @@
               "width_bytes": {"type": "integer", "minimum": 1},
               "definition_resolution_state": {"enum": ["exact_definition", "definition_not_found", "ambiguous_definition", "non_definition_token"]},
               "definition_analysis_record_index": {"type": "integer", "minimum": 1},
-              "definition_evidence_refs": {"type": "array", "items": {"$ref": "#/$defs/pcode_evidence_ref"}}
+              "definition_evidence_refs": {"type": "array", "items": {"$ref": "#/$defs/pcode_evidence_ref"}},
+              "operand_trace_state": {"enum": ["closed", "boundary_reached", "cycle_present", "partial", "depth_limit", "node_limit", "definition_not_found", "ambiguous_definition", "non_definition_token"]},
+              "operand_trace_analysis_record_index": {"type": "integer", "minimum": 1},
+              "operand_trace_evidence_ref": {"$ref": "#/$defs/operand_trace_evidence_ref"}
             },
             "allOf": [
               {
@@ -205,6 +247,26 @@
               {
                 "if": {"properties": {"definition_resolution_state": {"enum": ["definition_not_found", "non_definition_token"]}}, "required": ["definition_resolution_state"]},
                 "then": {"properties": {"definition_evidence_refs": {"maxItems": 0}}}
+              },
+              {
+                "if": {"required": ["operand_trace_state"]},
+                "then": {"required": ["operand_trace_analysis_record_index", "operand_trace_evidence_ref"]}
+              },
+              {
+                "if": {"properties": {"definition_resolution_state": {"const": "definition_not_found"}}, "required": ["definition_resolution_state"]},
+                "then": {"properties": {"operand_trace_state": {"const": "definition_not_found"}}}
+              },
+              {
+                "if": {"properties": {"definition_resolution_state": {"const": "ambiguous_definition"}}, "required": ["definition_resolution_state"]},
+                "then": {"properties": {"operand_trace_state": {"const": "ambiguous_definition"}}}
+              },
+              {
+                "if": {"properties": {"definition_resolution_state": {"const": "non_definition_token"}}, "required": ["definition_resolution_state"]},
+                "then": {"properties": {"operand_trace_state": {"const": "non_definition_token"}}}
+              },
+              {
+                "if": {"properties": {"definition_resolution_state": {"const": "exact_definition"}}, "required": ["definition_resolution_state"]},
+                "then": {"properties": {"operand_trace_state": {"enum": ["closed", "boundary_reached", "cycle_present", "partial", "depth_limit", "node_limit"]}}}
               }
             ]
             }

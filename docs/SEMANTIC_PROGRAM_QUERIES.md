@@ -76,6 +76,24 @@ graph without definition annotations produces no matches for this selector.
 When combined with `--call-argument-token`, both filters must match the same
 argument.
 
+For graphs built with an operand-trace sidecar, select call sites by trace
+state. Repeating the option selects any listed state:
+
+```sh
+revenginstr-semantic-program-query program-graphs.jsonl \
+  --view exact-only \
+  --kind operation \
+  --relation calls \
+  --call-argument-trace-state boundary_reached \
+  --output calls-with-operand-boundaries.jsonl
+```
+
+The matched call nodes retain each argument's state and trace-row reference;
+the hash-pinned trace sidecar contains the bounded producer and boundary rows.
+When combined with token or definition-state selectors, all argument filters
+must match the same argument. Graphs without trace annotations produce no
+matches for this selector.
+
 For `/3` and `/4` graphs, layout fields can be selected by type id and byte offset. The
 result includes the owning type node as related context:
 

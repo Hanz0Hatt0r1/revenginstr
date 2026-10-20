@@ -34,6 +34,7 @@ PYTHONPATH=src python -m revenginstr.semantic_program_graph \
   --type-layout-hypotheses docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick/type-layout-hypothesis.jsonl \
   --call-arguments docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/call-arguments.jsonl \
   --call-argument-definitions docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/argument-definitions.jsonl \
+  --call-argument-traces docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/argument-operand-traces.jsonl \
   --output docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/semantic-program-graph.jsonl
 ```
 
@@ -65,6 +66,11 @@ references, 28 reach explicit memory/call boundaries, and 14 are non-definition
 tokens. Across the traces it retains 87 producer rows, 33 exact operand links,
 and 34 boundary rows. `LOAD`, `CALL`, `CALLIND`, and `INDIRECT` boundaries
 prevent claims about memory contents or callee return values.
+
+The graph pins the trace JSONL and adds each argument's trace state and
+sidecar-row reference. Queries can select `closed`, `boundary_reached`,
+`partial`, cycle, or limit states with `--call-argument-trace-state`; the full
+trace remains in the sidecar.
 
 This records P-code operands at statically resolved calls. The definition
 sidecar alone links each `def:` token to one exact producer row; the separate
