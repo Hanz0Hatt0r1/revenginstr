@@ -29,6 +29,12 @@ barriers, and three mix bounded and blocked paths. Correct P-code handling of
 This adds a target observation without removing its `CALLIND` effect barrier.
 See the [triage replay](scan37/replay-0041dd40/callind-target-triage-replay.md)
 and [closure replay](scan37/replay-0041dd40/static-call-target-closure-replay.md).
+The static review of `00918a4c` now traces the two call-result barriers to a
+cached `KERNEL32.DLL!InitializeCriticalSectionAndSpinCount` pointer or the
+internal `___crtInitCritSecNoSpinCount@8` fallback at `0x009189bd`. It retains
+the indirect-call barrier because branch selection, the external runtime
+address, and possible cache aliases remain unresolved; see the
+[symbolic-target review](scan37/replay-0041dd40/callind-static-symbol-review-00918a4c.md).
 
 ## Screens
 

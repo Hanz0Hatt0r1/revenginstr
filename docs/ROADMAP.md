@@ -2410,10 +2410,16 @@ See the [closure replay](evidence/receiver-field-access/nfs-shift-screening-2026
 The new source-pinned [CALLIND provenance triage](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/callind-target-triage-replay.md)
 classifies the 16 sites beyond the six prior observations as 13
 dynamic-barrier-only and three mixed bounded/dynamic paths. One mixed path now
-has a partial static target candidate; its two dynamic alternatives remain
-unresolved.
+has a partial numeric candidate. A focused static review of `00918a4c` traces
+its two call-result barriers to the named API
+`KERNEL32.DLL!InitializeCriticalSectionAndSpinCount` and internal fallback
+`0x009189bd`; it retains the conditional cache-alias limitation, unresolved
+runtime address, and unknown branch selection. The generic triage output still
+preserves those call barriers. See the
+[symbolic-target review](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/callind-static-symbol-review-00918a4c.md).
 
-**Next:** acquire runtime observations for the two remaining mixed paths and
+**Next:** add evidence-backed symbolic API-target summaries to the analyzer,
+then acquire runtime observations for the two remaining mixed paths and
 the 13 dynamic-barrier-only sites, then bind runtime state for the seven
 scoped candidate sets, including the partial candidate at `00918a4c`.
 Preserve unresolved target and alias barriers; keep selector and receiver

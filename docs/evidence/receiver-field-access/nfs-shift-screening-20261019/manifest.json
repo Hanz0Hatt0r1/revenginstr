@@ -1465,9 +1465,14 @@
       "rows": 3246
     },
     {
+      "path": "scan37/replay-0041dd40/callind-static-symbol-review-00918a4c.md",
+      "bytes": 6044,
+      "sha256": "ff15228316e44a5cbf02d84ed0c2401f1a9f5801d582cbe0cf5962d75a47bb46"
+    },
+    {
       "path": "scan37/replay-0041dd40/callind-target-triage-replay.md",
-      "bytes": 2248,
-      "sha256": "7ec47191cafd2b45eb16fc3bf28b50dff64b3e37f37e180fd682c1c6ed78af37"
+      "bytes": 2798,
+      "sha256": "705a03b2e4e282b3105c5d9508ee54058b79e555118dd84b39f66e56dde79913"
     },
     {
       "path": "scan37/replay-0041dd40/callind-target-triage.jsonl",
@@ -2333,6 +2338,36 @@
       "path": "scan37/replay-0041dd40/closure-static-return-function-instructions.jsonl",
       "bytes": 24460,
       "sha256": "3851b1145199f6ef8c564c82f6f8ad443d73b19a472b11e3de1497be9c7cd39e",
+      "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/crt-callind-api-address-references.jsonl",
+      "bytes": 16265,
+      "sha256": "8e1e335d05303efb8b9296d5d2359c9905cf5f86cbbb08d1a0a1fd5c19683c07",
+      "rows": 12
+    },
+    {
+      "path": "scan37/replay-0041dd40/crt-callind-api-defined-strings.tsv",
+      "bytes": 593,
+      "sha256": "df153ea81ba2f0588a61404e194ca0991c0f588c75e83deaaad81d4375e7c37f",
+      "rows": 6
+    },
+    {
+      "path": "scan37/replay-0041dd40/crt-callind-api-functions.jsonl",
+      "bytes": 331199,
+      "sha256": "61ec3009da1b92af4bd73768121584ecf92eeb61e48038f7776c55cb1f35711a",
+      "rows": 5
+    },
+    {
+      "path": "scan37/replay-0041dd40/crt-pointer-cache-init-00907737.jsonl",
+      "bytes": 38465,
+      "sha256": "3470667dbd40137c5921926137cb291a4365351bffec48db61b3146cb6e65a5c",
+      "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/crt-pointer-cache-writer-009189b3.jsonl",
+      "bytes": 3766,
+      "sha256": "7f2fb5e5c6426fabe0f1b62331adfd95aeac47ba69e94cc79fab46fb82e092cb",
       "rows": 1
     },
     {

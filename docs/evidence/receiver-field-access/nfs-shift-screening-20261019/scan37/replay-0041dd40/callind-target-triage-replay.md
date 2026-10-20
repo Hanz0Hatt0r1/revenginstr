@@ -42,3 +42,11 @@ in its direct-call closure. See the
 
 All 22 sites remain `CALLIND` effect barriers. Runtime acquisition or stronger
 validated call-result summaries are still needed to cover the dynamic paths.
+For `009189cd:00918a4c`, a manual, source-pinned review now narrows both
+call-result barriers to the symbolic candidate set
+`KERNEL32.DLL!InitializeCriticalSectionAndSpinCount` and
+`SHIFT.exe!___crtInitCritSecNoSpinCount@8` (`0x009189bd`). The external API's
+runtime address and branch selection remain unresolved, and the indirect
+cache has a possible aliasing reference; this evidence does not change the
+generic triage JSONL or remove the effect barrier. See
+[`callind-static-symbol-review-00918a4c.md`](callind-static-symbol-review-00918a4c.md).
