@@ -12,6 +12,13 @@ each four bytes wide. The new Effect IR projection retains those writes as
 structural facts and leaves `source_parameter_index` null because the exporter
 does not identify their value source.
 
+A separate 176-row `GhidraFunctionPcodeFlow/1` export cross-checks the 12 LOAD
+operation keys and widths and both STORE keys, pointer tokens, and widths. For
+each STORE, the retained `CAST` points to the retained `PTRADD`; its constant
+offset and scale reproduce the memory sidecar's byte offset. This is a
+cross-export consistency check from the same analyzed Ghidra program, not an
+independent semantic gold set.
+
 The member map manually associates root parameter 0 of each exact function
 entry with the same opaque CCJoyStick type record, based on the Ghidra method
 owner identity. The mapping is retained as `human_review` evidence. The graph
@@ -36,6 +43,18 @@ revenginstr-effect-ir \
   --memory-store-access docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick-method-pair-20261020/update-touchpoint-memory-stores.jsonl \
   --output docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick-method-pair-20261020/update-touchpoint-effects.jsonl
 ```
+
+The raw P-code cross-check comes from the independent function-flow exporter:
+
+```sh
+GHIDRA_HOME=/opt/ghidra \
+  scripts/run_ghidra_function_pcode_flow.sh \
+  /home/pes/ghidra_projects nevergone_title_enemy libcocos2dcpp.so \
+  002a5f00 /tmp/update-touchpoint-pcode-flow.tsv
+```
+
+The replay test checks the operation and pointer-expression agreement against
+the pinned `update-touchpoint-pcode-flow.tsv` artifact.
 
 The replay test rebuilds the Effect IR, combined function artifact, graph, and
 query and checks each result byte-for-byte against its pinned output:

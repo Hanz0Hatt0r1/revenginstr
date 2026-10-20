@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 from pathlib import Path
@@ -320,9 +321,45 @@ def test_nevergone_ccjoystick_method_pair_replay_is_reproducible() -> None:
         json.loads(line)
         for line in update_stores.read_text(encoding="utf-8").splitlines()
     ]
+    pcode_path = replay_dir / "update-touchpoint-pcode-flow.tsv"
+    pcode_rows = list(csv.DictReader(pcode_path.open(encoding="utf-8"), delimiter="\t"))
+    pcode_schema = _schema("ghidra-function-pcode-flow-v1.schema.json")
+    for row in pcode_rows:
+        pcode_schema.validate(row)
+    pcode_by_key = {
+        (row["function_entry"], row["op_address"], row["op_time"], row["opcode"]): row
+        for row in pcode_rows
+    }
+    assert len(pcode_by_key) == len(pcode_rows) == 176
     assert len(memory_rows) == 2
     for row in memory_rows:
         memory_store_schema.validate(row)
+        store = pcode_by_key[(row["function_entry"], row["address"], str(row["time"]), "STORE")]
+        store_inputs = store["inputs"].split(";")
+        assert len(store_inputs) == 3
+        assert store_inputs[1] == row["pointer_token"]
+        assert int(store_inputs[2].rsplit(":", 1)[1]) == row["memory_width_bytes"]
+        expression = {}
+        for operation in row["address_expression_ops"]:
+            key = (row["function_entry"], operation["address"], str(operation["time"]), operation["opcode"])
+            expression[operation["opcode"]] = pcode_by_key[key]
+        cast = expression["CAST"]
+        ptradd = expression["PTRADD"]
+        assert cast["output"] == row["pointer_token"]
+        assert cast["inputs"] == ptradd["output"]
+        ptradd_inputs = ptradd["inputs"].split(";")
+        assert len(ptradd_inputs) == 3
+        assert ptradd_inputs[1].startswith("const:")
+        assert ptradd_inputs[2].startswith("const:")
+        byte_offset = int(ptradd_inputs[1].split(":")[1], 0)
+        element_scale = int(ptradd_inputs[2].split(":")[1], 0)
+        assert row["offset_bytes"] == byte_offset * element_scale
+
+    load_rows = list(csv.DictReader(update_loads.open(encoding="utf-8"), delimiter="\t"))
+    assert len(load_rows) == 12
+    for row in load_rows:
+        load = pcode_by_key[(row["function_entry"], row["load_address"], row["load_time"], "LOAD")]
+        assert int(load["output"].rsplit(":", 1)[1]) == int(row["value_size"])
 
     init_dir = ROOT / "docs/evidence/receiver-field-access/nevergone-ccjoystick-init-20261019"
     init_effects = build_function_effect_ir(

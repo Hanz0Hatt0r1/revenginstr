@@ -102,8 +102,20 @@
     {
       "id": "readme",
       "path": "README.md",
-      "bytes": 2503,
-      "sha256": "b711ac7e5a2463add2524eafbd2552b4af3e14c708e691d471a8a2e4ea251883"
+      "bytes": 3334,
+      "sha256": "c73494e8642c38ee445e912a369c05ba3473135dbf40a16d4b95eca232ae6bb8"
+    },
+    {
+      "id": "update_touchpoint_pcode_flow",
+      "path": "update-touchpoint-pcode-flow.tsv",
+      "bytes": 15032,
+      "sha256": "17b9a726f0f8e1ef04c4bf77bfdcd06d77e3a035af6fa66a7745d607800555a6"
+    },
+    {
+      "id": "function_pcode_flow_schema",
+      "path": "../../../../schemas/ghidra-function-pcode-flow-v1.schema.json",
+      "bytes": 1014,
+      "sha256": "f0c4c38211ce1402074a27c8deb03e3e8079921073856fce6490c1e0b4940c05"
     }
   ],
   "summary": {
@@ -117,6 +129,13 @@
     "graph_nodes": 61,
     "graph_edges": 89,
     "query_field_nodes": 10,
-    "query_related_type_nodes": 1
+    "query_related_type_nodes": 1,
+    "update_touchpoint_pcode_rows": 176,
+    "crosschecked_load_operations": 12,
+    "crosschecked_store_operations": 2,
+    "crosschecked_store_offsets": [
+      "0x13c",
+      "0x140"
+    ]
   }
 }
