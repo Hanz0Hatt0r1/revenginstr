@@ -111,7 +111,16 @@ def evaluate_probe_set(
             )
         except (TypeError, ValueError) as error:
             raise ProbeEvaluationError(f"invalid source candidate set: {error}") from error
-        if reproduced_plan != plan:
+        try:
+            reproduced_plan_json = json.dumps(
+                reproduced_plan, sort_keys=True, separators=(",", ":"), allow_nan=False,
+            )
+            submitted_plan_json = json.dumps(
+                plan, sort_keys=True, separators=(",", ":"), allow_nan=False,
+            )
+        except (TypeError, ValueError) as error:
+            raise ProbeEvaluationError(f"request plan is not canonical JSON data: {error}") from error
+        if reproduced_plan_json != submitted_plan_json:
             raise ProbeEvaluationError("request plan does not reproduce from the source candidate bytes")
     requests = plan.get("selected_requests")
     if not isinstance(requests, list) or not 1 <= len(requests) <= MAX_REQUESTS:
