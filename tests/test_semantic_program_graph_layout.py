@@ -423,6 +423,176 @@ def test_nevergone_ccjoystick_method_pair_replay_is_reproducible() -> None:
         replay_dir / "field-access-query.jsonl"
     ).read_bytes()
 
+    prototype_artifact = next(
+        artifact for artifact in manifest["artifacts"] if artifact["id"] == "function_prototypes"
+    )
+    prototype_path = (replay_dir / prototype_artifact["path"]).resolve()
+    prototype_rows = [
+        json.loads(line) for line in prototype_path.read_text(encoding="utf-8").splitlines()
+    ]
+    prototype_validator = _schema("ghidra-function-prototype-v1.schema.json")
+    prototype_by_entry = {}
+    for row in prototype_rows:
+        prototype_validator.validate(row)
+        assert row["program_sha256"] == layouts[0]["program_sha256"]
+        assert row["signature_source"] == "ANALYSIS"
+        parameter = row["parameters"][0]
+        assert parameter["index"] == 0
+        assert parameter["type"]["kind"] == "pointer"
+        assert parameter["type"]["target_name"] == "CCJoyStick"
+        assert row["resolved_entry"] not in prototype_by_entry
+        prototype_by_entry[row["resolved_entry"]] = row
+    assert {
+        entry: row["qualified_name"] for entry, row in prototype_by_entry.items()
+    } == {
+        "002a6584": "CCJoyStick::init",
+        "002a5f00": "CCJoyStick::updateTouchPoint",
+    }
+
+    layout = layouts[0]
+    layout_offsets = {field["offset_bytes"] for field in layout["fields"]}
+
+    def stable_id(kind: str, identity: list[object]) -> str:
+        encoded = json.dumps(identity, ensure_ascii=False, separators=(",", ":"))
+        return f"{kind}:{hashlib.sha256(encoded.encode('utf-8')).hexdigest()}"
+
+    type_node_id = stable_id("type", [program_id, layout["type_id"]])
+    expected_gold_edges: dict[tuple[str, str], set[tuple[str, int, str]]] = {}
+    expected_field_context: dict[tuple[str, str], tuple[str, int]] = {}
+    for function in combined:
+        entry = function["function_entry"]
+        prototype = prototype_by_entry[entry]
+        assert prototype["parameters"][0]["type"]["target_name"] == "CCJoyStick"
+        for effect in function["effects"]:
+            if (
+                effect["kind"] not in {"parameter_field_read", "parameter_field_write"}
+                or effect["parameter_index"] != 0
+                or int(effect["field_offset"], 16) not in layout_offsets
+            ):
+                continue
+            field_node_id = stable_id(
+                "field", [program_id, entry, effect["parameter_index"], effect["field_offset"]]
+            )
+            edge_key = (type_node_id, field_node_id)
+            expected_field_context[edge_key] = (entry, int(effect["field_offset"], 16))
+            expected_gold_edges.setdefault(edge_key, set()).add((
+                effect["provenance"]["artifact_sha256"],
+                effect["provenance"]["record_index"],
+                effect["provenance"]["source_format"],
+            ))
+    assert len(expected_gold_edges) == 15
+
+    gold_path = replay_dir / "field-layout-gold.jsonl"
+    [gold] = [
+        json.loads(line) for line in gold_path.read_text(encoding="utf-8").splitlines()
+    ]
+    _schema("semantic-program-graph-gold-v1.schema.json").validate(gold)
+    assert gold["program_id"] == program_id
+    assert gold["graph_id"] == graph["graph_id"]
+    assert gold["complete_relations"] == ["has_field"]
+    gold_edges = {
+        (edge["from"], edge["to"]): edge for edge in gold["edges"]
+    }
+    assert set(gold_edges) == set(expected_gold_edges)
+    assert set(gold["scope_node_ids"]) == {
+        type_node_id, *(field_node_id for _, field_node_id in expected_gold_edges)
+    }
+    assert "REVENGINSTR.TypeLayoutMemberMap/1" not in {
+        reference["source_format"]
+        for edge in gold["edges"] for reference in edge["evidence_refs"]
+    }
+
+    manifest_by_id = {artifact["id"]: artifact for artifact in manifest["artifacts"]}
+    source_ids_by_format = {
+        "REVENGINSTR.GhidraFunctionPrototype/1": "function_prototypes",
+        "REVENGINSTR.TypeLayoutHypothesis/1": "type_layout_hypothesis",
+        "REVENGINSTR.GhidraParameterLoadField/1": "init_parameter_loads",
+        "REVENGINSTR.GhidraParameterStoreField/1": "init_parameter_stores",
+        "REVENGINSTR.GhidraMemoryStoreAccess/1": "update_touchpoint_memory_stores",
+    }
+    records_by_sha: dict[str, list[dict[str, object]]] = {}
+    for artifact_id in set(source_ids_by_format.values()) | {
+        "update_touchpoint_loads",
+    }:
+        artifact = manifest_by_id[artifact_id]
+        source_path = (replay_dir / artifact["path"]).resolve()
+        if source_path.suffix == ".tsv":
+            with source_path.open(encoding="utf-8", newline="") as source_file:
+                records = list(csv.DictReader(source_file, delimiter="\t"))
+        else:
+            records = [
+                json.loads(line)
+                for line in source_path.read_text(encoding="utf-8").splitlines()
+            ]
+        records_by_sha[artifact["sha256"]] = records
+
+    prototype_indices = {
+        row["resolved_entry"]: index
+        for index, row in enumerate(prototype_rows, start=1)
+    }
+    layout_artifact = manifest_by_id["type_layout_hypothesis"]
+    for edge_key, edge in gold_edges.items():
+        entry, offset = expected_field_context[edge_key]
+        expected_refs = {
+            (prototype_artifact["sha256"], prototype_indices[entry],
+             "REVENGINSTR.GhidraFunctionPrototype/1"),
+            (layout_artifact["sha256"], 1, "REVENGINSTR.TypeLayoutHypothesis/1"),
+        }
+        expected_refs.update(expected_gold_edges[edge_key])
+        actual_refs = {
+            (reference["artifact_sha256"], reference["record_index"], reference["source_format"])
+            for reference in edge["evidence_refs"]
+        }
+        assert actual_refs == expected_refs
+        for artifact_sha256, record_index, source_format in actual_refs:
+            assert source_format in source_ids_by_format
+            source_records = records_by_sha[artifact_sha256]
+            source_row = source_records[record_index - 1]
+            assert source_row["format"] == source_format
+            if source_format == "REVENGINSTR.GhidraFunctionPrototype/1":
+                assert source_row["resolved_entry"] == entry
+                assert source_row["parameters"][0]["type"]["target_name"] == "CCJoyStick"
+            elif source_format == "REVENGINSTR.TypeLayoutHypothesis/1":
+                assert source_row["type_id"] == layout["type_id"]
+                assert offset in {field["offset_bytes"] for field in source_row["fields"]}
+            else:
+                assert source_row["function_entry"] == entry
+                root_field = {
+                    "REVENGINSTR.GhidraParameterLoadField/1": "base_parameter_index",
+                    "REVENGINSTR.GhidraParameterStoreField/1": "destination_parameter_index",
+                    "REVENGINSTR.GhidraMemoryStoreAccess/1": "root_parameter_index",
+                }[source_format]
+                assert source_row[root_field] == 0 or source_row[root_field] == "0"
+                raw_offset = source_row.get(
+                    "field_offset", source_row.get("destination_offset")
+                )
+                if source_format == "REVENGINSTR.GhidraMemoryStoreAccess/1":
+                    raw_offset = source_row["offset_bytes"]
+                elif isinstance(raw_offset, str):
+                    raw_offset = int(raw_offset, 16)
+                assert raw_offset == offset
+
+    evaluation = evaluate_semantic_program_graph(
+        graph_path, gold_path, view="exploratory",
+    )
+    pinned_evaluation = json.loads(
+        (replay_dir / "field-layout-evaluation.json").read_text(encoding="utf-8")
+    )
+    _schema("semantic-program-graph-evaluation-v1.schema.json").validate(evaluation)
+    assert evaluation == pinned_evaluation
+    assert evaluation["candidate_edge_count"] == 15
+    assert evaluation["per_relation"]["has_field"]["true_positives"] == 15
+    assert evaluation["per_relation"]["has_field"]["candidate_edge_precision"] == 1.0
+    assert evaluation["per_relation"]["has_field"]["recall"] == 1.0
+    assert evaluation["per_relation"]["has_field"]["unsupported_edges"] == 0
+    assert evaluation["provenance_completeness"] == 1.0
+    assert evaluation["accepted_edge_count"] == 0
+    assert evaluation["accepted_edge_precision"] is None
+    assert manifest["summary"]["adjudicated_has_field_gold_edges"] == 15
+    assert manifest["summary"]["exploratory_has_field_precision"] == 1.0
+    assert manifest["summary"]["exploratory_has_field_recall"] == 1.0
+    assert manifest["summary"]["accepted_has_field_edges"] == 0
+
 
 def test_nevergone_runtime_resource_calls_match_independent_instruction_references() -> None:
     replay_dir = ROOT / (

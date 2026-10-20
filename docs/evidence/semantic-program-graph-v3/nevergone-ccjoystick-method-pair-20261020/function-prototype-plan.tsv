@@ -1,0 +1,3 @@
+plan_id	requested_entry	resolution
+ccjoystick_init	002a6584	exact
+ccjoystick_update_touch_point	002a5f00	exact

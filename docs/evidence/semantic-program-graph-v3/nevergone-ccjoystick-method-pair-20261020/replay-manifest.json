@@ -102,8 +102,8 @@
     {
       "id": "readme",
       "path": "README.md",
-      "bytes": 3334,
-      "sha256": "c73494e8642c38ee445e912a369c05ba3473135dbf40a16d4b95eca232ae6bb8"
+      "bytes": 4639,
+      "sha256": "8ad3bce2d5ac07cdec4351593e8b11ed434adf73d3ae1a372fa61eeab6fcca0c"
     },
     {
       "id": "update_touchpoint_pcode_flow",
@@ -116,6 +116,60 @@
       "path": "../../../../schemas/ghidra-function-pcode-flow-v1.schema.json",
       "bytes": 1014,
       "sha256": "f0c4c38211ce1402074a27c8deb03e3e8079921073856fce6490c1e0b4940c05"
+    },
+    {
+      "id": "init_parameter_loads",
+      "path": "../../receiver-field-access/nevergone-ccjoystick-init-20261019/parameter-loads.tsv",
+      "bytes": 1389,
+      "sha256": "b96a464135852bc16474bb3e9e6d127b07527330a8e128b67b4907be999df134"
+    },
+    {
+      "id": "init_parameter_stores",
+      "path": "../../receiver-field-access/nevergone-ccjoystick-init-20261019/parameter-stores.tsv",
+      "bytes": 925,
+      "sha256": "308a90c88b719f1bb0bdbd3f605dd18968a2fe4e284b51cde6ac2a4c63749bc0"
+    },
+    {
+      "id": "function_prototype_plan",
+      "path": "function-prototype-plan.tsv",
+      "bytes": 111,
+      "sha256": "aa7cf793f7286539ad5d7950906b9605d7d06aadc5f0d009c7c6f4827ee314b5"
+    },
+    {
+      "id": "function_prototypes",
+      "path": "function-prototypes.jsonl",
+      "bytes": 3089,
+      "sha256": "eb32af7f1824286c72c44f6c7048b18bf2bd899dd3f21c028345ad76cf5c64aa"
+    },
+    {
+      "id": "field_layout_gold",
+      "path": "field-layout-gold.jsonl",
+      "bytes": 14560,
+      "sha256": "cba50329bac18446e9a00a9480de7892e34e268f2084bd766f6260687dadf571"
+    },
+    {
+      "id": "field_layout_evaluation",
+      "path": "field-layout-evaluation.json",
+      "bytes": 870,
+      "sha256": "1fb00d8fc0efc1158ccd0aebda957ad9b2b019d66746172e0b43492755c58828"
+    },
+    {
+      "id": "function_prototype_schema",
+      "path": "../../../../schemas/ghidra-function-prototype-v1.schema.json",
+      "bytes": 3061,
+      "sha256": "add5786aff444d068a2c922090b30bc19f5cfd46fe697c95fc7495326784f082"
+    },
+    {
+      "id": "semantic_graph_gold_schema",
+      "path": "../../../../schemas/semantic-program-graph-gold-v1.schema.json",
+      "bytes": 4265,
+      "sha256": "886fc1635f594eba5f2a669bf1179cde310053a88e2f33d139b9cac572280b78"
+    },
+    {
+      "id": "semantic_graph_evaluation_schema",
+      "path": "../../../../schemas/semantic-program-graph-evaluation-v1.schema.json",
+      "bytes": 2931,
+      "sha256": "528e719a14c522a382ccb257101060096a8795708685a10f1b8c2d770e70e847"
     }
   ],
   "summary": {
@@ -136,6 +190,11 @@
     "crosschecked_store_offsets": [
       "0x13c",
       "0x140"
-    ]
+    ],
+    "crosschecked_method_owner_prototypes": 2,
+    "adjudicated_has_field_gold_edges": 15,
+    "exploratory_has_field_precision": 1.0,
+    "exploratory_has_field_recall": 1.0,
+    "accepted_has_field_edges": 0
   }
 }

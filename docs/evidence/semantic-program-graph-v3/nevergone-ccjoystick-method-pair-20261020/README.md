@@ -28,6 +28,16 @@ derived links keep null confidence. These artifacts do not assign field
 meanings, establish runtime aliasing, or claim that any store supplies a later
 load.
 
+An additional read-only `GhidraFunctionPrototype/1` export records parameter 0
+of both methods as a pointer to `CCJoyStick`. Ghidra labels these signatures
+`ANALYSIS`, so the snapshot is corroborating evidence rather than truth. A
+scoped, manually adjudicated `has_field` gold is built from the separate
+prototype rows, the reviewed type-layout row, and the underlying field-access
+rows; it does not cite the member map. The exploratory evaluation matches all
+15 scoped joins (precision and recall 1.0, complete provenance). It accepts no
+edges: confidence remains null and the relation is not calibrated. This is a
+narrow cross-artifact owner-type check, not a general field-accuracy result.
+
 The REA MCP Ghidra provider reported `cleanup_incomplete` for an old analysis
 session, so this replay was exported with the repository's standard Ghidra
 parameter-store-field tool in `-readOnly -noanalysis` mode. The checked-in
@@ -56,6 +66,21 @@ GHIDRA_HOME=/opt/ghidra \
 The replay test checks the operation and pointer-expression agreement against
 the pinned `update-touchpoint-pcode-flow.tsv` artifact.
 
+Regenerate the exact stored signature snapshot with:
+
+```sh
+GHIDRA_HOME=/opt/ghidra \
+  scripts/run_ghidra_function_prototypes.sh \
+  /home/pes/ghidra_projects nevergone_title_enemy libcocos2dcpp.so \
+  docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick-method-pair-20261020/function-prototype-plan.tsv \
+  /tmp/ccjoystick-function-prototypes.jsonl
+```
+
+The checked-in gold is adjudicated from those prototype rows plus the raw field
+evidence and layout hypothesis. Its replay test verifies that every cited
+artifact hash and record ordinal resolves and that the gold contains no
+member-map evidence.
+
 The replay test rebuilds the Effect IR, combined function artifact, graph, and
 query and checks each result byte-for-byte against its pinned output:
 
@@ -63,5 +88,5 @@ query and checks each result byte-for-byte against its pinned output:
 pytest -q tests/test_semantic_program_graph_layout.py -k method_pair
 ```
 
-The manifest pins both source exports, the manually reviewed member map,
+The manifest pins the source exports, the manually reviewed member map,
 intermediate and final outputs, schemas, and this README.

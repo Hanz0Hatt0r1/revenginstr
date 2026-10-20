@@ -1508,6 +1508,16 @@ member-map joins and is fully hash-pinned and reproducible. The map remains
 human-review evidence, so this expands queryable structural coverage without
 adding independent field-accuracy evidence or closing M10.5.
 
+A separate, read-only `GhidraFunctionPrototype/1` export records parameter 0
+of both methods as `CCJoyStick *`. A narrow adjudicated gold built from those
+prototype rows, the reviewed layout hypothesis, and raw field-access rows
+scores all 15 corresponding `has_field` joins in the exploratory view with
+complete provenance. It does not cite the graph's member map. Because the
+stored prototypes are Ghidra `ANALYSIS` signatures from the same project, this
+is a cross-artifact owner-type check, not broad independent field-accuracy or
+confidence evidence; no edges enter the accepted view. Broader subsystem gold
+and accepted derived-relation evaluation remain open, so M10.5 is not complete.
+
 `revenginstr-semantic-program-query` now selects nodes and edges by kind,
 relation, indirect-call state, conflict state, function entry, operation
 address, field offset, type id, and provenance id. It emits a hash-pinned
