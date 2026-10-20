@@ -38,3 +38,5 @@ all 88 startup observations; a later bounded capture also exact-matches 11
 and [runtime transform replay](RUNTIME_TRANSFORM_REPLAY.md).
 For exact caller/`CALLIND`/target triples, see
 [`runtime indirect-call correlation`](RUNTIME_INDIRECT_CALL_CORRELATION.md).
+For runtime `CALL` site/target triples, see
+[`runtime direct-call correlation`](RUNTIME_DIRECT_CALL_CORRELATION.md).

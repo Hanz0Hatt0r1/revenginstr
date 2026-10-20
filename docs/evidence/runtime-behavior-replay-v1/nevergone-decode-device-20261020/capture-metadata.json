@@ -1,13 +1,27 @@
 {
-  "adapter_sha256": "95c5b41a7144cf56d8f83e16dc0f3475fc3991069d65675dbcdd74aae4c3e664",
+  "adapter_sha256": "7fa4869a3dd27b0bb9f024162825d9bff8bae60ca94cecd4a43fde87ba2e9ab5",
   "android_abi": "armeabi-v7a",
   "application_version": "1.0.9",
   "buffer_bytes_retained": false,
+  "callsite_elf_vmas": [
+    "0x534bdc"
+  ],
+  "callsite_facts": [
+    {
+      "caller_entry": "00544a60",
+      "node_id": "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9",
+      "static_address": "0x544bdc"
+    }
+  ],
+  "callsite_return_offsets": [
+    "0x534be1"
+  ],
   "capture_id": "nevergone-decode-device-20261020-pid15911",
   "captured_at_utc": "2026-10-20T12:39:57.971000+00:00",
   "decode_call_rows": 11,
   "device_code": "begonia",
   "device_model": "Redmi Note 8 Pro",
+  "direct_call_observations": 11,
   "elf_vma": "0x534a40",
   "format": "REVENGINSTR.NevergoneDecodeCaptureMetadata/1",
   "formula_matches": 10,

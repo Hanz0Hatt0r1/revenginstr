@@ -24,6 +24,15 @@ the probe or recompute the formula from the omitted bytes. It does not prove
 whole-buffer behavior or close the receiver/field/state value-flow pairs in
 M9.4.
 
+The same 11 events also verify the caller edge. Frida recorded return offset
+`0x534be1`; clearing the Thumb state bit and stepping back the four-byte `BL`
+maps it to ELF call instruction `0x534bdc`, then to graph operation `0x544bdc`
+under image base `0x10000`. The pinned graph identifies that operation as the
+unique `CALL` from `CCFileUtilsAndroid::getFileData` (`0x544a60`) to `Decode`
+(`0x544a40`). [`RuntimeDirectCallCorrelation/1`](../../../../docs/RUNTIME_DIRECT_CALL_CORRELATION.md)
+reports 11/11 matched edges. The source disassembly is retained in the
+[mobile static-analysis evidence](../../mobile-static-analysis-v1/nevergone-decode-20261020/disassembly.txt).
+
 `probe-script.js` is the complete instrumented trace script used for this
 capture. The raw device trace is not checked in because it contains transient
 process pointers and file-access paths; its SHA-256 is retained in the capture
@@ -45,6 +54,13 @@ PYTHONPATH=src python -m revenginstr.runtime_static_correlation \
   /tmp/nevergone-decode-capture/runtime-address-observations.jsonl \
   --output /tmp/nevergone-decode-capture/runtime-static-correlation.json
 
+PYTHONPATH=src python -m revenginstr.runtime_direct_call_correlation \
+  docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/semantic-program-graph.jsonl \
+  /tmp/nevergone-decode-capture/static-identity.json \
+  /tmp/nevergone-decode-capture/capture-manifest.json \
+  /tmp/nevergone-decode-capture/runtime-direct-call-observations.jsonl \
+  --output /tmp/nevergone-decode-capture/runtime-direct-call-correlation.json
+
 python tools/capture_adapters/pin_runtime_transform_manifest.py \
   /tmp/nevergone-decode-capture/capture-metadata.json \
   /tmp/nevergone-decode-capture/runtime-static-correlation.json \
@@ -58,6 +74,6 @@ PYTHONPATH=src python -m revenginstr.runtime_transform_replay \
   --output /tmp/nevergone-decode-capture/runtime-transform-replay.json
 ```
 
-The checked-in correlation, transform observations, manifest, and replay are
-the hash-pinned outputs from those steps. A fresh capture needs a manifest
-whose hashes refer to that capture's files.
+The checked-in address, direct-call, and transform correlations, observations,
+manifest, and replay are the hash-pinned outputs from those steps. A fresh
+capture needs a manifest whose hashes refer to that capture's files.

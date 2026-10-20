@@ -1290,6 +1290,15 @@ function presence only: completeness remains unknown, and object-instance,
 field, call-edge, and sampled-value joins remain open. See the
 [runtime graph replay](evidence/semantic-program-graph-v3/nevergone-runtime-correlation-20261020/README.md).
 
+`RuntimeDirectCallObservation/1` and
+`revenginstr-runtime-direct-call-correlate` now verify a sampled direct edge
+from `CCFileUtilsAndroid::getFileData` to `cocos2d::Decode`. In the same device
+capture, 11 normalized Thumb callsites map to the exact `CALL` operation at
+`0x544bdc`, its owner at `0x544a60`, and its unique target at `0x544a40`.
+Capture completeness remains unknown; this establishes the edge only for the
+observed calls and does not close object, field, or value-flow joins. See
+[`runtime direct-call correlation`](RUNTIME_DIRECT_CALL_CORRELATION.md).
+
 **Indirect-call triple correlation v1 implemented:**
 `RuntimeIndirectCallObservation/1` binds a runtime caller entry, `CALLIND`
 machine address, and observed target entry. The

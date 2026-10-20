@@ -30,3 +30,5 @@ The consumer-specific Nevergone adapter
 normalizes Frida Gadget traces without copying buffer bytes or raw pointers
 into the observation contract. The retained on-device replay is documented in
 [`the Nevergone Decode capture`](evidence/runtime-behavior-replay-v1/nevergone-decode-device-20261020/README.md).
+The same trace also has an independent [direct-call replay](RUNTIME_DIRECT_CALL_CORRELATION.md)
+for the `getFileData` to `Decode` edge.

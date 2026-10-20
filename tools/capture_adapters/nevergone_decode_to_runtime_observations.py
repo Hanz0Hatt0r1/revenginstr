@@ -118,11 +118,27 @@ def main() -> int:
 
     addresses: list[dict[str, Any]] = []
     transforms: list[dict[str, Any]] = []
+    direct_calls: list[dict[str, Any]] = []
     ordinals: set[int] = set()
+    callsite_facts: dict[int, dict[str, Any]] = {}
     for sequence, event in enumerate(events):
         offset = _hex(event.get("offset"), f"Decode event {sequence + 1} offset")
         if offset & ~1 != expected_elf_vma:
             raise ValueError(f"Decode event {sequence + 1} does not map to the requested static function")
+        return_offset = _hex(event.get("callsite"), f"Decode event {sequence + 1} callsite")
+        if return_offset & 1 == 0:
+            raise ValueError(f"Decode event {sequence + 1} return address is not Thumb-tagged")
+        callsite_elf_vma = (return_offset & ~1) - 4
+        if callsite_elf_vma < 0:
+            raise ValueError(f"Decode event {sequence + 1} return address precedes a Thumb BL")
+        callsite_static_address = callsite_elf_vma + image_base
+        callsite_nodes = [
+            node for node in graph.get("nodes", [])
+            if node.get("kind") == "operation" and node.get("opcode") == "CALL"
+            and _hex(node.get("operation_address"), "graph direct call address") == callsite_static_address
+        ]
+        if len(callsite_nodes) != 1 or callsite_nodes[0].get("target_entries") != [f"{static_entry:08x}"]:
+            raise ValueError(f"Decode event {sequence + 1} return address does not identify one direct CALL to the selected function")
         typed = event.get("typed")
         if not isinstance(typed, dict) or typed.get("kind") != "decode":
             raise ValueError(f"Decode event {sequence + 1} has no typed observation")
@@ -145,6 +161,12 @@ def main() -> int:
         if mode == "none" and (sample_count != 0 or result != "unavailable"):
             raise ValueError(f"Decode event {sequence + 1} has inconsistent empty-sample fields")
         address = module_base + expected_elf_vma
+        runtime_callsite_address = module_base + callsite_elf_vma
+        callsite_facts[callsite_elf_vma] = {
+            "static_address": f"0x{callsite_static_address:x}",
+            "node_id": callsite_nodes[0]["id"],
+            "caller_entry": callsite_nodes[0]["function_entry"],
+        }
         addresses.append({
             "format": "REVENGINSTR.RuntimeAddressObservation/1",
             "capture_id": args.capture_id,
@@ -166,6 +188,13 @@ def main() -> int:
             "sample_count": sample_count,
             "formula_result": result,
             "probe_script_sha256": script_sha,
+        })
+        direct_calls.append({
+            "format": "REVENGINSTR.RuntimeDirectCallObservation/1",
+            "capture_id": args.capture_id,
+            "sequence": sequence,
+            "callsite_runtime_address": f"0x{runtime_callsite_address:x}",
+            "target_runtime_address": f"0x{address:x}",
         })
 
     identity = {
@@ -208,6 +237,10 @@ def main() -> int:
         "elf_vma": f"0x{expected_elf_vma:x}",
         "hook_symbol_offset": events[0]["offset"],
         "function_node_id": target_nodes[0]["id"],
+        "direct_call_observations": len(direct_calls),
+        "callsite_return_offsets": sorted({event["callsite"] for event in events}),
+        "callsite_elf_vmas": [f"0x{vma:x}" for vma in sorted(callsite_facts)],
+        "callsite_facts": [callsite_facts[vma] for vma in sorted(callsite_facts)],
         "decode_call_rows": len(transforms),
         "nonempty_decode_calls": sum(row["input_length"] > 0 for row in transforms),
         "sampled_bytes": sum(row["sample_count"] for row in transforms),
@@ -223,10 +256,12 @@ def main() -> int:
     _write_json(args.output_dir / "capture-metadata.json", metadata)
     _write_jsonl(args.output_dir / "runtime-address-observations.jsonl", addresses)
     _write_jsonl(args.output_dir / "runtime-transform-observations.jsonl", transforms)
+    _write_jsonl(args.output_dir / "runtime-direct-call-observations.jsonl", direct_calls)
     print("Decode calls:", len(transforms))
     print("formula matches:", matched)
     print("formula mismatches:", mismatched)
     print("unavailable:", unavailable)
+    print("direct CALL observations:", len(direct_calls))
     print("output:", args.output_dir)
     return 0
 
