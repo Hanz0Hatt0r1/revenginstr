@@ -771,6 +771,7 @@ def test_codegen_routes_computed_call_terminator_with_trailing_return(tmp_path: 
     row["instruction_count"] = 1
     row["instructions"] = [{
         "address": "0x00401000", "mnemonic": "BREAK", "flow_type": "COMPUTED_CALL_TERMINATOR",
+        "fallthrough": "0x00401001",
         "flows": [], "pcode": [
             {"opcode": "CALLOTHER", "output": _varnode("unique", "0x100", 4),
              "inputs": [_varnode("const", "0x10", 4, constant=True),
@@ -781,12 +782,31 @@ def test_codegen_routes_computed_call_terminator_with_trailing_return(tmp_path: 
     }]
     source, operation_count = compile_function(row, _address_spaces())
     assert operation_count == 3
+    assert 'rvi_call_x86_32(ctx, rvi_1_call_target_value, UINT32_C(0x401001), "ram")' in source
 
     compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
     if compiler is None:
         pytest.skip("C compiler not available")
     harness = r'''
-typedef struct { unsigned userop_calls; unsigned function_calls; } TestState;
+typedef struct { uint8_t registers[64]; uint8_t ram[512]; unsigned userop_calls; unsigned function_calls; } TestState;
+static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {
+    TestState *state = (TestState *)opaque;
+    uint8_t *base = strcmp(space, "register") == 0 ? state->registers :
+                    strcmp(space, "ram") == 0 ? state->ram : NULL;
+    size_t limit = strcmp(space, "register") == 0 ? sizeof(state->registers) : sizeof(state->ram);
+    if (!base || offset + size > limit) return -1;
+    memcpy(out, base + offset, size);
+    return 0;
+}
+static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t size, const uint8_t *in) {
+    TestState *state = (TestState *)opaque;
+    uint8_t *base = strcmp(space, "register") == 0 ? state->registers :
+                    strcmp(space, "ram") == 0 ? state->ram : NULL;
+    size_t limit = strcmp(space, "register") == 0 ? sizeof(state->registers) : sizeof(state->ram);
+    if (!base || offset + size > limit) return -1;
+    memcpy(base + offset, in, size);
+    return 0;
+}
 static int call_function(void *opaque, uint64_t target) {
     TestState *state = (TestState *)opaque;
     if (target != UINT64_C(0x1234)) return -1;
@@ -805,9 +825,13 @@ static int execute_userop(void *opaque, uint32_t index, const uint64_t *args,
 int rvi_00401000(RviPcodeContext *ctx);
 int main(void) {
     TestState state = {0};
-    RviPcodeContext context = {&state, NULL, NULL, call_function, execute_userop};
+    uint32_t esp = 0x200;
+    memcpy(state.registers + 0x10, &esp, sizeof(esp));
+    RviPcodeContext context = {&state, read_bytes, write_bytes, call_function, execute_userop};
     if (rvi_00401000(&context) != 0) return 1;
-    return state.userop_calls == 1 && state.function_calls == 1 ? 0 : 2;
+    uint32_t final_esp = 0;
+    memcpy(&final_esp, state.registers + 0x10, sizeof(final_esp));
+    return state.userop_calls == 1 && state.function_calls == 1 && final_esp == esp ? 0 : 2;
 }
 '''
     c_path = tmp_path / "computed-call-return.c"
@@ -1198,14 +1222,25 @@ def test_codegen_compacts_sparse_unique_space_without_losing_overlaps() -> None:
 def test_codegen_dispatches_direct_and_indirect_calls(tmp_path: Path) -> None:
     row = _function_row()
     row["function"] = {**row["function"], "address": "0x00401200"}
+    memory_id = _varnode("const", "0x1a1", 4, constant=True)
+    esp = _varnode("register", "0x10", 4)
+
+    def call_stack(return_address: int) -> list[dict]:
+        return [
+            {"opcode": "INT_SUB", "output": esp, "inputs": [esp, _varnode("const", "0x4", 4, constant=True)]},
+            {"opcode": "STORE", "output": None, "inputs": [memory_id, esp, _varnode("const", hex(return_address), 4, constant=True)]},
+        ]
+
     row["instruction_count"] = 4
     row["instructions"] = [
         {"address": "0x00401200", "mnemonic": "CALL", "flow_type": "UNCONDITIONAL_CALL",
-         "flows": ["0x00405000"], "pcode": [{
+         "fallthrough": "0x00401205",
+         "flows": ["0x00405000"], "pcode": [*call_stack(0x00401205), {
              "opcode": "CALL", "output": None, "inputs": [_varnode("ram", "0x405000", 4)],
          }]},
         {"address": "0x00401205", "mnemonic": "CALL", "flow_type": "COMPUTED_CALL",
-         "flows": [], "pcode": [{
+         "fallthrough": "0x00401207",
+         "flows": [], "pcode": [*call_stack(0x00401207), {
              "opcode": "CALLIND", "output": None, "inputs": [_varnode("register", "0xc", 4)],
          }]},
         {"address": "0x00401207", "mnemonic": "MOV", "flow_type": "FALL_THROUGH",
@@ -1219,42 +1254,66 @@ def test_codegen_dispatches_direct_and_indirect_calls(tmp_path: Path) -> None:
          }]},
     ]
     source, operation_count = compile_function(row, _address_spaces())
-    assert operation_count == 4
+    assert operation_count == 8
+    assert 'rvi_call_x86_32(ctx, UINT64_C(0x405000), UINT32_C(0x401205), "ram")' in source
+    assert 'rvi_call_x86_32(ctx, rvi_5_call_target_value, UINT32_C(0x401207), "ram")' in source
 
     compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
     if compiler is None:
         pytest.skip("C compiler not available")
     harness = r'''
-typedef struct { uint8_t registers[64]; uint64_t targets[2]; int call_count; } TestState;
+typedef struct { uint8_t registers[64]; uint8_t ram[512]; uint64_t targets[2]; int call_count; } TestState;
 static int read_bytes(void *opaque, const char *space, uint64_t offset, size_t size, uint8_t *out) {
     TestState *state = (TestState *)opaque;
-    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
-    memcpy(out, state->registers + offset, size);
+    uint8_t *base = strcmp(space, "register") == 0 ? state->registers :
+                    strcmp(space, "ram") == 0 ? state->ram : NULL;
+    size_t limit = strcmp(space, "register") == 0 ? sizeof(state->registers) : sizeof(state->ram);
+    if (!base || offset + size > limit) return -1;
+    memcpy(out, base + offset, size);
     return 0;
 }
 static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t size, const uint8_t *in) {
     TestState *state = (TestState *)opaque;
-    if (strcmp(space, "register") != 0 || offset + size > sizeof(state->registers)) return -1;
-    memcpy(state->registers + offset, in, size);
+    uint8_t *base = strcmp(space, "register") == 0 ? state->registers :
+                    strcmp(space, "ram") == 0 ? state->ram : NULL;
+    size_t limit = strcmp(space, "register") == 0 ? sizeof(state->registers) : sizeof(state->ram);
+    if (!base || offset + size > limit) return -1;
+    memcpy(base + offset, in, size);
     return 0;
 }
 static int call_target(void *opaque, uint64_t target) {
     TestState *state = (TestState *)opaque;
     if (state->call_count >= 2) return -1;
     state->targets[state->call_count++] = target;
+    uint32_t esp = 0, return_address = 0;
+    memcpy(&esp, state->registers + 0x10, sizeof(esp));
+    if (esp != 0x1fc) return -1;
+    if (esp > sizeof(state->ram) - sizeof(return_address)) return -1;
+    memcpy(&return_address, state->ram + esp, sizeof(return_address));
+    if ((target == UINT64_C(0x405000) && return_address != UINT32_C(0x401205)) ||
+        (target == UINT64_C(0x406000) && return_address != UINT32_C(0x401207))) return -1;
+    if (target == UINT64_C(0x405000)) {
+        esp += 4; /* Guest RET consumes its synthetic return address. */
+        memcpy(state->registers + 0x10, &esp, sizeof(esp));
+    }
     return 0;
 }
 int rvi_00401200(RviPcodeContext *ctx);
 int main(void) {
-    TestState state = {{0}, {0}, 0};
+    TestState state = {{0}, {0}, {0}, 0};
     uint32_t indirect_target = 0x00406000;
     memcpy(state.registers + 0xc, &indirect_target, sizeof(indirect_target));
-    RviPcodeContext context = {&state, read_bytes, write_bytes, call_target};
+    uint32_t initial_esp = 0x200;
+    memcpy(state.registers + 0x10, &initial_esp, sizeof(initial_esp));
+    RviPcodeContext context = {&state, read_bytes, write_bytes, call_target, NULL};
     if (rvi_00401200(&context) != 0 || state.call_count != 2) return 1;
     if (state.targets[0] != 0x00405000 || state.targets[1] != 0x00406000) return 2;
+    uint32_t final_esp = 0;
+    memcpy(&final_esp, state.registers + 0x10, sizeof(final_esp));
+    if (final_esp != initial_esp) return 3;
     uint32_t result = 0;
     memcpy(&result, state.registers + 4, sizeof(result));
-    return result == 3 ? 0 : 3;
+    return result == 3 ? 0 : 4;
 }
 '''
     c_path = tmp_path / "calls.c"

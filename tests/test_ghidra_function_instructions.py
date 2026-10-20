@@ -42,6 +42,41 @@ def test_generic_function_instruction_contract() -> None:
         "instruction_count": 0,
         "instructions": [],
     })
+    validator.validate({
+        "format": "REVENGINSTR.GhidraFunctionInstructions/1",
+        "program": "sample",
+        "requested": "entry:0x00401000",
+        "resolved_address": "0x00401000",
+        "found": True,
+        "function": {
+            "address": "0x00401000",
+            "name": "ENTRY_00401000",
+            "size": 1,
+            "calling_convention": None,
+        },
+        "instruction_count": 1,
+        "instructions": [fixture["instructions"][0]],
+    })
+
+
+def test_exporter_restores_only_verified_returning_call_fallthroughs() -> None:
+    source = (ROOT / "ghidra/ExportGhidraFunctionInstructions.java").read_text(encoding="utf-8")
+    for required in (
+        "collectFunctionInstructions",
+        "PseudoDisassembler",
+        '"entry:"',
+        "writeEntrypointRow",
+        "listing.getInstructionAt(address)",
+        "instruction.getFlowType().toString()",
+        '"CALL_TERMINATOR"',
+        '"UNCONDITIONAL_CALL"',
+        "operation.getOpcode() == PcodeOp.RETURN",
+        "addRecoverySuccessors",
+        "MAX_RECOVERED_BYTES",
+    ):
+        assert required in source
+    for consumer_term in ("Nevergone", "SHIFT.exe", "__fload_withFB", "0x00902ec7"):
+        assert consumer_term not in source
 
 
 def test_function_instruction_runner_is_read_only_and_isolated() -> None:

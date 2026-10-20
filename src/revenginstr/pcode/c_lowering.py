@@ -1097,6 +1097,39 @@ static int rvi_write_space(RviPcodeContext *ctx, const char *space, uint64_t off
 static int rvi_call(RviPcodeContext *ctx, uint64_t target) {
     return ctx && ctx->call ? ctx->call(ctx->opaque, target) : -1;
 }
+static int rvi_call_x86_32(RviPcodeContext *ctx, uint64_t target,
+                           uint32_t return_address, const char *stack_space) {
+    uint64_t original_esp, stack_return_address = 0;
+    if (!ctx || rvi_read_space(ctx, "register", UINT64_C(0x10), 4, 0,
+                               &original_esp) != 0 || original_esp > UINT32_MAX)
+        return -1;
+    const uint32_t esp = (uint32_t)original_esp;
+    int synthetic_return_slot = 1;
+    uint32_t call_esp;
+    if (rvi_read_space(ctx, stack_space, esp, 4, 0, &stack_return_address) == 0 &&
+        (uint32_t)stack_return_address == return_address) {
+        /* Ghidra's x86 CALL P-code has already pushed this fallthrough. */
+        call_esp = esp;
+        synthetic_return_slot = 0;
+    } else {
+        if (esp < 4) return -1;
+        call_esp = esp - 4;
+        if (rvi_write_space(ctx, stack_space, call_esp, 4, 0, return_address) != 0 ||
+            rvi_write_space(ctx, "register", UINT64_C(0x10), 4, 0, call_esp) != 0)
+            return -1;
+    }
+    if (rvi_call(ctx, target) != 0) return -1;
+    uint64_t returned_esp;
+    if (rvi_read_space(ctx, "register", UINT64_C(0x10), 4, 0,
+                       &returned_esp) != 0 || returned_esp > UINT32_MAX)
+        return -1;
+    /* Imports have no guest RET instruction; consume the call's one return slot. */
+    if (returned_esp == call_esp &&
+        rvi_write_space(ctx, "register", UINT64_C(0x10), 4, 0,
+                        synthetic_return_slot ? esp : call_esp + 4u) != 0)
+        return -1;
+    return 0;
+}
 '''
 
 
@@ -1121,6 +1154,7 @@ def compile_function(
     if not isinstance(language_id, str) or not language_id:
         raise PcodeLoweringError("address-space table language_id is missing")
     supports_binary80 = language_id.split(":", 1)[0].lower() == "x86"
+    x86_32_call_stack = language_id.lower().startswith("x86:le:32")
     has_fprem = any(
         isinstance(instruction, dict) and
         isinstance(instruction.get("mnemonic"), str) and
@@ -1139,6 +1173,9 @@ def compile_function(
     default_space = address_spaces.get("default_space")
     if not isinstance(default_space, str) or not default_space:
         raise PcodeLoweringError("address-space table default_space is missing")
+    call_stack_space = address_spaces.get("default_data_space", default_space)
+    if not isinstance(call_stack_space, str) or not call_stack_space:
+        raise PcodeLoweringError("address-space table default_data_space is invalid")
     big_endian = address_spaces.get("big_endian")
     if not isinstance(big_endian, bool):
         raise PcodeLoweringError("address-space table big_endian must be a boolean")
@@ -1461,11 +1498,28 @@ def compile_function(
                     flow_addresses = {_hex(item, f"{address} machine flow target") for item in flows}
                     if flow_addresses and target_address not in flow_addresses:
                         raise PcodeLoweringError(f"{address}: CALL target disagrees with machine flow metadata")
-                    call_lines = [f"if (rvi_call(ctx, UINT64_C(0x{target_address:x})) != 0) return -1;"]
+                    target_expr = f"UINT64_C(0x{target_address:x})"
                 else:
                     target_prelude, target_expr, _ = _read_expr(
                         inputs[0], f"rvi_{operation_count}_call_target", unique_layout, big_endian)
-                    call_lines = target_prelude + [f"if (rvi_call(ctx, {target_expr}) != 0) return -1;"]
+                call_lines = target_prelude if opcode == "CALLIND" else []
+                if x86_32_call_stack and not tail_call and not (
+                    flow_type == "COMPUTED_CALL_TERMINATOR" and
+                    not callind_return_suffix
+                ):
+                    fallthrough = instruction.get("fallthrough")
+                    if not isinstance(fallthrough, str):
+                        raise PcodeLoweringError(
+                            f"{address}: x86 CALL requires a machine fallthrough return address")
+                    return_address = _hex(fallthrough, f"{address} call fallthrough")
+                    if return_address > 0xffffffff:
+                        raise PcodeLoweringError(
+                            f"{address}: x86-32 call return address exceeds 32 bits")
+                    call_lines.append(
+                        f"if (rvi_call_x86_32(ctx, {target_expr}, UINT32_C(0x{return_address:x}), "
+                        f"{_escape_c_string(call_stack_space)}) != 0) return -1;")
+                else:
+                    call_lines.append(f"if (rvi_call(ctx, {target_expr}) != 0) return -1;")
                 if tail_call or (flow_type == "COMPUTED_CALL_TERMINATOR" and not callind_return_suffix):
                     call_lines.append("return 0;")
                 body.extend("    " + line for line in ["{"] + call_lines + ["}"])
