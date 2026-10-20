@@ -1,0 +1,184 @@
+{
+  "address_mapping": {
+    "method": "runtime_address_minus_module_delta",
+    "module_delta": "0xbb63e000",
+    "runtime_module_base": "0xbb64e000",
+    "static_image_base": "0x10000"
+  },
+  "capture_id": "nevergone-decode-device-20261020-pid15911",
+  "capture_manifest_sha256": "ce77b39d34d66bc684d48d8560303b238087217f22492219123fb6b19a50e560",
+  "events": [
+    {
+      "capture_id": "nevergone-decode-device-20261020-pid15911",
+      "event_kind": "function_entry",
+      "function_entries": [
+        "00544a40"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "normalized_address": "0x544a40",
+      "runtime_address": "0xbbb82a40",
+      "sequence": 0
+    },
+    {
+      "capture_id": "nevergone-decode-device-20261020-pid15911",
+      "event_kind": "function_entry",
+      "function_entries": [
+        "00544a40"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "normalized_address": "0x544a40",
+      "runtime_address": "0xbbb82a40",
+      "sequence": 1
+    },
+    {
+      "capture_id": "nevergone-decode-device-20261020-pid15911",
+      "event_kind": "function_entry",
+      "function_entries": [
+        "00544a40"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "normalized_address": "0x544a40",
+      "runtime_address": "0xbbb82a40",
+      "sequence": 2
+    },
+    {
+      "capture_id": "nevergone-decode-device-20261020-pid15911",
+      "event_kind": "function_entry",
+      "function_entries": [
+        "00544a40"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "normalized_address": "0x544a40",
+      "runtime_address": "0xbbb82a40",
+      "sequence": 3
+    },
+    {
+      "capture_id": "nevergone-decode-device-20261020-pid15911",
+      "event_kind": "function_entry",
+      "function_entries": [
+        "00544a40"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "normalized_address": "0x544a40",
+      "runtime_address": "0xbbb82a40",
+      "sequence": 4
+    },
+    {
+      "capture_id": "nevergone-decode-device-20261020-pid15911",
+      "event_kind": "function_entry",
+      "function_entries": [
+        "00544a40"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "normalized_address": "0x544a40",
+      "runtime_address": "0xbbb82a40",
+      "sequence": 5
+    },
+    {
+      "capture_id": "nevergone-decode-device-20261020-pid15911",
+      "event_kind": "function_entry",
+      "function_entries": [
+        "00544a40"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "normalized_address": "0x544a40",
+      "runtime_address": "0xbbb82a40",
+      "sequence": 6
+    },
+    {
+      "capture_id": "nevergone-decode-device-20261020-pid15911",
+      "event_kind": "function_entry",
+      "function_entries": [
+        "00544a40"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "normalized_address": "0x544a40",
+      "runtime_address": "0xbbb82a40",
+      "sequence": 7
+    },
+    {
+      "capture_id": "nevergone-decode-device-20261020-pid15911",
+      "event_kind": "function_entry",
+      "function_entries": [
+        "00544a40"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "normalized_address": "0x544a40",
+      "runtime_address": "0xbbb82a40",
+      "sequence": 8
+    },
+    {
+      "capture_id": "nevergone-decode-device-20261020-pid15911",
+      "event_kind": "function_entry",
+      "function_entries": [
+        "00544a40"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "normalized_address": "0x544a40",
+      "runtime_address": "0xbbb82a40",
+      "sequence": 9
+    },
+    {
+      "capture_id": "nevergone-decode-device-20261020-pid15911",
+      "event_kind": "function_entry",
+      "function_entries": [
+        "00544a40"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "normalized_address": "0x544a40",
+      "runtime_address": "0xbbb82a40",
+      "sequence": 10
+    }
+  ],
+  "format": "REVENGINSTR.RuntimeStaticCorrelation/1",
+  "observations_sha256": "1408fe1cfda6e12c2b5aeca512489be8a661564e0a871509af3fb3412c50bc8d",
+  "program_id": "nevergone-1.0.9-armv7-libcocos2dcpp",
+  "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
+  "sampling": {
+    "gaps": [],
+    "status": "unknown"
+  },
+  "semantic_graph_sha256": "04c223505df90987014c1732c0707cc6e5576b7a380cbcf1dc9c485a91610e4c",
+  "static_identity_sha256": "4db276e242085c912d470f1e105af40ca4943606bfea53b8e1b049e66e19970a",
+  "summary": {
+    "ambiguous_count": 0,
+    "event_count": 11,
+    "mapping_overflow_count": 0,
+    "mapping_underflow_count": 0,
+    "matched_count": 11,
+    "unmatched_count": 0
+  }
+}

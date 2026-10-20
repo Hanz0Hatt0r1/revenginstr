@@ -30,9 +30,11 @@ revenginstr-runtime-static-correlate semantic-program-graph.jsonl static-identit
 ```
 
 The Nevergone `CCJoyStick` graph has a synthetic replay that exercises address
-normalization and sampling-gap handling. A separate bounded startup capture
-from the installed game records function entries for two resource functions;
-they remain unmatched because the pinned graph does not contain them. See
-[`the device replay`](evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/).
+normalization and sampling-gap handling. The first device replay used a graph
+without the resource functions and correctly left those events unmatched. A
+follow-up SemanticProgramGraph/4 replay includes the two functions and matches
+all 88 startup observations; a later bounded capture also exact-matches 11
+`Decode` entries. See the [graph replay](evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/)
+and [runtime transform replay](RUNTIME_TRANSFORM_REPLAY.md).
 For exact caller/`CALLIND`/target triples, see
 [`runtime indirect-call correlation`](RUNTIME_INDIRECT_CALL_CORRELATION.md).

@@ -1,0 +1,7 @@
+{
+  "format": "REVENGINSTR.RuntimeStaticIdentity/1",
+  "program_id": "nevergone-1.0.9-armv7-libcocos2dcpp",
+  "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
+  "semantic_graph_sha256": "04c223505df90987014c1732c0707cc6e5576b7a380cbcf1dc9c485a91610e4c",
+  "static_image_base": "0x10000"
+}

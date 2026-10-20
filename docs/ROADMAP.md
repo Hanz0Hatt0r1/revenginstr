@@ -1353,6 +1353,19 @@ a mismatch becomes `escalated_conflict`, and missing evidence remains
 `review_required`. No runtime replay automatically accepts a claim. See
 [`runtime value-flow replay`](RUNTIME_VALUE_FLOW.md).
 
+**Bounded runtime transform replay added:** `RuntimeTransformReplayManifest/1`
+pins consumer-reported transform observations to exact function-entry matches
+in `RuntimeStaticCorrelation/1`, retaining sample counts, source ordinals, and
+unknown capture completeness. On 2026-10-20, the installed Nevergone 1.0.9
+build exercised `cocos2d::Decode` 11 times; 10 non-empty calls checked 128
+evenly spaced byte positions each and reported matches for the recovered
+formula, while one zero-length call remained inconclusive. All 11 addresses
+matched the exact graph function node. The bytes are not retained and RevEngInstr
+does not recompute the consumer's formula result, so this remains bounded
+runtime evidence, not an accepted claim or a pair-scoped value-flow witness.
+See [`runtime transform replay`](RUNTIME_TRANSFORM_REPLAY.md) and the
+[device capture](evidence/runtime-behavior-replay-v1/nevergone-decode-device-20261020/README.md).
+
 ### M9.5 Information-gain evaluation
 
 **Bounded native-probe evaluation replay v1 implemented:**

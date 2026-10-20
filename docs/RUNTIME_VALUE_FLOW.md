@@ -32,9 +32,10 @@ python -m revenginstr.runtime_value_flow \
 ```
 
 This checked-in input is a synthetic contract fixture, not a Nevergone device
-capture. The current bounded device startup capture contains no game value
-observations, so this milestone does not yet include real receiver, field,
-state, factory or lifetime witnesses.
+capture. The separate [runtime transform replay](RUNTIME_TRANSFORM_REPLAY.md)
+now records sampled Decode behavior from the device, but it is not a
+receiver/field/state/factory/lifetime value-flow witness. Pair-scoped runtime
+value-flow still has no actual in-game observations.
 
 ## Decision-ledger replay
 
