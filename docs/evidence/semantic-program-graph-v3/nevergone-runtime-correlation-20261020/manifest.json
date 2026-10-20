@@ -1,0 +1,67 @@
+{
+  "artifacts": [
+    {
+      "bytes": 2214,
+      "id": "base_player_effects",
+      "path": "docs/evidence/semantic-program-graph-evaluation/nevergone-player-horizontal-facing/nevergone-facing-effects.jsonl",
+      "sha256": "5d6c089cbbae5e07ea50b06a84481e3af1f45a176986fa481aed9edc82d0158e"
+    },
+    {
+      "bytes": 21116,
+      "id": "type_layout_hypotheses",
+      "path": "docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick/type-layout-hypothesis.jsonl",
+      "sha256": "db9c2d161456ac73a931e0e1d08e8dc2fd71bbc3d7c3559b94e1b5b543f0e35b"
+    },
+    {
+      "bytes": 4007,
+      "id": "LoadGameLevels_pcode",
+      "path": "docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/LoadGameLevels.pcode-flow.tsv",
+      "sha256": "930d7acd70c8f92df3d1b191efb04ce9ace78b22a701ea4d663eec68b0c5e592"
+    },
+    {
+      "bytes": 7114,
+      "id": "LoadGameLevels_effect_ir",
+      "path": "docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/LoadGameLevels.function-effect-ir.jsonl",
+      "sha256": "d8932bd73f37214d05fa6e179f4206e3d2fdb13531f1c29d3b0e9eda2f65e428"
+    },
+    {
+      "bytes": 53542,
+      "id": "CCFileUtilsAndroid_getFileData_pcode",
+      "path": "docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/CCFileUtilsAndroid-getFileData.pcode-flow.tsv",
+      "sha256": "a15289511ed196ce41591c196d3c76c1f8cdb48f1c6dec7285aef3b3f0218dfd"
+    },
+    {
+      "bytes": 20365,
+      "id": "CCFileUtilsAndroid_getFileData_effect_ir",
+      "path": "docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/CCFileUtilsAndroid-getFileData.function-effect-ir.jsonl",
+      "sha256": "fdf5aedf122dfa68994f105a04298d8d0239c26a5b9a90ac791544fb2443cdb8"
+    },
+    {
+      "bytes": 29693,
+      "id": "combined_function_effect_ir",
+      "path": "docs/evidence/semantic-program-graph-v3/nevergone-runtime-correlation-20261020/function-effects.jsonl",
+      "sha256": "9ce34ab4ada5f43da49912ef75043a28692ab95cf2bfecc1edb3d44d8c10d8d7"
+    },
+    {
+      "bytes": 211701,
+      "id": "semantic_program_graph",
+      "path": "docs/evidence/semantic-program-graph-v3/nevergone-runtime-correlation-20261020/semantic-program-graph.jsonl",
+      "sha256": "021065470f8da973921b701323807b60033cb0870e2cdd2f15831665b9cffaab"
+    }
+  ],
+  "format": "REVENGINSTR.SemanticProgramGraphRuntimeReplay/1",
+  "program_id": "nevergone-1.0.9-armv7-libcocos2dcpp",
+  "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
+  "runtime_function_entries": [
+    {
+      "address": "0x2d2f1c",
+      "name": "GameLevels::LoadGameLevels",
+      "pcode_rows": 46
+    },
+    {
+      "address": "0x544a60",
+      "name": "cocos2d::CCFileUtilsAndroid::getFileData",
+      "pcode_rows": 597
+    }
+  ]
+}

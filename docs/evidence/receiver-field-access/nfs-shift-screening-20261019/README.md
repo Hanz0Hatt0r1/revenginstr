@@ -10,8 +10,36 @@ each `selection-source.json`; the executable's High-P-code supplies all
 memory facts. The [manifest](manifest.json) pins every retained artifact by
 byte count, row count where applicable, and SHA-256.
 The local executable path in the retained selection manifests is normalized
-to `SHIFT.exe`; the executable hash is unchanged. Ghidra ran read-only with
-analysis disabled for all evidence exports.
+to `SHIFT.exe`; the executable hash is unchanged. Ghidra ran with analysis
+disabled for all evidence exports. The `006642a5` replay seeded the missing
+function only in a disposable project copy; its CFG export then opened that
+copy read-only.
+
+The singleton wrapper targets and the field-20 vtable candidate sets are
+joined into the `/2` direct-call effect closure with exact function/address/
+time matches and the pinned executable hash. The resulting rows retain
+`indirect_call` barriers; each observation keeps its bounded or partial source
+scope. See the
+[closure replay](scan37/replay-0041dd40/static-call-target-closure-replay.md).
+The generic `IndirectCallTargetTriage/1` report groups the 22 retained
+CALLIND provenance paths: six have bounded provenance, 13 have only dynamic
+barriers, and three mix bounded and blocked paths. Correct P-code handling of
+`PTRSUB` exposes one partial static candidate (`0x009189bd`) at
+`009189cd:00918a4c`; two alternative paths at that site remain call barriers.
+This adds a target observation without removing its `CALLIND` effect barrier.
+See the [triage replay](scan37/replay-0041dd40/callind-target-triage-replay.md)
+and [closure replay](scan37/replay-0041dd40/static-call-target-closure-replay.md).
+The static review of `00918a4c` now traces the two call-result barriers to a
+cached `KERNEL32.DLL!InitializeCriticalSectionAndSpinCount` pointer or the
+internal `___crtInitCritSecNoSpinCount@8` fallback at `0x009189bd`. It retains
+the indirect-call barrier because branch selection, the external runtime
+address, and possible cache aliases remain unresolved; see the
+[symbolic-target review](scan37/replay-0041dd40/callind-static-symbol-review-00918a4c.md).
+The new `IndirectCallTargetTriage/2` replay joins four symbolic candidates to
+three exact sites, with Ghidra source references and unresolved paths carried
+through each record. The `/1` report and all 22 CALLIND effect barriers remain
+unchanged; see the
+[symbolic triage replay](scan37/replay-0041dd40/callind-target-triage-replay.md).
 
 ## Screens
 
@@ -128,7 +156,9 @@ removes source-linked `INDIRECT` markers, but 22 reachable `CALLIND` operations
 across 13 functions still block four pairs. The closure also reaches a direct
 CALL target `006642a5` absent from the pinned function inventory. The full
 closure replay keeps the same four pairs possible and the fifth pair unique;
-it does not promote any alias or runtime value-flow claim.
+it does not promote any alias or runtime value-flow claim. A follow-up seeded
+replay now captures the exact function body and CFG for that target; see
+[`field20-006642a5-replay.md`](scan37/replay-0041dd40/field20-006642a5-replay.md).
 
 A follow-up CFG/5 export now retains the caller and all 100 functions from the
 captured closure flow selection, including the empty-root graph at `006642a0` and both
@@ -140,12 +170,13 @@ but their `CALLIND` and `STORE` barriers remain. The `/6` results stay at four
 possible effects and one unique candidate, matching the earlier CFG/4 statuses.
 The two boundary functions are not field-pair candidates in this replay.
 
-`closure-pointer-provenance.jsonl` applies `PointerProvenance/1` to the same
-98 flows, 22 exact `CALLIND` rows, and retained v2 parameter-root mappings.
-Among the 22 target records, six stop at memory-read anchors, thirteen at
-call barriers, and three are ambiguous. None resolves to an exact function
-entry through `PointerProvenance/1` alone, so its output does not reduce the
-call-effect barriers.
+`closure-pointer-provenance.jsonl` applies `PointerProvenance/1` to the
+retained caller and closure P-code flows, 22 exact `CALLIND` rows, and v2
+parameter-root mappings. Six target records stop at memory-read anchors,
+thirteen at call barriers, and three are ambiguous. Correct `PTRSUB`
+handling exposes `0x009189bd` on one ambiguous path at `00918a4c`; two call
+barriers remain there, so no complete target set is available. The call
+effect barrier therefore remains.
 
 The read-only receiver-type export also matched all 22 sites across 13
 functions, with no failed functions or count mismatches. Five sites have no
@@ -154,15 +185,24 @@ or `size_t`, and the sole recovered pointee is `undefined4`. This adds no
 class or target identity evidence and does not narrow the call-effect set.
 
 A separate read-only static-data review resolves two of those six memory-read
-anchors. The `0064a0c0` and `0064a100` wrappers receive the result of
-`0064a010` at all four direct call sites in `0088d1d0`. `0064a010` returns
-`0x00bfa9b0` on both initialization paths. Its constructor stores the result
-of the `006642a0` helper in that object's first field; the helper's jump into
-the bounded instruction slice at `006642a5` returns `0x00bfc728`. Constructor
-`00664140` sets that singleton's vtable pointer to `0x00af08a0`, whose slot at
-`+0x30` (`0x00af08d0`) contains `0x00664a10`. This makes `00664a10` the
-evidence-backed static target for `CALLIND` at `0064a0ce` and `0064a10e`.
-The caller and return evidence is in
+anchors for the observed singleton path. A follow-up xref and caller-flow
+replay covers all 14 direct calls to wrappers `0064a0c0` (six) and `0064a100`
+(eight), across five caller functions; argument 0 at each call derives from
+getter `0064a010`. The retained per-call provenance is in
+[`field20-wrapper-callind-argument-provenance.tsv`](scan37/replay-0041dd40/field20-wrapper-callind-argument-provenance.tsv),
+with caller flows and xrefs beside it. `0064a010` returns `0x00bfa9b0` on both
+initialization paths. Its constructor stores the result of the `006642a0`
+helper in that object's first field; the helper's jump into the now fully
+exported function `006642a5` returns `0x00bfc728`. Constructor `00664140` sets
+that singleton's vtable pointer to `0x00af08a0`, whose slot at `+0x30`
+(`0x00af08d0`) contains `0x00664a10`. The resulting static target rows for
+`CALLIND` at `0064a0ce` and `0064a10e` are in
+[`field20-wrapper-callind-static-targets.jsonl`](scan37/replay-0041dd40/field20-wrapper-callind-static-targets.jsonl).
+These rows apply to the observed singleton initializer path; they do not
+exclude indirect callers or runtime writes to the global pointer. Raw pointer
+provenance and the interprocedural-effect replay continue to preserve these
+`CALLIND` barriers until they consume the static-target evidence. The caller
+and return evidence is in
 [`caller-arguments-closure.tsv`](scan37/replay-0041dd40/caller-arguments-closure.tsv),
 [`closure-pcode-flow.tsv`](scan37/replay-0041dd40/closure-pcode-flow.tsv),
 [`closure-static-return-address-refs.jsonl`](scan37/replay-0041dd40/closure-static-return-address-refs.jsonl),
@@ -176,8 +216,9 @@ The implementation exports are
 [`closure-secondary-singleton-vtable-metadata.jsonl`](scan37/replay-0041dd40/closure-secondary-singleton-vtable-metadata.jsonl),
 [`closure-secondary-singleton-references.jsonl`](scan37/replay-0041dd40/closure-secondary-singleton-references.jsonl),
 and [`closure-first-pair-target-instructions.jsonl`](scan37/replay-0041dd40/closure-first-pair-target-instructions.jsonl).
-The bounded slice recovers instructions at `006642a5`, but not a complete
-function flow or CFG. Following the recovered target `00664a10` adds its two
+The seeded 43-byte function `006642a5` now has a complete 18-row P-code flow
+and CFG/5 export; see [`field20-006642a5-replay.md`](scan37/replay-0041dd40/field20-006642a5-replay.md).
+Following the recovered target `00664a10` adds its two
 internal `CALLIND` sites, `00664a4f` and `00664a83`. The targeted
 [`P-code flow`](scan37/replay-0041dd40/target-function-00664a10-flow.tsv),
 [`CALLIND evidence`](scan37/replay-0041dd40/target-function-00664a10-callind-evidence.jsonl),
@@ -191,17 +232,20 @@ entries, constructor/append chain, target instruction bytes, and limits are
 recorded in
 [`manual-static-vtable-review.md`](scan37/replay-0041dd40/manual-static-vtable-review.md).
 `00664a10` returns the second reader's runtime field value, so it still does
-not identify the receiver used by later calls in `006657e0` and `00665820`;
-their four anchors remain unresolved. This manual review does not change the
-`/6` statuses or establish that runtime memory cannot be overwritten.
+not identify the runtime receiver used by later calls in `006657e0` and
+`00665820`. Static vtable evidence now gives bounded candidate sets for the
+first-level cached-field calls and partial candidate sets for the two calls on
+their returned objects. This manual review does not change the `/6` statuses
+or establish that runtime memory cannot be overwritten.
 The generic [`IndirectCallPointerSlot/1` replay](scan37/replay-0041dd40/indirect-call-pointer-slots.jsonl)
 joins all 22 closure `CALLIND` sites to the exact pointer-provenance rows. Six
 have a single aligned constant-offset pointer-slot shape. The four downstream
 sites are `006657ed` (`+0x30`), `00665801` (`+0x8`), `0066582d` (`+0x34`), and
 `00665841` (`+0xc`). These offsets describe loads through runtime-derived
 pointer anchors; they do not associate those anchors with a specific table or
-resolve a function entry. The other 16 sites are not a single resolved
-constant-offset target load.
+resolve a function entry by themselves. The vtable candidate replay below
+joins the two cached-field calls to five constructor-observed vtables; the
+other 16 sites are not a single resolved constant-offset target load.
 
 The read-only Ghidra xrefs in
 [`anchor-address-references.jsonl`](scan37/replay-0041dd40/anchor-address-references.jsonl)
@@ -223,9 +267,31 @@ The new [`TypeLayoutHypothesis/1` row](scan37/replay-0041dd40/field20-type-layou
 captures this as an opaque review-level cluster with a 56-byte minimum
 observed extent and a 4-byte data-pointer candidate; it leaves exact size and
 pointee identity unresolved.
-This narrows the static writer and lifecycle paths without resolving the
-runtime referent/type at the four downstream sites. No downstream function
-target is promoted, and the `/6` results remain unchanged.
+The [`GhidraIndirectCallVtableCandidates/1` first-level capture](scan37/replay-0041dd40/field20-vtable-call-candidates.jsonl)
+contains three static target candidates (`00663030`, `00676040`, `006770b0`)
+for each first-level call at `006657ed` and `0066582d`, with constructor,
+factory, store-graph, vtable-slot, and raw-byte references. The second-level
+[`nested candidate capture`](scan37/replay-0041dd40/field20-nested-vtable-call-candidates.jsonl)
+records partial target candidates for `00665801` (`00674f10`, `007091d0`) and
+`00665841` (`00674f30`, `00677210`) from vtables initialized in returned
+subobjects. Those rows retain the parent call, selector case, member offset,
+constructor path, and exact P-code store references. A pinned-disassembly
+case also traces `00663030` selector 3 to vtable `00af0628`, adding
+`007091d0`/`00677210` as another origin pair. A follow-up selector-1 replay
+resolves the `+0x74` member to vtable `00af7394` for four observed constructor
+roots and adds those origins to the nested candidate rows. Selector values
+remain dynamic, unobserved writers remain possible, and the `/6` results remain
+unchanged. See
+[`field20-selector1-resolution.md`](scan37/replay-0041dd40/field20-selector1-resolution.md).
+An additional CFG/5 replay extended that chain through all five direct callees
+of `00664140` and two terminal descendants, retaining 127 exact P-code rows,
+34 store facts, and 10 caller-parameter-offset roots across the nine added
+functions. The five `/6` statuses remain unchanged; 22 `CALLIND` sites and
+older missing direct-call flows remain barriers. See
+[`cfg-v5-seeded-callee-descendants.md`](scan37/replay-0041dd40/cfg-v5-seeded-callee-descendants.md)
+for the complete input set and replay command. The earlier
+[`cfg-v5-seeded-callee-extension.md`](scan37/replay-0041dd40/cfg-v5-seeded-callee-extension.md)
+records the intermediate exact-callee capture.
 The replay also includes the 32-row, read-only generic Ghidra pointer-table
 export at [`ghidra-pointer-table-slots.jsonl`](scan37/replay-0041dd40/ghidra-pointer-table-slots.jsonl);
 its schema and invocation are documented in

@@ -16,7 +16,7 @@
     "function_effect_ir_v1": {
       "path": "../../../../schemas/function-effect-ir-v1.schema.json",
       "version": "FunctionEffectIR/1",
-      "sha256": "d7e92fd6504c758fa4bc25f9a74c017f52aed9e4e61f11d0367a64db48cc721e"
+      "sha256": "67ecb001d47a6d4ecc273b257bc62f7f6c6d06e286faf924c91c4ef925784779"
     },
     "type_layout_hypothesis_v1": {
       "path": "../../../../schemas/type-layout-hypothesis-v1.schema.json",
@@ -26,7 +26,7 @@
     "semantic_program_graph_v3": {
       "path": "../../../../schemas/semantic-program-graph-v3.schema.json",
       "version": "SemanticProgramGraph/3",
-      "sha256": "2310a0fca32c5c29301ac596df0925cbf4a7de5177742c1142f5256894afd067"
+      "sha256": "674ea89ab173734971cb6206870064a71b4047fcbddf7a7e9f20d921bace4f5f"
     },
     "semantic_program_query_result_v1": {
       "path": "../../../../schemas/semantic-program-query-result-v1.schema.json",

@@ -32,7 +32,7 @@ The repository now owns these generic mechanisms:
 - conservative receiver class/vtable identity inference from consumer-owned catalogs;
 - leakage-safe evidence aggregation;
 - deterministic structural P-code metrics and coarse numeric evidence tokenization;
-- hash-pinned runtime/static address correlation, pairwise differential summaries, and repeated intervention evidence;
+- hash-pinned runtime/static address, direct/indirect-call, value-flow, differential, intervention, and bounded runtime-transform replay;
 - portable P-code function-family mining with deterministic MinHash/LSH;
 - family-grouped selective classification with calibrated correctness confidence and contrastive family OOD;
 - optional evidence-aware selective classification using `REVENGINSTR.Evidence/1`;
@@ -94,6 +94,10 @@ REVENGINSTR.RuntimeStaticIdentity/1
 REVENGINSTR.RuntimeCaptureManifest/1
 REVENGINSTR.RuntimeAddressObservation/1
 REVENGINSTR.RuntimeStaticCorrelation/1
+REVENGINSTR.RuntimeDirectCallObservation/1
+REVENGINSTR.RuntimeDirectCallCorrelation/1
+REVENGINSTR.RuntimeIndirectCallObservation/1
+REVENGINSTR.RuntimeIndirectCallCorrelation/1
 REVENGINSTR.RuntimeDifferentialManifest/1
 REVENGINSTR.RuntimeDifferential/1
 REVENGINSTR.RuntimeInterventionManifest/1
@@ -101,6 +105,9 @@ REVENGINSTR.RuntimeInterventionEvidence/1
 REVENGINSTR.RuntimeValueFlowManifest/1
 REVENGINSTR.RuntimeValueObservation/1
 REVENGINSTR.RuntimeValueFlowReplay/1
+REVENGINSTR.RuntimeTransformReplayManifest/1
+REVENGINSTR.RuntimeTransformObservation/1
+REVENGINSTR.RuntimeTransformReplay/1
 REVENGINSTR.RuntimeProbeEvaluationManifest/1
 REVENGINSTR.RuntimeProbeOutcome/1
 REVENGINSTR.RuntimeProbeEvaluation/1

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/semantic-program-graph-call-reference-crosscheck-v1.schema.json",
+  "title": "REVENGINSTR.SemanticProgramGraphCallReferenceCrosscheck/1 JSONL row",
+  "description": "One exact match between a High-P-code CALL, a Ghidra instruction call reference, and a SemanticProgramGraph call edge.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "program_id", "program_sha256", "function_entry", "operation_address",
+    "target_entry", "reference_type", "instruction_index", "instruction_export_sha256",
+    "instruction_record_index", "pcode_flow_sha256", "pcode_record_index", "graph_sha256", "status"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.SemanticProgramGraphCallReferenceCrosscheck/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "program_sha256": {"$ref": "#/$defs/sha256"},
+    "function_entry": {"$ref": "#/$defs/address"},
+    "operation_address": {"$ref": "#/$defs/address"},
+    "target_entry": {"$ref": "#/$defs/address"},
+    "reference_type": {"type": "string", "minLength": 1},
+    "instruction_index": {"type": "integer", "minimum": 1},
+    "instruction_export_sha256": {"$ref": "#/$defs/sha256"},
+    "instruction_record_index": {"type": "integer", "minimum": 1},
+    "pcode_flow_sha256": {"$ref": "#/$defs/sha256"},
+    "pcode_record_index": {"type": "integer", "minimum": 1},
+    "graph_sha256": {"$ref": "#/$defs/sha256"},
+    "status": {"const": "exact_match"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "address": {"type": "string", "pattern": "^[0-9a-f]+$"}
+  }
+}

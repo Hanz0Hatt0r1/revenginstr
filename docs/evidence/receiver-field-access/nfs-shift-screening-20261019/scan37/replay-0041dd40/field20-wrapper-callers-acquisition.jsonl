@@ -1,0 +1,4 @@
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"SHIFT.exe","function_entry":"0088d390","state":"complete","operation_count":300,"callind_count":0,"error":null}
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"SHIFT.exe","function_entry":"0088bf10","state":"complete","operation_count":68,"callind_count":0,"error":null}
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"SHIFT.exe","function_entry":"00889990","state":"complete","operation_count":134,"callind_count":3,"error":null}
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"SHIFT.exe","function_entry":"0088dd40","state":"complete","operation_count":686,"callind_count":2,"error":null}

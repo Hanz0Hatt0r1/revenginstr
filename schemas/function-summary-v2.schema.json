@@ -81,7 +81,10 @@
               "minimum": 0
             },
             "source_parameter_index": {
-              "type": "integer",
+              "type": [
+                "integer",
+                "null"
+              ],
               "minimum": 0
             },
             "target_entry": {

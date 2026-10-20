@@ -10,7 +10,7 @@
     "format": {"const": "REVENGINSTR.RuntimeValueObservation/1"},
     "capture_id": {"type": "string", "minLength": 1},
     "correlation_sequence": {"type": "integer", "minimum": 0, "maximum": 1000000000},
-    "event_kind": {"enum": ["receiver", "field_write", "field_read", "state_before", "state_after", "factory_return", "factory_use", "allocation", "release"]},
+    "event_kind": {"enum": ["receiver", "field_write", "field_read", "state_before", "state_after", "factory_return", "factory_use", "call_output", "function_return", "allocation", "release"]},
     "runtime_address": {"type": "string", "pattern": "^(0x)?[0-9a-fA-F]{1,16}$"},
     "tokens": {"$ref": "#/$defs/tokens"}
   },
@@ -30,6 +30,6 @@
     {"if": {"properties": {"event_kind": {"const": "receiver"}}, "required": ["event_kind"]}, "then": {"properties": {"tokens": {"required": ["subject"]}}}},
     {"if": {"properties": {"event_kind": {"enum": ["field_write", "field_read"]}}, "required": ["event_kind"]}, "then": {"properties": {"tokens": {"required": ["subject", "field", "value"]}}}},
     {"if": {"properties": {"event_kind": {"enum": ["state_before", "state_after"]}}, "required": ["event_kind"]}, "then": {"properties": {"tokens": {"required": ["subject", "value"]}}}},
-    {"if": {"properties": {"event_kind": {"enum": ["factory_return", "factory_use", "allocation", "release"]}}, "required": ["event_kind"]}, "then": {"properties": {"tokens": {"required": ["subject"]}}}}
+    {"if": {"properties": {"event_kind": {"enum": ["factory_return", "factory_use", "call_output", "function_return", "allocation", "release"]}}, "required": ["event_kind"]}, "then": {"properties": {"tokens": {"required": ["subject"]}}}}
   ]
 }

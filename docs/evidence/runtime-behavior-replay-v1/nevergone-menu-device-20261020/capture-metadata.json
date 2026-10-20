@@ -1,0 +1,63 @@
+{
+  "adapter_sha256": "75629a50e2b567f919d11b8e83dc76ac4a6f70b0a2de80d86e3ffa9b3734e3e6",
+  "android_abi": "armeabi-v7a",
+  "application_version": "1.0.9",
+  "buffer_bytes_retained": false,
+  "callsite_elf_vmas": [
+    "0x534bdc"
+  ],
+  "callsite_facts": [
+    {
+      "caller_entry": "00544a60",
+      "node_id": "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9",
+      "static_address": "0x544bdc"
+    }
+  ],
+  "callsite_return_offsets": [
+    "0x534be1"
+  ],
+  "capture_id": "nevergone-menu-device-20261020-pid914",
+  "captured_at_utc": "2026-10-20T13:48:06.782000+00:00",
+  "decode_call_rows": 42,
+  "device_code": "begonia",
+  "device_model": "Redmi Note 8 Pro",
+  "direct_call_observations": 42,
+  "elf_vma": "0x534a40",
+  "format": "REVENGINSTR.NevergoneDecodeCaptureMetadata/1",
+  "formula_matches": 41,
+  "formula_mismatches": 0,
+  "function_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+  "hook_symbol_offset": "0x534a41",
+  "installed_apk_sha256": "e1b85fd36fa932e6de49fdab6e858a8bddbba233faef9817cd568ae6adfe51bf",
+  "last_observation_at_utc": "2026-10-20T13:49:21.884000+00:00",
+  "nonempty_decode_calls": 41,
+  "package": "com.hippiegame.nevergone",
+  "probe_script_sha256": "0ffb0ced88a48680f2122647b4fb5f1b80356819c915d7da8db302327a483c0f",
+  "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
+  "runtime_module_base": "0xbb64a000",
+  "runtime_value_flow_pair_exclusions": {
+    "ambiguous_pointer_identity_match": 4,
+    "no_later_same_thread_get_file_data_return": 1,
+    "pointer_identity_not_observed": 3
+  },
+  "runtime_value_flow_pairs": 34,
+  "runtime_value_pointer_identity_matches": 34,
+  "runtime_value_token_scheme": "capture-scoped HMAC-SHA-256",
+  "sampled_bytes": 5132,
+  "sampling_status": "unknown",
+  "source_trace_bytes": 110670,
+  "source_trace_event_counts": {
+    "call": 130,
+    "file_access": 200,
+    "file_hook": 3,
+    "header": 1,
+    "hook": 3,
+    "loader": 1,
+    "module": 1
+  },
+  "source_trace_has_footer": false,
+  "source_trace_row_count": 339,
+  "source_trace_sha256": "fe684bec8e41de6b99b53cdb9377299ba564e887624b16ef698942b7536f2957",
+  "static_function_entry": "0x544a40",
+  "unavailable_results": 1
+}

@@ -1429,6 +1429,18 @@
       "rows": 249
     },
     {
+      "path": "scan37/replay-0041dd40/caller-parameter-roots-cfg5-followup-delta-v2.tsv",
+      "bytes": 1567,
+      "sha256": "590f0bfbd95323810ca7cda9e21f2631d46376cfc183c5a7c9a5767e492bfd64",
+      "rows": 10
+    },
+    {
+      "path": "scan37/replay-0041dd40/caller-parameter-roots-cfg5-followup-v2.tsv",
+      "bytes": 10460,
+      "sha256": "b1908a1c13afddbeadb4779786fd7d153a516d5630a62551e350e70c01f92bdb",
+      "rows": 73
+    },
+    {
       "path": "scan37/replay-0041dd40/caller-parameter-roots-closure-v2.tsv",
       "bytes": 9044,
       "sha256": "72c6573e96a5125309cab138685f844ffb158a89076918fdbf39047357639ef6",
@@ -1453,9 +1465,149 @@
       "rows": 3246
     },
     {
+      "path": "scan37/replay-0041dd40/callind-amsg-exit-address-metadata.jsonl",
+      "bytes": 916,
+      "sha256": "e5e6abdafab96c5531b79b71c489997bddd6fd51514e950fc13932f1ef59d70a",
+      "rows": 2
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-amsg-exit-cache-address-references.jsonl",
+      "bytes": 765,
+      "sha256": "35cd7defb7e86c94a26fa1d50fab3e21fa531874f457732f8d0fdd8b63629682",
+      "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-amsg-exit-target-function.jsonl",
+      "bytes": 12982,
+      "sha256": "5165da6935806a178939c83058f62fd2b2db1a401ca7755f91043026011e085f",
+      "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-blocker-api-address-metadata.jsonl",
+      "bytes": 1173,
+      "sha256": "4fe2354cb8b298f64fe20df7528f6f32ddb06dc2dbae67e0d76e2d166bee7865",
+      "rows": 3
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-blocker-cache-address-references.jsonl",
+      "bytes": 4105,
+      "sha256": "a371fe36cae47ace018722b2f7e865e2c048de4ba17b498d3e8704042025770c",
+      "rows": 5
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-blocker-defined-strings.tsv",
+      "bytes": 1019,
+      "sha256": "e43fc0d82c71ad72b13868f17988f3cecb2c3e8c43cbd17deccb417251806f7a",
+      "rows": 11
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-blocker-functions.jsonl",
+      "bytes": 618401,
+      "sha256": "c55d54b93043391424f3ca2c7906d9b27269c7138ba8e0ac7dcd34f2024bed32",
+      "rows": 8
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-callback-setter-address-references.jsonl",
+      "bytes": 4032,
+      "sha256": "297399ec69aa683df965e0595bc775ca8a6222be1c5a5391b518843ad05885da",
+      "rows": 5
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-encode-tls-address-metadata.jsonl",
+      "bytes": 1145,
+      "sha256": "ecc3bf4e9227d841a2675914d85b1d1215248d281e74c75b935f9d357e5701e0",
+      "rows": 3
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-encode-tls-address-references.jsonl",
+      "bytes": 5693,
+      "sha256": "36e6c97d79f232d6f26a7561d08ad4def4c44770a79355147094d2abc9b7121b",
+      "rows": 2
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-encoded-null-helper.jsonl",
+      "bytes": 6360,
+      "sha256": "a1d91daefe40e8a75b66e527a4027fdb514ec8d0512a7bdd93727cc0101b9f34",
+      "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-mtinit-defined-strings.tsv",
+      "bytes": 463,
+      "sha256": "31fd7f851e0aa7a12e490b435e0b76c7df4b208289402f45fe43677355f109d4",
+      "rows": 5
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-mtinit-pcode-flow.tsv",
+      "bytes": 30255,
+      "sha256": "7fb05d9983958cffe6f4b565b21b996b52535fd601a00fbe6fefdc57e5d3fa68",
+      "rows": 356
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-static-symbol-review-00918a4c.md",
+      "bytes": 6044,
+      "sha256": "ff15228316e44a5cbf02d84ed0c2401f1a9f5801d582cbe0cf5962d75a47bb46"
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-symbol-candidates.jsonl",
+      "bytes": 60435,
+      "sha256": "a78b2c7220cf4f3ee17ddb9f098311206d7fd2a0d78e1f136028c1efc3f8a622",
+      "rows": 14
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-target-triage-replay.md",
+      "bytes": 10573,
+      "sha256": "67c9072688dfbd056a2a1f70051e27dc1962816efff7d57d0136474974cfc1ec"
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-target-triage-v2.jsonl",
+      "bytes": 119891,
+      "sha256": "3df8967eff61b32551230c090a46192d31ebd9a64db723ac50f9e3c043b94be5",
+      "rows": 22
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-target-triage.jsonl",
+      "bytes": 55750,
+      "sha256": "582d0793e3fae55fc84fc56f5caf6fefc120d35ec12eae8d4a7138fbb5741cb9",
+      "rows": 22
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-tls-followup-address-metadata.jsonl",
+      "bytes": 4571,
+      "sha256": "ce139dbcc99c6b00bbbffd8da2e63ec28500bc718a3358d4a5e823f46dc63f32",
+      "rows": 12
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-tls-followup-functions.jsonl",
+      "bytes": 199215,
+      "sha256": "05939385b96b6339e780a4981ae4d2fbe40f01065c833993e955791412bfcbe8",
+      "rows": 3
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-tls-followup-global-references.jsonl",
+      "bytes": 11271,
+      "sha256": "d6bbd1344d55099cc5b85a7ab55a4dfba79f7e9542a78421f44604112896c928",
+      "rows": 6
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-tls-helper-functions.jsonl",
+      "bytes": 24788,
+      "sha256": "01ce8809fd8128fef39dc45046d8359eb701d69f104335e53f6fe4e16856d015",
+      "rows": 1
+    },
+    {
       "path": "scan37/replay-0041dd40/cfg-v5-entry-block-replay.md",
       "bytes": 4224,
       "sha256": "5be53d6d7d95330b4e9b38b12476ad92f22f9886b4713dd7df2fe419ba449a16"
+    },
+    {
+      "path": "scan37/replay-0041dd40/cfg-v5-seeded-callee-descendants.md",
+      "bytes": 4116,
+      "sha256": "adf6b5c5e5f8d41d04602cb65df67af294023bb080904d55c5ae60ad417d0148"
+    },
+    {
+      "path": "scan37/replay-0041dd40/cfg-v5-seeded-callee-extension.md",
+      "bytes": 3829,
+      "sha256": "2cf41c317bd2a5faf8ed9315f9fe1583460f9a8f53a19411c43fb6a06c29236d"
     },
     {
       "path": "scan37/replay-0041dd40/closure-callind.jsonl",
@@ -1492,6 +1644,48 @@
       "bytes": 10426,
       "sha256": "aa57052fe780f4d1f01ee73f2be515f2eec2685f668707a82d9d1bccb8be4543",
       "rows": 100
+    },
+    {
+      "path": "scan37/replay-0041dd40/closure-flows-followup/00533e70.tsv",
+      "bytes": 212,
+      "sha256": "4977d868c3072b038a1439861fc252ccab7040e917d746476768c951fa2ebb31",
+      "rows": 2
+    },
+    {
+      "path": "scan37/replay-0041dd40/closure-flows-followup/0062f260.tsv",
+      "bytes": 1654,
+      "sha256": "7b489d284fe0546d7fbd5113b8b5aff49a372f9645b0306818931f6b201edb1d",
+      "rows": 18
+    },
+    {
+      "path": "scan37/replay-0041dd40/closure-flows-followup/0064ec60.tsv",
+      "bytes": 1399,
+      "sha256": "91716e174379ccee2aa4c8ffcb178650c706a7c195ecac8d26f69a885cbbd708",
+      "rows": 15
+    },
+    {
+      "path": "scan37/replay-0041dd40/closure-flows-followup/0066e0e0.tsv",
+      "bytes": 1855,
+      "sha256": "b5fc49cac408cce0173e40b18a90af4ac42a798e425d60d1453ed8d645b5f5bc",
+      "rows": 23
+    },
+    {
+      "path": "scan37/replay-0041dd40/closure-flows-followup/0066f510.tsv",
+      "bytes": 294,
+      "sha256": "906c1be0cb6f8060975566cae7b5477f42b10b3d5693a3383f2c7d57a487086e",
+      "rows": 3
+    },
+    {
+      "path": "scan37/replay-0041dd40/closure-flows-followup/0066f5b0.tsv",
+      "bytes": 294,
+      "sha256": "d2839cd07143360347ad2a396849b37508caf6d0e76254d4fc2489041a3ef464",
+      "rows": 3
+    },
+    {
+      "path": "scan37/replay-0041dd40/closure-flows-followup/007f6690.tsv",
+      "bytes": 1085,
+      "sha256": "292a6f895bc4813a948e7b9f248588fbf335f95c0bcb560a9a0bd1b1856abea6",
+      "rows": 12
     },
     {
       "path": "scan37/replay-0041dd40/closure-flows/00648c40.tsv",
@@ -2110,6 +2304,18 @@
       "rows": 98
     },
     {
+      "path": "scan37/replay-0041dd40/closure-function-pcode-cfg-v5-seeded-callees.jsonl",
+      "bytes": 2466664,
+      "sha256": "159a01c166a6674ac774e525f21a1f90bf85997cdfd5ce4442d81c657d3d949a",
+      "rows": 110
+    },
+    {
+      "path": "scan37/replay-0041dd40/closure-function-pcode-cfg-v5-with-006642a5-00664140.jsonl",
+      "bytes": 2450768,
+      "sha256": "08ed15d12f2462e45fb289a99fe03edf4791444c9b6f3d04d37c1b755c3c9041",
+      "rows": 103
+    },
+    {
       "path": "scan37/replay-0041dd40/closure-function-pcode-cfg-v5.jsonl",
       "bytes": 2440344,
       "sha256": "1845690e1b40c5f1ba4de087b6c464f94cc78e81655cf7eca04c41e6d460760c",
@@ -2191,14 +2397,14 @@
     },
     {
       "path": "scan37/replay-0041dd40/closure-pointer-provenance.jsonl",
-      "bytes": 23309460,
-      "sha256": "05c954fde3df954d037aa832fe8f0b423822e70267b12be9f0ea0429526f5f7c",
-      "rows": 9192
+      "bytes": 23375945,
+      "sha256": "8a026a517f7bd9be9200e158a712fa0559fa8c665e60a3900347063a69371f5b",
+      "rows": 9230
     },
     {
       "path": "scan37/replay-0041dd40/closure-pointer-provenance.log",
       "bytes": 355,
-      "sha256": "1586144d4cf43e270806907e2d19819d8305433d6fab86c0eba14e8cb2362e7a"
+      "sha256": "42859f7904d02a23f6ab1fa15b4f72bdf907d78fb86444436fae4be3a5df51e9"
     },
     {
       "path": "scan37/replay-0041dd40/closure-secondary-singleton-constructor-instructions.jsonl",
@@ -2249,9 +2455,51 @@
       "rows": 1
     },
     {
+      "path": "scan37/replay-0041dd40/crt-callind-api-address-references.jsonl",
+      "bytes": 16265,
+      "sha256": "8e1e335d05303efb8b9296d5d2359c9905cf5f86cbbb08d1a0a1fd5c19683c07",
+      "rows": 12
+    },
+    {
+      "path": "scan37/replay-0041dd40/crt-callind-api-defined-strings.tsv",
+      "bytes": 593,
+      "sha256": "df153ea81ba2f0588a61404e194ca0991c0f588c75e83deaaad81d4375e7c37f",
+      "rows": 6
+    },
+    {
+      "path": "scan37/replay-0041dd40/crt-callind-api-functions.jsonl",
+      "bytes": 331199,
+      "sha256": "61ec3009da1b92af4bd73768121584ecf92eeb61e48038f7776c55cb1f35711a",
+      "rows": 5
+    },
+    {
+      "path": "scan37/replay-0041dd40/crt-pointer-cache-init-00907737.jsonl",
+      "bytes": 38465,
+      "sha256": "3470667dbd40137c5921926137cb291a4365351bffec48db61b3146cb6e65a5c",
+      "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/crt-pointer-cache-writer-009189b3.jsonl",
+      "bytes": 3766,
+      "sha256": "7f2fb5e5c6426fabe0f1b62331adfd95aeac47ba69e94cc79fab46fb82e092cb",
+      "rows": 1
+    },
+    {
       "path": "scan37/replay-0041dd40/field-access-pairs.jsonl",
       "bytes": 6865,
       "sha256": "7c65ef4d11dfab850eff6e6626866acbb852e6752e8f43d319f035279a7dc7a5",
+      "rows": 5
+    },
+    {
+      "path": "scan37/replay-0041dd40/field-store-load-dominance-v6-cfg5-seeded-callees.jsonl",
+      "bytes": 15356,
+      "sha256": "6bccd5397ca55ecb6ad2fd75ded0a9a649f430af7462cf206840e83b5dac6590",
+      "rows": 5
+    },
+    {
+      "path": "scan37/replay-0041dd40/field-store-load-dominance-v6-cfg5-with-006642a5-00664140.jsonl",
+      "bytes": 15356,
+      "sha256": "56abb819a21dd745ff319273ef25dbe109101f5739047fdaaa7bbe6e2ef10568",
       "rows": 5
     },
     {
@@ -2284,16 +2532,159 @@
       "rows": 5
     },
     {
+      "path": "scan37/replay-0041dd40/field20-00664140-descendant-caller-argument-plan.tsv",
+      "bytes": 635,
+      "sha256": "e01c85b4dde3ecdec15b725ccd006556d00e0e80644b3bb686de85a0a578094d",
+      "rows": 13
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-00664140-descendant-caller-arguments.tsv",
+      "bytes": 11515,
+      "sha256": "7ffd38c7de949296c2bb2fbb7bba4a2ed987fa781b4e181af762c18edbbd8cd1",
+      "rows": 58
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-00664140-descendant-cfg-v5.jsonl",
+      "bytes": 15896,
+      "sha256": "703ad5ec5a896f7316a43eedf5e18f950d6097ae2190dd407cc89acc6bbfeaa9",
+      "rows": 7
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-00664140-descendant-memory-store-access.jsonl",
+      "bytes": 14408,
+      "sha256": "456140a9931fefeaaa8581364664dc398432c95c926ffa49ec337ebca30575ef",
+      "rows": 25
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-00664140-descendant-pcode-flow-acquisition.jsonl",
+      "bytes": 1313,
+      "sha256": "31601e43ca13239ddb0088bed6481c014346d37303805916a670c8e650ab34f3",
+      "rows": 7
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-00664140-descendant-pcode-flow-batch.tsv",
+      "bytes": 6313,
+      "sha256": "b41d1a7f8f044ecb39cbb85717fb08130dcb4defdc856e84bb02e3809d4be375",
+      "rows": 76
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-00664140-memory-store-access.jsonl",
+      "bytes": 5157,
+      "sha256": "c4b3b6dd8c957c5a6e1154797f9ac59f14114c5121f0d7d3b5547c9a438f497a",
+      "rows": 9
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-00664140-pcode-cfg-v5.jsonl",
+      "bytes": 6404,
+      "sha256": "2602f992787100e8d1d0824430e8eabe413f0f7466ed70e7f992e03e81dd6974",
+      "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-00664140-pcode-flow.tsv",
+      "bytes": 2951,
+      "sha256": "acc11f036179ba0b2e8356c2765319885495169277f32b33276ba9f208d67336",
+      "rows": 33
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-006642a5-acquisition.jsonl",
+      "bytes": 175,
+      "sha256": "b1d680d8aafc9af5d9d8a03a5e7b681c4c7df4a0e785863ae67b9a580107d50e",
+      "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-006642a5-callind.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "rows": 0
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-006642a5-functions.txt",
+      "bytes": 9,
+      "sha256": "eb42b1b25f332ac69e40bb534627fc6b04661daa2380c85c1f3203c796e5c685",
+      "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-006642a5-pcode-cfg-v5.jsonl",
+      "bytes": 4020,
+      "sha256": "64d6e8ad20b569f81aff608e3b75301a9b7d6ca606065a624539e2294a9a2a88",
+      "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-006642a5-pcode-flow.tsv",
+      "bytes": 1480,
+      "sha256": "e5d413fd05e231ccd95be31a2bb50bae02629884a830a79218997c1442f219b8",
+      "rows": 18
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-006642a5-replay.md",
+      "bytes": 3209,
+      "sha256": "a0357c61c3397e4e9d609157810b876e9921c5df5e3b5732c67b59e89293b0ae"
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-63030-selector-disassembly.md",
+      "bytes": 710,
+      "sha256": "d66abe16a8a68252d97efdf54e42ea21acf541d66c0ffc46857e4071520475fd",
+      "rows": 17
+    },
+    {
       "path": "scan37/replay-0041dd40/field20-acquisition.jsonl",
       "bytes": 1752,
       "sha256": "fe831974a20737b81b4bb9a4de9a00fe91935f8a31123293c3708b1f90654379",
       "rows": 10
     },
     {
+      "path": "scan37/replay-0041dd40/field20-base-subobject-init-acquisition.jsonl",
+      "bytes": 351,
+      "sha256": "21231e2b362df75dbd22883f7fbd59c6dffbed94bbe10b1f41a9af7f2c623a5e",
+      "rows": 2
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-base-subobject-init-callind.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "rows": 0
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-base-subobject-init-export.log",
+      "bytes": 5091,
+      "sha256": "61e4df071c7a3e94a163cf838b8733d902a22e28bdfaa7480ad99350b6018c95",
+      "rows": 59
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-base-subobject-init-functions.txt",
+      "bytes": 18,
+      "sha256": "34b339e00204938887017f14acc701685efc56d4332cfd7b536561f27bd956cf",
+      "rows": 2
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-base-subobject-init-pcode-flow.tsv",
+      "bytes": 15294,
+      "sha256": "00d6707bfd425857d0f08f8ed30729f73d6b54b3df5d3b4bfc37e44ce622f0c4",
+      "rows": 185
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-call-store-flow.jsonl",
+      "bytes": 6839,
+      "sha256": "5da217124af539089390fa7d78a2c7f7c6fd5a70e9b51900daa243bd03d90fe4",
+      "rows": 6
+    },
+    {
       "path": "scan37/replay-0041dd40/field20-callind.jsonl",
       "bytes": 7196,
       "sha256": "3d2d7128f0bc0924b19110eeff56d5711a042d81aeb6d3c3488ac1ff142c3c57",
       "rows": 21
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-field74-00678b90-pcode-flow.tsv",
+      "bytes": 239,
+      "sha256": "6f8d93be1c38b7501720965428ed82d3a2a6aa8637c5fda90d4050c90734a44b",
+      "rows": 3
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-field74-vtable-slots.jsonl",
+      "bytes": 7372,
+      "sha256": "36a47496b7f21c5a41ca98504abb3456fe9fa3bcfa08dfbfe8ae6567b2a4fdb7",
+      "rows": 16
     },
     {
       "path": "scan37/replay-0041dd40/field20-functions.txt",
@@ -2306,6 +2697,12 @@
       "bytes": 33586,
       "sha256": "ca95f6c849e38276adab6c78e489a0a7594bf30b700ee761ff52792f20038d1b",
       "rows": 58
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-nested-vtable-call-candidates.jsonl",
+      "bytes": 148700,
+      "sha256": "95fd25b48536e82ac2e5be2639f58e61befab03d65969d84a1fc320a1d9ecfae",
+      "rows": 2
     },
     {
       "path": "scan37/replay-0041dd40/field20-parameter-loads.tsv",
@@ -2327,15 +2724,131 @@
     },
     {
       "path": "scan37/replay-0041dd40/field20-pointer-provenance.jsonl",
-      "bytes": 2546482,
-      "sha256": "14ee8006e4fda980813054cf36fcb044740f7f5695b473b47408947733f55f28",
+      "bytes": 2546458,
+      "sha256": "4fb08fec3e4b45cad580a572f71124be98844047d00735dd8dd73c8876155383",
       "rows": 1393
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-selector1-address-references.jsonl",
+      "bytes": 7718,
+      "sha256": "9b1efeaf15215c4b66d3d7b6866cc104d05e28aae339807112e04263817033b6",
+      "rows": 7
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-selector1-instruction-slices.jsonl",
+      "bytes": 68031,
+      "sha256": "1069b94b9825dd5156829673938f8202eac982b06719a1ca967b9814c04d5570",
+      "rows": 9
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-selector1-resolution.md",
+      "bytes": 4217,
+      "sha256": "c8fbbdf2a76a6b88f396961eef92354b4ff50b18612300666d7291a665bea171"
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-constructor-acquisition.jsonl",
+      "bytes": 1404,
+      "sha256": "38cca8943d07f097fc192afeb46138507dfce4659c61085b88a8c3e1a6908dd8",
+      "rows": 8
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-constructor-callind.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "rows": 0
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-constructor-export.log",
+      "bytes": 5107,
+      "sha256": "b995a42c8897a37dab255a006c2602523409bd5e9042898d6c56ab6f908f2cad"
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-constructor-functions.txt",
+      "bytes": 72,
+      "sha256": "7dd25297965585738d1eeac80d76e2b123dc45dcab6ee6513680be7a369dccdd",
+      "rows": 8
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-constructor-pcode-flow.tsv",
+      "bytes": 210701,
+      "sha256": "6f52c33fda106cf4e9a71a235b13679342816221e8e3530d047db3504db589cc",
+      "rows": 2402
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-acquisition.jsonl",
+      "bytes": 1046,
+      "sha256": "a9d74faf702ecc40e388d86f9c1ab6ecd320267fa4bce9179cdab7bc3121c274",
+      "rows": 6
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-callind.jsonl",
+      "bytes": 1236,
+      "sha256": "eb7c25dca4b672d75ff3e850fa56cd1d2cd376db0805f5b1fcc62cda986a9186",
+      "rows": 2
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-cases.md",
+      "bytes": 1235,
+      "sha256": "757141e02193713435787f48579a23cc465ab4e17b75ab0eb57b73d978298a3c"
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-export.log",
+      "bytes": 5084,
+      "sha256": "7d9068fd066bbc9c4a83d678806a29574eddce5f9afb5ba8eb2d9ad12955bd0b"
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-functions.txt",
+      "bytes": 54,
+      "sha256": "af66588fb25771e67638a3ee0e2126dbeca3c5464b4ffc0beefcf8b9fa0e4263",
+      "rows": 6
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-subobject-dispatch-pcode-flow.tsv",
+      "bytes": 4169,
+      "sha256": "bd531a61f945e97189274448fa468e4c84b925807d878fe072701b06a84614d0",
+      "rows": 56
     },
     {
       "path": "scan37/replay-0041dd40/field20-type-layout-hypothesis.jsonl",
       "bytes": 3603,
-      "sha256": "86520e8906da7f962f3b88fa400a1d9af3b6280c4bdba8fb18f7d1bd81f1c267",
+      "sha256": "095e25faab5b792c9691d1cead40b84b87db98322abfe70cc38d74a5755bf586",
       "rows": 1
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-vtable-call-candidates.jsonl",
+      "bytes": 28135,
+      "sha256": "7fe629f1086028b447b97f57eee865b97422fecddcf29df4bfc5f33fdc983703",
+      "rows": 4
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-wrapper-address-references.jsonl",
+      "bytes": 29071,
+      "sha256": "cb8785f297d165d5c3743a890f57718289fa12cb35b5de0e522811186e1f20f6",
+      "rows": 10
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-wrapper-callers-acquisition.jsonl",
+      "bytes": 703,
+      "sha256": "fb6d5ad48a264b6fc7020e69f93b6da74f6a3ee7ed0800712ddf75eb1b77472f",
+      "rows": 4
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-wrapper-callers-flow.tsv",
+      "bytes": 104917,
+      "sha256": "e2d80d78197a5575c870e86f969e34741208f5ae26f2e3b2c11994a73e2bdca4",
+      "rows": 1188
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-wrapper-callind-argument-provenance.tsv",
+      "bytes": 5359,
+      "sha256": "b7d0fb85fbb1d1d1e83c4d71943a7a91194954ab7b0efe8f73113b62b94030d2",
+      "rows": 14
+    },
+    {
+      "path": "scan37/replay-0041dd40/field20-wrapper-callind-static-targets.jsonl",
+      "bytes": 27873,
+      "sha256": "dcf77714b6a9c9d76c80ea5435c0592a738a66908464605bdfc4886d68606231",
+      "rows": 2
     },
     {
       "path": "scan37/replay-0041dd40/function-pcode-cfg-v4-full-closure-scope.jsonl",
@@ -2364,14 +2877,38 @@
     {
       "path": "scan37/replay-0041dd40/indirect-call-pointer-slots.jsonl",
       "bytes": 36343,
-      "sha256": "e7a2dfae3bf80663727e503f161d56557e646fd3cc82f3ff53cc2516438e6e1e",
+      "sha256": "d4197d2340ea303d217425585fb9fa2d2476f13121ee00101c87725e2eea3c5e",
       "rows": 22
+    },
+    {
+      "path": "scan37/replay-0041dd40/interprocedural-flow-input-entries-cfg5-followup-v2.txt",
+      "bytes": 954,
+      "sha256": "398b3e167353278fc93f1927a17042ba1e1586ebf415c2988c4a2f6326cc5594",
+      "rows": 106
+    },
+    {
+      "path": "scan37/replay-0041dd40/interprocedural-flow-input-entries-cfg5-followup.txt",
+      "bytes": 891,
+      "sha256": "27807ec49fc8821c57d99d6b53772378e580200d389c1b86b2ce772588f69046",
+      "rows": 99
     },
     {
       "path": "scan37/replay-0041dd40/interprocedural-flow-input-entries.txt",
       "bytes": 873,
       "sha256": "fe2a267f38880ebc4cb74d7ab7328b8030125d8116e24839fa04232ff896fc82",
       "rows": 97
+    },
+    {
+      "path": "scan37/replay-0041dd40/interprocedural-memory-effects-v2-cfg5-seeded-callees.jsonl",
+      "bytes": 1412175,
+      "sha256": "14f302a342e3f0deaf7f3eab13e5723de91fa1e0d98c34c91c0a66797aa88772",
+      "rows": 670
+    },
+    {
+      "path": "scan37/replay-0041dd40/interprocedural-memory-effects-v2-cfg5-with-006642a5-00664140.jsonl",
+      "bytes": 1401575,
+      "sha256": "51577abc5acdfaae07deccfef1e9c7e40485e8147724b2d8d3cade07da6ea111",
+      "rows": 670
     },
     {
       "path": "scan37/replay-0041dd40/interprocedural-memory-effects-v2-cfg5.jsonl",
@@ -2404,8 +2941,20 @@
     },
     {
       "path": "scan37/replay-0041dd40/manual-static-vtable-review.md",
-      "bytes": 8864,
-      "sha256": "f17d8f368bf885f7d1128bd6a66a82e7636395a1f2531fcbfc3e33dc2f21011b"
+      "bytes": 20595,
+      "sha256": "99d2580164851af36bf0dd2b8d8ec3aa674a31714982da203de50b90fd665213"
+    },
+    {
+      "path": "scan37/replay-0041dd40/memory-store-access-full-closure-scope-seeded-callees.jsonl",
+      "bytes": 280038,
+      "sha256": "d6364f227276afd4d379f7befae3205338d5ab2a2b60fcf55d3a89242e2786c9",
+      "rows": 448
+    },
+    {
+      "path": "scan37/replay-0041dd40/memory-store-access-full-closure-scope-with-00664140.jsonl",
+      "bytes": 265630,
+      "sha256": "8465e5ccc2612bec59c2ebbe6ba39394f01d01cdc9dcf40b3a94cabdd0252aed",
+      "rows": 423
     },
     {
       "path": "scan37/replay-0041dd40/memory-store-access-full-closure-scope.jsonl",
@@ -2475,6 +3024,41 @@
       "bytes": 1206713,
       "sha256": "292be2504bc190af4c602de6dee2197b602fdd815b4e3718c28c2d3f3b9f8141",
       "rows": 2
+    },
+    {
+      "path": "scan37/replay-0041dd40/static-call-target-closure-0064a0c0.jsonl",
+      "bytes": 2596,
+      "sha256": "9f60dc92ae2380ff754d616531ef3618bda67c4507436dc4b4759413b7832a31",
+      "rows": 3
+    },
+    {
+      "path": "scan37/replay-0041dd40/static-call-target-closure-0064a100.jsonl",
+      "bytes": 3342,
+      "sha256": "f6daf40d8dcbd80d0ce96fe10daf0381892c0731575ad3d29cc1753b87bf41aa",
+      "rows": 4
+    },
+    {
+      "path": "scan37/replay-0041dd40/static-call-target-closure-006657e0.jsonl",
+      "bytes": 4228,
+      "sha256": "5a3a575627328bd33061e886e2153976c3503cb65287bf43f93e852d2da6f08a",
+      "rows": 2
+    },
+    {
+      "path": "scan37/replay-0041dd40/static-call-target-closure-00665820.jsonl",
+      "bytes": 4946,
+      "sha256": "0ecc1ce1babf3759da1a86287ac580eb291bf0c0c91d566941f17a8deb96be59",
+      "rows": 3
+    },
+    {
+      "path": "scan37/replay-0041dd40/static-call-target-closure-009189cd.jsonl",
+      "bytes": 4609,
+      "sha256": "86e3c52d78ab1703f02502aeabcb83d33f95b54a33e7e64158362b6bd3debb46",
+      "rows": 7
+    },
+    {
+      "path": "scan37/replay-0041dd40/static-call-target-closure-replay.md",
+      "bytes": 6064,
+      "sha256": "deab798588c7a767536f75be4f3ae456c2f84c00bf34f620eb4ee662cc90c83e"
     },
     {
       "path": "scan37/replay-0041dd40/target-function-00664a10-callind-evidence.jsonl",

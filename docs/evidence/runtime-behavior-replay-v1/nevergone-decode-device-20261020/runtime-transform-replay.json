@@ -1,0 +1,207 @@
+{
+  "behavior_id": "nevergone-decode-xor-subtract-index-mod-127-u8/v1",
+  "candidate_id": "nevergone-decode-static-recovery",
+  "capture_id": "nevergone-decode-device-20261020-pid15911",
+  "correlation_report_sha256": "90f9cda7da02096608f25fdc037fec83743d79f78ceba632ffbdc97829bd2d28",
+  "evidence_limitations": [
+    "Formula results are consumer-reported; sample bytes are not included or recomputed by the analyzer.",
+    "The source capture and probe hashes identify inputs but do not authenticate their origin.",
+    "A bounded sample match does not prove whole-buffer behavior or capture completeness."
+  ],
+  "expected_function_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+  "format": "REVENGINSTR.RuntimeTransformReplay/1",
+  "manifest_sha256": "aa75aa03280d76045070c96816964320404582fb46b5299a5894a8d471a7d090",
+  "observations": [
+    {
+      "correlation_sequence": 0,
+      "evidence_class": "runtime_consumer_reported",
+      "formula_result": "match",
+      "input_length": 94624,
+      "key": 1,
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "outcome": "sampled_match",
+      "runtime_address": "0xbbb82a40",
+      "sample_count": 128,
+      "sample_mode": "bounded",
+      "source_ordinal": 1,
+      "static_match_state": "matched"
+    },
+    {
+      "correlation_sequence": 1,
+      "evidence_class": "runtime_consumer_reported",
+      "formula_result": "match",
+      "input_length": 38362,
+      "key": 1,
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "outcome": "sampled_match",
+      "runtime_address": "0xbbb82a40",
+      "sample_count": 128,
+      "sample_mode": "bounded",
+      "source_ordinal": 2,
+      "static_match_state": "matched"
+    },
+    {
+      "correlation_sequence": 2,
+      "evidence_class": "runtime_consumer_reported",
+      "formula_result": "match",
+      "input_length": 13632,
+      "key": 1,
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "outcome": "sampled_match",
+      "runtime_address": "0xbbb82a40",
+      "sample_count": 128,
+      "sample_mode": "bounded",
+      "source_ordinal": 3,
+      "static_match_state": "matched"
+    },
+    {
+      "correlation_sequence": 3,
+      "evidence_class": "runtime_consumer_reported",
+      "formula_result": "match",
+      "input_length": 104579,
+      "key": 1,
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "outcome": "sampled_match",
+      "runtime_address": "0xbbb82a40",
+      "sample_count": 128,
+      "sample_mode": "bounded",
+      "source_ordinal": 4,
+      "static_match_state": "matched"
+    },
+    {
+      "correlation_sequence": 4,
+      "evidence_class": "runtime_consumer_reported",
+      "formula_result": "match",
+      "input_length": 87555,
+      "key": 1,
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "outcome": "sampled_match",
+      "runtime_address": "0xbbb82a40",
+      "sample_count": 128,
+      "sample_mode": "bounded",
+      "source_ordinal": 5,
+      "static_match_state": "matched"
+    },
+    {
+      "correlation_sequence": 5,
+      "evidence_class": "runtime_consumer_reported",
+      "formula_result": "match",
+      "input_length": 79153,
+      "key": 1,
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "outcome": "sampled_match",
+      "runtime_address": "0xbbb82a40",
+      "sample_count": 128,
+      "sample_mode": "bounded",
+      "source_ordinal": 6,
+      "static_match_state": "matched"
+    },
+    {
+      "correlation_sequence": 6,
+      "evidence_class": "runtime_consumer_reported",
+      "formula_result": "match",
+      "input_length": 3731,
+      "key": 1,
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "outcome": "sampled_match",
+      "runtime_address": "0xbbb82a40",
+      "sample_count": 128,
+      "sample_mode": "bounded",
+      "source_ordinal": 7,
+      "static_match_state": "matched"
+    },
+    {
+      "correlation_sequence": 7,
+      "evidence_class": "runtime_consumer_reported",
+      "formula_result": "match",
+      "input_length": 3874,
+      "key": 1,
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "outcome": "sampled_match",
+      "runtime_address": "0xbbb82a40",
+      "sample_count": 128,
+      "sample_mode": "bounded",
+      "source_ordinal": 8,
+      "static_match_state": "matched"
+    },
+    {
+      "correlation_sequence": 8,
+      "evidence_class": "runtime_consumer_reported",
+      "formula_result": "match",
+      "input_length": 1609306,
+      "key": 1,
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "outcome": "sampled_match",
+      "runtime_address": "0xbbb82a40",
+      "sample_count": 128,
+      "sample_mode": "bounded",
+      "source_ordinal": 9,
+      "static_match_state": "matched"
+    },
+    {
+      "correlation_sequence": 9,
+      "evidence_class": "runtime_consumer_reported",
+      "formula_result": "match",
+      "input_length": 2758344,
+      "key": 1,
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "outcome": "sampled_match",
+      "runtime_address": "0xbbb82a40",
+      "sample_count": 128,
+      "sample_mode": "bounded",
+      "source_ordinal": 10,
+      "static_match_state": "matched"
+    },
+    {
+      "correlation_sequence": 10,
+      "evidence_class": "runtime_consumer_reported",
+      "formula_result": "unavailable",
+      "input_length": 0,
+      "key": 1,
+      "matched_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "outcome": "inconclusive",
+      "runtime_address": "0xbbb82a40",
+      "sample_count": 0,
+      "sample_mode": "none",
+      "source_ordinal": 11,
+      "static_match_state": "matched"
+    }
+  ],
+  "observations_sha256": "fd555a1c6bd2e9e731ab833d191b37671e1d82c2c68ba23b63089a52fa2c675e",
+  "probe_script_sha256": "0ffb0ced88a48680f2122647b4fb5f1b80356819c915d7da8db302327a483c0f",
+  "sampling": {
+    "gaps": [],
+    "status": "unknown"
+  },
+  "source_capture_sha256": "383e0f8ce81f9ccd65e75202a3730bb48eb3eb546591ddcdb03b6d11d3829be9",
+  "summary": {
+    "exact_static_match_count": 11,
+    "full_match_count": 0,
+    "inconclusive_count": 1,
+    "observation_count": 11,
+    "observed_mismatch_count": 0,
+    "sampled_match_count": 10
+  }
+}

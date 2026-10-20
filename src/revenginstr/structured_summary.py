@@ -38,11 +38,15 @@ _OPCODES = {
 _SOURCE_FORMATS = {
     "REVENGINSTR.GhidraParameterStoreField/1",
     "REVENGINSTR.GhidraParameterLoadField/1",
+    "REVENGINSTR.GhidraMemoryStoreAccess/1",
     "REVENGINSTR.GhidraFunctionPcodeFlow/1",
 }
-_SOURCE_FORMAT_BY_KIND = {
+_SOURCE_FORMATS_BY_KIND = {
     "parameter_field_read": "REVENGINSTR.GhidraParameterLoadField/1",
-    "parameter_field_write": "REVENGINSTR.GhidraParameterStoreField/1",
+    "parameter_field_write": {
+        "REVENGINSTR.GhidraParameterStoreField/1",
+        "REVENGINSTR.GhidraMemoryStoreAccess/1",
+    },
     "direct_call": "REVENGINSTR.GhidraFunctionPcodeFlow/1",
     "indirect_call": "REVENGINSTR.GhidraFunctionPcodeFlow/1",
     "return_op": "REVENGINSTR.GhidraFunctionPcodeFlow/1",
@@ -127,7 +131,10 @@ def _validate_effect_ir(records: list[dict[str, Any]], source_sha256: str) -> st
                 or provenance["record_index"] < 1
             ):
                 raise ValueError(f"{effect_where}: invalid provenance")
-            if provenance["source_format"] != _SOURCE_FORMAT_BY_KIND[kind]:
+            expected_source_formats = _SOURCE_FORMATS_BY_KIND[kind]
+            if isinstance(expected_source_formats, str):
+                expected_source_formats = {expected_source_formats}
+            if provenance["source_format"] not in expected_source_formats:
                 raise ValueError(f"{effect_where}: source format does not match effect kind")
             expected_id = hashlib.sha256(
                 f"{provenance['source_format']}\0{provenance['artifact_sha256']}\0{provenance['record_index']}".encode("utf-8")
@@ -177,7 +184,11 @@ def _attributes(effect: dict[str, Any], where: str) -> dict[str, Any]:
             attrs["value_size"] = size
         if kind == "parameter_field_write":
             source_parameter = effect["source_parameter_index"]
-            if not isinstance(source_parameter, int) or isinstance(source_parameter, bool) or source_parameter < 0:
+            if source_parameter is not None and (
+                not isinstance(source_parameter, int)
+                or isinstance(source_parameter, bool)
+                or source_parameter < 0
+            ):
                 raise ValueError(f"{where}: invalid source parameter index")
             attrs["source_parameter_index"] = source_parameter
         return attrs

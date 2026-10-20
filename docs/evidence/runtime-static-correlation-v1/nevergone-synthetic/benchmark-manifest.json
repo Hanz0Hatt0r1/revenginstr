@@ -89,7 +89,7 @@
     },
     "graph": {
       "path": "../../../../schemas/semantic-program-graph-v3.schema.json",
-      "sha256": "2310a0fca32c5c29301ac596df0925cbf4a7de5177742c1142f5256894afd067",
+      "sha256": "674ea89ab173734971cb6206870064a71b4047fcbddf7a7e9f20d921bace4f5f",
       "version": "REVENGINSTR.SemanticProgramGraph/3"
     },
     "identity": {

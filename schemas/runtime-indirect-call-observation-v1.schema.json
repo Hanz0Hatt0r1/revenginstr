@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/runtime-indirect-call-observation-v1.schema.json",
+  "title": "REVENGINSTR.RuntimeIndirectCallObservation/1 JSONL row",
+  "description": "One bounded runtime observation joining a caller address, exact indirect-call site, and executed target address. Sequence numbers order this CALLIND event stream and use the capture manifest sampling-gap coordinate system.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "capture_id", "sequence", "caller_runtime_address",
+    "callsite_runtime_address", "target_runtime_address"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.RuntimeIndirectCallObservation/1"},
+    "capture_id": {"type": "string", "minLength": 1},
+    "sequence": {"type": "integer", "minimum": 0, "maximum": 1000000000},
+    "caller_runtime_address": {"$ref": "#/$defs/address"},
+    "callsite_runtime_address": {"$ref": "#/$defs/address"},
+    "target_runtime_address": {"$ref": "#/$defs/address"}
+  },
+  "$defs": {
+    "address": {"type": "string", "pattern": "^(?:0x)?[0-9a-fA-F]{1,16}$"}
+  }
+}

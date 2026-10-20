@@ -21,11 +21,13 @@ from revenginstr.semantic_program_graph import _read_jsonl
 ROOT = Path(__file__).resolve().parents[1]
 GRAPH_PATH = ROOT / "docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick/semantic-program-graph.jsonl"
 PROGRAM_MANIFEST_PATH = ROOT / "docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick/manifest.json"
+RUNTIME_GRAPH_PATH = ROOT / "docs/evidence/semantic-program-graph-v3/nevergone-runtime-correlation-20261020/semantic-program-graph.jsonl"
 REPLAY_DIR = ROOT / "docs/evidence/runtime-static-correlation-v1/nevergone-synthetic"
 DEVICE_ARTIFACT_IDENTITY_PATH = (
     ROOT / "docs/evidence/runtime-static-correlation-v1/nevergone-device-artifact-20261019/artifact-identity.json"
 )
 DEVICE_RUNTIME_REPLAY_DIR = ROOT / "docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019"
+DEVICE_RUNTIME_STATIC_IDENTITY_PATH = DEVICE_RUNTIME_REPLAY_DIR / "static-identity.json"
 SCHEMAS = {
     name: json.loads((ROOT / "schemas" / name).read_text(encoding="utf-8"))
     for name in (
@@ -320,8 +322,8 @@ def test_pinned_device_runtime_capture_replay_preserves_unknown_sampling(tmp_pat
 
     output = tmp_path / "device-correlation.json"
     assert main([
-        str(GRAPH_PATH),
-        str(REPLAY_DIR / "static-identity.json"),
+        str(RUNTIME_GRAPH_PATH),
+        str(DEVICE_RUNTIME_STATIC_IDENTITY_PATH),
         str(DEVICE_RUNTIME_REPLAY_DIR / "capture-manifest.json"),
         str(observations_path),
         "--output", str(output),
@@ -332,10 +334,11 @@ def test_pinned_device_runtime_capture_replay_preserves_unknown_sampling(tmp_pat
     assert generated == expected
     assert generated["summary"] == {
         "event_count": 88,
-        "matched_count": 0,
+        "matched_count": 88,
         "ambiguous_count": 0,
-        "unmatched_count": 88,
+        "unmatched_count": 0,
         "mapping_underflow_count": 0,
         "mapping_overflow_count": 0,
     }
     assert {row["normalized_address"] for row in generated["events"]} == {"0x544a60", "0x2d2f1c"}
+    assert {row["match_state"] for row in generated["events"]} == {"matched"}

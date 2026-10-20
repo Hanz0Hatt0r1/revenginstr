@@ -1,0 +1,107 @@
+{
+  "artifacts": [
+    {
+      "bytes": 29693,
+      "id": "function_effect_ir",
+      "path": "../../semantic-program-graph-v3/nevergone-runtime-correlation-20261020/function-effects.jsonl",
+      "sha256": "9ce34ab4ada5f43da49912ef75043a28692ab95cf2bfecc1edb3d44d8c10d8d7"
+    },
+    {
+      "bytes": 21116,
+      "id": "type_layout_hypotheses",
+      "path": "../../semantic-program-graph-v3/nevergone-ccjoystick/type-layout-hypothesis.jsonl",
+      "sha256": "db9c2d161456ac73a931e0e1d08e8dc2fd71bbc3d7c3559b94e1b5b543f0e35b"
+    },
+    {
+      "bytes": 4007,
+      "id": "LoadGameLevels_pcode",
+      "path": "../../runtime-static-correlation-v1/nevergone-device-runtime-20261019/LoadGameLevels.pcode-flow.tsv",
+      "sha256": "930d7acd70c8f92df3d1b191efb04ce9ace78b22a701ea4d663eec68b0c5e592"
+    },
+    {
+      "bytes": 53542,
+      "id": "getFileData_pcode",
+      "path": "../../runtime-static-correlation-v1/nevergone-device-runtime-20261019/CCFileUtilsAndroid-getFileData.pcode-flow.tsv",
+      "sha256": "a15289511ed196ce41591c196d3c76c1f8cdb48f1c6dec7285aef3b3f0218dfd"
+    },
+    {
+      "bytes": 23485,
+      "id": "call_arguments",
+      "path": "call-arguments.jsonl",
+      "sha256": "3ea5e756a606d8ff0b4d9e10eda79df51326013a4f67e84a989ef0b3316d1546"
+    },
+    {
+      "bytes": 267349,
+      "id": "semantic_graph",
+      "path": "semantic-program-graph.jsonl",
+      "sha256": "04c223505df90987014c1732c0707cc6e5576b7a380cbcf1dc9c485a91610e4c"
+    },
+    {
+      "bytes": 28267,
+      "id": "graph_schema_v4",
+      "path": "../../../../schemas/semantic-program-graph-v4.schema.json",
+      "sha256": "3493fe42b9da9a8c1c0e2fca4f97b1cac8013be12d5301a702c1a6fb8c1343db"
+    },
+    {
+      "bytes": 2069,
+      "id": "call_argument_schema",
+      "path": "../../../../schemas/direct-call-argument-observation-v1.schema.json",
+      "sha256": "b421ac10ba2c172bbda2e05abb6f6481e0ee9ef75af99a3588b71f85a06303a0"
+    },
+    {
+      "bytes": 4539,
+      "id": "query_result_schema",
+      "path": "../../../../schemas/semantic-program-query-result-v1.schema.json",
+      "sha256": "1cc14f26ec8ba74650ef072a5e57acead9d51fde7dcd5935e770edbe2a18e138"
+    },
+    {
+      "id": "path_query_result_schema",
+      "path": "../../../../schemas/semantic-program-path-query-result-v1.schema.json",
+      "bytes": 7305,
+      "sha256": "080bcae87edd4861555cf8547d2cb0944a625a6a784df3885cffd6a855bfa680"
+    },
+    {
+      "id": "argument_definitions",
+      "path": "argument-definitions.jsonl",
+      "bytes": 69377,
+      "sha256": "2c2ba0822ec38212401599a5819e5e8182f77037c0f37128a66833ece46a340a"
+    },
+    {
+      "id": "argument_definition_schema",
+      "path": "../../../../schemas/direct-call-argument-definition-v1.schema.json",
+      "bytes": 3400,
+      "sha256": "335ac0a989ded1e48090440874b6bfad8231907ced4eb5e2fd507d0f75b41679"
+    },
+    {
+      "id": "argument_operand_traces",
+      "path": "argument-operand-traces.jsonl",
+      "bytes": 195232,
+      "sha256": "8d6135421625efc05c00cf074fc678b6001859e39e5b203d05102d649975b086"
+    },
+    {
+      "id": "argument_operand_trace_schema",
+      "path": "../../../../schemas/direct-call-argument-operand-trace-v1.schema.json",
+      "bytes": 9396,
+      "sha256": "87a426cc242ffa9d943881cbd4485f7ada7735fa02be5499038b999645626478"
+    }
+  ],
+  "format": "REVENGINSTR.SemanticProgramGraphCallArgumentReplay/1",
+  "program_id": "nevergone-1.0.9-armv7-libcocos2dcpp",
+  "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
+  "summary": {
+    "arguments": 70,
+    "call_argument_observations": 36,
+    "constant_arguments": 10,
+    "graph_edges": 128,
+    "graph_nodes": 90,
+    "exact_argument_definitions": 56,
+    "non_definition_arguments": 14,
+    "operand_trace_rows": 70,
+    "closed_operand_traces": 28,
+    "boundary_operand_traces": 28,
+    "non_definition_operand_traces": 14,
+    "operand_trace_producer_rows": 87,
+    "operand_trace_edges": 33,
+    "operand_trace_boundaries": 34
+  }
+}

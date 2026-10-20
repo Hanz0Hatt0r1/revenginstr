@@ -1,42 +1,90 @@
 {
-  "format": "REVENGINSTR.RuntimeStaticCorrelationReplay/1",
-  "input_origin": "real installed Nevergone binary and sampled startup runtime function entries; the pinned graph omits both observed resource functions",
   "artifacts": [
     {
+      "bytes": 211701,
       "id": "semantic_graph",
-      "path": "../../semantic-program-graph-v3/nevergone-ccjoystick/semantic-program-graph.jsonl",
-      "bytes": 52588,
-      "sha256": "83093ddcab1e2a39abae5a53174ab1e835f501a92394ca09cc328682454186e3"
+      "path": "../../semantic-program-graph-v3/nevergone-runtime-correlation-20261020/semantic-program-graph.jsonl",
+      "sha256": "021065470f8da973921b701323807b60033cb0870e2cdd2f15831665b9cffaab"
     },
     {
-      "id": "static_identity",
-      "path": "../nevergone-synthetic/static-identity.json",
+      "bytes": 2813,
+      "id": "semantic_graph_manifest",
+      "path": "../../semantic-program-graph-v3/nevergone-runtime-correlation-20261020/manifest.json",
+      "sha256": "4f9320f13b38b1ed25b3a7b7ac76755d11c23c4d092df7e09956a41a3a48511a"
+    },
+    {
+      "bytes": 29693,
+      "id": "combined_function_effect_ir",
+      "path": "../../semantic-program-graph-v3/nevergone-runtime-correlation-20261020/function-effects.jsonl",
+      "sha256": "9ce34ab4ada5f43da49912ef75043a28692ab95cf2bfecc1edb3d44d8c10d8d7"
+    },
+    {
+      "bytes": 4007,
+      "id": "LoadGameLevels_pcode",
+      "path": "LoadGameLevels.pcode-flow.tsv",
+      "sha256": "930d7acd70c8f92df3d1b191efb04ce9ace78b22a701ea4d663eec68b0c5e592"
+    },
+    {
+      "bytes": 7114,
+      "id": "LoadGameLevels_effect_ir",
+      "path": "LoadGameLevels.function-effect-ir.jsonl",
+      "sha256": "d8932bd73f37214d05fa6e179f4206e3d2fdb13531f1c29d3b0e9eda2f65e428"
+    },
+    {
+      "bytes": 53542,
+      "id": "CCFileUtilsAndroid_getFileData_pcode",
+      "path": "CCFileUtilsAndroid-getFileData.pcode-flow.tsv",
+      "sha256": "a15289511ed196ce41591c196d3c76c1f8cdb48f1c6dec7285aef3b3f0218dfd"
+    },
+    {
+      "bytes": 20365,
+      "id": "CCFileUtilsAndroid_getFileData_effect_ir",
+      "path": "CCFileUtilsAndroid-getFileData.function-effect-ir.jsonl",
+      "sha256": "fdf5aedf122dfa68994f105a04298d8d0239c26a5b9a90ac791544fb2443cdb8"
+    },
+    {
       "bytes": 314,
-      "sha256": "3cc89c41b5f5a55f2143ad74c1c03ae453878b5d8c68d2f6b80161227b03a96e"
+      "id": "static_identity",
+      "path": "static-identity.json",
+      "sha256": "93a16daf397da6a72e05a037fd9a9edd5d4442cbc53adce17be2670963de8d70"
     },
     {
+      "bytes": 450,
       "id": "capture_manifest",
       "path": "capture-manifest.json",
-      "bytes": 450,
-      "sha256": "8025319b570d3ec9d09e0e25f9ea31f7aa15b2833ec74adf4da65ad02d9d4e66"
+      "sha256": "b68d5437b15f059c744b7a8eddc3b858f53952f9da079ac91e28e29d0dd025d1"
     },
     {
+      "bytes": 17150,
       "id": "observations",
       "path": "observations.jsonl",
-      "bytes": 17150,
       "sha256": "134c9896542eecc833fbf77281dc036501bca763431b8ddefac6234e5d08823f"
     },
     {
+      "bytes": 38576,
       "id": "expected_correlation",
       "path": "correlation.json",
-      "bytes": 28456,
-      "sha256": "2aa09d108ee970f0ae4c4eb04d624d032e3c6b1c971f7036bdc04225921c2f53"
+      "sha256": "d46761f58a2c5e81af57188788198a3f3e79638c1ee0c133548f1c4140d310df"
     },
     {
+      "bytes": 89038,
+      "id": "decision_ledger_events",
+      "path": "decision-ledger-events.jsonl",
+      "sha256": "69d6047c2e7f2cb2c0534b69c599707a6312a62e3582d7f484e1d5e5bf97a1de"
+    },
+    {
+      "bytes": 762,
+      "id": "decision_ledger_audit",
+      "path": "decision-ledger-audit.json",
+      "sha256": "b92b52996ff885139882b2a185a394aaa0724bb4f31d9c8ce8028f11ebb676e6"
+    },
+    {
+      "bytes": 2409,
       "id": "installed_artifact_identity",
       "path": "../nevergone-device-artifact-20261019/artifact-identity.json",
-      "bytes": 2409,
       "sha256": "62ea5be9ff21c2adbee97e06a7c6f1c7d2488fd91a6b966bee014fe53863b7cc"
     }
-  ]
+  ],
+  "format": "REVENGINSTR.RuntimeStaticCorrelationReplay/1",
+  "input_origin": "real sampled startup trace from installed Nevergone 1.0.9; both observed function entries have exact Ghidra P-code evidence; capture completeness remains unknown"
 }

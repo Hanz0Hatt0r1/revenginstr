@@ -6,14 +6,18 @@
     "static_image_base": "0x10000"
   },
   "capture_id": "nevergone-device-startup-resource-20261019",
-  "capture_manifest_sha256": "8025319b570d3ec9d09e0e25f9ea31f7aa15b2833ec74adf4da65ad02d9d4e66",
+  "capture_manifest_sha256": "b68d5437b15f059c744b7a8eddc3b858f53952f9da079ac91e28e29d0dd025d1",
   "events": [
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 0
@@ -21,9 +25,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 1
@@ -31,9 +39,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 2
@@ -41,9 +53,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 3
@@ -51,9 +67,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 4
@@ -61,9 +81,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 5
@@ -71,9 +95,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 6
@@ -81,9 +109,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 7
@@ -91,9 +123,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 8
@@ -101,9 +137,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 9
@@ -111,9 +151,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 10
@@ -121,9 +165,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 11
@@ -131,9 +179,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 12
@@ -141,9 +193,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 13
@@ -151,9 +207,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 14
@@ -161,9 +221,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 15
@@ -171,9 +235,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 16
@@ -181,9 +249,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 17
@@ -191,9 +263,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 18
@@ -201,9 +277,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 19
@@ -211,9 +291,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 20
@@ -221,9 +305,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 21
@@ -231,9 +319,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 22
@@ -241,9 +333,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 23
@@ -251,9 +347,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 24
@@ -261,9 +361,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 25
@@ -271,9 +375,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 26
@@ -281,9 +389,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 27
@@ -291,9 +403,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 28
@@ -301,9 +417,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 29
@@ -311,9 +431,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 30
@@ -321,9 +445,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 31
@@ -331,9 +459,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 32
@@ -341,9 +473,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 33
@@ -351,9 +487,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 34
@@ -361,9 +501,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 35
@@ -371,9 +515,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 36
@@ -381,9 +529,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 37
@@ -391,9 +543,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 38
@@ -401,9 +557,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 39
@@ -411,9 +571,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 40
@@ -421,9 +585,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 41
@@ -431,9 +599,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 42
@@ -441,9 +613,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 43
@@ -451,9 +627,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 44
@@ -461,9 +641,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 45
@@ -471,9 +655,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 46
@@ -481,9 +669,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 47
@@ -491,9 +683,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 48
@@ -501,9 +697,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 49
@@ -511,9 +711,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 50
@@ -521,9 +725,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 51
@@ -531,9 +739,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 52
@@ -541,9 +753,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 53
@@ -551,9 +767,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 54
@@ -561,9 +781,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 55
@@ -571,9 +795,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 56
@@ -581,9 +809,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 57
@@ -591,9 +823,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 58
@@ -601,9 +837,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 59
@@ -611,9 +851,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 60
@@ -621,9 +865,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 61
@@ -631,9 +879,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 62
@@ -641,9 +893,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 63
@@ -651,9 +907,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 64
@@ -661,9 +921,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 65
@@ -671,9 +935,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 66
@@ -681,9 +949,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 67
@@ -691,9 +963,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 68
@@ -701,9 +977,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 69
@@ -711,9 +991,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 70
@@ -721,9 +1005,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 71
@@ -731,9 +1019,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 72
@@ -741,9 +1033,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 73
@@ -751,9 +1047,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 74
@@ -761,9 +1061,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 75
@@ -771,9 +1075,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 76
@@ -781,9 +1089,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 77
@@ -791,9 +1103,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 78
@@ -801,9 +1117,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 79
@@ -811,9 +1131,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 80
@@ -821,9 +1145,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 81
@@ -831,9 +1159,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 82
@@ -841,9 +1173,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 83
@@ -851,9 +1187,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 84
@@ -861,9 +1201,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 85
@@ -871,9 +1215,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "002d2f1c"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:16f75e360c8704676ef7fcb6114daf4aa0ebc78d9456aa41c52b8f841ad7b4a1"
+      ],
       "normalized_address": "0x2d2f1c",
       "runtime_address": "0xbb90ef1c",
       "sequence": 86
@@ -881,9 +1229,13 @@
     {
       "capture_id": "nevergone-device-startup-resource-20261019",
       "event_kind": "function_entry",
-      "function_entries": [],
-      "match_state": "unmatched",
-      "matched_node_ids": [],
+      "function_entries": [
+        "00544a60"
+      ],
+      "match_state": "matched",
+      "matched_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
       "normalized_address": "0x544a60",
       "runtime_address": "0xbbb80a60",
       "sequence": 87
@@ -897,14 +1249,14 @@
     "gaps": [],
     "status": "unknown"
   },
-  "semantic_graph_sha256": "83093ddcab1e2a39abae5a53174ab1e835f501a92394ca09cc328682454186e3",
-  "static_identity_sha256": "3cc89c41b5f5a55f2143ad74c1c03ae453878b5d8c68d2f6b80161227b03a96e",
+  "semantic_graph_sha256": "021065470f8da973921b701323807b60033cb0870e2cdd2f15831665b9cffaab",
+  "static_identity_sha256": "93a16daf397da6a72e05a037fd9a9edd5d4442cbc53adce17be2670963de8d70",
   "summary": {
     "ambiguous_count": 0,
     "event_count": 88,
     "mapping_overflow_count": 0,
     "mapping_underflow_count": 0,
-    "matched_count": 0,
-    "unmatched_count": 88
+    "matched_count": 88,
+    "unmatched_count": 0
   }
 }

@@ -584,7 +584,7 @@ class _Analyzer:
                         item.address_space_token, "dynamic_offset", item.path, item.evidence,
                     ), operation) for item in base]
                 delta = constant
-                if operation.opcode in {"PTRSUB", "INT_SUB"}:
+                if operation.opcode == "INT_SUB":
                     delta = -delta
             return self._offset(base, delta, operation)
 

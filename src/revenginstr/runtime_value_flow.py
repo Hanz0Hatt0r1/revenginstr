@@ -27,6 +27,8 @@ _EVENT_TOKENS = {
     "state_after": {"subject", "value"},
     "factory_return": {"subject"},
     "factory_use": {"subject"},
+    "call_output": {"subject"},
+    "function_return": {"subject"},
     "allocation": {"subject"},
     "release": {"subject"},
 }
@@ -35,6 +37,7 @@ _RELATIONS = {
     "field_write_read": ("field_write", "field_read"),
     "state_transition": ("state_before", "state_after"),
     "factory_return_use": ("factory_return", "factory_use"),
+    "call_output_return": ("call_output", "function_return"),
     "allocation_release": ("allocation", "release"),
 }
 

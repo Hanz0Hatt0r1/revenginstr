@@ -17,6 +17,7 @@ FORMAT = FORMAT_V1
 STORE_FORMAT = "REVENGINSTR.GhidraParameterStoreField/1"
 LOAD_FORMAT = "REVENGINSTR.GhidraParameterLoadField/1"
 PCODE_FORMAT = "REVENGINSTR.GhidraFunctionPcodeFlow/1"
+MEMORY_STORE_FORMAT = "REVENGINSTR.GhidraMemoryStoreAccess/1"
 DEFAULT_MAX_EFFECTS = 100_000
 
 _STORE_HEADER = (
@@ -40,6 +41,13 @@ _PCODE_EFFECT_KINDS = {
     "RETURN": "return_op",
     "LOAD": "memory_read",
     "STORE": "memory_write",
+}
+_MEMORY_STORE_FIELDS = {
+    "format", "program_id", "function_entry", "address", "time", "opcode",
+    "memory_space", "memory_physical_space", "memory_width_bytes",
+    "memory_pointer_width_bytes", "memory_space_size_bits",
+    "memory_addressable_unit_bytes", "pointer_token", "root_parameter_index",
+    "offset_bytes", "location_status", "destination_pattern", "address_expression_ops",
 }
 
 
@@ -118,11 +126,87 @@ def _base_effect(
     }
 
 
+def _read_memory_store_access(path: Path, *, program_id: str) -> tuple[str, list[dict[str, Any]]]:
+    raw = path.read_bytes()
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise ValueError(f"{path}: input must be UTF-8") from error
+    rows = []
+    for record_index, line in enumerate(text.splitlines(), 1):
+        where = f"{path}: memory-store record {record_index}"
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError as error:
+            raise ValueError(f"{where}: invalid JSON") from error
+        if not isinstance(row, dict) or set(row) != _MEMORY_STORE_FIELDS:
+            raise ValueError(f"{where}: malformed GhidraMemoryStoreAccess/1 fields")
+        if row.get("format") != MEMORY_STORE_FORMAT or row.get("program_id") != program_id:
+            raise ValueError(f"{where}: format or program_id does not match the selected program")
+        if any(not isinstance(row.get(key), str) or not row[key] for key in (
+            "function_entry", "address", "opcode", "pointer_token", "destination_pattern",
+        )):
+            raise ValueError(f"{where}: invalid operation or pointer identity")
+        if row["opcode"] != "STORE" or type(row.get("time")) is not int or row["time"] < 0:
+            raise ValueError(f"{where}: expected an exact STORE operation key")
+        for key in ("memory_space", "memory_physical_space"):
+            value = row.get(key)
+            if value is not None and (not isinstance(value, str) or not value):
+                raise ValueError(f"{where}: invalid {key}")
+        for key in (
+            "memory_width_bytes", "memory_pointer_width_bytes",
+            "memory_space_size_bits", "memory_addressable_unit_bytes",
+        ):
+            value = row.get(key)
+            if value is not None and (type(value) is not int or value < 1):
+                raise ValueError(f"{where}: invalid {key}")
+        root_parameter_index = row.get("root_parameter_index")
+        if root_parameter_index is not None and (
+            type(root_parameter_index) is not int or root_parameter_index < 0
+        ):
+            raise ValueError(f"{where}: invalid root_parameter_index")
+        offset_bytes = row.get("offset_bytes")
+        if offset_bytes is not None and type(offset_bytes) is not int:
+            raise ValueError(f"{where}: invalid offset_bytes")
+        if row.get("location_status") not in {"parameter_rooted_constant_offset", "unresolved"}:
+            raise ValueError(f"{where}: invalid location_status")
+        expression_ops = row.get("address_expression_ops")
+        if not isinstance(expression_ops, list) or any(
+            not isinstance(op, dict)
+            or set(op) != {"address", "time", "opcode"}
+            or not isinstance(op["address"], str) or not op["address"]
+            or type(op["time"]) is not int or op["time"] < 0
+            or not isinstance(op["opcode"], str) or not op["opcode"]
+            for op in expression_ops
+        ):
+            raise ValueError(f"{where}: malformed address_expression_ops")
+        if row["location_status"] == "parameter_rooted_constant_offset":
+            if type(root_parameter_index) is not int:
+                raise ValueError(f"{where}: invalid root_parameter_index")
+            if type(offset_bytes) is not int:
+                raise ValueError(f"{where}: invalid offset_bytes")
+            for key in (
+                "memory_space", "memory_width_bytes", "memory_pointer_width_bytes",
+                "memory_space_size_bits", "memory_addressable_unit_bytes",
+            ):
+                value = row.get(key)
+                if key == "memory_space":
+                    valid = isinstance(value, str) and bool(value)
+                else:
+                    valid = type(value) is int and value >= 1
+                if not valid:
+                    raise ValueError(f"{where}: invalid {key}")
+            row["_record_index"] = record_index
+            rows.append(row)
+    return hashlib.sha256(raw).hexdigest(), rows
+
+
 def build_function_effect_ir(
     program_id: str,
     *,
     parameter_store_tsv: Path | None = None,
     parameter_load_tsv: Path | None = None,
+    memory_store_access_jsonl: Path | None = None,
     pcode_flow_tsv: Path | None = None,
     include_generic_memory_ops: bool = False,
     max_effects: int = DEFAULT_MAX_EFFECTS,
@@ -136,8 +220,8 @@ def build_function_effect_ir(
         raise ValueError("program_id must be non-empty")
     if max_effects < 1:
         raise ValueError("max_effects must be positive")
-    if not any((parameter_store_tsv, parameter_load_tsv, pcode_flow_tsv)):
-        raise ValueError("at least one input TSV is required")
+    if not any((parameter_store_tsv, parameter_load_tsv, memory_store_access_jsonl, pcode_flow_tsv)):
+        raise ValueError("at least one input artifact is required")
     if include_generic_memory_ops and pcode_flow_tsv is None:
         raise ValueError("generic memory effects require P-code flow input")
 
@@ -201,6 +285,28 @@ def build_function_effect_ir(
             })
             add(function_entry, effect)
 
+    if memory_store_access_jsonl is not None:
+        artifact_sha256, rows = _read_memory_store_access(
+            memory_store_access_jsonl, program_id=program_id,
+        )
+        for row in rows:
+            effect = _base_effect(
+                source_format=MEMORY_STORE_FORMAT,
+                artifact_sha256=artifact_sha256,
+                record_index=row["_record_index"],
+                kind="parameter_field_write",
+                address=row["address"],
+                time=row["time"],
+                opcode="STORE",
+                evidence_class="derived_structural",
+            )
+            effect.update({
+                "parameter_index": row["root_parameter_index"],
+                "field_offset": hex(row["offset_bytes"]),
+                "value_size": row["memory_width_bytes"],
+            })
+            add(row["function_entry"], effect)
+
     if pcode_flow_tsv is not None:
         artifact_sha256, rows = _read_tsv(pcode_flow_tsv, _PCODE_HEADER)
         for record_index, row in enumerate(rows, 1):
@@ -259,6 +365,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--program-id", required=True, help="Opaque consumer join key for the selected program.")
     parser.add_argument("--parameter-stores", type=Path)
     parser.add_argument("--parameter-loads", type=Path)
+    parser.add_argument(
+        "--memory-store-access", type=Path,
+        help="optional GhidraMemoryStoreAccess/1 JSONL; adds parameter-rooted constant-offset writes",
+    )
     parser.add_argument("--pcode-flow", type=Path)
     parser.add_argument(
         "--include-generic-memory-ops", action="store_true",
@@ -272,6 +382,7 @@ def main(argv: list[str] | None = None) -> int:
         args.program_id,
         parameter_store_tsv=args.parameter_stores,
         parameter_load_tsv=args.parameter_loads,
+        memory_store_access_jsonl=args.memory_store_access,
         pcode_flow_tsv=args.pcode_flow,
         include_generic_memory_ops=args.include_generic_memory_ops,
         max_effects=args.max_effects,

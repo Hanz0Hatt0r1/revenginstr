@@ -1,0 +1,10 @@
+{
+  "capture_id": "nevergone-gameplay-device-20261020-pid15911",
+  "format": "REVENGINSTR.RuntimeCaptureManifest/1",
+  "program_id": "nevergone-1.0.9-armv7-libcocos2dcpp",
+  "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
+  "runtime_module_base": "0xbb64e000",
+  "sampling_gaps": [],
+  "sampling_status": "unknown",
+  "static_identity_sha256": "4db276e242085c912d470f1e105af40ca4943606bfea53b8e1b049e66e19970a"
+}

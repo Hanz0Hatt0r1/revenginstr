@@ -1,7 +1,7 @@
 # Semantic program queries
 
 `revenginstr-semantic-program-query` applies deterministic selectors to a
-`SemanticProgramGraph/1`, `/2`, or `/3` JSONL file and emits one
+`SemanticProgramGraph/1`, `/2`, `/3`, or `/4` JSONL file and emits one
 `SemanticProgramQueryResult/1` record per program graph. Results pin both the
 source graph id and the complete input-file SHA-256; matched nodes and edges
 keep their original evidence support.
@@ -27,7 +27,74 @@ revenginstr-semantic-program-query program-graphs.jsonl \
   --output contested-exact-calls.jsonl
 ```
 
-For `/3` graphs, layout fields can be selected by type id and byte offset. The
+In `/4`, exact-joined direct-call argument tokens are fields on their source
+operation nodes. Select those call sites with the usual function and relation
+filters:
+
+```sh
+revenginstr-semantic-program-query program-graphs.jsonl \
+  --view accepted-high-confidence \
+  --kind operation \
+  --function-entry 002d2f1c \
+  --relation calls \
+  --output calls-with-arguments.jsonl
+```
+
+The returned nodes keep the ordered P-code value tokens, widths, and row
+provenance. The query does not chase `def:` tokens or assign argument semantics;
+graph construction can attach the separately validated one-row definition
+references described below.
+Use `--call-argument-token` to select exact tokens as alternatives. For
+example, this selects direct calls with an observed zero argument:
+
+```sh
+revenginstr-semantic-program-query program-graphs.jsonl \
+  --view exact-only \
+  --kind operation \
+  --relation calls \
+  --call-argument-token const:0x0:4 \
+  --output calls-passing-zero.jsonl
+```
+
+The token match is literal and retains the whole argument list on each result
+node; it does not explain what the value means.
+
+For graphs built with a definition sidecar, select call sites by the resolution
+state of any argument. Repeating the option selects any of the listed states:
+
+```sh
+revenginstr-semantic-program-query program-graphs.jsonl \
+  --view exact-only \
+  --kind operation \
+  --relation calls \
+  --call-argument-definition-state exact_definition \
+  --output calls-with-exact-argument-definitions.jsonl
+```
+
+The matched call nodes retain the full argument list and its evidence refs. A
+graph without definition annotations produces no matches for this selector.
+When combined with `--call-argument-token`, both filters must match the same
+argument.
+
+For graphs built with an operand-trace sidecar, select call sites by trace
+state. Repeating the option selects any listed state:
+
+```sh
+revenginstr-semantic-program-query program-graphs.jsonl \
+  --view exact-only \
+  --kind operation \
+  --relation calls \
+  --call-argument-trace-state boundary_reached \
+  --output calls-with-operand-boundaries.jsonl
+```
+
+The matched call nodes retain each argument's state and trace-row reference;
+the hash-pinned trace sidecar contains the bounded producer and boundary rows.
+When combined with token or definition-state selectors, all argument filters
+must match the same argument. Graphs without trace annotations produce no
+matches for this selector.
+
+For `/3` and `/4` graphs, layout fields can be selected by type id and byte offset. The
 result includes the owning type node as related context:
 
 ```sh
@@ -55,11 +122,11 @@ Views are:
 
 - `exact-only`: select records marked `exact_static`. Contested records remain
   visible with their conflict state.
-- `accepted-high-confidence`: select only uncontested records whose recorded
-  confidence is non-null and meets `--minimum-confidence` (default `0.95`).
-  The query does not calibrate confidence; use this view only when the graph
-  producer documents calibration. Current structural graph builders emit
-  null confidence, so this view returns no accepted records for their output.
+- `accepted-high-confidence`: select only uncontested records whose evidence
+  is `exact_static`, or whose numeric confidence is non-null and meets
+  `--minimum-confidence` (default `0.95`). Exact static facts do not receive a
+  fabricated probability; inferred and structural facts still require
+  calibrated confidence. Contested records never pass.
 - `exploratory`: keep all graph records, including `exact_static`,
   `derived_structural`, `mixed`, `observed_metadata`, and contested records.
 

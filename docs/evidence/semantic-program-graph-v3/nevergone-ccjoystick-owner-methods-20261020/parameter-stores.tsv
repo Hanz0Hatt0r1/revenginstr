@@ -1,0 +1,7 @@
+format	function_entry	function_name	store_address	store_time	destination_parameter_index	destination_offset	destination_pattern	source_parameter_index	value_size	status
+REVENGINSTR.GhidraParameterStoreField/1	002a6584	CCJoyStick::init	002a659c	37	0	0x114	ptradd	1	4	parameter_to_parameter_field
+REVENGINSTR.GhidraParameterStoreField/1	002a6584	CCJoyStick::init	002a65a2	44	0	0x110	ptradd	2	4	parameter_to_parameter_field
+REVENGINSTR.GhidraParameterStoreField/1	002a6584	CCJoyStick::init	002a65a8	49	0	0x119	ptradd	4	1	parameter_to_parameter_field
+REVENGINSTR.GhidraParameterStoreField/1	002a6584	CCJoyStick::init	002a65b0	55	0	0x118	ptradd	3	1	parameter_to_parameter_field
+REVENGINSTR.GhidraParameterStoreField/1	002a6584	CCJoyStick::init	002a65b8	60	0	0x11a	ptradd	5	1	parameter_to_parameter_field
+REVENGINSTR.GhidraParameterStoreField/1	002a6584	CCJoyStick::init	002a65c4	68	0	0x139	ptradd	6	1	parameter_to_parameter_field

@@ -1,0 +1,3 @@
+vtable_symbol_start	vtable_symbol_name	address_point	slot_offset	slot_address	raw_value	target_thumb	target_entry	target_name	target_signature	resolution_mode	next_vtable_symbol_start
+0x8f4220	_ZTV10CCJoyStick	0x8f4228	0x178	0x8f43a0	0x2a6301	true	002a6300	ccTouchBegan	undefined __stdcall ccTouchBegan(CCTouch * param_1, CCEvent * param_2)	direct_ghidra_address	0x8f4458
+0x8f4220	_ZTV10CCJoyStick	0x8f4228	0x180	0x8f43a8	0x2a63ed	true	002a63ec	ccTouchEnded	undefined __stdcall ccTouchEnded(CCTouch * param_1, CCEvent * param_2)	direct_ghidra_address	0x8f4458

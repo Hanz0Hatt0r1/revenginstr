@@ -43,6 +43,41 @@ revenginstr-direct-call-arguments caller-flow-*.tsv --program-id program-name \
   --output direct-call-arguments.jsonl
 ```
 
+`revenginstr-direct-call-argument-definitions` checks whether each `def:`
+input token identifies an exact output row in the same caller's pinned P-code
+TSV:
+
+```sh
+revenginstr-direct-call-argument-definitions direct-call-arguments.jsonl \
+  caller-one.pcode-flow.tsv caller-two.pcode-flow.tsv \
+  --output direct-call-argument-definitions.jsonl
+```
+
+Each `DirectCallArgumentDefinition/1` row retains the call-observation and
+call-site P-code references plus zero, one, or multiple matching definition
+references. Constants/register tokens, missing definitions, and ambiguous
+rows remain explicit. An exact definition is a static source-row match; it
+does not establish the operand's type, semantic role, runtime value, or
+transitive data flow.
+
+`revenginstr-direct-call-argument-traces` follows syntactic operand references
+from each argument's exact producer row, staying in the same caller and P-code
+artifact:
+
+```sh
+revenginstr-direct-call-argument-traces direct-call-arguments.jsonl \
+  direct-call-argument-definitions.jsonl \
+  caller-one.pcode-flow.tsv caller-two.pcode-flow.tsv \
+  --output direct-call-argument-traces.jsonl
+```
+
+`DirectCallArgumentOperandTrace/1` retains each producer row, input index,
+operand reference, and non-definition leaf. Traces are bounded by depth and
+producer count; cycles, missing/ambiguous operands, and limits stay explicit.
+`LOAD`, `CALL`, `CALLIND`, and `INDIRECT` are recorded as boundaries, so the
+tool does not read memory, resolve callees, choose a `MULTIEQUAL` branch,
+evaluate values, or infer types or meaning.
+
 `revenginstr-prototype-callsite-check` compares those observations with
 `GhidraFunctionPrototype/1` snapshots by exact callee entry. It checks arity
 only: fixed signatures require an exact argument count, while variadic

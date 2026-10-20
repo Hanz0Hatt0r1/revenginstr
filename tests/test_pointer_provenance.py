@@ -99,12 +99,12 @@ def test_constant_pointer_offsets_keep_exact_root_and_evidence(tmp_path: Path) -
     ], [root_row(0, 1, offset="0x10")])
 
     positive = record_at(rows, "00401020")
-    negative = record_at(rows, "00401024")
+    ptrsub = record_at(rows, "00401024")
     assert positive["format"] == FORMAT
-    assert positive["status"] == negative["status"] == "resolved"
+    assert positive["status"] == ptrsub["status"] == "resolved"
     assert positive["alternatives"][0]["root_id"] == "parameter:1"
     assert positive["alternatives"][0]["offset_bytes"] == 24
-    assert negative["alternatives"][0]["offset_bytes"] == 12
+    assert ptrsub["alternatives"][0]["offset_bytes"] == 20
     assert record_at(rows, "00401028")["alternatives"][0]["offset_bytes"] == 24
     assert record_at(rows, "00401032")["alternatives"][0]["offset_bytes"] == 20
     assert record_at(rows, "00401036")["alternatives"][0]["offset_bytes"] == 12

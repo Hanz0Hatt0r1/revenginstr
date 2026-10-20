@@ -21,7 +21,7 @@
       "required": ["candidate_id", "relation_kind", "source_sequence", "sink_sequence", "expected_source_node_id", "expected_sink_node_id"],
       "properties": {
         "candidate_id": {"type": "string", "minLength": 1},
-        "relation_kind": {"enum": ["receiver_identity", "field_write_read", "state_transition", "factory_return_use", "allocation_release"]},
+        "relation_kind": {"enum": ["receiver_identity", "field_write_read", "state_transition", "factory_return_use", "call_output_return", "allocation_release"]},
         "source_sequence": {"type": "integer", "minimum": 0, "maximum": 1000000000},
         "sink_sequence": {"type": "integer", "minimum": 1, "maximum": 1000000000},
         "expected_source_node_id": {"type": "string", "minLength": 1},

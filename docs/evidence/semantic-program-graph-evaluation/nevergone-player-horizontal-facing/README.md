@@ -11,7 +11,7 @@ The source P-code rows and consumer recovery note are pinned in that gold
 artifact. The note describes the same shipped binary as the P-code export;
 this is a consumer-adjudicated interpretation, not independent binary or
 runtime corroboration. It does not validate joystick behavior, field meaning,
-runtime execution, or accepted-edge confidence.
+or runtime execution.
 
 ## Replay result
 
@@ -22,7 +22,7 @@ runtime execution, or accepted-edge confidence.
 | Candidate precision / recall | 1.0 / 1.0 |
 | Unsupported edge rate | 0% |
 | Provenance completeness | 100% |
-| Accepted edges / accepted-edge precision | 0 / `null` |
+| Accepted edges / accepted-edge precision | 3 / 1.0 |
 
 The graph is `program:6c909c5b932abf2c3a09d25c6ec072be8ab047bee480caf35a68dcb784ce4dcb`
 for program `nevergone-1.0.9-armv7-libcocos2dcpp`.
@@ -31,7 +31,7 @@ for program `nevergone-1.0.9-armv7-libcocos2dcpp`.
 | --- | --- |
 | Function Effect IR | `5d6c089cbbae5e07ea50b06a84481e3af1f45a176986fa481aed9edc82d0158e` |
 | Semantic Program Graph | `b2c64e397bd1e95d5f195b10dfaa2d3254a455377fdac53db9d2c2a6c08f37e5` |
-| Evaluation result | `fa480bc65b9188a9e4a1730995187abc30015cf1a15eab70821a6ee5b68c8ce0` |
+| Evaluation result | `b337538e13d3bb9887c704b0655e8d34d26d1e914a33ebe9c9346b9056f0d408` |
 | Consumer gold subgraph | `ee5cb2c3a3880d3a3da9098c47a5e589d52e0d6137c6297cfff2f8197100d5ec` |
 | Query result | `2fa88182b5d951f9745c670f06d56f24cbddf121a59b4d6fbc4e22df4624613c` |
 

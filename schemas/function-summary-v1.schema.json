@@ -28,7 +28,7 @@
             "parameter_index": {"type": "integer", "minimum": 0},
             "field_offset": {"type": "string", "pattern": "^-?0x[0-9a-f]+$"},
             "value_size": {"type": "integer", "minimum": 0},
-            "source_parameter_index": {"type": "integer", "minimum": 0},
+            "source_parameter_index": {"type": ["integer", "null"], "minimum": 0},
             "target_entry": {"type": ["string", "null"]},
             "target_name": {"type": ["string", "null"]}
           }

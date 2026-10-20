@@ -11,6 +11,7 @@ from revenginstr.semantic_program_graph import (
     FORMAT_V1,
     FORMAT_V2,
     FORMAT_V3,
+    FORMAT_V4,
     _read_jsonl,
     validate_graph_references,
 )
@@ -20,6 +21,13 @@ VIEWS = ("exact-only", "accepted-high-confidence", "exploratory")
 NODE_KINDS = ("program", "function", "operation", "field", "receiver_observation", "type", "layout_field")
 RELATIONS = ("contains", "calls", "reads", "writes", "observes_receiver", "has_field")
 CALL_STATES = ("not_applicable", "resolved", "unresolved", "indirect", "conflicted")
+CALL_ARGUMENT_DEFINITION_STATES = (
+    "exact_definition", "definition_not_found", "ambiguous_definition", "non_definition_token",
+)
+CALL_ARGUMENT_TRACE_STATES = (
+    "closed", "boundary_reached", "cycle_present", "partial", "depth_limit", "node_limit",
+    "definition_not_found", "ambiguous_definition", "non_definition_token",
+)
 
 
 def _in_view(row: dict[str, Any], view: str, minimum_confidence: float) -> bool:
@@ -27,12 +35,15 @@ def _in_view(row: dict[str, Any], view: str, minimum_confidence: float) -> bool:
         return True
     if view == "exact-only":
         return row.get("evidence_class") == "exact_static"
+    if row.get("conflict_state") != "uncontested":
+        return False
+    if row.get("evidence_class") == "exact_static":
+        return True
     confidence = row.get("confidence")
     return (
         isinstance(confidence, (int, float))
         and not isinstance(confidence, bool)
         and confidence >= minimum_confidence
-        and row.get("conflict_state") == "uncontested"
     )
 
 
@@ -68,6 +79,25 @@ def _matches_node(row: dict[str, Any], filters: dict[str, Any]) -> bool:
             return False
     if filters["type_ids"] and row.get("type_id") not in filters["type_ids"]:
         return False
+    call_argument_tokens = filters.get("call_argument_tokens", [])
+    call_argument_definition_states = filters.get("call_argument_definition_states", [])
+    call_argument_trace_states = filters.get("call_argument_trace_states", [])
+    if call_argument_tokens or call_argument_definition_states or call_argument_trace_states:
+        arguments = row.get("call_arguments")
+        if not isinstance(arguments, list) or not any(
+            isinstance(argument, dict)
+            and (not call_argument_tokens or argument.get("value_token") in call_argument_tokens)
+            and (
+                not call_argument_definition_states
+                or argument.get("definition_resolution_state") in call_argument_definition_states
+            )
+            and (
+                not call_argument_trace_states
+                or argument.get("operand_trace_state") in call_argument_trace_states
+            )
+            for argument in arguments
+        ):
+            return False
     return _supports(row, filters["support_id"])
 
 
@@ -93,6 +123,9 @@ def query_graphs(
     operation_addresses: list[str] | None = None,
     field_offsets: list[str] | None = None,
     type_ids: list[str] | None = None,
+    call_argument_tokens: list[str] | None = None,
+    call_argument_definition_states: list[str] | None = None,
+    call_argument_trace_states: list[str] | None = None,
     support_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """Return matching graph facts and endpoint context with source provenance."""
@@ -110,6 +143,12 @@ def query_graphs(
         raise ValueError("unsupported edge relation filter")
     if set(call_target_states or []) - set(CALL_STATES):
         raise ValueError("unsupported call target state filter")
+    if any(not isinstance(token, str) or not token for token in call_argument_tokens or []):
+        raise ValueError("call argument tokens must be non-empty strings")
+    if set(call_argument_definition_states or []) - set(CALL_ARGUMENT_DEFINITION_STATES):
+        raise ValueError("unsupported call argument definition state filter")
+    if set(call_argument_trace_states or []) - set(CALL_ARGUMENT_TRACE_STATES):
+        raise ValueError("unsupported call argument trace state filter")
     if not graphs:
         raise ValueError("Semantic Program Graph input is empty")
     filters = {
@@ -123,16 +162,25 @@ def query_graphs(
         "type_ids": sorted(set(type_ids or [])),
         "support_id": support_id,
     }
+    if call_argument_tokens:
+        filters["call_argument_tokens"] = sorted(set(call_argument_tokens))
+    if call_argument_definition_states:
+        filters["call_argument_definition_states"] = sorted(set(call_argument_definition_states))
+    if call_argument_trace_states:
+        filters["call_argument_trace_states"] = sorted(set(call_argument_trace_states))
     node_filters_active = any((
         filters["kinds"], filters["call_target_states"],
         filters["function_entries"], filters["operation_addresses"],
-        filters["field_offsets"], filters["type_ids"], filters["support_id"],
+        filters["field_offsets"], filters["type_ids"], filters.get("call_argument_tokens", []),
+        filters.get("call_argument_definition_states", []),
+        filters.get("call_argument_trace_states", []),
+        filters["support_id"],
     ))
 
     results = []
     seen_graph_ids: set[str] = set()
     for graph in graphs:
-        if graph.get("format") not in {FORMAT_V1, FORMAT_V2, FORMAT_V3}:
+        if graph.get("format") not in {FORMAT_V1, FORMAT_V2, FORMAT_V3, FORMAT_V4}:
             raise ValueError(f"unsupported graph format: {graph.get('format')!r}")
         if graph["graph_id"] in seen_graph_ids:
             raise ValueError(f"duplicate semantic program graph id: {graph['graph_id']!r}")
@@ -219,6 +267,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--operation-address", action="append", default=[])
     parser.add_argument("--field-offset", action="append", default=[])
     parser.add_argument("--type-id", action="append", default=[])
+    parser.add_argument("--call-argument-token", action="append", default=[])
+    parser.add_argument(
+        "--call-argument-definition-state", action="append",
+        choices=CALL_ARGUMENT_DEFINITION_STATES, default=[],
+    )
+    parser.add_argument(
+        "--call-argument-trace-state", action="append",
+        choices=CALL_ARGUMENT_TRACE_STATES, default=[],
+    )
     parser.add_argument("--support-id")
     args = parser.parse_args(argv)
     try:
@@ -236,6 +293,9 @@ def main(argv: list[str] | None = None) -> int:
             operation_addresses=args.operation_address,
             field_offsets=args.field_offset,
             type_ids=args.type_id,
+            call_argument_tokens=args.call_argument_token,
+            call_argument_definition_states=args.call_argument_definition_state,
+            call_argument_trace_states=args.call_argument_trace_state,
             support_id=args.support_id,
         )
     except ValueError as error:

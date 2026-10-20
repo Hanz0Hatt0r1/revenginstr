@@ -1,0 +1,9 @@
+plan_id	requested_entry	resolution
+CCJoyStick_destructor_CCJoyStick_002a5e08	002a5e08	exact
+CCJoyStick_CCJoyStick_002a5ea0	002a5ea0	exact
+CCJoyStick_updateTouchPoint_002a5f00	002a5f00	exact
+CCJoyStick_onTouchMoved_002a6048	002a6048	exact
+CCJoyStick_resetJoyStick_002a643c	002a643c	exact
+CCJoyStick_setHitAreaWithRect_002a6570	002a6570	exact
+CCJoyStick_init_002a6584	002a6584	exact
+CCJoyStick_getPower_002a66c6	002a66c6	exact

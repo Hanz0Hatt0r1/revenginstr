@@ -1,0 +1,4 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+0066f510	0066f512	2	STORE	-	const:0x1a1:4;register:register:00000004:4;def:0066f512:8:4	-	-
+0066f510	0066f512	8	PTRSUB	def:0066f512:8:4	const:0x0:4;const:0xaf6874:4	-	-
+0066f510	0066f518	5	RETURN	-	const:0x0:4	-	-

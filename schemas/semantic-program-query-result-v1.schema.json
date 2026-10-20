@@ -10,7 +10,7 @@
     "format": {"const": "REVENGINSTR.SemanticProgramQueryResult/1"},
     "query_id": {"type": "string", "pattern": "^query:[0-9a-f]{64}$"},
     "source_graph_id": {"type": "string", "pattern": "^program:[0-9a-f]{64}$"},
-    "source_graph_format": {"enum": ["REVENGINSTR.SemanticProgramGraph/1", "REVENGINSTR.SemanticProgramGraph/2", "REVENGINSTR.SemanticProgramGraph/3"]},
+    "source_graph_format": {"enum": ["REVENGINSTR.SemanticProgramGraph/1", "REVENGINSTR.SemanticProgramGraph/2", "REVENGINSTR.SemanticProgramGraph/3", "REVENGINSTR.SemanticProgramGraph/4"]},
     "program_id": {"type": "string", "minLength": 1},
     "source_graph_sha256": {"$ref": "#/$defs/sha256"},
     "view": {"enum": ["exact-only", "accepted-high-confidence", "exploratory"]},
@@ -34,6 +34,9 @@
         "function_entries": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
         "operation_addresses": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
         "field_offsets": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "call_argument_tokens": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "call_argument_definition_states": {"type": "array", "uniqueItems": true, "items": {"enum": ["exact_definition", "definition_not_found", "ambiguous_definition", "non_definition_token"]}},
+        "call_argument_trace_states": {"type": "array", "uniqueItems": true, "items": {"enum": ["closed", "boundary_reached", "cycle_present", "partial", "depth_limit", "node_limit", "definition_not_found", "ambiguous_definition", "non_definition_token"]}},
         "type_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
         "support_id": {"type": ["string", "null"]}
       }

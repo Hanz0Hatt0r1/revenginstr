@@ -1,0 +1,90 @@
+[
+  {
+    "candidate_id": "decode-output-return-001",
+    "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+    "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+    "relation_kind": "call_output_return",
+    "sink_sequence": 1,
+    "source_sequence": 0
+  },
+  {
+    "candidate_id": "decode-output-return-002",
+    "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+    "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+    "relation_kind": "call_output_return",
+    "sink_sequence": 3,
+    "source_sequence": 2
+  },
+  {
+    "candidate_id": "decode-output-return-003",
+    "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+    "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+    "relation_kind": "call_output_return",
+    "sink_sequence": 5,
+    "source_sequence": 4
+  },
+  {
+    "candidate_id": "decode-output-return-004",
+    "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+    "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+    "relation_kind": "call_output_return",
+    "sink_sequence": 7,
+    "source_sequence": 6
+  },
+  {
+    "candidate_id": "decode-output-return-005",
+    "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+    "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+    "relation_kind": "call_output_return",
+    "sink_sequence": 9,
+    "source_sequence": 8
+  },
+  {
+    "candidate_id": "decode-output-return-006",
+    "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+    "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+    "relation_kind": "call_output_return",
+    "sink_sequence": 11,
+    "source_sequence": 10
+  },
+  {
+    "candidate_id": "decode-output-return-007",
+    "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+    "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+    "relation_kind": "call_output_return",
+    "sink_sequence": 13,
+    "source_sequence": 12
+  },
+  {
+    "candidate_id": "decode-output-return-008",
+    "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+    "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+    "relation_kind": "call_output_return",
+    "sink_sequence": 15,
+    "source_sequence": 14
+  },
+  {
+    "candidate_id": "decode-output-return-009",
+    "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+    "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+    "relation_kind": "call_output_return",
+    "sink_sequence": 17,
+    "source_sequence": 16
+  },
+  {
+    "candidate_id": "decode-output-return-010",
+    "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+    "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+    "relation_kind": "call_output_return",
+    "sink_sequence": 19,
+    "source_sequence": 18
+  },
+  {
+    "candidate_id": "decode-output-return-011",
+    "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+    "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+    "relation_kind": "call_output_return",
+    "sink_sequence": 21,
+    "source_sequence": 20
+  }
+]

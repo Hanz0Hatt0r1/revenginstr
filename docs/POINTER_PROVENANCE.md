@@ -18,7 +18,8 @@ Supported value flow is deliberately small:
 
 - `COPY` and same-width `CAST` preserve a known root;
 - `PTRADD`, `PTRSUB`, `INT_ADD`, and `INT_SUB` propagate only constant byte
-  offsets with matching pointer widths;
+  offsets with matching pointer widths. `PTRSUB` adds its byte offset to the
+  base pointer; `INT_SUB` subtracts its right operand;
 - `MULTIEQUAL` retains bounded, distinct root/offset alternatives;
 - `LOAD` creates a memory-read anchor and separately records the address
   expression. It does not claim which value was stored there;

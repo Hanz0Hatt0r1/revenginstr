@@ -1,0 +1,245 @@
+{
+  "analysis": {
+    "cfg_export": {
+      "format": "REVENGINSTR.GhidraFunctionPcodeCFG/5",
+      "functions": 5,
+      "mode": "read-only, no-analysis",
+      "provider": "Ghidra 12.1.2"
+    },
+    "java": "21",
+    "mode": "read-only, no-analysis",
+    "project": "nevergone_title_enemy",
+    "provider": "Ghidra 12.1.2"
+  },
+  "artifacts": [
+    {
+      "bytes": 18,
+      "id": "artifact_01_function-entries_txt",
+      "path": "function-entries.txt",
+      "sha256": "281f793cf25f4c1701ddff1bf428d6d588d0201cb8e21787b42d86d0ba69f7b2"
+    },
+    {
+      "bytes": 4948,
+      "id": "artifact_02_callback-pcode-flow_tsv",
+      "path": "callback-pcode-flow.tsv",
+      "sha256": "7754825f95dbfd0971c00020d1043b2f9544e970cc0a5b9ed232134186ce2479"
+    },
+    {
+      "bytes": 0,
+      "id": "artifact_03_callback-callind-evidence",
+      "path": "callback-callind-evidence.jsonl",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 364,
+      "id": "artifact_04_callback-acquisition",
+      "path": "callback-acquisition.jsonl",
+      "sha256": "2dae4f0fcf10830aaa5d9ee8206de1d359099c1af114b61df896f4d8282290f4"
+    },
+    {
+      "bytes": 101566,
+      "id": "artifact_05_function-effects",
+      "path": "function-effects.jsonl",
+      "sha256": "b8f00842630f192e410fd88d83ccdfac8948c37a968851b31fd0cecda25911ba"
+    },
+    {
+      "bytes": 3102,
+      "id": "artifact_06_type-layout-member-map",
+      "path": "type-layout-member-map.jsonl",
+      "sha256": "3338d1527fea61036f37b4d86311683ce367a54fabb563c676943c5124b7aac8"
+    },
+    {
+      "bytes": 743275,
+      "id": "artifact_07_semantic-program-graph",
+      "path": "semantic-program-graph.jsonl",
+      "sha256": "4167a3a089dbb285b814c7ebe327ca564701cf93461272423fd1213ba220139e"
+    },
+    {
+      "bytes": 267645,
+      "id": "artifact_08_path-callback-to-hitcheck",
+      "path": "path-callback-to-hitcheck.jsonl",
+      "sha256": "48c0872aadcf3c3239413136377ba9efa38b625a8ce2b1a2c1032ac63bbaa418"
+    },
+    {
+      "bytes": 267382,
+      "id": "artifact_09_path-callback-to-began",
+      "path": "path-callback-to-began.jsonl",
+      "sha256": "6f9d3afee3818f47432604b98ca9f43cb333b8de9d9bee87b7955f29ea6f76c7"
+    },
+    {
+      "bytes": 40789,
+      "id": "artifact_10_path-callback-to-end",
+      "path": "path-callback-to-end.jsonl",
+      "sha256": "a83401a310a3d78d10c727dfd9acab618df4d21208be7faad4b29e9a75eb6385"
+    },
+    {
+      "bytes": 25550,
+      "id": "artifact_11_hit-area-field-query",
+      "path": "hit-area-field-query.jsonl",
+      "sha256": "ff569a386668cac45b29227401bcac27b6428ff17ae192f2d1f57e87a26f397c"
+    },
+    {
+      "bytes": 5344,
+      "id": "artifact_12_rebuild_py",
+      "path": "rebuild.py",
+      "sha256": "94dee072b1a2b8aaa4ad03def1e606201396b1c72286fde9c706de337a1d77e8"
+    },
+    {
+      "bytes": 4707,
+      "id": "artifact_13_README_md",
+      "path": "README.md",
+      "sha256": "f8d6c2e061dfcfa209e5d9444981d2a523e5719eb1ee2b35ff7425b9f3cddc87"
+    },
+    {
+      "bytes": 55908,
+      "id": "artifact_14_function-effects",
+      "path": "../nevergone-ccjoystick-owner-methods-20261020/function-effects.jsonl",
+      "sha256": "078e85ca421a2cd87193c70c017fd1a0de65c619fabcacc4bd12f6bb8e11906b"
+    },
+    {
+      "bytes": 2256,
+      "id": "artifact_15_type-layout-member-map",
+      "path": "../nevergone-ccjoystick-owner-methods-20261020/type-layout-member-map.jsonl",
+      "sha256": "1c46f741dea5f63ef0f835625a3d264e9800828f254043913e3ede3c6695f025"
+    },
+    {
+      "bytes": 10941,
+      "id": "artifact_16_replay-manifest_json",
+      "path": "../nevergone-ccjoystick-owner-methods-20261020/replay-manifest.json",
+      "sha256": "5da5d2ce1bd242744ba6d792e3469548196199ed01cbd694c999551712dcea85"
+    },
+    {
+      "bytes": 169,
+      "id": "artifact_17_parameter-stores_tsv",
+      "path": "../nevergone-ccjoystick-touch-helpers-20261020/parameter-stores.tsv",
+      "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+    },
+    {
+      "bytes": 3112,
+      "id": "artifact_18_parameter-loads_tsv",
+      "path": "../nevergone-ccjoystick-touch-helpers-20261020/parameter-loads.tsv",
+      "sha256": "b411db1085a2e4bf6ed7bf5ab48709de4a101bc307904f43c1c9a939c3aa87a2"
+    },
+    {
+      "bytes": 1208,
+      "id": "artifact_19_memory-store-access",
+      "path": "../nevergone-ccjoystick-touch-helpers-20261020/memory-store-access.jsonl",
+      "sha256": "bbced42eb3b738c80a61e1986355bb8510a96b4704a9328e624514efeebf6584"
+    },
+    {
+      "bytes": 21636,
+      "id": "artifact_20_pcode-flow_tsv",
+      "path": "../nevergone-ccjoystick-touch-helpers-20261020/pcode-flow.tsv",
+      "sha256": "20225af452e74271f4b6c1b2dadb2afd5aaf803ca3a90441457806e14cb64316"
+    },
+    {
+      "bytes": 846,
+      "id": "artifact_21_touch-helper-type-layout-member-map",
+      "path": "../nevergone-ccjoystick-touch-helpers-20261020/touch-helper-type-layout-member-map.jsonl",
+      "sha256": "53bc36ef1d5c3afe6728eacd3bff7c5141a7d613c6a784300e99f3de61da690a"
+    },
+    {
+      "bytes": 71076,
+      "id": "artifact_22_type-layout-hypothesis",
+      "path": "../nevergone-ccjoystick-touch-helpers-20261020/type-layout-hypothesis.jsonl",
+      "sha256": "3ae330e663fbbbdcab5225a8df5c774c0da7d4da9f7b461ec5c1e334156aa621"
+    },
+    {
+      "bytes": 5375,
+      "id": "artifact_23_receiver-abi-evidence_md",
+      "path": "../nevergone-ccjoystick-touch-helpers-20261020/receiver-abi-evidence.md",
+      "sha256": "618dc8950a353ff5db79fe39c6dd4c08afb233974de6e8264e1a0e386a456430"
+    },
+    {
+      "bytes": 10516,
+      "id": "artifact_24_replay-manifest_json",
+      "path": "../nevergone-ccjoystick-touch-helpers-20261020/replay-manifest.json",
+      "sha256": "91c63c252e2a824139685d76d83cc6c420d65b28cc86fdc2278bc572a210afbb"
+    },
+    {
+      "bytes": 23345,
+      "id": "artifact_25_ExportProgramPcodeFlowBatch_java",
+      "path": "../../../../ghidra/ExportProgramPcodeFlowBatch.java",
+      "sha256": "15b3590136bda9d84c4402279954302a395e892c2eb136ca2b2e304a98ae2802"
+    },
+    {
+      "bytes": 2004,
+      "id": "artifact_26_run_ghidra_pcode_flow_batch_sh",
+      "path": "../../../../scripts/run_ghidra_pcode_flow_batch.sh",
+      "sha256": "3cf199914574172937839d0e6480d398ea125cf606ce24d05db1adddaf3ca3f4"
+    },
+    {
+      "bytes": 17800,
+      "id": "artifact_27_effect_ir_py",
+      "path": "../../../../src/revenginstr/effect_ir.py",
+      "sha256": "62e1737a59fa896d2db6331e85d228b3f244d24cafe7b5fa2f814e4c413c2a60"
+    },
+    {
+      "bytes": 92400,
+      "id": "artifact_28_semantic_program_graph_py",
+      "path": "../../../../src/revenginstr/semantic_program_graph.py",
+      "sha256": "8e133433a7841cc5dddd33c314359750f756475cfefe422d6a286b75512b3f78"
+    },
+    {
+      "bytes": 22325,
+      "id": "artifact_29_semantic_program_path_query_py",
+      "path": "../../../../src/revenginstr/semantic_program_path_query.py",
+      "sha256": "12180452063233446cefb6d48031478f4faa7bd6122437d1e254bfabd5bd8428"
+    },
+    {
+      "bytes": 13966,
+      "id": "artifact_30_semantic_program_query_py",
+      "path": "../../../../src/revenginstr/semantic_program_query.py",
+      "sha256": "de3c9b2974908e139601a3e7d81ce8aff683f6ba8ebdb70f6aaec0256ea52a5f"
+    },
+    {
+      "bytes": 69700,
+      "id": "artifact_31_callback-function-pcode-cfg_jsonl",
+      "path": "callback-function-pcode-cfg.jsonl",
+      "sha256": "9f167fc04144d251dc310111a13e4ecdce9bb06911b26820c90bd3da2c20c6f3"
+    },
+    {
+      "bytes": 17084,
+      "id": "artifact_32_ExportFunctionPcodeCFG_java",
+      "path": "../../../../ghidra/ExportFunctionPcodeCFG.java",
+      "sha256": "714cceac94340397db566b6c4ba49afa421f3cfd096f07bb4fcf2fd1fae7c164"
+    },
+    {
+      "bytes": 1437,
+      "id": "artifact_33_run_ghidra_function_pcode_cfg_sh",
+      "path": "../../../../scripts/run_ghidra_function_pcode_cfg.sh",
+      "sha256": "ea1cee8e7bed19ee1666eb69996fac4e535e14dae3810778153ed417d447a4b4"
+    },
+    {
+      "bytes": 92859,
+      "id": "artifact_34_field_flow_py",
+      "path": "../../../../src/revenginstr/receiver/field_flow.py",
+      "sha256": "a73831dcee8f76bb3178d7607af0cc67d8db2aa1f73d1e39c43c2e79f1c31545"
+    },
+    {
+      "bytes": 4755,
+      "id": "artifact_35_ghidra-function-pcode-cfg-v5_schema_json",
+      "path": "../../../../schemas/ghidra-function-pcode-cfg-v5.schema.json",
+      "sha256": "3be67975ecf75b939483274e4028cf6214657bc5db7d2ff319557a9368be0f19"
+    }
+  ],
+  "format": "Nevergone.CCJoyStickTouchPipelineReplay/1",
+  "program_id": "nevergone:libcocos2dcpp.so",
+  "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
+  "summary": {
+    "accepted_field_to_type_joins": 0,
+    "callback_functions": 2,
+    "callback_pcode_rows": 56,
+    "ccTouchBegan_uncertain_call_frontier_sites": 8,
+    "ccTouchEnded_uncertain_call_frontier_sites": 2,
+    "cfg_export_functions": 5,
+    "cfg_reachable_direct_call_sites": 3,
+    "exact_direct_call_paths": 3,
+    "field_to_type_joins": 53,
+    "function_count": 13,
+    "graph_edges": 407,
+    "graph_nodes": 276,
+    "hit_area_field_accesses": 7,
+    "synthesized_callind_targets": 0
+  }
+}

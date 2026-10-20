@@ -1,0 +1,13 @@
+format	function_entry	function_name	load_address	load_time	base_parameter_index	field_offset	address_pattern	value_size	value_token	status
+REVENGINSTR.GhidraParameterLoadField/1	002a5f00	CCJoyStick::updateTouchPoint	002a5f14	33	0	0x110	ptradd	4	def:LOAD@002a5f14:33:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a5f00	CCJoyStick::updateTouchPoint	002a5f18	35	0	0x114	ptradd	4	def:LOAD@002a5f18:35:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a5f00	CCJoyStick::updateTouchPoint	002a5f34	86	0	0x104	ptradd	4	def:LOAD@002a5f34:86:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a5f00	CCJoyStick::updateTouchPoint	002a5f40	99	0	0x104	ptradd	4	def:LOAD@002a5f40:99:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a5f00	CCJoyStick::updateTouchPoint	002a5f4a	106	0	0x104	ptradd	4	def:LOAD@002a5f4a:106:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a5f00	CCJoyStick::updateTouchPoint	002a5f5e	122	0	0x110	ptradd	4	def:LOAD@002a5f5e:122:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a5f00	CCJoyStick::updateTouchPoint	002a5f62	124	0	0x114	ptradd	4	def:LOAD@002a5f62:124:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a5f00	CCJoyStick::updateTouchPoint	002a5fcc	193	0	0x108	ptradd	4	def:LOAD@002a5fcc:193:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a5f00	CCJoyStick::updateTouchPoint	002a5fda	207	0	0x108	ptradd	4	def:LOAD@002a5fda:207:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a5f00	CCJoyStick::updateTouchPoint	002a5fde	209	0	0x104	ptradd	4	def:LOAD@002a5fde:209:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a5f00	CCJoyStick::updateTouchPoint	002a6016	255	0	0x108	ptradd	4	def:LOAD@002a6016:255:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a5f00	CCJoyStick::updateTouchPoint	002a601a	257	0	0x140	ptradd	4	def:LOAD@002a601a:257:4	parameter_field_load

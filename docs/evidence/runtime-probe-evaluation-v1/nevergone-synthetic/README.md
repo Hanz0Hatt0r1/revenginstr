@@ -13,6 +13,7 @@ Run from the repository root:
 python -m revenginstr.runtime_probe_evaluation \
   docs/evidence/runtime-probe-evaluation-v1/nevergone-synthetic/evaluation-manifest.json \
   docs/evidence/runtime-probe-evaluation-v1/nevergone-synthetic/request-plan.json \
+  docs/evidence/runtime-probe-evaluation-v1/nevergone-synthetic/request-candidates.json \
   docs/evidence/runtime-probe-evaluation-v1/nevergone-synthetic/outcomes.jsonl \
   --output /tmp/runtime-probe-evaluation.json
 ```

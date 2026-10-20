@@ -1,0 +1,55 @@
+{
+  "artifact_type": "manual-mobile-static-analysis",
+  "artifact_version": 1,
+  "program": {
+    "program_id": "nevergone-1.0.9-armv7-libcocos2dcpp",
+    "package": "com.hippiegame.nevergone",
+    "library_path": "lib/armeabi-v7a/libcocos2dcpp.so",
+    "sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
+    "elf_class": 32,
+    "architecture": "ARM little-endian, Thumb code"
+  },
+  "analysis_environment": {
+    "runtime": "Termux 0.118.3 on Android arm64",
+    "tool": "radare2",
+    "tool_version": "6.2.4",
+    "transport": "ADB over Wi-Fi"
+  },
+  "address_mapping": {
+    "radare2_address_domain": "ELF virtual address",
+    "ghidra_static_image_base": "0x10000",
+    "graph_address_rule": "ELF virtual address + ghidra_static_image_base"
+  },
+  "functions": [
+    {
+      "name": "cocos2d::Decode(unsigned char*, int, unsigned char*, unsigned int)",
+      "symbol": "_ZN7cocos2d6DecodeEPhiS0_j",
+      "elf_entry": "0x534a40",
+      "graph_entry": "0x544a40",
+      "symbol_size_bytes": 32,
+      "callers_observed": [
+        {
+          "name": "cocos2d::CCFileUtilsAndroid::getFileData(char const*, char const*, unsigned long*)",
+          "elf_entry": "0x534a60",
+          "graph_entry": "0x544a60",
+          "elf_callsite": "0x534bdc",
+          "graph_callsite": "0x544bdc",
+          "key_argument": "1"
+        }
+      ],
+      "recovered_transform": "dst[i] = (((src[i] XOR key) - (i mod 127)) mod 256)"
+    },
+    {
+      "name": "GameLevels::LoadGameLevels(char const*)",
+      "symbol": "_ZN10GameLevels14LoadGameLevelsEPKc",
+      "elf_entry": "0x2c2f1c",
+      "graph_entry": "0x2d2f1c",
+      "symbol_size_bytes": 112
+    }
+  ],
+  "evidence_files": {
+    "radare2-version.txt": "b3e449dd220497cbc0371599b4a2992f1924e2d8661c2c873d8bded93de26fbf",
+    "symbols.txt": "4e90479af7138ede2be943572c174b38ea8eaba60aa2172a91f30b1307229e7a",
+    "disassembly.txt": "c0d9d453fd2bff8f10c8c9e3ff2855ab459a2db9837aa6c540cdddc6935ae5d5"
+  }
+}

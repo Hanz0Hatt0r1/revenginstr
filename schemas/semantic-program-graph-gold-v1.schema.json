@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/semantic-program-graph-gold-v1.schema.json",
   "title": "REVENGINSTR.SemanticProgramGraphGold/1 JSONL row",
-  "description": "One consumer-owned, adjudicated gold subgraph with explicitly complete relations and references to source evidence outside the graph output. Layout hypotheses can be scored through SemanticProgramGraph/3 has_field edges.",
+  "description": "One consumer-owned, adjudicated gold subgraph with explicitly complete relations and references to source evidence outside the graph output. Layout hypotheses and reviewer-mapped parameter-rooted fields can be scored through SemanticProgramGraph/3 or /4 has_field edges.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -106,7 +106,7 @@
           "properties": {
             "relation": {"const": "has_field"},
             "from": {"pattern": "^type:"},
-            "to": {"pattern": "^layout_field:"}
+            "to": {"pattern": "^(layout_field|field):"}
           }
         }
       ]

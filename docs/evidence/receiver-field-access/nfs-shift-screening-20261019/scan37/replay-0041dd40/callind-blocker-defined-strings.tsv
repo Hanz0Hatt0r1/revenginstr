@@ -1,0 +1,12 @@
+format	constant_address	data_address	byte_offset	utf8_base64	length
+REVENGINSTR.GhidraPcodeDefinedString/1	0xb36d0c	00b36d0c	0x0	bXNjb3JlZS5kbGw=	11
+REVENGINSTR.GhidraPcodeDefinedString/1	0xb36cfc	00b36cfc	0x0	Q29yRXhpdFByb2Nlc3M=	14
+REVENGINSTR.GhidraPcodeDefinedString/1	0xb384cc	00b384cc	0x0	S0VSTkVMMzIuRExM	12
+REVENGINSTR.GhidraPcodeDefinedString/1	0xb384bc	00b384bc	0x0	RW5jb2RlUG9pbnRlcg==	13
+REVENGINSTR.GhidraPcodeDefinedString/1	0xb384dc	00b384dc	0x0	RGVjb2RlUG9pbnRlcg==	13
+REVENGINSTR.GhidraPcodeDefinedString/1	0xb42154	00b42154	0x0	VVNFUjMyLkRMTA==	10
+REVENGINSTR.GhidraPcodeDefinedString/1	0xb42148	00b42148	0x0	TWVzc2FnZUJveEE=	11
+REVENGINSTR.GhidraPcodeDefinedString/1	0xb42138	00b42138	0x0	R2V0QWN0aXZlV2luZG93	15
+REVENGINSTR.GhidraPcodeDefinedString/1	0xb42124	00b42124	0x0	R2V0TGFzdEFjdGl2ZVBvcHVw	18
+REVENGINSTR.GhidraPcodeDefinedString/1	0xb42108	00b42108	0x0	R2V0VXNlck9iamVjdEluZm9ybWF0aW9uQQ==	25
+REVENGINSTR.GhidraPcodeDefinedString/1	0xb420f0	00b420ef	0x1	P0dldFByb2Nlc3NXaW5kb3dTdGF0aW9u	24

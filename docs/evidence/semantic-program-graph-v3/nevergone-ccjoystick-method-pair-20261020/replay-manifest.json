@@ -1,0 +1,200 @@
+{
+  "format": "REVENGINSTR.SemanticProgramGraphMethodPairReplay/1",
+  "program_id": "nevergone:libcocos2dcpp.so",
+  "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
+  "artifacts": [
+    {
+      "id": "update_touchpoint_loads",
+      "path": "update-touchpoint-loads.tsv",
+      "bytes": 1955,
+      "sha256": "1f06139671dafe7d470481209ef713d3e2f65bf4e801f96a4232cb54e0bdfacb"
+    },
+    {
+      "id": "update_touchpoint_memory_stores",
+      "path": "update-touchpoint-memory-stores.jsonl",
+      "bytes": 1266,
+      "sha256": "3449e4830a1a7f2023d1f649d1a69605b25c557569b8bcadc3b70edb2456c569"
+    },
+    {
+      "id": "update_touchpoint_effect_ir",
+      "path": "update-touchpoint-effects.jsonl",
+      "bytes": 8557,
+      "sha256": "7cc08884558a84955b6adf638b17a2988e0dfad7c6b1c93fee1c9989c6a3e071"
+    },
+    {
+      "id": "init_function_effect_ir",
+      "path": "../../receiver-field-access/nevergone-ccjoystick-init-20261019/function-effects.jsonl",
+      "bytes": 9065,
+      "sha256": "c8854141d955a30d9199a8b7fde0462e9943f5973ba66249921f13a7936cd3e0"
+    },
+    {
+      "id": "function_effect_ir",
+      "path": "function-effects.jsonl",
+      "bytes": 17622,
+      "sha256": "28d864bb0f8d9165c088391f56082cbb236d8d90ed074f26a7cd9fec30fe5274"
+    },
+    {
+      "id": "type_layout_hypothesis",
+      "path": "../../type-layout-review/nevergone-ccjoystick-20261019/type-layout-hypothesis.jsonl",
+      "bytes": 20314,
+      "sha256": "5aa1def50f8f51c9cf6c0927efda7dadd2aa61a51d095acbb5684d731704be7a"
+    },
+    {
+      "id": "type_layout_member_map",
+      "path": "type-layout-member-map.jsonl",
+      "bytes": 564,
+      "sha256": "04974a6b12da52e8845dc7f3b80ccd4c441c0baf039c98445bb7217f38152c52"
+    },
+    {
+      "id": "semantic_graph",
+      "path": "semantic-program-graph.jsonl",
+      "bytes": 164762,
+      "sha256": "f2726e5dfcc4c7e7ba8975b213c0cc157b9bc261f94fcc2ce52b5aaa327a6bf5"
+    },
+    {
+      "id": "field_access_query",
+      "path": "field-access-query.jsonl",
+      "bytes": 26241,
+      "sha256": "485328d00244f3b9977e702fc9dd8ce3d161d562f644c0611151683344346203"
+    },
+    {
+      "id": "memory_store_schema",
+      "path": "../../../../schemas/ghidra-memory-store-access-v1.schema.json",
+      "bytes": 2974,
+      "sha256": "bf53e4abc2d85609b23f831c85b0aa4b2bdb155bf2bc82ff7c5443a8c8c6b05d"
+    },
+    {
+      "id": "parameter_load_schema",
+      "path": "../../../../schemas/ghidra-parameter-load-field-v1.schema.json",
+      "bytes": 1375,
+      "sha256": "8d2f634d7a0c92eeded035bb2a4bf8dfd461ef842aba478391b97274bf72e4b7"
+    },
+    {
+      "id": "function_effect_ir_schema",
+      "path": "../../../../schemas/function-effect-ir-v1.schema.json",
+      "bytes": 6052,
+      "sha256": "67ecb001d47a6d4ecc273b257bc62f7f6c6d06e286faf924c91c4ef925784779"
+    },
+    {
+      "id": "type_layout_schema",
+      "path": "../../../../schemas/type-layout-hypothesis-v1.schema.json",
+      "bytes": 7552,
+      "sha256": "9ffbb68840291c7029627904d773ba8eeec5675c8474bd245d0aaeedf0c2fb91"
+    },
+    {
+      "id": "type_layout_member_map_schema",
+      "path": "../../../../schemas/type-layout-member-map-v1.schema.json",
+      "bytes": 903,
+      "sha256": "e21c47ca352a6fcd8f779d4cd6502a3436641e52f523ae367a7aa45228e3904d"
+    },
+    {
+      "id": "semantic_graph_schema_v3",
+      "path": "../../../../schemas/semantic-program-graph-v3.schema.json",
+      "bytes": 19651,
+      "sha256": "674ea89ab173734971cb6206870064a71b4047fcbddf7a7e9f20d921bace4f5f"
+    },
+    {
+      "id": "query_result_schema",
+      "path": "../../../../schemas/semantic-program-query-result-v1.schema.json",
+      "bytes": 4539,
+      "sha256": "1cc14f26ec8ba74650ef072a5e57acead9d51fde7dcd5935e770edbe2a18e138"
+    },
+    {
+      "id": "readme",
+      "path": "README.md",
+      "bytes": 4639,
+      "sha256": "8ad3bce2d5ac07cdec4351593e8b11ed434adf73d3ae1a372fa61eeab6fcca0c"
+    },
+    {
+      "id": "update_touchpoint_pcode_flow",
+      "path": "update-touchpoint-pcode-flow.tsv",
+      "bytes": 15032,
+      "sha256": "17b9a726f0f8e1ef04c4bf77bfdcd06d77e3a035af6fa66a7745d607800555a6"
+    },
+    {
+      "id": "function_pcode_flow_schema",
+      "path": "../../../../schemas/ghidra-function-pcode-flow-v1.schema.json",
+      "bytes": 1014,
+      "sha256": "f0c4c38211ce1402074a27c8deb03e3e8079921073856fce6490c1e0b4940c05"
+    },
+    {
+      "id": "init_parameter_loads",
+      "path": "../../receiver-field-access/nevergone-ccjoystick-init-20261019/parameter-loads.tsv",
+      "bytes": 1389,
+      "sha256": "b96a464135852bc16474bb3e9e6d127b07527330a8e128b67b4907be999df134"
+    },
+    {
+      "id": "init_parameter_stores",
+      "path": "../../receiver-field-access/nevergone-ccjoystick-init-20261019/parameter-stores.tsv",
+      "bytes": 925,
+      "sha256": "308a90c88b719f1bb0bdbd3f605dd18968a2fe4e284b51cde6ac2a4c63749bc0"
+    },
+    {
+      "id": "function_prototype_plan",
+      "path": "function-prototype-plan.tsv",
+      "bytes": 111,
+      "sha256": "aa7cf793f7286539ad5d7950906b9605d7d06aadc5f0d009c7c6f4827ee314b5"
+    },
+    {
+      "id": "function_prototypes",
+      "path": "function-prototypes.jsonl",
+      "bytes": 3089,
+      "sha256": "eb32af7f1824286c72c44f6c7048b18bf2bd899dd3f21c028345ad76cf5c64aa"
+    },
+    {
+      "id": "field_layout_gold",
+      "path": "field-layout-gold.jsonl",
+      "bytes": 14560,
+      "sha256": "cba50329bac18446e9a00a9480de7892e34e268f2084bd766f6260687dadf571"
+    },
+    {
+      "id": "field_layout_evaluation",
+      "path": "field-layout-evaluation.json",
+      "bytes": 870,
+      "sha256": "1fb00d8fc0efc1158ccd0aebda957ad9b2b019d66746172e0b43492755c58828"
+    },
+    {
+      "id": "function_prototype_schema",
+      "path": "../../../../schemas/ghidra-function-prototype-v1.schema.json",
+      "bytes": 3061,
+      "sha256": "add5786aff444d068a2c922090b30bc19f5cfd46fe697c95fc7495326784f082"
+    },
+    {
+      "id": "semantic_graph_gold_schema",
+      "path": "../../../../schemas/semantic-program-graph-gold-v1.schema.json",
+      "bytes": 4265,
+      "sha256": "886fc1635f594eba5f2a669bf1179cde310053a88e2f33d139b9cac572280b78"
+    },
+    {
+      "id": "semantic_graph_evaluation_schema",
+      "path": "../../../../schemas/semantic-program-graph-evaluation-v1.schema.json",
+      "bytes": 2931,
+      "sha256": "528e719a14c522a382ccb257101060096a8795708685a10f1b8c2d770e70e847"
+    }
+  ],
+  "summary": {
+    "methods": {
+      "CCJoyStick::init": "002a6584",
+      "CCJoyStick::updateTouchPoint": "002a5f00"
+    },
+    "update_touchpoint_loads": 12,
+    "update_touchpoint_parameter_rooted_stores": 2,
+    "joined_type_field_edges": 15,
+    "graph_nodes": 61,
+    "graph_edges": 89,
+    "query_field_nodes": 10,
+    "query_related_type_nodes": 1,
+    "update_touchpoint_pcode_rows": 176,
+    "crosschecked_load_operations": 12,
+    "crosschecked_store_operations": 2,
+    "crosschecked_store_offsets": [
+      "0x13c",
+      "0x140"
+    ],
+    "crosschecked_method_owner_prototypes": 2,
+    "adjudicated_has_field_gold_edges": 15,
+    "exploratory_has_field_precision": 1.0,
+    "exploratory_has_field_recall": 1.0,
+    "accepted_has_field_edges": 0
+  }
+}

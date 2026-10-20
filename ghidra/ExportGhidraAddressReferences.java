@@ -72,6 +72,8 @@ public class ExportGhidraAddressReferences extends GhidraScript {
             throw new IllegalStateException("requested addresses not found in memory: " +
                 String.join(", ", missing));
         }
+        println("GHIDRA_ADDRESS_REFERENCES_FORMAT=" + FORMAT);
+        println("GHIDRA_ADDRESS_REFERENCES_ROWS=" + (args.length - 1));
         println("Ghidra address-reference export -> " + output);
     }
 

@@ -12,6 +12,7 @@ from revenginstr.semantic_program_graph import (
     FORMAT_V1,
     FORMAT_V2,
     FORMAT_V3,
+    FORMAT_V4,
     _read_jsonl,
     validate_graph_references,
 )
@@ -33,10 +34,13 @@ def _consume_expansion(budget: list[int], max_expansions: int) -> None:
 def _reachable_block_paths(
     cfg: dict[str, Any], *, max_expansions: int, expansion_budget: list[int]
 ) -> dict[int, list[int]]:
-    entry = cfg["entry_block_index"]
+    entries = cfg["entry_block_indices"]
+    if entries is None:
+        entry = cfg["entry_block_index"]
+        entries = [] if entry is None else [entry]
     blocks = cfg["blocks"]
-    paths = {entry: [entry]}
-    pending = deque([entry])
+    paths = {entry: [entry] for entry in entries}
+    pending = deque(entries)
     while pending:
         block_index = pending.popleft()
         for successor in sorted(blocks[block_index]["successors"]):
@@ -79,7 +83,7 @@ def _cfg_callsite(
     if opcode != operation.get("opcode"):
         status = "opcode_mismatch"
         block_path = []
-    elif cfg["entry_block_index"] is None:
+    elif not cfg["entry_block_indices"] and cfg["entry_block_index"] is None:
         status = "entry_block_unavailable"
         block_path = []
     else:
@@ -338,7 +342,7 @@ def query_graphs(
     results = []
     seen_graph_ids: set[str] = set()
     for graph in graphs:
-        if graph.get("format") not in {FORMAT_V1, FORMAT_V2, FORMAT_V3}:
+        if graph.get("format") not in {FORMAT_V1, FORMAT_V2, FORMAT_V3, FORMAT_V4}:
             raise ValueError(f"unsupported graph format: {graph.get('format')!r}")
         graph_id = graph["graph_id"]
         if graph_id in seen_graph_ids:

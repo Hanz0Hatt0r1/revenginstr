@@ -18,6 +18,49 @@ vtable byte offset `0x30` is at `0x00af08d0`; its raw value is
 collection lookup for the initialized global object, rather than resolving
 arbitrary runtime receiver values.
 
+## Direct caller coverage for the outer dispatches
+
+A read-only address-reference export finds six direct references to
+`0064a0c0` and eight to `0064a100`, across `0088d1d0`, `0088d390`,
+`0088bf10`, `00889990`, and `0088dd40`. The retained caller flows show that
+argument 0 at each of those 14 calls is a single `CAST` of a direct call to
+getter `0064a010`. The per-call argument and
+P-code record indices are listed in
+[`field20-wrapper-callind-argument-provenance.tsv`](field20-wrapper-callind-argument-provenance.tsv);
+the four newly captured caller flows, acquisition results, and xrefs are in
+[`field20-wrapper-callers-flow.tsv`](field20-wrapper-callers-flow.tsv),
+[`field20-wrapper-callers-acquisition.jsonl`](field20-wrapper-callers-acquisition.jsonl),
+and [`field20-wrapper-address-references.jsonl`](field20-wrapper-address-references.jsonl).
+
+[`field20-wrapper-callind-static-targets.jsonl`](field20-wrapper-callind-static-targets.jsonl)
+records the resulting singleton-path target for each outer `CALLIND` using
+[`GhidraStaticIndirectCallTarget/1`](../../../../../../schemas/ghidra-static-indirect-call-target-v1.schema.json).
+This covers the retained direct references; it does not exclude indirect
+callers or runtime mutation of the global pointer. The raw
+`PointerProvenance/1` and interprocedural-effect outputs therefore retain
+their `CALLIND` barriers until a consumer explicitly incorporates this
+static-target evidence.
+
+## Exact initializer body at `006642a5`
+
+The target is the tail-jump destination of thunk `006642a0` (which sets `EAX`
+to `1` at `004183cd`). It was missing from the pinned function inventory, so
+the retained Ghidra project was copied and this entry was seeded only in that
+disposable copy. The exact 43-byte function now has a full 18-operation
+High-P-code flow and a CFG/5 export with three blocks and one entry block. See
+[`field20-006642a5-replay.md`](field20-006642a5-replay.md),
+[`field20-006642a5-pcode-flow.tsv`](field20-006642a5-pcode-flow.tsv), and
+[`field20-006642a5-pcode-cfg-v5.jsonl`](field20-006642a5-pcode-cfg-v5.jsonl).
+
+The function checks global initialization guard `0x00bfc818`; its branch
+skips the constructor path when the selected bit is already set. Otherwise it
+updates the guard, calls `00664140` to initialize global `0x00bfc728`, and
+registers callback `0x00a9e620` through `_atexit` (`00900fb3`). Both paths
+return the pointer to `0x00bfc728`. The flow contains two direct `CALL`s and
+no `CALLIND`; the CFG's two `INDIRECT` P-code markers are linked to those
+direct calls. This closes the missing function-flow and CFG acquisition gap,
+without identifying the runtime branch taken.
+
 ## Receiver population
 
 `00664a10` walks the object collection at `this + 8`. Constructor `00664140`
@@ -94,6 +137,127 @@ captures are retained beside this review and pinned by the parent manifest.
 Their hashes bind each derived pointer-provenance alternative back to the
 P-code rows. This narrows the static writer gap; it does not promote the four
 `/6` rows or identify a target class.
+
+## Bounded first-level vtable targets
+
+The retained P-code now links each of the five constructor call results in
+`0066eff0` to the `+0x20` store at `0066f215`. The six-row
+[`field20-call-store-flow.jsonl`](field20-call-store-flow.jsonl) capture records
+those result-to-store paths, including the null alternative. Joining those
+paths to the constructor vtable writes and the pinned executable's raw table
+bytes yields a bounded candidate set for the two first-level calls whose
+receiver is the cached field:
+
+| CALLIND | Slot | Candidate target | Observed vtable origin(s) |
+| --- | ---: | --- | --- |
+| `006657ed` | `+0x30` | `00663030` | `00af6bf0` |
+| `006657ed` | `+0x30` | `00676040` | `00af6a50` |
+| `006657ed` | `+0x30` | `006770b0` | `00af6ce0`, `00af6e00`, `00af6f20` |
+| `0066582d` | `+0x34` | `00663030` | `00af6bf0` |
+| `0066582d` | `+0x34` | `00676040` | `00af6a50` |
+| `0066582d` | `+0x34` | `006770b0` | `00af6ce0`, `00af6e00`, `00af6f20` |
+
+The candidate set covers the five concrete vtable values observed in this
+lazy-construction flow. It does not show which type-tag branch executes at
+runtime, exclude unobserved writers, or establish a unique runtime target.
+The raw slot values and file offsets, factory calls, constructor-return
+proofs, and `+0x20` store-graph references are retained per origin in
+[`field20-vtable-call-candidates.jsonl`](field20-vtable-call-candidates.jsonl)
+using [`GhidraIndirectCallVtableCandidates/1`](../../../../../../schemas/ghidra-indirect-call-vtable-candidates-v1.schema.json).
+
+The later calls `00665801` (`+0x8`) and `00665841` (`+0xc`) use the prior
+`CALLIND` results as receivers. A follow-up replay traces subobject vtables
+written by the observed first-level constructors, giving partial static target
+sets for both calls. In particular, the original cached object's vtable
+entries at `+0x8` and `+0xc` are not evidence for these calls.
+
+## Partial targets on returned subobjects
+
+Read-only P-code batches completed for all eight constructor/helper functions
+and all six getter/leaf functions. The inputs, outputs, and acquisition rows
+are retained in [`field20-subobject-constructor-functions.txt`](field20-subobject-constructor-functions.txt),
+[`field20-subobject-constructor-pcode-flow.tsv`](field20-subobject-constructor-pcode-flow.tsv),
+[`field20-subobject-constructor-callind.jsonl`](field20-subobject-constructor-callind.jsonl),
+[`field20-subobject-constructor-acquisition.jsonl`](field20-subobject-constructor-acquisition.jsonl),
+[`field20-subobject-dispatch-functions.txt`](field20-subobject-dispatch-functions.txt),
+[`field20-subobject-dispatch-pcode-flow.tsv`](field20-subobject-dispatch-pcode-flow.tsv),
+[`field20-subobject-dispatch-callind.jsonl`](field20-subobject-dispatch-callind.jsonl),
+and [`field20-subobject-dispatch-acquisition.jsonl`](field20-subobject-dispatch-acquisition.jsonl).
+All 14 functions completed with P-code; the constructor replay contains 2,402
+flow rows and the getter/leaf replay contains 56. The getter case mapping is
+preserved with the source hash in
+[`field20-subobject-dispatch-cases.md`](field20-subobject-dispatch-cases.md).
+
+The returned-object getters expose these static cases:
+
+| Getter target | Selector | Returned member | Bounds |
+| --- | ---: | --- | --- |
+| `00676040` | 4 | parent `+0x128` | index `< 3`, stride `0x5c` |
+| `006770b0` | 2 | parent `+0x4c0` | index `< 2`, stride `0x48` |
+| `006770b0` | 4 | parent `+0x128` | index `< 10`, stride `0x5c` |
+| `006770b0` | 5 | parent `+0x550` | singleton |
+
+The existing first-level rows do not bind the runtime selector register. For
+selector 1, both `00676040` and `006770b0` return parent `+0x74`. A focused
+constructor replay now resolves that member's vtable for the four observed
+root constructors: each initializes `+0x74` through `00678b90`, which writes
+vtable `00af7394`. Slots `+0x8/+0xc` then target `007091d0` and `00677210`.
+The selector remains data-dependent, so this is a conditional static path; see
+[`field20-selector1-resolution.md`](field20-selector1-resolution.md). A
+separate selector-3 path through `00663030` returns parent `+0x7c`. Base
+constructor `006634a0` writes vtable `00af0628` there. The exact getter
+instructions are retained in
+[`field20-63030-selector-disassembly.md`](field20-63030-selector-disassembly.md);
+they do not prove selector 3 is supplied at runtime.
+
+The bounded constructor replay also shows `006634a0` storing zero to its own
+`this + 0x74` at `006634cd` (P-code flow rows 13–14 in
+[`field20-base-subobject-init-pcode-flow.tsv`](field20-base-subobject-init-pcode-flow.tsv)).
+That is a null initialization in a different observed object; it does not
+contradict the four constructor paths for the selector-1 `+0x74` member above.
+Other writers and runtime mutations remain unbounded.
+
+The constructor helpers write vtables `00af6b38` at `+0x128`, `00af7050` at
+`+0x4c0`, and `00af723c` at `+0x550`. The getter conditions above therefore
+bound the following partial candidates from the pinned executable's raw slot
+bytes:
+
+| Later `CALLIND` | Slot on returned object | Static target | Returned-object vtable origins | Origin paths |
+| --- | ---: | --- | --- | ---: |
+| `00665801` | `+0x8` | `00674f10` | `00af6b38`, `00af7050` | 7 |
+| `00665801` | `+0x8` | `007091d0` | `00af723c`, `00af0628`, `00af7394` | 8 |
+| `00665841` | `+0xc` | `00674f30` | `00af6b38`, `00af7050` | 7 |
+| `00665841` | `+0xc` | `00677210` | `00af723c`, `00af0628`, `00af7394` | 8 |
+
+The PE `.rdata` mapping used for these slots has virtual base `00aa6000` and
+raw file offset `006a4a00`. The ten little-endian entries are:
+
+| Vtable | Slot | File offset | Bytes | Target |
+| --- | ---: | --- | --- | --- |
+| `00af6b38` | `+0x8` | `006f5540` | `10 4f 67 00` | `00674f10` |
+| `00af6b38` | `+0xc` | `006f5544` | `30 4f 67 00` | `00674f30` |
+| `00af7050` | `+0x8` | `006f5a58` | `10 4f 67 00` | `00674f10` |
+| `00af7050` | `+0xc` | `006f5a5c` | `30 4f 67 00` | `00674f30` |
+| `00af723c` | `+0x8` | `006f5c44` | `d0 91 70 00` | `007091d0` |
+| `00af723c` | `+0xc` | `006f5c48` | `10 72 67 00` | `00677210` |
+| `00af0628` | `+0x8` | `006ef030` | `d0 91 70 00` | `007091d0` |
+| `00af0628` | `+0xc` | `006ef034` | `10 72 67 00` | `00677210` |
+| `00af7394` | `+0x8` | `006f5d9c` | `d0 91 70 00` | `007091d0` |
+| `00af7394` | `+0xc` | `006f5da0` | `10 72 67 00` | `00677210` |
+
+The seven paths for `00af6b38`/`00af7050` retain each applicable parent
+constructor, including `006749e0` calling base constructor `006747b0`. The
+`00af723c` entries retain three constructor roots, `00af0628` adds the
+`00673150` path through `006634a0`, and `00af7394` adds four selector-1 paths
+through roots `00672320`, `006747b0`, `006749e0`, and `00675040`. Each vtable origin in
+[`field20-nested-vtable-call-candidates.jsonl`](field20-nested-vtable-call-candidates.jsonl)
+links back to its first-level candidate row, the selector case, the
+constructor call path, the exact helper STORE/PTRSUB rows, and the raw slot
+address and bytes. The schema labels these rows
+`partial_static_target_candidates` because runtime selector values remain
+unbound and unobserved writers or later mutations remain possible. The
+selector-1 `+0x74` vtable is resolved for the observed constructor paths in
+[`field20-selector1-resolution.md`](field20-selector1-resolution.md).
 
 The new generic [`IndirectCallPointerSlot/1` replay](indirect-call-pointer-slots.jsonl)
 joins all 22 closure targets to their exact `PointerProvenance/1` rows. It
@@ -174,4 +338,25 @@ GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_address_references.sh \
   /path/to/ghidra-projects shift SHIFT.exe /tmp/anchor-address-references.jsonl \
   0x006657e0 0x00665820 0x00665880 0x0066ee90 0x00663f50 \
   0x009d1880 0x00af0860 0x00af08a0 0x0043c792 0x0066efc0 0x0066efcd
+```
+
+The returned-subobject P-code replays use the saved `shift` project with
+analysis disabled. From the repository root, reproduce both batches with:
+
+```sh
+GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_pcode_flow_batch.sh \
+  /home/pes/ghidra_projects/shift shift SHIFT.exe \
+  docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-constructor-functions.txt \
+  docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-constructor-pcode-flow.tsv \
+  docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-constructor-callind.jsonl \
+  docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-constructor-acquisition.jsonl \
+  8 900 > docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-constructor-export.log 2>&1
+
+GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_pcode_flow_batch.sh \
+  /home/pes/ghidra_projects/shift shift SHIFT.exe \
+  docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-dispatch-functions.txt \
+  docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-dispatch-pcode-flow.tsv \
+  docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-dispatch-callind.jsonl \
+  docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-dispatch-acquisition.jsonl \
+  6 900 > docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-subobject-dispatch-export.log 2>&1
 ```

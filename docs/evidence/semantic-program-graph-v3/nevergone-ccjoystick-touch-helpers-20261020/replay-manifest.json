@@ -1,0 +1,300 @@
+{
+  "artifacts": [
+    {
+      "bytes": 186,
+      "id": "method_plan",
+      "path": "method-plan.tsv",
+      "sha256": "a10c682e270f097c1a8d63fdec0821a342bb275b936c8e07462ce7093a2ed3b6"
+    },
+    {
+      "bytes": 27,
+      "id": "function_entries",
+      "path": "function-entries.txt",
+      "sha256": "27137768813a5f621662209137ec33546b0b4164a0905105e87a827c0371ca86"
+    },
+    {
+      "bytes": 2836,
+      "id": "function_prototypes",
+      "path": "function-prototypes.jsonl",
+      "sha256": "6cb2ed9769b4abb6c9f245cdd0aad74cbf0bc0b1f85d79c0ad8954612ef48a02"
+    },
+    {
+      "bytes": 3112,
+      "id": "parameter_loads",
+      "path": "parameter-loads.tsv",
+      "sha256": "b411db1085a2e4bf6ed7bf5ab48709de4a101bc307904f43c1c9a939c3aa87a2"
+    },
+    {
+      "bytes": 169,
+      "id": "parameter_stores",
+      "path": "parameter-stores.tsv",
+      "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+    },
+    {
+      "bytes": 1208,
+      "id": "memory_store_access",
+      "path": "memory-store-access.jsonl",
+      "sha256": "bbced42eb3b738c80a61e1986355bb8510a96b4704a9328e624514efeebf6584"
+    },
+    {
+      "bytes": 21636,
+      "id": "pcode_flow",
+      "path": "pcode-flow.tsv",
+      "sha256": "20225af452e74271f4b6c1b2dadb2afd5aaf803ca3a90441457806e14cb64316"
+    },
+    {
+      "bytes": 3747,
+      "id": "callind_evidence",
+      "path": "callind-evidence.jsonl",
+      "sha256": "65b1ebb92a22fd713511c82dc590edc6570fffa84ab7eca138b581133baa25c5"
+    },
+    {
+      "bytes": 548,
+      "id": "acquisition",
+      "path": "acquisition.jsonl",
+      "sha256": "3a807c2314d9b5a624732dde41fdc90b24f824db2ec0b947702b37cb39f6d177"
+    },
+    {
+      "bytes": 846,
+      "id": "touch_helper_member_map",
+      "path": "touch-helper-type-layout-member-map.jsonl",
+      "sha256": "53bc36ef1d5c3afe6728eacd3bff7c5141a7d613c6a784300e99f3de61da690a"
+    },
+    {
+      "bytes": 10682,
+      "id": "field_type_review",
+      "path": "field-type-review.jsonl",
+      "sha256": "f4c407d173c61e4d3cda875db93b448745bfb9c71f99e14bdb59afc72245d394"
+    },
+    {
+      "bytes": 5375,
+      "id": "receiver_abi_evidence",
+      "path": "receiver-abi-evidence.md",
+      "sha256": "618dc8950a353ff5db79fe39c6dd4c08afb233974de6e8264e1a0e386a456430"
+    },
+    {
+      "bytes": 71076,
+      "id": "type_layout_hypothesis",
+      "path": "type-layout-hypothesis.jsonl",
+      "sha256": "3ae330e663fbbbdcab5225a8df5c774c0da7d4da9f7b461ec5c1e334156aa621"
+    },
+    {
+      "bytes": 2579,
+      "id": "readme",
+      "path": "README.md",
+      "sha256": "af408cf4a5677230c89aae3a598ecf2bf6f3f227cd71db7a460d45edc40d31b8"
+    },
+    {
+      "bytes": 65180,
+      "id": "replay_test",
+      "path": "../../../../tests/test_semantic_program_graph_layout.py",
+      "sha256": "d489248e02e5aef162a196e60682e143e20da2de18bacfd225502b1a6ec73016"
+    },
+    {
+      "bytes": 3781,
+      "id": "prior_parameter_loads",
+      "path": "../nevergone-ccjoystick-owner-methods-20261020/parameter-loads.tsv",
+      "sha256": "c1e6229522b3a8d59048b04b12fc9d6f4ae18b1471e411eaf420c74edd862506"
+    },
+    {
+      "bytes": 16577,
+      "id": "prior_memory_store_access",
+      "path": "../nevergone-ccjoystick-owner-methods-20261020/memory-store-access.jsonl",
+      "sha256": "58393c3945018a6c026f3bef4ad5e2968b2201bd000f46ee9358f8b51efe1808"
+    },
+    {
+      "bytes": 2256,
+      "id": "prior_member_map",
+      "path": "../nevergone-ccjoystick-owner-methods-20261020/type-layout-member-map.jsonl",
+      "sha256": "1c46f741dea5f63ef0f835625a3d264e9800828f254043913e3ede3c6695f025"
+    },
+    {
+      "bytes": 10762,
+      "id": "prior_owner_field_type_review",
+      "path": "../nevergone-ccjoystick-owner-methods-20261020/field-type-review.jsonl",
+      "sha256": "63f2976692344852bb1c749fb123de7bf1d672b33b4d919397ccffb0562ff5e7"
+    },
+    {
+      "bytes": 621,
+      "id": "prior_size_review",
+      "path": "../../type-layout-review/nevergone-ccjoystick-20261019/size-review.jsonl",
+      "sha256": "be17fddac5f7a62ba37f7b47ca69840e9a5afcec5857e6f699acf954a46cbbe6"
+    },
+    {
+      "bytes": 6122,
+      "id": "prior_field_type_review",
+      "path": "../../type-layout-review/nevergone-ccjoystick-20261019/field-type-review.jsonl",
+      "sha256": "6145e57ddf02fdc722c6b36fe20ac51df78024f7b757e00b03eb3f5c368b7977"
+    },
+    {
+      "bytes": 7552,
+      "id": "type_layout_schema",
+      "path": "../../../../schemas/type-layout-hypothesis-v1.schema.json",
+      "sha256": "9ffbb68840291c7029627904d773ba8eeec5675c8474bd245d0aaeedf0c2fb91"
+    },
+    {
+      "bytes": 2302,
+      "id": "field_type_review_schema",
+      "path": "../../../../schemas/type-layout-field-type-review-v1.schema.json",
+      "sha256": "a70f37e9d4914ed97e4f0a5a7015eebfe2aa414b3599e3b8715dc334ed87faa0"
+    },
+    {
+      "bytes": 903,
+      "id": "member_map_schema",
+      "path": "../../../../schemas/type-layout-member-map-v1.schema.json",
+      "sha256": "e21c47ca352a6fcd8f779d4cd6502a3436641e52f523ae367a7aa45228e3904d"
+    },
+    {
+      "bytes": 1375,
+      "id": "parameter_load_schema",
+      "path": "../../../../schemas/ghidra-parameter-load-field-v1.schema.json",
+      "sha256": "8d2f634d7a0c92eeded035bb2a4bf8dfd461ef842aba478391b97274bf72e4b7"
+    },
+    {
+      "bytes": 2974,
+      "id": "memory_store_schema",
+      "path": "../../../../schemas/ghidra-memory-store-access-v1.schema.json",
+      "sha256": "bf53e4abc2d85609b23f831c85b0aa4b2bdb155bf2bc82ff7c5443a8c8c6b05d"
+    },
+    {
+      "bytes": 3061,
+      "id": "function_prototype_schema",
+      "path": "../../../../schemas/ghidra-function-prototype-v1.schema.json",
+      "sha256": "add5786aff444d068a2c922090b30bc19f5cfd46fe697c95fc7495326784f082"
+    },
+    {
+      "bytes": 1014,
+      "id": "pcode_flow_schema",
+      "path": "../../../../schemas/ghidra-function-pcode-flow-v1.schema.json",
+      "sha256": "f0c4c38211ce1402074a27c8deb03e3e8079921073856fce6490c1e0b4940c05"
+    },
+    {
+      "bytes": 1005,
+      "id": "pcode_acquisition_schema",
+      "path": "../../../../schemas/ghidra-pcode-flow-acquisition-v1.schema.json",
+      "sha256": "5d8fa0fa31e009bffa8e9342a5ecdda980086721e22d813940890321d7fb9d90"
+    },
+    {
+      "bytes": 3536,
+      "id": "callind_schema",
+      "path": "../../../../schemas/ghidra-indirect-call-evidence-v4.schema.json",
+      "sha256": "902b36e4329a1d9cc1d31c2cdcce111ce478120b12e6ec413ccb2a6d89c470be"
+    },
+    {
+      "bytes": 30872,
+      "id": "layout_builder",
+      "path": "../../../../src/revenginstr/type_layout_builder.py",
+      "sha256": "08e1798119f68dd24c914b9ba4a0b4e18f0ee7fc87419fe1bc6a215a6c175081"
+    },
+    {
+      "bytes": 28803,
+      "id": "ghidra_parameter_exporter",
+      "path": "../../../../ghidra/ExportGhidraParameterStoreField.java",
+      "sha256": "d386df5af77be920a2fb1fd0814c86ba3457dda792c572b2359a5e511fa5c083"
+    },
+    {
+      "bytes": 23345,
+      "id": "ghidra_pcode_exporter",
+      "path": "../../../../ghidra/ExportProgramPcodeFlowBatch.java",
+      "sha256": "15b3590136bda9d84c4402279954302a395e892c2eb136ca2b2e304a98ae2802"
+    },
+    {
+      "bytes": 9047,
+      "id": "ghidra_prototype_exporter",
+      "path": "../../../../ghidra/ExportGhidraFunctionPrototypes.java",
+      "sha256": "61f79b0f58686bd6160facd14b7f7962be4f56a42393da15e63d60238bf55b5a"
+    },
+    {
+      "bytes": 2057,
+      "id": "parameter_export_runner",
+      "path": "../../../../scripts/run_ghidra_parameter_store_field.sh",
+      "sha256": "c117ae56e4599bd1ad571ba497c37a8b96ffebdc634dac741763df5cb6387203"
+    },
+    {
+      "bytes": 2004,
+      "id": "pcode_export_runner",
+      "path": "../../../../scripts/run_ghidra_pcode_flow_batch.sh",
+      "sha256": "3cf199914574172937839d0e6480d398ea125cf606ce24d05db1adddaf3ca3f4"
+    },
+    {
+      "bytes": 1348,
+      "id": "prototype_export_runner",
+      "path": "../../../../scripts/run_ghidra_function_prototypes.sh",
+      "sha256": "3d860512793df4128024d7e00f4d5eb7afa5adfb45528dcec856c0506bc9c5a7"
+    },
+    {
+      "bytes": 560,
+      "id": "vtable_touch_slots",
+      "path": "vtable-touch-slots.tsv",
+      "sha256": "ecc7ca2989f77982ebd9bdd2b74a19dd0cdfec5ac358eaa2e3209d5c4a3816c8"
+    },
+    {
+      "bytes": 10235,
+      "id": "ghidra_vtable_exporter",
+      "path": "../../../../ghidra/ExportArm32ItaniumVtableSlots.java",
+      "sha256": "4d37d35591b79d7b1b961f24e913462e26a431706835e64bb440e4bccdb0f523"
+    },
+    {
+      "bytes": 1110,
+      "id": "vtable_export_runner",
+      "path": "../../../../scripts/run_ghidra_vtable_slots.sh",
+      "sha256": "cf7753931de77450382502b6868475aef243b41c1b5926382b6ffdd5937142d8"
+    },
+    {
+      "bytes": 2397,
+      "id": "vtable_export_documentation",
+      "path": "../../../../docs/GHIDRA_VTABLE_SLOTS.md",
+      "sha256": "425413013d7f8fcec3ddf30da3ec84f5f1870e19b416cabc4fa04192c5b16dd6"
+    },
+    {
+      "bytes": 9236,
+      "id": "prior_owner_function_prototypes",
+      "path": "../nevergone-ccjoystick-owner-methods-20261020/function-prototypes.jsonl",
+      "sha256": "77b048046fbdba4de42f8f2722bbffc09fe36f0a45f928d0195025ffb2107848"
+    },
+    {
+      "bytes": 25337,
+      "id": "prior_owner_pcode_flow",
+      "path": "../nevergone-ccjoystick-owner-methods-20261020/pcode-flow.tsv",
+      "sha256": "0e75c17c7d13d05fc627be93a4e1dd78aef8ff7e49d9f207ee17f3deef05dda2"
+    },
+    {
+      "bytes": 8520,
+      "id": "prior_init_pcode_flow",
+      "path": "init-pcode-flow.tsv",
+      "sha256": "23aaf5f49743c7f20606e6283c5a3703412b7c085ef499b0f27e18e315d61e94"
+    },
+    {
+      "bytes": 2631,
+      "id": "prior_init_callind_evidence",
+      "path": "init-callind-evidence.jsonl",
+      "sha256": "e6d6009c6299b8fb699a2ea0d05c368ebac3f6d59700071fe649f2764b9d149d"
+    },
+    {
+      "bytes": 183,
+      "id": "prior_init_pcode_acquisition",
+      "path": "init-pcode-acquisition.jsonl",
+      "sha256": "368cb9478c733d747631f87ece4faeb69769c993f0723f7503dfb06f48c9d280"
+    }
+  ],
+  "format": "Nevergone.CCJoyStickTouchHelperReplay/1",
+  "program_id": "nevergone:libcocos2dcpp.so",
+  "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
+  "summary": {
+    "accepted_type_candidates": 0,
+    "allocation_size_bytes": 340,
+    "helper_methods": 3,
+    "layout_field_count": 23,
+    "memory_store_rows": 2,
+    "new_layout_offsets": [
+      "0x11c",
+      "0x120",
+      "0x124",
+      "0x128"
+    ],
+    "parameter_load_rows": 20,
+    "parameter_store_rows": 0,
+    "pcode_rows": 256,
+    "vtable_rows": 2
+  }
+}

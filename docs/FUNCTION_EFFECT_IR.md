@@ -9,6 +9,7 @@ reads and writes plus direct calls, indirect calls, and return operations:
 revenginstr-effect-ir --program-id 'analysis:opaque-id' \
   --parameter-stores parameter-stores.tsv \
   --parameter-loads parameter-loads.tsv \
+  --memory-store-access memory-store-access.jsonl \
   --pcode-flow function-pcode-flow.tsv \
   --output function-effects.jsonl
 ```
@@ -28,7 +29,12 @@ traceable to the pinned artifact. Function records sort by function entry;
 effects sort by operation address, sequence time, kind, then effect id.
 
 Parameter-rooted reads and writes are `derived_structural`: the exporter
-recovers the formal parameter and constant offset from High P-code. Direct and
+recovers the formal parameter and constant offset from High P-code. In
+particular, `GhidraMemoryStoreAccess/1` contributes a field write only when it
+reports an exact parameter root, constant byte offset, and STORE width.
+`source_parameter_index` stays null for these rows because the sidecar does
+not identify the stored value's source; unresolved locations are not projected
+as field writes. Direct and
 indirect call operations and `RETURN` operations are `exact_static`; unresolved
 direct-call targets retain the `-` sentinel. Operation input tokens are
 preserved where the P-code exporter provides them.

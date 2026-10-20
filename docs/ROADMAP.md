@@ -78,7 +78,7 @@ Reference measurements currently retained by the Nevergone consumer give the fol
 | Non-Nevergone validated consumers | 1 early consumer (NFS Shift) | >=2 | >=3 |
 | High-confidence recovered-layout audit acceptance | not canonical yet | >=90% | >=95% |
 | Decisive bounded probe rate on planner-selected unresolved cases | not canonical yet | >=50% | >=70% |
-| Semantic graph accepted-edge precision | not canonical yet | >=0.95 | >=0.98 |
+| Semantic graph accepted-edge precision | 1.0 on five narrow call-edge scopes | >=0.95 | >=0.98 |
 | Validated ISA/ABI combinations | ARM32 + early x86-32 consumers | >=4 | >=5 |
 
 ## 3. Engineering rules
@@ -1265,7 +1265,7 @@ core. Runtime capture, identity correlation, and evaluation remain open.
 Join runtime events to static function, instruction, object, field and callgraph identities using exact program/build hashes and normalized addresses. ASLR mapping between ELF and analyzer image bases, sampling gaps and unmatched events are explicit metadata rather than guessed joins.
 
 **Address-only correlation v1 implemented:** a caller-pinned
-`RuntimeStaticIdentity/1` binds the exact SemanticProgramGraph/3 bytes and
+`RuntimeStaticIdentity/1` binds the exact SemanticProgramGraph/3 or /4 bytes and
 program SHA-256. `RuntimeCaptureManifest/1` repeats the exact build identity,
 pins the static identity, records the runtime module base and sampling gaps;
 the identity pins the static analyzer image base, so the address delta is
@@ -1282,8 +1282,48 @@ installed Nevergone 1.0.9 APK confirmed that its
 graph. The package-artifact identity record is retained under
 `docs/evidence/runtime-static-correlation-v1/`. This verifies static artifact
 provenance, establishes that this graph's Ghidra image base is `0x10000`, and
-includes a bounded startup capture. Object-instance, field, call-edge, and
-sampled-value joins remain open.
+includes a bounded startup capture. A second hash-pinned graph replay adds
+exact P-code for runtime-observed `GameLevels::LoadGameLevels` at `0x2d2f1c`
+and `cocos2d::CCFileUtilsAndroid::getFileData` at `0x544a60`; all 88 sampled
+function-entry observations now join to exact function nodes. This confirms
+function presence only: completeness remains unknown, and object-instance,
+field, call-edge, and sampled-value joins remain open. See the
+[runtime graph replay](evidence/semantic-program-graph-v3/nevergone-runtime-correlation-20261020/README.md).
+
+`RuntimeDirectCallObservation/1` and
+`revenginstr-runtime-direct-call-correlate` now verify a sampled direct edge
+from `CCFileUtilsAndroid::getFileData` to `cocos2d::Decode`. In the same device
+capture, 11 normalized Thumb callsites map to the exact `CALL` operation at
+`0x544bdc`, its owner at `0x544a60`, and its unique target at `0x544a40`.
+Capture completeness remains unknown; this establishes the edge only for the
+observed calls and does not close object, field, or other value-flow joins. See
+[`runtime direct-call correlation`](RUNTIME_DIRECT_CALL_CORRELATION.md).
+
+**Indirect-call triple correlation v1 implemented:**
+`RuntimeIndirectCallObservation/1` binds a runtime caller entry, `CALLIND`
+machine address, and observed target entry. The
+`revenginstr-runtime-indirect-call-correlate` command maps each address through
+the same pinned module delta, then independently joins the caller function,
+exact `CALLIND` operation, and target function in `SemanticProgramGraph/3` or
+`/4`.
+Unmatched targets, ambiguous graph identities, mapping failures, sampling gaps,
+and input hashes remain explicit. This provides a project-neutral way to bind
+consumer-collected runtime dispatch events; no NFS Shift runtime capture has
+been collected yet, and static barriers remain open until such observations
+are supplied. See [runtime indirect-call correlation](RUNTIME_INDIRECT_CALL_CORRELATION.md).
+
+`revenginstr-runtime-ledger` now replays both
+`RuntimeStaticCorrelation/1` and `RuntimeIndirectCallCorrelation/1` reports
+into one deterministic `AnalysisDecisionLedgerEvent/1` per observed event.
+Exact joins remain `review_required` pending human review; unmatched,
+ambiguous, or unmapped joins remain `review_required` with
+`missing_evidence`. The real Nevergone startup capture now joins all 88
+observations to exact static function entries; its ledger has 88
+`human_review` events and zero accepts. Sampling completeness remains unknown,
+and the replay does not treat any observed target as exhaustive. Consumer-
+collected NFS dispatch observations, broader runtime value-flow observations,
+and frozen probe outcome measurements remain open. The retained decision-ledger
+replay is documented with the [device capture evidence](evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/README.md).
 
 ### M9.3 Differential and interventional analysis
 
@@ -1308,19 +1348,48 @@ Mixed, unchanged, or incomplete comparisons remain `correlation`; this is not
 `RuntimeValueFlowManifest/1` pins one exact address-correlation report, one
 consumer-generated `RuntimeValueObservation/1` JSONL file, and explicit
 candidate pairs. Receiver identity, field write/read, state transition,
-factory return/use and allocation/release relations compare only opaque
-HMAC-shaped tokens. Both pair endpoints must map to their declared static
+factory return/use, call-output/return and allocation/release relations
+compare only opaque HMAC-shaped tokens. Both pair endpoints must map to their declared static
 nodes through unique exact address matches. Declared gaps and partial sampling
 remain visible; only the selected pair can be `witnessed`, `observed_mismatch`
 or `inconclusive`. Token authenticity is not verified, no raw values enter the
-report, and no pair upgrades a static path to `confirmed_exact`. The pinned
-Nevergone example is synthetic; obtaining in-game value observations remains
-open because the current device capture contains only startup function entries.
+report, and no pair upgrades a static path to `confirmed_exact`. Three real
+Nevergone device captures now witness 11, 34, and 34 selected `Decode`
+output-buffer to `getFileData` return-pointer identity pairs. The gameplay
+capture maps all 49 calls to the exact static graph; nine pointer mismatches
+and six calls without a later same-thread return are excluded. A later
+post-Tap-to-Start menu capture maps all 42 calls to the graph; its 34-pair
+ledger has no accepts. Other in-game receiver, field, state, factory, and
+lifetime observations remain open; capture completeness is unknown. See the
+[runtime value-flow replay](RUNTIME_VALUE_FLOW.md), the
+[first capture](evidence/runtime-behavior-replay-v1/nevergone-decode-device-20261020/README.md),
+the [gameplay capture](evidence/runtime-behavior-replay-v1/nevergone-gameplay-device-20261020/README.md),
+and the [post-Tap-to-Start menu capture](evidence/runtime-behavior-replay-v1/nevergone-menu-device-20261020/README.md).
 `revenginstr-runtime-ledger` deterministically turns pair results into
 `AnalysisDecisionLedgerEvent/1` records; a witness remains `review_required`,
 a mismatch becomes `escalated_conflict`, and missing evidence remains
 `review_required`. No runtime replay automatically accepts a claim. See
 [`runtime value-flow replay`](RUNTIME_VALUE_FLOW.md).
+
+**Bounded runtime transform replay added:** `RuntimeTransformReplayManifest/1`
+pins consumer-reported transform observations to exact function-entry matches
+in `RuntimeStaticCorrelation/1`, retaining sample counts, source ordinals, and
+unknown capture completeness. On 2026-10-20, the installed Nevergone 1.0.9
+gameplay capture exercised `cocos2d::Decode` 49 times; 48 non-empty calls
+checked 6,028 byte positions and reported formula matches (45 sampled checks
+and 3 full-buffer checks), while one zero-length call remained inconclusive.
+A post-Tap-to-Start menu capture adds 42 calls; 41 reported formula matches
+(38 sampled and 3 full-buffer checks), with one zero-length call
+inconclusive. All 91 addresses across both captures matched the exact graph
+function node. The bytes are not retained and RevEngInstr does not recompute
+the consumer's formula result, so these remain bounded runtime evidence, not
+accepted claims or pair-scoped value-flow witnesses. Both source traces lack
+footers and reach the 200 file-access-event cap, so completeness remains
+unknown. See
+[`runtime transform replay`](RUNTIME_TRANSFORM_REPLAY.md), the
+[first device capture](evidence/runtime-behavior-replay-v1/nevergone-decode-device-20261020/README.md),
+the [gameplay capture](evidence/runtime-behavior-replay-v1/nevergone-gameplay-device-20261020/README.md),
+and the [post-Tap-to-Start menu capture](evidence/runtime-behavior-replay-v1/nevergone-menu-device-20261020/README.md).
 
 ### M9.5 Information-gain evaluation
 
@@ -1331,11 +1400,13 @@ uncertainty thresholds; one bounded consumer receipt is required per planned
 request, including incomplete attempts. The evaluator reports planned cost
 units, actual steps and elapsed time, completion and decisive rates,
 uncertainty reduction, unlocked decision IDs and disagreement with known
-static predictions. It rejects resource overruns and does not run probes.
-The synthetic Nevergone-shaped fixture checks metric arithmetic only. The
-evaluator cannot authenticate caller predictions or prove the unresolved set
-was frozen before capture; actual device results and frozen-set measurements
-remain open. See [`runtime probe evaluation`](RUNTIME_PROBE_EVALUATION.md).
+static predictions. It rejects resource overruns, verifies the exact candidate
+file hash, reproduces deterministic planner selection, and does not run probes.
+The synthetic Nevergone-shaped fixture checks metric arithmetic and planner
+reproduction only. The evaluator cannot authenticate caller predictions or
+prove the unresolved set was frozen before capture; actual device results and
+frozen-set measurements remain open. See
+[`runtime probe evaluation`](RUNTIME_PROBE_EVALUATION.md).
 
 ## Exit criteria
 
@@ -1407,7 +1478,7 @@ Build consumer-owned gold subgraphs for independently understood subsystems and 
 
 Stretch: accepted-edge precision >=0.98 with useful cross-function/state/object graph coverage across multiple projects.
 
-### Current implementation status (2026-10-19)
+### Current implementation status (2026-10-20)
 
 `SemanticProgramGraph/1` projects `FunctionEffectIR/1` and `/2` into
 deterministic program, function, operation, and parameter-rooted field
@@ -1448,10 +1519,69 @@ edge, or accepted-edge accuracy measurement. The audit still reports possible
 intervening memory effects and makes no alias or runtime value-flow claim. See
 [`CCJoyStick::init field access replay`](evidence/receiver-field-access/nevergone-ccjoystick-init-20261019/README.md).
 
+An additional SemanticProgramGraph/3 replay now rebuilds the FunctionEffectIR
+with the exact program id used by the reviewed layout and joins nine of the
+parameter-rooted field nodes through the reviewer-supplied
+`TypeLayoutMemberMap/1` row. The query for `+0x119` and `+0x11a` returns the
+owner type as context. These are provenance-linked review associations with
+null confidence; they do not change the earlier benchmark's separate graph
+identities, establish object identity at runtime, or resolve its
+intervening-memory-effect findings. See
+[`CCJoyStick::init field-to-layout graph replay`](evidence/semantic-program-graph-v3/nevergone-ccjoystick-init-layout-join-20261020/README.md).
+
 The graph families are still structural slices of M10.1–M10.3. Dispatch
 recovery, object identity across functions, roles, states, resources,
 callbacks, execution contexts, broadly scoped semantic gold graphs, and M10
 exit criteria remain open.
+
+The `SemanticProgramGraphGold/1` endpoint contract now also accepts
+`has_field` edges to parameter-rooted field nodes, so independently reviewed
+member-map associations can be evaluated. The Nevergone member map used by
+the current graph replay is also a graph-construction input; it is not
+independent accuracy evidence, and no field-join evaluation metric is claimed.
+
+A second Nevergone `CCJoyStick` replay now combines `init` and
+`updateTouchPoint`. FunctionEffectIR accepts `GhidraMemoryStoreAccess/1` only
+when it carries an exact parameter root, constant byte offset, and STORE width;
+computed value sources remain unknown. The two-method graph contains 15
+member-map joins and is fully hash-pinned and reproducible. The map remains
+human-review evidence, so this expands queryable structural coverage without
+adding independent field-accuracy evidence or closing M10.5.
+
+A separate, read-only `GhidraFunctionPrototype/1` export records parameter 0
+of both methods as `CCJoyStick *`. A narrow adjudicated gold built from those
+prototype rows, the reviewed layout hypothesis, and raw field-access rows
+scores all 15 corresponding `has_field` joins in the exploratory view with
+complete provenance. It does not cite the graph's member map. Because the
+stored prototypes are Ghidra `ANALYSIS` signatures from the same project, this
+is a cross-artifact owner-type check, not broad independent field-accuracy or
+confidence evidence; no edges enter the accepted view. Broader subsystem gold
+and accepted derived-relation evaluation remain open, so M10.5 is not complete.
+
+A follow-on read-only replay adds six more `CCJoyStick *` methods (constructor,
+destructor, touch movement, reset, hit-area setter, and power getter). Across
+the eight-method sample the layout hypothesis now contains 19 observed offsets,
+and the exploratory graph joins 36 owner fields with complete provenance. The
+same-project `ANALYSIS` prototypes and raw accesses support this narrow replay.
+A separate manual review records boolean candidates at `+0x138` and `+0x150`,
+and floating-point candidates at `+0x13c` and `+0x140`, tied to exact P-code and
+memory records. The other added offsets remain untyped; no member names or
+accepted types are inferred, and no graph edge is accepted. This does not
+establish direct-versus-inherited ownership or close M10.5. See
+[`CCJoyStick` owner-method field replay](evidence/semantic-program-graph-v3/nevergone-ccjoystick-owner-methods-20261020/README.md).
+
+A combined touch-pipeline replay now includes the two vtable callback methods
+and the three touch helpers beside those eight owner methods. Read-only P-code
+produces exact paths from `ccTouchBegan` to `containsTouchLocation` and
+`onTouchBegan`, and from `ccTouchEnded` to `onTouchEnd`; a field query connects
+the reviewed `+0x11c`–`+0x128` rectangle components and `+0x12c` threshold
+accesses to the exploratory graph. The 13-function graph has 276 nodes, 407
+edges, and 53 provenance-linked field-to-type joins; none is accepted, and all
+unresolved `CALLIND` frontiers remain barriers. The exported graph and queries
+rebuild byte-for-byte from the pinned evidence. This broadens one consumer
+subsystem's structural reconstruction without proving runtime touch behavior
+or closing M10.5. See the
+[`CCJoyStick` touch-pipeline replay](evidence/semantic-program-graph-v3/nevergone-ccjoystick-touch-pipeline-20261020/README.md).
 
 `revenginstr-semantic-program-query` now selects nodes and edges by kind,
 relation, indirect-call state, conflict state, function entry, operation
@@ -1476,9 +1606,12 @@ returns the captured route `00a45520 → 00a40550 → 00886930`.
 The path query also accepts a hash-pinned Ghidra Function P-code CFG artifact
 and joins call sites by exact function entry, address, P-code time, and opcode.
 It records the call block and a successor-path witness from the function entry.
-The NFS SHIFT CFG/3 replay confirms the call at `00a4556d` is in entry-reachable
-block 3; block-graph reachability does not establish branch-predicate
-feasibility or runtime execution.
+CFG/5 `entry_block_indices` now seeds reachability from every listed entry
+block, while earlier CFG formats retain their single-entry behavior. The
+Nevergone touch-pipeline replay confirms three call sites are reachable with
+block paths `[0]`, `[0, 1, 3]`, and `[0]`; the NFS SHIFT CFG/3 replay confirms
+the call at `00a4556d` is in entry-reachable block 3. Block-graph reachability
+does not establish branch-predicate feasibility or runtime execution.
 
 `SemanticProgramGraphGold/1` and
 `SemanticProgramGraphEvaluation/1` now define scoped consumer gold and report
@@ -1493,12 +1626,70 @@ all 3 documented calls (see the
 [replay](evidence/semantic-program-graph-evaluation/nevergone-player-horizontal-facing/README.md)).
 The NFS M2.3 consumer-owned slice matches 7 calls, 2 reads, and 1 write (see
 its [replay](evidence/semantic-program-graph-evaluation/nfs-m23-00a45520/README.md)).
-All twenty-two edges have complete provenance fields. Both consumer golds are
-narrow structural interpretations, without independent runtime
-corroboration; the NFS gold does not assign field meaning or prove memory
-flow. Calibrated accepted edges and reconstruction/query of two broader
-semantic subsystems remain open, so M10.5 and its exit criteria are not
-complete.
+A new Nevergone runtime resource-loader subgraph cross-checks 36 direct calls
+against Ghidra instruction-level references; all 36 match with full
+provenance. Runtime evidence corroborates only the two function entries, not
+the call edges. All fifty-eight evaluated edges have complete provenance
+fields. The three consumer golds are narrow structural interpretations; the
+NFS gold does not assign field meaning or prove memory flow. The
+accepted-high-confidence view now admits uncontested exact-static facts
+without assigning numeric confidence; other evidence classes still require a
+calibrated score. Across these five frozen subgraphs, 55 exact direct-call
+edges are accepted and all 55 match their reviewed labels (precision 1.0).
+The three NFS field edges remain review-only because their structural evidence
+is not calibrated. These bounded call-only results meet the precision gate for
+those relations, but accepted derived relations and reconstruction/query of
+two broader semantic subsystems remain open; M10.5 is not complete.
+
+`SemanticProgramGraph/4` now optionally joins hash-pinned
+`DirectCallArgumentObservation/1` rows to one exact resolved `CALL`, requiring
+caller, address, P-code time, callee, and the underlying P-code artifact and
+record to agree. The Nevergone replay attaches 36 call-site observations
+across `GameLevels::LoadGameLevels` and
+`CCFileUtilsAndroid::getFileData`, preserving 70 ordered value tokens (10
+constants) and complete row provenance; its 90-node, 128-edge graph rebuilds
+deterministically. These are P-code operand observations, not recovered
+prototypes, resource identities, or runtime argument values. An optional
+exact-definition sidecar is attached per argument, and the replay's operand
+tracer retains bounded same-artifact use/def references. It stops at memory
+and call-result boundaries and does not evaluate values. Generic queries,
+bounded path queries, and runtime address correlators accept `/4`; see the
+[call-argument graph replay](evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/README.md).
+This extends graph access to static call arguments but does not close M10.5,
+whose broad subsystem reconstruction and accepted derived-relation evaluation
+remain open.
+
+`revenginstr-direct-call-argument-definitions` now resolves a `def:` operand
+only when one output row in the same caller, same P-code artifact, and exact
+address/time produces the same token and width. The Nevergone replay matches
+56/56 definition tokens and leaves all 14 constant/register tokens as
+non-definition observations. It retains call and definition record references;
+it does not chase transitive dependencies or infer types, semantic roles, or
+runtime values. This supplies a precise first link for later data-flow
+reconstruction, not a value-flow conclusion.
+
+SemanticProgramGraph/4 can now consume the definition-analysis JSONL and attach
+its resolution state and exact P-code row references to each call argument.
+The graph validates that the sidecar row points back to the exact pinned call
+observation and that its token and width agree. This makes the bounded
+definition evidence queryable alongside the callsite without upgrading it to
+a semantic or runtime value-flow claim.
+
+It can also consume the bounded operand-trace sidecar, pin its artifact hash,
+and attach each trace state and sidecar-row reference to the corresponding
+call argument. Semantic queries can select trace states while requiring token,
+definition, and trace selectors to match the same argument. This exposes the
+trace inventory in the graph without copying the full operand closure into
+every graph node.
+
+`revenginstr-direct-call-argument-traces` emits a bounded operand-use closure
+for each observed direct-call argument. On the Nevergone replay, 56 exact
+definitions expand to 87 producer rows and 33 exact operand references; 28
+traces reach a memory/call boundary, 28 close without one, and 14 operands are
+non-definition tokens. Cycles, ambiguities, missing rows, and trace limits are
+preserved explicitly. The replay does not traverse `LOAD` contents or call
+returns, choose `MULTIEQUAL` branches, evaluate runtime values, or infer
+operand semantics.
 
 ---
 
@@ -1736,7 +1927,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 31. Bounded runtime probe-request and correlation contracts.
 32. Static/runtime differential replay and information-gain metrics.
 33. Semantic Program Graph schema and deterministic builder.
-34. 🟡 Scoped graph-gold schema/evaluator, two raw P-code projection audits, and narrow Nevergone/NFS consumer-owned structural golds implemented; accepted-edge precision and end-to-end semantic subsystem gates remain open.
+34. 🟡 Scoped graph-gold schema/evaluator, two raw P-code projection audits, and narrow Nevergone/NFS consumer-owned structural golds implemented; exact direct-call edges reach 1.0 accepted precision on five frozen scopes, while accepted derived relations and end-to-end semantic subsystem gates remain open.
 35. Feedback quarantine, adjudication and leakage-gated training promotion.
 
 ## P4 — architecture and integration
@@ -2196,7 +2387,9 @@ outside the pinned function inventory. CFG/4 removed source-linked
 `INDIRECT` markers, but 22 reachable `CALLIND` operations in 13 functions
 leave four pairs possible. `PointerProvenance/1` classifies the 22 target
 expressions as six memory-read anchors, thirteen call barriers, and three
-ambiguous results; none resolves to an exact function entry. The receiver-
+ambiguous results. Correct `PTRSUB` handling exposes candidate `0x009189bd`
+on one ambiguous path, but two call barriers remain at that site, so no
+complete target set is available. The receiver-
 type exporter matched all 22 sites but recovered only generic primitive
 labels, so it adds no target identity evidence. Across scans25–37, three
 unique candidates, 20 possible pairs, and 79 non-dominating pairs have been
@@ -2208,28 +2401,98 @@ retained closure-flow selection. It records the empty root set for `006642a0`
 and both entry blocks `[0, 1]` for `0090e864`, with no skipped rows. This closes the two CFG
 acquisition gaps and removes `MISSING_CFG` from 40 interprocedural effect rows.
 The remaining `CALLIND` and `STORE` effects preserve the four possible `/6`
-statuses and one unique candidate. The
+statuses and one unique candidate. The direct target `006642a5` has now been
+seeded in a disposable Ghidra project copy and exported as its exact 43-byte
+function: all 18 High-P-code rows and CFG/5's three blocks are retained, with
+no `CALLIND` in this function. This closes that function-flow and CFG
+acquisition gap without resolving the other indirect-call targets or changing
+the memory-effect classifications. The
 [CFG/5 replay](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/cfg-v5-entry-block-replay.md)
-records the input and output hashes. The bounded instruction slice at
-`006642a5` and the unresolved CALLIND targets remain open.
+records the closure input and output hashes. The exact-function capture is at
+[`field20-006642a5-replay.md`](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-006642a5-replay.md).
+The unresolved `CALLIND` targets remain open.
 
 The four downstream memory-read anchors now have a generic structural
 projection: `IndirectCallPointerSlot/1` identifies aligned pointer-slot access
 shapes at `006657ed` (`+0x30`), `00665801` (`+0x8`), `0066582d` (`+0x34`), and
-`00665841` (`+0xc`). The exact target addresses remain unknown. A read-only
-Ghidra reference export confirms that `006657e0` and `00665820` are reached
-from the two wrapper functions, while their receiver comes from the runtime
-field at `AptCIH + 0x20`. The field is initialized to zero in `0066ee90` and
-copied by `00663f50`; an additional vtable write in `0043c792` is reached from
-the cleanup path `0066efc0`, not a new factory. These facts narrow the observed
-static construction path but do not bind the runtime field value to a table.
+`00665841` (`+0xc`). Exact static vtable evidence narrows the first-level
+cached-field calls at `006657ed` and `0066582d` to the same three target
+addresses, `00663030`, `00676040`, and `006770b0`, across five concrete
+constructor variants in the observed `AptCIH + 0x20` lazy-construction flow.
+The candidate rows retain the constructor, factory, field-store, vtable-slot,
+and raw-byte evidence in
+[`field20-vtable-call-candidates.jsonl`](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-vtable-call-candidates.jsonl).
+This is a bounded static set: it does not identify runtime branch selection,
+exclude unobserved writers, or establish a unique runtime target.
 
-**Next:** trace all exact writes and copy sources for the runtime `+0x20`
-field, or acquire bounded runtime evidence for those four receivers. Keep
-unknown targets and roots as barriers. The five focused candidate pairs now
-have a fresh CFG/5 memory-effect replay: four remain possible and one remains
-unique because `CALLIND` and `STORE` effects are unresolved. The bounded slice
-at `006642a5` is not a complete function flow or CFG. Assess bodies smaller
-than 40 bytes only if this unresolved set or new pair evidence gives a concrete
+A read-only replay of the two known getter bodies and three subobject
+constructors now adds partial static target sets for `00665801` (`00674f10`,
+`007091d0`) and `00665841` (`00674f30`, `00677210`). The nested candidate
+records retain the parent candidate, selector case, member offset, helper-call
+path, exact vtable stores, and raw table bytes. A pinned-disassembly trace
+adds the selector-3 result of `00663030` at parent `+0x7c`, initialized with
+vtable `00af0628`; its `+0x8/+0xc` slots add origins for `007091d0` and
+`00677210`. The selector-1 cases at parent `+0x74` are now tied to vtable `00af7394`
+across four observed constructor roots; its slots add the already-known
+`007091d0`/`00677210` target pair to each nested call. The rows remain partial
+because the runtime selector is data-dependent and unobserved writers remain
+possible. The field writer/copy inventory and replay chains are documented in
+the [manual static review](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/manual-static-vtable-review.md)
+and the [selector-1 replay](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/field20-selector1-resolution.md).
+
+The refreshed CFG/5 memory-effect replay now includes exact flows for
+`006642a5`, `00664140`, all five direct targets from `00664140`, and two terminal
+descendants. The nine additions contribute 127 P-code rows, 34 STORE facts,
+and 10 exact caller-parameter-offset roots. All 12 direct calls introduced by
+those function bodies resolve to selected flow records. The extended closures
+contain 102 functions; the `/6` audit remains four possible pairs and one
+unique candidate. Global `00bfc728` may alias a tracked parameter, and 22
+`CALLIND` sites plus older missing direct-call flows remain unresolved. See
+the [seeded-callee descendant replay](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/cfg-v5-seeded-callee-descendants.md)
+for the pinned inputs and reproduction command.
+
+The `/2` direct-call effect closure now accepts reviewed
+`GhidraStaticIndirectCallTarget/1` and
+`GhidraIndirectCallVtableCandidates/1` evidence. It joins exact
+function/address/time identities, requires a matching program id and binary
+SHA-256, and pins each source artifact row in its output. The singleton
+wrapper sites are visible with their initializer scope; the four field-20
+dispatch sites can carry bounded or partial constructor-derived candidates.
+All 22 `CALLIND` sites remain effect barriers and none of their target flows
+is treated as part of the closed graph. Six sites carry constructor/singleton
+target observations, and a seventh has the partial constant-address candidate
+`0x009189bd`; 15 sites still have no target observations.
+See the [closure replay](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/static-call-target-closure-replay.md).
+The new source-pinned [CALLIND provenance triage](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/callind-target-triage-replay.md)
+classifies the 16 sites beyond the six prior observations as 13
+dynamic-barrier-only and three mixed bounded/dynamic paths. One mixed path now
+has a partial numeric candidate. A focused static review of `00918a4c` traces
+its two call-result barriers to the named API
+`KERNEL32.DLL!InitializeCriticalSectionAndSpinCount` and internal fallback
+`0x009189bd`; it retains the conditional cache-alias limitation, unresolved
+runtime address, and unknown branch selection. The generic triage output still
+preserves those call barriers. See the
+[symbolic-target review](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/callind-static-symbol-review-00918a4c.md).
+
+The new `IndirectCallTargetTriage/2` analyzer layer now attaches source-pinned
+symbolic API and internal-function candidates to exact triage sites while
+preserving the `/1` provenance, unresolved alternatives, and effect barriers.
+It records the conditional `00918a4c` API/fallback set, partial
+`EncodePointer`/`DecodePointer` paths at `0090aa89` and `0090ab00`,
+`SHIFT.exe!__exit` (`0x00907708`) at `00907485`,
+`mscoree.dll!CorExitProcess` at `009074ae`, `KERNEL32.DLL!TlsGetValue` (partial) at `0090ac8c`,
+`KERNEL32.DLL!TlsSetValue` at `0090acbb`, and five `USER32.DLL` API targets
+at `0091c17c`, `0091c18f`, `0091c1e3`, `0091c204`, and `0091c225`. All thirteen
+symbolic candidates remain scoped to their provenance alternatives; runtime
+addresses and execution are unobserved, and cache-load alternatives remain
+unresolved.
+
+**Next:** acquire runtime observations for the two remaining mixed paths and
+the 13 dynamic-barrier-only sites, then bind runtime state for the thirteen
+scoped candidate mappings across twelve sites, including the partial candidate
+at `00918a4c`.
+Preserve unresolved target and alias barriers; keep selector and receiver
+conclusions conditional until runtime evidence binds them. Assess bodies
+smaller than 40 bytes only when a remaining target or pair gives a concrete
 reason to extend the population screen. Do not infer alias facts from
 decompiler text or instruction-level corpus labels.

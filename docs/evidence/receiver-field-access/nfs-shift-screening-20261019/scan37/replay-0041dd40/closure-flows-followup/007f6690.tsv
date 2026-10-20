@@ -1,0 +1,13 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+007f6690	007f6693	6	CALL	-	register:register:00000004:4	0062f260	FUN_0062f260
+007f6690	007f669a	18	STORE	-	const:0x1a1:4;def:007f669a:54:4;const:0x0:4	-	-
+007f6690	007f669a	54	PTRADD	def:007f669a:54:4	register:register:00000004:4;const:0x9:4;const:0x4:4	-	-
+007f6690	007f669d	21	STORE	-	const:0x1a1:4;def:007f669d:55:4;const:0x0:4	-	-
+007f6690	007f669d	55	PTRADD	def:007f669d:55:4	register:register:00000004:4;const:0xa:4;const:0x4:4	-	-
+007f6690	007f66a0	24	STORE	-	const:0x1a1:4;def:007f66a0:58:4;const:0x0:2	-	-
+007f6690	007f66a0	56	PTRADD	def:007f66a0:56:4	register:register:00000004:4;const:0xb:4;const:0x4:4	-	-
+007f6690	007f66a0	58	CAST	def:007f66a0:58:4	def:007f66a0:56:4	-	-
+007f6690	007f66a4	27	STORE	-	const:0x1a1:4;def:007f66a4:57:4;const:0x0:4	-	-
+007f6690	007f66a4	57	PTRADD	def:007f66a4:57:4	register:register:00000004:4;const:0xc:4;const:0x4:4	-	-
+007f6690	007f66a7	28	COPY	def:007f66a7:28:4	register:register:00000004:4	-	-
+007f6690	007f66aa	35	RETURN	-	const:0x0:4;def:007f66a7:28:4	-	-

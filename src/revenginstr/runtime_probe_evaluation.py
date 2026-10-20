@@ -8,6 +8,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from .evidence_planner import build_evidence_request_plan
+
 MANIFEST_FORMAT = "REVENGINSTR.RuntimeProbeEvaluationManifest/1"
 PLAN_FORMAT = "REVENGINSTR.EvidenceRequestPlan/1"
 OUTCOME_FORMAT = "REVENGINSTR.RuntimeProbeOutcome/1"
@@ -60,6 +62,7 @@ def _sha256(value: Any, where: str) -> str:
 def evaluate_probe_set(
     manifest: Any, manifest_raw: bytes, plan: Any, plan_raw: bytes,
     outcomes: Any, outcomes_raw: bytes,
+    *, source_candidates: Any | None = None, source_candidates_raw: bytes | None = None,
 ) -> dict[str, Any]:
     if not isinstance(manifest, dict) or set(manifest) != {
         "format", "evaluation_id", "plan_sha256", "source_unresolved_set_sha256", "candidates",
@@ -79,6 +82,46 @@ def evaluate_probe_set(
     source_count = _integer(source.get("candidate_count"), "plan source candidate_count", 1_000_000)
     if source_count == 0:
         raise ProbeEvaluationError("plan source candidate_count must be positive")
+    if (source_candidates is None) != (source_candidates_raw is None):
+        raise ProbeEvaluationError("source candidates and their exact bytes must be provided together")
+    source_plan_verified = source_candidates is not None
+    if source_plan_verified:
+        if not isinstance(source_candidates_raw, bytes) or len(source_candidates_raw) > 64 * 1024 * 1024:
+            raise ProbeEvaluationError("source candidate bytes must be at most 64 MiB")
+        if hashlib.sha256(source_candidates_raw).hexdigest() != source_set_hash:
+            raise ProbeEvaluationError("source candidate bytes do not match the declared unresolved set")
+        try:
+            decoded_candidates = json.loads(
+                source_candidates_raw.decode("utf-8"), object_pairs_hook=_unique_object,
+            )
+        except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as error:
+            raise ProbeEvaluationError(f"invalid source candidate JSON: {error}") from error
+        if decoded_candidates != source_candidates:
+            raise ProbeEvaluationError("parsed source candidates do not match their exact bytes")
+        budget_units = _integer(plan.get("budget_units"), "plan budget_units", 1_000_000)
+        max_requests = _integer(plan.get("max_requests"), "plan max_requests", MAX_REQUESTS)
+        if budget_units == 0 or max_requests == 0:
+            raise ProbeEvaluationError("plan budget_units and max_requests must be positive")
+        try:
+            reproduced_plan = build_evidence_request_plan(
+                source_candidates,
+                candidates_sha256=source_set_hash,
+                budget_units=budget_units,
+                max_requests=max_requests,
+            )
+        except (TypeError, ValueError) as error:
+            raise ProbeEvaluationError(f"invalid source candidate set: {error}") from error
+        try:
+            reproduced_plan_json = json.dumps(
+                reproduced_plan, sort_keys=True, separators=(",", ":"), allow_nan=False,
+            )
+            submitted_plan_json = json.dumps(
+                plan, sort_keys=True, separators=(",", ":"), allow_nan=False,
+            )
+        except (TypeError, ValueError) as error:
+            raise ProbeEvaluationError(f"request plan is not canonical JSON data: {error}") from error
+        if reproduced_plan_json != submitted_plan_json:
+            raise ProbeEvaluationError("request plan does not reproduce from the source candidate bytes")
     requests = plan.get("selected_requests")
     if not isinstance(requests, list) or not 1 <= len(requests) <= MAX_REQUESTS:
         raise ProbeEvaluationError("request plan must contain 1 to 10000 selected requests")
@@ -219,6 +262,7 @@ def evaluate_probe_set(
         "manifest_sha256": hashlib.sha256(manifest_raw).hexdigest(),
         "outcomes_sha256": hashlib.sha256(outcomes_raw).hexdigest(),
         "source_unresolved_set_sha256": manifest["source_unresolved_set_sha256"],
+        "source_plan_reproduction_verified": source_plan_verified,
         "metrics": {
             "planned_request_count": len(requests),
             "completed_count": completed,
@@ -239,7 +283,11 @@ def evaluate_probe_set(
             "static_disagreement_rate_ppm": rate(disagreements, comparable),
         },
         "results": report_rows,
-        "scope_note": "Caller-provided freeze hashes are provenance labels; this report cannot verify that the set was frozen before outcomes were observed.",
+        "scope_note": (
+            "Plan selection was reproduced from the supplied candidate bytes; caller-provided freeze hashes are provenance labels and do not prove that the set was frozen before outcomes were observed."
+            if source_plan_verified else
+            "The selected plan was not re-derived from candidate bytes; caller-provided freeze hashes are provenance labels and do not prove that the set was frozen before outcomes were observed."
+        ),
     }
     return report
 
@@ -248,16 +296,21 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("manifest", type=Path)
     parser.add_argument("request_plan", type=Path)
+    parser.add_argument("source_candidates", type=Path)
     parser.add_argument("outcomes", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
-    inputs = {path.resolve() for path in (args.manifest, args.request_plan, args.outcomes)}
+    inputs = {path.resolve() for path in (args.manifest, args.request_plan, args.source_candidates, args.outcomes)}
     if args.output.resolve() in inputs:
         raise ProbeEvaluationError("output path must not replace an input")
     manifest, manifest_raw = _read_json(args.manifest)
     plan, plan_raw = _read_json(args.request_plan)
+    source_candidates, source_candidates_raw = _read_json(args.source_candidates)
     outcomes, outcomes_raw = _read_json(args.outcomes, jsonl=True)
-    report = evaluate_probe_set(manifest, manifest_raw, plan, plan_raw, outcomes, outcomes_raw)
+    report = evaluate_probe_set(
+        manifest, manifest_raw, plan, plan_raw, outcomes, outcomes_raw,
+        source_candidates=source_candidates, source_candidates_raw=source_candidates_raw,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     metrics = report["metrics"]

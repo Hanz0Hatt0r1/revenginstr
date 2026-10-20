@@ -9,12 +9,26 @@ import pytest
 from jsonschema import Draft202012Validator
 
 from revenginstr.decision_ledger import audit_decision_ledger
-from revenginstr.runtime_evidence_ledger import RuntimeLedgerError, build_ledger_events
+from revenginstr.runtime_evidence_ledger import (
+    RuntimeLedgerError,
+    build_ledger_events,
+)
+from revenginstr.runtime_indirect_call_correlation import REPORT_FORMAT as INDIRECT_CALL_FORMAT
 from revenginstr.runtime_value_flow import replay_value_flow
+from revenginstr.runtime_static_correlation import REPORT_FORMAT as STATIC_CORRELATION_FORMAT
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "docs/evidence/runtime-value-flow-v1/nevergone-synthetic"
 LEDGER_SCHEMA = json.loads((ROOT / "schemas/analysis-decision-ledger-event-v1.schema.json").read_text())
+INDIRECT_CALL_SCHEMA = json.loads(
+    (ROOT / "schemas/runtime-indirect-call-correlation-v1.schema.json").read_text()
+)
+STATIC_CORRELATION = (
+    ROOT / "docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/correlation.json"
+)
+STATIC_CORRELATION_SCHEMA = json.loads(
+    (ROOT / "schemas/runtime-static-correlation-v1.schema.json").read_text()
+)
 
 
 def _report() -> dict:
@@ -64,3 +78,99 @@ def test_duplicate_candidate_ids_are_rejected() -> None:
     report_raw = (json.dumps(report, sort_keys=True) + "\n").encode()
     with pytest.raises(RuntimeLedgerError, match="unique"):
         build_ledger_events(report, report_raw)
+
+
+def _indirect_call_report() -> dict:
+    capture_id = "shift-dispatch-capture"
+    matched = {
+        "capture_id": capture_id,
+        "sequence": 0,
+        "caller_runtime_address": "0x70010000",
+        "callsite_runtime_address": "0x70010040",
+        "target_runtime_address": "0x70020000",
+        "caller_address": "0x10000",
+        "callsite_address": "0x10040",
+        "target_address": "0x20000",
+        "caller_match_state": "matched",
+        "callsite_match_state": "matched",
+        "target_match_state": "matched",
+        "caller_node_ids": ["function-caller"],
+        "callsite_node_ids": ["operation-callind"],
+        "target_node_ids": ["function-target"],
+        "match_state": "matched",
+    }
+    unmatched_target = {
+        **matched,
+        "sequence": 1,
+        "target_runtime_address": "0x70030000",
+        "target_address": "0x30000",
+        "target_match_state": "unmatched",
+        "target_node_ids": [],
+        "match_state": "unmatched_target",
+    }
+    return {
+        "format": INDIRECT_CALL_FORMAT,
+        "capture_id": capture_id,
+        "program_id": "shift.exe:sha256:test",
+        "program_sha256": "a" * 64,
+        "static_identity_sha256": "b" * 64,
+        "semantic_graph_sha256": "c" * 64,
+        "capture_manifest_sha256": "d" * 64,
+        "observations_sha256": "e" * 64,
+        "address_mapping": {
+            "method": "runtime_address_minus_module_delta",
+            "runtime_module_base": "0x70000000",
+            "static_image_base": "0x10000",
+            "module_delta": "0x6fff0000",
+        },
+        "sampling": {"status": "sampled", "gaps": []},
+        "summary": {
+            "event_count": 2,
+            "match_state_counts": {"matched": 1, "unmatched_target": 1},
+        },
+        "events": [matched, unmatched_target],
+    }
+
+
+def test_indirect_call_observations_become_review_only_ledger_events() -> None:
+    report = _indirect_call_report()
+    Draft202012Validator(INDIRECT_CALL_SCHEMA).validate(report)
+    report_raw = (json.dumps(report, sort_keys=True) + "\n").encode()
+    events = build_ledger_events(report, report_raw)
+    assert len(events) == 2
+    assert events[0]["subject_id"] != events[1]["subject_id"]
+    assert [event["reason_codes"] for event in events] == [["human_review"], ["missing_evidence"]]
+    for event in events:
+        Draft202012Validator(LEDGER_SCHEMA).validate(event)
+        assert event["state"] == "review_required"
+        assert event["confidence_delta"] is None
+        assert event["evidence_added"][0]["evidence_class"] == "runtime_native"
+    ledger_raw = b"".join((json.dumps(event, sort_keys=True) + "\n").encode() for event in events)
+    audit = audit_decision_ledger(hashlib.sha256(ledger_raw).hexdigest(), events)
+    assert audit["events"] == 2
+    assert audit["terminal_state_counts"]["accepted_exact"] == 0
+
+
+def test_indirect_call_ledger_rejects_inconsistent_match_counts() -> None:
+    report = _indirect_call_report()
+    report["summary"]["match_state_counts"] = {"matched": 2}
+    report_raw = (json.dumps(report, sort_keys=True) + "\n").encode()
+    with pytest.raises(RuntimeLedgerError, match="match_state_counts"):
+        build_ledger_events(report, report_raw)
+
+
+def test_real_nevergone_runtime_capture_replays_to_human_review_ledger() -> None:
+    report_raw = STATIC_CORRELATION.read_bytes()
+    report = json.loads(report_raw)
+    assert report["format"] == STATIC_CORRELATION_FORMAT
+    Draft202012Validator(STATIC_CORRELATION_SCHEMA).validate(report)
+    events = build_ledger_events(report, report_raw)
+    assert len(events) == 88
+    assert all(event["state"] == "review_required" for event in events)
+    assert all(event["reason_codes"] == ["human_review"] for event in events)
+    assert all(event["evidence_added"][0]["artifact_sha256"] == hashlib.sha256(report_raw).hexdigest() for event in events)
+    ledger_raw = b"".join((json.dumps(event, sort_keys=True) + "\n").encode() for event in events)
+    audit = audit_decision_ledger(hashlib.sha256(ledger_raw).hexdigest(), events)
+    assert audit["events"] == 88
+    assert audit["terminal_state_counts"]["accepted_exact"] == 0
+    assert audit["terminal_state_counts"]["review_required"] == 88

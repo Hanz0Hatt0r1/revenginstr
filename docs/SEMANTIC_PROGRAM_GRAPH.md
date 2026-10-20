@@ -43,7 +43,51 @@ Field nodes retain access evidence, type candidates, and conflicts. These
 nodes remain candidate/review data, use null confidence, and stay out of the
 accepted-high-confidence view. Explicitly conflicted inputs remain contested.
 When both receiver observations and layouts are supplied, `/3` retains both
-inputs and joins them independently.
+inputs and joins them independently. Supplying call arguments as well emits
+`/4` and retains all three inputs.
+
+Supply an optional `DirectCallArgumentObservation/1` JSONL file to emit `/4`:
+
+```sh
+revenginstr-semantic-program-graph function-effects.jsonl \
+  --type-layout-hypotheses type-layout-hypotheses.jsonl \
+  --type-layout-member-maps type-layout-member-maps.jsonl \
+  --call-arguments direct-call-arguments.jsonl \
+  --call-argument-definitions direct-call-argument-definitions.jsonl \
+  --call-argument-traces direct-call-argument-traces.jsonl \
+  --output program-graphs.jsonl
+```
+
+The builder pins the observation-file hash and executable hash. When layouts
+are also supplied, their executable hash must agree. It attaches an
+argument count, ordered value tokens, widths, observation row index, and the
+source P-code reference to an operation only when caller, call address,
+P-code time, resolved callee, and the original P-code artifact/row all match.
+Unmatched or ambiguous observations fail closed. Argument tokens remain
+static observations; `def:` tokens are not resolved here, and constants do
+not establish resource names, prototypes, or runtime value flow.
+
+Optionally supply the matching `DirectCallArgumentDefinition/1` JSONL. The
+builder verifies each definition row against the pinned call-observation
+record, callsite identity, P-code artifact, argument index, token, and width.
+It attaches the resolution state and exact definition evidence references to
+each argument and pins the definition-analysis artifact hash. This remains a
+single-row definition link and does not chase transitive data flow.
+
+Optionally supply `TypeLayoutMemberMap/1` beside the layout hypothesis. A map
+joins a function's parameter-rooted `field` nodes to its reviewed `type` node
+only when the exact program, function entry, parameter index, type id, and
+byte offset all match. The graph pins the member-map artifact; `has_field`
+edges retain member-map, layout, and field-effect provenance and remain
+review-only with null confidence.
+
+Optionally supply `DirectCallArgumentOperandTrace/1` alongside the observation
+and definition sidecars. The graph pins the trace artifact and records each
+argument's trace state and exact trace-row reference. Trace states summarize a
+bounded syntactic operand walk; inspect the sidecar for producer rows,
+boundaries, unresolved operands, and cycle edges. The graph builder requires
+one trace row for every observed argument and checks that its call, definition,
+token, and P-code references agree with the pinned inputs.
 
 This first projection emits program, function, operation, and
 parameter-rooted field nodes. It emits `contains` edges for observed program,
@@ -71,15 +115,21 @@ and ordering are deterministic; the graph pins each input artifact's hash.
 strings are decompiler type metadata; they do not establish a class, dispatch
 slot, or target. No `dispatches` edge is inferred.
 
+The `accepted-high-confidence` view admits uncontested `exact_static` facts
+without assigning them a numeric confidence. Other evidence classes still
+need a calibrated score at the requested threshold; contested records never
+pass. This separates exact static facts from confidence estimates.
+
 The `semantic-program-graph` stage can be chained in a pinned benchmark
 manifest after `function-effect-ir`, with receiver TSV and layout JSONL inputs
 declared when used. `/3` connects candidate layouts but does not infer object
 identity from function-local fields or promote candidate type/layout labels
 to accepted facts. Receiver dispatch, roles, states, resources, callbacks,
 execution contexts, and CFG-feasible path/reachability queries remain open.
-Two narrow consumer-owned structural gold replays now
-exist for Nevergone and NFS SHIFT; broadly scoped semantic subsystem gold and
-M10 exit criteria remain open. See [graph evaluation replays](evidence/semantic-program-graph-evaluation/README.md).
+Narrow structural gold and projection audits now report 1.0 precision for
+55 accepted direct-call edges across five frozen subgraphs. Derived field
+edges remain review-only; broadly scoped semantic subsystem gold and the M10
+exit criteria remain open. See [graph evaluation replays](evidence/semantic-program-graph-evaluation/README.md).
 The deterministic graph selector and its three evidence views are documented in
 [Semantic program queries](SEMANTIC_PROGRAM_QUERIES.md), including the bounded
 direct-call path query. These call-graph paths do not establish CFG-feasible
@@ -88,5 +138,6 @@ execution reachability.
 Consumer-owned subgraphs can be scored with the scoped
 [`SemanticProgramGraphGold/1` evaluator](SEMANTIC_PROGRAM_GRAPH_EVALUATION.md).
 GT5 and the NFS call-path replay remain raw P-code projection audits.
-Nevergone and NFS M2.3 now provide narrow consumer-owned structural gold; they
-do not yet establish broad subsystem semantics or accepted-edge precision.
+Nevergone and NFS M2.3 now provide narrow consumer-owned structural gold;
+they do not yet establish broad subsystem semantics or accepted precision for
+derived field relations.

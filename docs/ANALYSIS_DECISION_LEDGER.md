@@ -7,6 +7,21 @@ and source artifact hash/record. The supported states are
 `accepted_exact`, `accepted_high_confidence`, `review_required`,
 `escalated_conflict`, `unsupported`, and `budget_exhausted`.
 
+`revenginstr-runtime-ledger` converts pair-scoped
+`RuntimeValueFlowReplay/1`, `RuntimeStaticCorrelation/1`, or
+`RuntimeIndirectCallCorrelation/1` reports into deterministic ledger events.
+Correlated runtime observations get per-observation claims and remain
+`review_required`: exact joins await human review, while unmatched or
+ambiguous joins carry `missing_evidence`. An observed target is not treated as
+an exhaustive target set and no event is automatically accepted.
+
+For either runtime correlation report:
+
+```sh
+revenginstr-runtime-ledger runtime-correlation.json \
+  --output decision-events.jsonl
+```
+
 Audit a consumer-owned ledger with:
 
 ```sh
