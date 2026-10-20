@@ -35,6 +35,7 @@ DIRECT_CALL_MEMORY_EFFECT_FORMAT = "REVENGINSTR.GhidraDirectCallMemoryEffect/1"
 DIRECT_CALL_MEMORY_EFFECT_CLOSURE_FORMAT = "REVENGINSTR.GhidraDirectCallMemoryEffectClosure/1"
 INTERPROCEDURAL_MEMORY_EFFECT_FORMAT = "REVENGINSTR.GhidraInterproceduralMemoryEffect/1"
 INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V2 = "REVENGINSTR.GhidraInterproceduralMemoryEffect/2"
+INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V3 = "REVENGINSTR.GhidraInterproceduralMemoryEffect/3"
 REACHING_CLAIM_SCOPE_V2 = (
     "Conservative single-function High-P-code structural candidate; only known different physical spaces "
     "and same-root non-overlapping byte ranges are excluded; no branch-feasibility or runtime value-flow claim."
@@ -1030,6 +1031,7 @@ def _index_interprocedural_memory_effects(
         "opcode", "callee_entry", "status", "effect_opcodes", "aliasing_store_record_indices",
         "non_aliasing_store_record_indices", "provenance",
     }
+    expected_fields_v3 = expected_fields | {"memory_range_summary"}
     provenance_fields = {
         "field_access_pair_graph_sha256", "field_access_pair_graph_record_index", "cfg_sha256",
         "memory_store_access_sha256", "memory_store_access_record_indices",
@@ -1059,15 +1061,25 @@ def _index_interprocedural_memory_effects(
     for record_index, fact in enumerate(records, 1):
         where = f"interprocedural memory effect record {record_index}"
         fact_format = fact.get("format") if isinstance(fact, dict) else None
+        expected_fields_for_format = (
+            expected_fields_v3
+            if fact_format == INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V3
+            else expected_fields
+        )
         expected_provenance = (
-            provenance_v2_fields if fact_format == INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V2
+            provenance_v2_fields if fact_format in {
+                INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V2,
+                INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V3,
+            }
             else provenance_fields
         )
         if (
             not isinstance(fact, dict)
-            or set(fact) != expected_fields
+            or set(fact) != expected_fields_for_format
             or fact_format not in {
-                INTERPROCEDURAL_MEMORY_EFFECT_FORMAT, INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V2,
+                INTERPROCEDURAL_MEMORY_EFFECT_FORMAT,
+                INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V2,
+                INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V3,
             }
         ):
             raise ValueError(f"{where}: unexpected format or fields")
@@ -1117,7 +1129,10 @@ def _index_interprocedural_memory_effects(
             or closure_entries != sorted(set(closure_entries))
         ):
             raise ValueError(f"{where}: invalid closure function entries")
-        if fact_format == INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V2:
+        if fact_format in {
+            INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V2,
+            INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V3,
+        }:
             link_cfg_indices = indices(
                 provenance["indirect_effect_link_cfg_record_indices"],
                 f"{where} INDIRECT link CFG records",
@@ -1166,6 +1181,80 @@ def _index_interprocedural_memory_effects(
             valid = opcode == "CALLIND" and callee_entry is None and not closure_entries and bool(unknown_ids)
         if not valid:
             raise ValueError(f"{where}: status and evidence disagree")
+
+        if fact_format == INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V3:
+            summary = fact["memory_range_summary"]
+            summary_fields = {
+                "model", "callee_name", "callee_entry", "destination_argument_index",
+                "length_argument_index", "caller_parameter_index", "destination_offset_bytes",
+                "length_bytes", "pointer_width_bytes", "tracked_field_offset_bytes",
+                "tracked_field_width_bytes", "range_disjoint",
+            }
+            if not isinstance(summary, dict) or set(summary) != summary_fields:
+                raise ValueError(f"{where}: invalid memory range summary fields")
+            if (
+                summary["model"] != "c_memset" or summary["callee_name"] != "_memset"
+                or summary["callee_entry"] != callee_entry
+                or summary["destination_argument_index"] != 0
+                or summary["length_argument_index"] != 2
+                or not isinstance(summary["range_disjoint"], bool)
+            ):
+                raise ValueError(f"{where}: unsupported memory range summary")
+            integer_fields = (
+                "caller_parameter_index", "destination_offset_bytes", "length_bytes",
+                "pointer_width_bytes", "tracked_field_offset_bytes", "tracked_field_width_bytes",
+            )
+            parsed_summary = {
+                key: _int(summary[key], f"{where} memory range {key}")
+                for key in integer_fields
+            }
+            if min(parsed_summary.values()) < 0 or parsed_summary["pointer_width_bytes"] < 1:
+                raise ValueError(f"{where}: invalid memory range summary geometry")
+            try:
+                pair_id = json.loads(fact["field_pair_id"])
+                store_id = (
+                    json.loads(pair_id[1])
+                    if isinstance(pair_id, list) and len(pair_id) == 3
+                    else None
+                )
+            except (json.JSONDecodeError, TypeError) as error:
+                raise ValueError(f"{where}: invalid field pair id for memory range summary") from error
+            if (
+                not isinstance(pair_id, list) or len(pair_id) != 3
+                or not isinstance(store_id, list) or len(store_id) < 6
+                or store_id[0] != fact["program_id"] or store_id[1] != fact["function_entry"]
+                or parsed_summary["caller_parameter_index"] != _int(store_id[4], f"{where} pair parameter")
+                or parsed_summary["tracked_field_offset_bytes"] != _int(store_id[5], f"{where} pair offset")
+            ):
+                raise ValueError(f"{where}: memory range summary does not match its field pair")
+            tracked_cfg = cfg_by_function.get((fact["program_id"], fact["function_entry"]))
+            if tracked_cfg is None:
+                raise ValueError(f"{where}: missing CFG for memory range summary")
+            tracked_detail = tracked_cfg[1]["operation_details"].get((store_id[2], _int(store_id[3], f"{where} pair time")))
+            if (
+                tracked_detail is None
+                or tracked_detail.get("memory_width_bytes") != parsed_summary["tracked_field_width_bytes"]
+                or tracked_detail.get("memory_pointer_width_bytes") != parsed_summary["pointer_width_bytes"]
+            ):
+                raise ValueError(f"{where}: memory range summary disagrees with tracked store geometry")
+            pointer_modulus = 1 << (8 * parsed_summary["pointer_width_bytes"])
+            destination = parsed_summary["destination_offset_bytes"]
+            length = parsed_summary["length_bytes"]
+            field_offset = parsed_summary["tracked_field_offset_bytes"]
+            field_width = parsed_summary["tracked_field_width_bytes"]
+            if (
+                field_width < 1 or destination + length > pointer_modulus
+                or field_offset + field_width > pointer_modulus
+            ):
+                raise ValueError(f"{where}: memory range summary exceeds pointer geometry")
+            actually_disjoint = (
+                length == 0 or destination + length <= field_offset
+                or field_offset + field_width <= destination
+            )
+            if summary["range_disjoint"] != actually_disjoint:
+                raise ValueError(f"{where}: memory range summary has an incorrect alias result")
+            if not unknown_ids and (status == "no_aliasing_memory_effect") != actually_disjoint:
+                raise ValueError(f"{where}: memory range summary and effect status disagree")
 
         function_key = (fact["program_id"], fact["function_entry"])
         cfg_item = cfg_by_function.get(function_key)

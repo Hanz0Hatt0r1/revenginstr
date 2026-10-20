@@ -1994,8 +1994,15 @@ destinations remain unresolved through `MULTIEQUAL`. `/2` therefore reports
 three `possible_aliasing_write` rows and proves no disjoint writes. Both
 dominance replays keep all three pairs at
 `possible_intervening_memory_effect`, despite the root STORE dominating each
-load. The exact base mapping does not recover byte offsets for these callee
-stores. The complete captures and byte-identical replay are in
+load. `/3` recognizes the standard `_memset` contract only with the direct
+callee name, exact destination root, constant width-matched length, and
+non-overflowing range. Its `[+0x98,+0xdc)` range is disjoint from the tracked
+`[+4,+8)` field, so all 13 implementation STORE facts are classified outside
+the call range and the dominance audit emits three
+`unique_cfg_store_candidate` rows. This is structural evidence only, with no
+runtime or value-flow claim. The `/2` baseline remains saved; the `/3` capture
+is byte-identical across repeated replay. Full inputs, outputs, and hashes are
+in
 [`field-store-load-shift-00a3dda0`](evidence/field-store-load-shift-00a3dda0/README.md).
 
 **Next:** continue bounded CFG/4 replays, especially for witnesses that cross

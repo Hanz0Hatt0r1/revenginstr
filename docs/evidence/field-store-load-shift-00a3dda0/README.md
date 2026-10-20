@@ -53,14 +53,24 @@ closure reports one `explicit_memory_write`; `/2` reports three
 `possible_aliasing_write` rows, each retaining all 13 unresolved callee STORE
 facts and proving zero non-aliasing writes. The exact `+0x98` argument root is
 therefore useful but not enough to assign byte offsets to the callee STOREs.
-Both dominance replays keep all three pairs at
-`possible_intervening_memory_effect`, even though the root STORE dominates
-each load. No unique candidate is promoted.
-
-The analyzer replay was run twice from the frozen inputs. Both
-`interprocedural-memory-effects.jsonl` outputs were byte-identical to each
-other and to the saved output (SHA-256
+That `/2` replay remains the conservative baseline (SHA-256
 `cb8263dc974ece07b8b88bc9010a53153b67746469c6a3779109a93a06d74ab4`).
+
+`/3` adds a narrow standard `_memset` range model. It is used only for a direct
+`_memset` call with three arguments, an exact caller-root mapping for argument
+0, and a constant argument 2 whose width matches the pointer width. The
+non-overflowing call range is `[param0+0x98,param0+0xdc)`, disjoint from the
+tracked field `[param0+4,param0+8)`. `/3` retains the 13 implementation STORE
+facts but classifies them outside that call range, yielding three
+`no_aliasing_memory_effect` rows. The dominance audit promotes all three pairs
+to `unique_cfg_store_candidate`. This remains a structural CFG result; it does
+not establish runtime execution or value flow. Two `/3` analyzer replays were
+byte-identical (SHA-256
+`cf3f13a9a2e19c71d5fbe12549d54ec5aa0b569100ee4682fee33c9cf6f788a8`), and the
+updated dominance output has SHA-256
+`59835d0bcd5801c59065d49641c8eab484a3cf259bce128e1b2f5a061fa949a1`.
+The fallback `/2` replay on `00689db0` remains byte-identical to its saved
+output, so the model does not affect other calls.
 
 ## Reproduce the capture
 
@@ -143,7 +153,7 @@ uv run --project . revenginstr-interprocedural-memory-effects \
   --pcode-flow 009015b0 "$CAPTURE/callee-pcode-flow/009015b0.tsv" \
   --pcode-flow 0090e50d "$CAPTURE/callee-pcode-flow/0090e50d.tsv" \
   --pcode-flow 0090e4b6 "$CAPTURE/callee-pcode-flow/0090e4b6.tsv" \
-  --output "$REPLAY/interprocedural-memory-effects.jsonl"
+  --output "$REPLAY/interprocedural-memory-effects-v3.jsonl"
 uv run --project . revenginstr-receiver-field-store-load-dominance-audit \
   "$REPLAY/field-access-pairs.jsonl" "$CAPTURE/function-pcode-cfg-v4.jsonl" \
   --memory-store-access-jsonl "$REPLAY/memory-store-access-closure.jsonl" \
@@ -152,15 +162,22 @@ uv run --project . revenginstr-receiver-field-store-load-dominance-audit \
 uv run --project . revenginstr-receiver-field-store-load-dominance-audit \
   "$REPLAY/field-access-pairs.jsonl" "$CAPTURE/function-pcode-cfg-v4.jsonl" \
   --memory-store-access-jsonl "$REPLAY/memory-store-access-closure.jsonl" \
-  --interprocedural-memory-effect-jsonl "$REPLAY/interprocedural-memory-effects.jsonl" \
-  --output "$REPLAY/dominance-with-interprocedural-effects.jsonl"
+  --interprocedural-memory-effect-jsonl "$REPLAY/interprocedural-memory-effects-v3.jsonl" \
+  --output "$REPLAY/dominance-with-memory-range-v3.jsonl"
 
 for name in field-access-pairs path-audit direct-call-memory-effect-closure \
-  interprocedural-memory-effects dominance-with-call-closure \
-  dominance-with-interprocedural-effects; do
+  dominance-with-call-closure; do
   cmp "$REPLAY/$name.jsonl" "$CAPTURE/$name.jsonl"
 done
+cmp "$REPLAY/interprocedural-memory-effects-v3.jsonl" \
+  "$CAPTURE/interprocedural-memory-effects-v3.jsonl"
+cmp "$REPLAY/dominance-with-memory-range-v3.jsonl" \
+  "$CAPTURE/dominance-with-memory-range-v3.jsonl"
 ```
+
+The committed `/2` interprocedural and dominance files are the pre-model
+baseline. Reproducing them requires the earlier analyzer version; the commands
+above reproduce the current `/3` result.
 
 ## Key hashes
 
@@ -177,5 +194,7 @@ done
 | Path audit | `419ebbb53bb2683bb48f46fd5d0e38ac5e38dc48e3d9aba5323d1bdb33b18496` |
 | Direct-call effect closure | `a187f626795dbee77053a7bee4b6f8eccb5a385adaeb45e6aca719d1a268bacf` |
 | Interprocedural memory effects/2 | `cb8263dc974ece07b8b88bc9010a53153b67746469c6a3779109a93a06d74ab4` |
+| Interprocedural memory effects/3 | `cf3f13a9a2e19c71d5fbe12549d54ec5aa0b569100ee4682fee33c9cf6f788a8` |
 | Dominance with direct closure | `31c6fa894d52ef59eb03339a26c6c72ccfb2c5dd57b34c9cdaa4d6ada7bd0c99` |
-| Dominance with interprocedural effects | `4b64419d36111a6525c4747bb22d268713c7f196564c3ce12db3e212b15c2f4d` |
+| Dominance with interprocedural effects/2 | `4b64419d36111a6525c4747bb22d268713c7f196564c3ce12db3e212b15c2f4d` |
+| Dominance with memory range/3 | `59835d0bcd5801c59065d49641c8eab484a3cf259bce128e1b2f5a061fa949a1` |

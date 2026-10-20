@@ -23,6 +23,7 @@ from .field_flow import (
 
 FORMAT = "REVENGINSTR.GhidraInterproceduralMemoryEffect/1"
 FORMAT_V2 = "REVENGINSTR.GhidraInterproceduralMemoryEffect/2"
+FORMAT_V3 = "REVENGINSTR.GhidraInterproceduralMemoryEffect/3"
 PARAMETER_ROOT_FORMAT = "REVENGINSTR.GhidraCallerArgumentParameterRoot/1"
 PARAMETER_OFFSET_ROOT_FORMAT = "REVENGINSTR.GhidraCallerArgumentParameterRoot/2"
 PARAMETER_ROOT_V1_HEADER = (
@@ -134,6 +135,74 @@ def _call_arguments(row: dict[str, str]) -> list[str]:
     if any(not value for value in arguments):
         raise ValueError("P-code CALL has an empty argument token")
     return arguments
+
+
+def _constant_argument(token: str) -> tuple[int, int] | None:
+    parts = token.split(":")
+    if len(parts) != 3 or parts[0] != "const" or not parts[1].startswith("0x"):
+        return None
+    digits, raw_width = parts[1][2:], parts[2]
+    if not digits or any(character not in "0123456789abcdef" for character in digits):
+        return None
+    if not raw_width.isascii() or not raw_width.isdecimal():
+        return None
+    value, width = int(digits, 16), int(raw_width)
+    if width < 1 or f"const:0x{value:x}:{width}" != token:
+        return None
+    return value, width
+
+
+def _memset_range_summary(
+    call: dict[str, str], call_index: int, caller_entry: str, target: str | None,
+    root_mappings: dict[tuple[str, str, int, str, int], tuple[int, int, int]],
+    identity: dict[str, Any], tracked_access: dict[str, Any],
+) -> dict[str, Any] | None:
+    # Only the standard three-argument _memset contract can justify this range.
+    if target is None or call["callee_name"] != "_memset":
+        return None
+    arguments = _call_arguments(call)
+    if len(arguments) != 3:
+        return None
+    mapping = root_mappings.get((
+        caller_entry, call["op_address"], call_index, target, 0,
+    ))
+    length = _constant_argument(arguments[2])
+    pointer_width = tracked_access["memory_pointer_width_bytes"]
+    if (
+        mapping is None or mapping[0] != identity["parameter_index"]
+        or length is None or pointer_width is None or length[1] != pointer_width
+    ):
+        return None
+    destination_offset = mapping[1]
+    length_bytes = length[0]
+    field_offset = identity["field_offset"]
+    field_width = tracked_access["memory_width_bytes"]
+    pointer_modulus = 1 << (8 * pointer_width)
+    if (
+        destination_offset < 0 or field_offset < 0 or field_width is None or field_width < 1
+        or destination_offset + length_bytes > pointer_modulus
+        or field_offset + field_width > pointer_modulus
+    ):
+        return None
+    range_disjoint = (
+        length_bytes == 0
+        or destination_offset + length_bytes <= field_offset
+        or field_offset + field_width <= destination_offset
+    )
+    return {
+        "model": "c_memset",
+        "callee_name": "_memset",
+        "callee_entry": target,
+        "destination_argument_index": 0,
+        "length_argument_index": 2,
+        "caller_parameter_index": mapping[0],
+        "destination_offset_bytes": destination_offset,
+        "length_bytes": length_bytes,
+        "pointer_width_bytes": pointer_width,
+        "tracked_field_offset_bytes": field_offset,
+        "tracked_field_width_bytes": field_width,
+        "range_disjoint": range_disjoint,
+    }
 
 
 def _resolved_indirect_source(
@@ -278,6 +347,13 @@ def build_interprocedural_memory_effects(
             alias_indices: set[int] = set()
             root_record_indices: set[int] = set()
             pair_comparisons = 0
+            memory_range_summary = (
+                _memset_range_summary(
+                    call, caller_row_index, caller_entry, target, root_mappings,
+                    identity, tracked_access,
+                )
+                if opcode == "CALL" and target in flows else None
+            )
             if opcode == "CALLIND":
                 status = "indirect_call"
                 unknown_ids.add(f"{caller_entry}:{address}:{time}:CALLIND")
@@ -446,42 +522,56 @@ def build_interprocedural_memory_effects(
                             if unknown:
                                 parameter_unknown[callee_entry][parameter] = True
                                 changed = True
-                for function_entry, store_index, fact in stores:
-                    root_parameter = fact["root_parameter_index"]
-                    offsets = (
-                        parameter_offsets[function_entry][root_parameter]
-                        if root_parameter is not None and root_parameter < len(parameter_offsets[function_entry])
-                        else set()
-                    )
-                    exact_root = bool(offsets) and not parameter_unknown[function_entry][root_parameter] \
-                        and not parameter_offset_overflow[function_entry][root_parameter]
-                    may_alias = not exact_root
-                    for base_offset in offsets if exact_root else ():
+                if memory_range_summary is not None:
+                    for _, store_index, _ in stores:
                         comparisons += 1
                         pair_comparisons += 1
                         if comparisons > max_memory_comparisons:
                             raise ValueError(f"memory access comparison budget exceeded: {max_memory_comparisons}")
-                        comparable_write = dict(fact)
-                        comparable_write["root_parameter_index"] = identity["parameter_index"]
-                        comparable_write["offset_bytes"] = fact["offset_bytes"] + base_offset
-                        reason = _memory_store_non_alias_reason(
-                            tracked_access, comparable_write,
-                            parameter_index=identity["parameter_index"],
-                            field_offset=identity["field_offset"],
-                            field_width=tracked_access["memory_width_bytes"],
+                        if memory_range_summary["range_disjoint"]:
+                            non_alias_indices.add(store_index)
+                        else:
+                            alias_indices.add(store_index)
+                    if memory_range_summary["length_bytes"] and not stores:
+                        unknown_ids.add(f"{target}:memset:missing_store_facts")
+                        effect_opcodes.add("STORE")
+                else:
+                    for function_entry, store_index, fact in stores:
+                        root_parameter = fact["root_parameter_index"]
+                        offsets = (
+                            parameter_offsets[function_entry][root_parameter]
+                            if root_parameter is not None and root_parameter < len(parameter_offsets[function_entry])
+                            else set()
                         )
-                        if reason is None:
-                            may_alias = True
-                            break
-                    if not exact_root:
-                        comparisons += 1
-                        pair_comparisons += 1
-                        if comparisons > max_memory_comparisons:
-                            raise ValueError(f"memory access comparison budget exceeded: {max_memory_comparisons}")
-                    if may_alias:
-                        alias_indices.add(store_index)
-                    else:
-                        non_alias_indices.add(store_index)
+                        exact_root = bool(offsets) and not parameter_unknown[function_entry][root_parameter] \
+                            and not parameter_offset_overflow[function_entry][root_parameter]
+                        may_alias = not exact_root
+                        for base_offset in offsets if exact_root else ():
+                            comparisons += 1
+                            pair_comparisons += 1
+                            if comparisons > max_memory_comparisons:
+                                raise ValueError(f"memory access comparison budget exceeded: {max_memory_comparisons}")
+                            comparable_write = dict(fact)
+                            comparable_write["root_parameter_index"] = identity["parameter_index"]
+                            comparable_write["offset_bytes"] = fact["offset_bytes"] + base_offset
+                            reason = _memory_store_non_alias_reason(
+                                tracked_access, comparable_write,
+                                parameter_index=identity["parameter_index"],
+                                field_offset=identity["field_offset"],
+                                field_width=tracked_access["memory_width_bytes"],
+                            )
+                            if reason is None:
+                                may_alias = True
+                                break
+                        if not exact_root:
+                            comparisons += 1
+                            pair_comparisons += 1
+                            if comparisons > max_memory_comparisons:
+                                raise ValueError(f"memory access comparison budget exceeded: {max_memory_comparisons}")
+                        if may_alias:
+                            alias_indices.add(store_index)
+                        else:
+                            non_alias_indices.add(store_index)
 
                 if unknown_ids:
                     status = "unknown_effect"
@@ -511,13 +601,15 @@ def build_interprocedural_memory_effects(
                     "non_aliasing_store_record_indices": sorted(non_alias_indices),
                     "unknown_operation_ids": sorted(unknown_ids),
                 }
+                if memory_range_summary is not None:
+                    closure_payload["memory_range_summary"] = memory_range_summary
                 if indirect_links_enabled:
                     closure_payload["indirect_effect_link_cfg_record_indices"] = indirect_link_cfg_record_indices
                 closure_sha = _hash_json(closure_payload)
             if len(output) >= max_effect_rows:
                 raise ValueError(f"interprocedural effect row budget exceeded: {max_effect_rows}")
-            output.append({
-                "format": FORMAT_V2 if indirect_links_enabled else FORMAT,
+            output_row = {
+                "format": FORMAT_V3 if memory_range_summary is not None else FORMAT_V2 if indirect_links_enabled else FORMAT,
                 "program_id": program_id,
                 "function_entry": caller_entry,
                 "field_pair_id": graph["graph_id"],
@@ -546,9 +638,12 @@ def build_interprocedural_memory_effects(
                     "unknown_operation_ids": sorted(unknown_ids),
                     "memory_access_comparisons": pair_comparisons,
                     **({"indirect_effect_link_cfg_record_indices": indirect_link_cfg_record_indices}
-                       if indirect_links_enabled else {}),
+                       if indirect_links_enabled or memory_range_summary is not None else {}),
                 },
-            })
+            }
+            if memory_range_summary is not None:
+                output_row["memory_range_summary"] = memory_range_summary
+            output.append(output_row)
 
     unused = set(flows) - used_flows
     if unused:
