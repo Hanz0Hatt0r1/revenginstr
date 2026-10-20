@@ -186,7 +186,14 @@ dominance `/7` moves the targeted pair from
 call-site rows retain their missing-flow and possible-alias barriers; the
 result does not establish runtime execution or memory value flow. See
 [`field-store-load-shift-0041dd40`](evidence/field-store-load-shift-0041dd40/README.md)
-for the frozen inputs, outputs, and hashes.
+for the frozen inputs, outputs, and hashes. The adjacent five-pair screen
+finds exact `param0+0x7b0` roots at all five direct calls, but four closures
+reach `0088d1d0`, where three possibly aliasing STOREs and 24 unexported direct
+calls keep those pairs conservative. Its nested argument export finds one
+exact root at `0088d550@0088d5af`; the other four `0088d1d0` call sites have no
+exact root. The screen retains these barriers and promotes only the complete
+`0088bc20` case; see
+[`call-series-screen`](evidence/field-store-load-shift-0041dd40/call-series-screen/README.md).
 
 `GhidraInterproceduralMemoryEffect/2` adds source-linked `INDIRECT` handling
 from CFG/4. `/3` additionally models the standard three-argument `_memset`

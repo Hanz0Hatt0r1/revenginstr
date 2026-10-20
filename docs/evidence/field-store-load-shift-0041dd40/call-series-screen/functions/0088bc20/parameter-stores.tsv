@@ -1,0 +1,2 @@
+format	function_entry	function_name	store_address	store_time	destination_parameter_index	destination_offset	destination_pattern	source_parameter_index	value_size	status
+REVENGINSTR.GhidraParameterStoreField/1	0088bc20	FUN_0088bc20	0088bc2a	35	0	0x670	int_add	1	4	parameter_to_parameter_field

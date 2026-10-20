@@ -2036,8 +2036,22 @@ establish branch feasibility, runtime execution, or memory reaching-definition.
 The full capture and hashes are in
 [`field-store-load-shift-0041dd40`](evidence/field-store-load-shift-0041dd40/README.md).
 
-**Next:** expand positive CFG/4 replays to other call targets and caller-root
-shapes, while retaining fail-closed behavior for incomplete closures such as
-`0064bb70`. Prove byte-range disjointness only from exact roots and memory
-facts; do not infer alias facts from decompiler text or instruction-level
-corpus labels.
+An expanded screen covered five adjacent store/call/load pairs in the same
+function. Parameter ID recovered exact `param0+0x7b0` roots for all five
+callers. The four `0088d550`/`d5d0`/`d620`/`d670` closures contain direct stores
+whose mapped ranges are disjoint, but all reach `0088d1d0`; only one of its
+five call sites has an exact incoming parameter root, and the callee has three
+potentially aliasing STOREs plus 24 direct calls without exported flows.
+Those four pairs therefore remain `possible_intervening_memory_effect`. The
+`0088bc20` closure has two complete disjoint STOREs and no unknown operations;
+its `+0x1240` pair is the only additional
+`unique_cfg_store_candidate`. This screen confirms that exact top-level roots
+alone do not justify filtering an incomplete nested closure. Its inputs,
+outputs, and hashes are in
+[`call-series-screen`](evidence/field-store-load-shift-0041dd40/call-series-screen/README.md).
+
+**Next:** investigate whether the four `0088d1d0` call sites can be rooted
+through their loaded arguments without assuming memory value flow. Keep the
+current fail-closed results until such roots and the 24 nested callee flows
+are exact. Continue other positive CFG/4 replays, and retain incomplete
+closures such as `0064bb70` as barriers.

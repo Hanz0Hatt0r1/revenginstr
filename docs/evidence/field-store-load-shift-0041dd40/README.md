@@ -67,3 +67,6 @@ This validates the single-function, memory-only store boundary. A separate
 Parameter ID replay checks one positive interprocedural call-effect case using
 fresh caller roots and callee memory facts; see
 [`interprocedural-parameter-id-capture`](interprocedural-parameter-id-capture/README.md).
+A follow-up screen covers five adjacent call/pair sites; only the complete
+`0088bc20` closure promotes, while four nested `0088d1d0` closures remain
+conservative. See [`call-series-screen`](call-series-screen/README.md).
