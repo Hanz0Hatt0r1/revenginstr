@@ -1388,11 +1388,13 @@ uncertainty thresholds; one bounded consumer receipt is required per planned
 request, including incomplete attempts. The evaluator reports planned cost
 units, actual steps and elapsed time, completion and decisive rates,
 uncertainty reduction, unlocked decision IDs and disagreement with known
-static predictions. It rejects resource overruns and does not run probes.
-The synthetic Nevergone-shaped fixture checks metric arithmetic only. The
-evaluator cannot authenticate caller predictions or prove the unresolved set
-was frozen before capture; actual device results and frozen-set measurements
-remain open. See [`runtime probe evaluation`](RUNTIME_PROBE_EVALUATION.md).
+static predictions. It rejects resource overruns, verifies the exact candidate
+file hash, reproduces deterministic planner selection, and does not run probes.
+The synthetic Nevergone-shaped fixture checks metric arithmetic and planner
+reproduction only. The evaluator cannot authenticate caller predictions or
+prove the unresolved set was frozen before capture; actual device results and
+frozen-set measurements remain open. See
+[`runtime probe evaluation`](RUNTIME_PROBE_EVALUATION.md).
 
 ## Exit criteria
 
