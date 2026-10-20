@@ -11,9 +11,15 @@ from typing import Any
 
 from revenginstr.pcode.opcodes import NO_EXPLICIT_MEMORY_WRITE_OPCODES
 from .provenance import FORMAT as GRAPH_FORMAT
-from .provenance import PARAMETER_LOAD_FORMAT, PARAMETER_STORE_FORMAT, validate_graph_references
+from .provenance import (
+    MEMORY_STORE_ACCESS_FORMAT,
+    PARAMETER_LOAD_FORMAT,
+    PARAMETER_STORE_FORMAT,
+    validate_graph_references,
+)
 
 FORMAT = "REVENGINSTR.FieldStoreLoadPathAudit/1"
+FORMAT_V2 = "REVENGINSTR.FieldStoreLoadPathAudit/2"
 CFG_FORMAT = "REVENGINSTR.GhidraFunctionPcodeCFG/1"
 CFG_FORMAT_V2 = "REVENGINSTR.GhidraFunctionPcodeCFG/2"
 CFG_FORMAT_V3 = "REVENGINSTR.GhidraFunctionPcodeCFG/3"
@@ -24,11 +30,12 @@ REACHING_FORMAT_V3 = "REVENGINSTR.FieldStoreLoadDominanceAudit/3"
 REACHING_FORMAT_V4 = "REVENGINSTR.FieldStoreLoadDominanceAudit/4"
 REACHING_FORMAT_V5 = "REVENGINSTR.FieldStoreLoadDominanceAudit/5"
 REACHING_FORMAT_V6 = "REVENGINSTR.FieldStoreLoadDominanceAudit/6"
-MEMORY_STORE_ACCESS_FORMAT = "REVENGINSTR.GhidraMemoryStoreAccess/1"
+REACHING_FORMAT_V7 = "REVENGINSTR.FieldStoreLoadDominanceAudit/7"
 DIRECT_CALL_MEMORY_EFFECT_FORMAT = "REVENGINSTR.GhidraDirectCallMemoryEffect/1"
 DIRECT_CALL_MEMORY_EFFECT_CLOSURE_FORMAT = "REVENGINSTR.GhidraDirectCallMemoryEffectClosure/1"
 INTERPROCEDURAL_MEMORY_EFFECT_FORMAT = "REVENGINSTR.GhidraInterproceduralMemoryEffect/1"
 INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V2 = "REVENGINSTR.GhidraInterproceduralMemoryEffect/2"
+INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V3 = "REVENGINSTR.GhidraInterproceduralMemoryEffect/3"
 REACHING_CLAIM_SCOPE_V2 = (
     "Conservative single-function High-P-code structural candidate; only known different physical spaces "
     "and same-root non-overlapping byte ranges are excluded; no branch-feasibility or runtime value-flow claim."
@@ -53,6 +60,12 @@ REACHING_CLAIM_SCOPE_V6 = (
     "Conservative single-function High-P-code structural candidate; source-linked INDIRECT markers are counted "
     "with their exact source operation and ignored only when that operation is classified harmless; direct calls "
     "remain barriers without complete effect evidence; no branch-feasibility or runtime value-flow claim."
+)
+REACHING_CLAIM_SCOPE_V7 = (
+    "Conservative single-function High-P-code structural candidate; field-store destinations may be linked "
+    "to GhidraMemoryStoreAccess/1 without a recovered source-parameter claim; source-linked INDIRECT markers "
+    "are counted with their exact source operation and ignored only when that operation is classified harmless; "
+    "direct calls remain barriers without complete effect evidence; no branch-feasibility or runtime value-flow claim."
 )
 HAZARD_OPCODES = {"STORE", "CALL", "CALLIND", "CALLOTHER"}
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -93,15 +106,19 @@ def _parse_source_id(value: Any, source_format: str, where: str) -> list[Any]:
         key = json.loads(value)
     except json.JSONDecodeError as error:
         raise ValueError(f"{where}: invalid source id") from error
-    if not isinstance(key, list) or len(key) != 7:
+    expected_length = 6 if source_format == MEMORY_STORE_ACCESS_FORMAT else 7
+    if not isinstance(key, list) or len(key) != expected_length:
         raise ValueError(f"{where}: unexpected source identity")
     if any(not isinstance(key[index], str) or not key[index] for index in (0, 1, 2)):
         raise ValueError(f"{where}: invalid program/function/address identity")
-    _int(key[3], f"{where} operation time", nullable=True)
+    _int(key[3], f"{where} operation time", nullable=source_format != MEMORY_STORE_ACCESS_FORMAT)
     _int(key[4], f"{where} parameter index")
     if not isinstance(key[5], int) or isinstance(key[5], bool):
         raise ValueError(f"{where}: invalid field offset")
-    if source_format == PARAMETER_STORE_FORMAT:
+    if source_format == MEMORY_STORE_ACCESS_FORMAT:
+        if key[3] is None:
+            raise ValueError(f"{where}: memory store operation time is required")
+    elif source_format == PARAMETER_STORE_FORMAT:
         _int(key[6], f"{where} source parameter index")
     elif not isinstance(key[6], str) or not key[6]:
         raise ValueError(f"{where}: invalid load value token")
@@ -131,7 +148,7 @@ def _pair_identity(graph: dict[str, Any], row: int) -> dict[str, Any]:
     store_refs = [
         provenance for edge in edges if edge.get("relation") == "field_store"
         for provenance in edge.get("provenance", [])
-        if provenance.get("source_format") == PARAMETER_STORE_FORMAT
+        if provenance.get("source_format") in {PARAMETER_STORE_FORMAT, MEMORY_STORE_ACCESS_FORMAT}
     ]
     load_refs = [
         provenance for edge in edges if edge.get("relation") == "field_load"
@@ -141,7 +158,8 @@ def _pair_identity(graph: dict[str, Any], row: int) -> dict[str, Any]:
     if len(store_refs) != 1 or len(load_refs) != 1:
         raise ValueError(f"{where}: expected one field-store and one field-load reference")
     store_id, load_id = store_refs[0].get("source_id"), load_refs[0].get("source_id")
-    store_key = _parse_source_id(store_id, PARAMETER_STORE_FORMAT, f"{where} store")
+    store_source_format = store_refs[0].get("source_format")
+    store_key = _parse_source_id(store_id, store_source_format, f"{where} store")
     load_key = _parse_source_id(load_id, PARAMETER_LOAD_FORMAT, f"{where} load")
     try:
         graph_id = json.loads(graph["graph_id"])
@@ -161,7 +179,8 @@ def _pair_identity(graph: dict[str, Any], row: int) -> dict[str, Any]:
         "function_entry": store_key[1],
         "parameter_index": store_key[4],
         "field_offset": store_key[5],
-        "source_parameter_index": store_key[6],
+        "source_parameter_index": store_key[6] if store_source_format == PARAMETER_STORE_FORMAT else None,
+        "store_source_format": store_source_format,
         "store_address": store_key[2],
         "store_time": store_key[3],
         "load_address": load_key[2],
@@ -827,7 +846,7 @@ def audit_field_store_load_paths(
                     status = "intervening_store_or_call"
                     path = any_path
         output.append({
-            "format": FORMAT,
+            "format": FORMAT_V2 if identity["source_parameter_index"] is None else FORMAT,
             "program_id": identity["program_id"],
             "function_entry": function_entry,
             "parameter_index": identity["parameter_index"],
@@ -1012,6 +1031,7 @@ def _index_interprocedural_memory_effects(
         "opcode", "callee_entry", "status", "effect_opcodes", "aliasing_store_record_indices",
         "non_aliasing_store_record_indices", "provenance",
     }
+    expected_fields_v3 = expected_fields | {"memory_range_summary"}
     provenance_fields = {
         "field_access_pair_graph_sha256", "field_access_pair_graph_record_index", "cfg_sha256",
         "memory_store_access_sha256", "memory_store_access_record_indices",
@@ -1041,15 +1061,25 @@ def _index_interprocedural_memory_effects(
     for record_index, fact in enumerate(records, 1):
         where = f"interprocedural memory effect record {record_index}"
         fact_format = fact.get("format") if isinstance(fact, dict) else None
+        expected_fields_for_format = (
+            expected_fields_v3
+            if fact_format == INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V3
+            else expected_fields
+        )
         expected_provenance = (
-            provenance_v2_fields if fact_format == INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V2
+            provenance_v2_fields if fact_format in {
+                INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V2,
+                INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V3,
+            }
             else provenance_fields
         )
         if (
             not isinstance(fact, dict)
-            or set(fact) != expected_fields
+            or set(fact) != expected_fields_for_format
             or fact_format not in {
-                INTERPROCEDURAL_MEMORY_EFFECT_FORMAT, INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V2,
+                INTERPROCEDURAL_MEMORY_EFFECT_FORMAT,
+                INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V2,
+                INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V3,
             }
         ):
             raise ValueError(f"{where}: unexpected format or fields")
@@ -1099,7 +1129,10 @@ def _index_interprocedural_memory_effects(
             or closure_entries != sorted(set(closure_entries))
         ):
             raise ValueError(f"{where}: invalid closure function entries")
-        if fact_format == INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V2:
+        if fact_format in {
+            INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V2,
+            INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V3,
+        }:
             link_cfg_indices = indices(
                 provenance["indirect_effect_link_cfg_record_indices"],
                 f"{where} INDIRECT link CFG records",
@@ -1148,6 +1181,80 @@ def _index_interprocedural_memory_effects(
             valid = opcode == "CALLIND" and callee_entry is None and not closure_entries and bool(unknown_ids)
         if not valid:
             raise ValueError(f"{where}: status and evidence disagree")
+
+        if fact_format == INTERPROCEDURAL_MEMORY_EFFECT_FORMAT_V3:
+            summary = fact["memory_range_summary"]
+            summary_fields = {
+                "model", "callee_name", "callee_entry", "destination_argument_index",
+                "length_argument_index", "caller_parameter_index", "destination_offset_bytes",
+                "length_bytes", "pointer_width_bytes", "tracked_field_offset_bytes",
+                "tracked_field_width_bytes", "range_disjoint",
+            }
+            if not isinstance(summary, dict) or set(summary) != summary_fields:
+                raise ValueError(f"{where}: invalid memory range summary fields")
+            if (
+                summary["model"] != "c_memset" or summary["callee_name"] != "_memset"
+                or summary["callee_entry"] != callee_entry
+                or summary["destination_argument_index"] != 0
+                or summary["length_argument_index"] != 2
+                or not isinstance(summary["range_disjoint"], bool)
+            ):
+                raise ValueError(f"{where}: unsupported memory range summary")
+            integer_fields = (
+                "caller_parameter_index", "destination_offset_bytes", "length_bytes",
+                "pointer_width_bytes", "tracked_field_offset_bytes", "tracked_field_width_bytes",
+            )
+            parsed_summary = {
+                key: _int(summary[key], f"{where} memory range {key}")
+                for key in integer_fields
+            }
+            if min(parsed_summary.values()) < 0 or parsed_summary["pointer_width_bytes"] < 1:
+                raise ValueError(f"{where}: invalid memory range summary geometry")
+            try:
+                pair_id = json.loads(fact["field_pair_id"])
+                store_id = (
+                    json.loads(pair_id[1])
+                    if isinstance(pair_id, list) and len(pair_id) == 3
+                    else None
+                )
+            except (json.JSONDecodeError, TypeError) as error:
+                raise ValueError(f"{where}: invalid field pair id for memory range summary") from error
+            if (
+                not isinstance(pair_id, list) or len(pair_id) != 3
+                or not isinstance(store_id, list) or len(store_id) < 6
+                or store_id[0] != fact["program_id"] or store_id[1] != fact["function_entry"]
+                or parsed_summary["caller_parameter_index"] != _int(store_id[4], f"{where} pair parameter")
+                or parsed_summary["tracked_field_offset_bytes"] != _int(store_id[5], f"{where} pair offset")
+            ):
+                raise ValueError(f"{where}: memory range summary does not match its field pair")
+            tracked_cfg = cfg_by_function.get((fact["program_id"], fact["function_entry"]))
+            if tracked_cfg is None:
+                raise ValueError(f"{where}: missing CFG for memory range summary")
+            tracked_detail = tracked_cfg[1]["operation_details"].get((store_id[2], _int(store_id[3], f"{where} pair time")))
+            if (
+                tracked_detail is None
+                or tracked_detail.get("memory_width_bytes") != parsed_summary["tracked_field_width_bytes"]
+                or tracked_detail.get("memory_pointer_width_bytes") != parsed_summary["pointer_width_bytes"]
+            ):
+                raise ValueError(f"{where}: memory range summary disagrees with tracked store geometry")
+            pointer_modulus = 1 << (8 * parsed_summary["pointer_width_bytes"])
+            destination = parsed_summary["destination_offset_bytes"]
+            length = parsed_summary["length_bytes"]
+            field_offset = parsed_summary["tracked_field_offset_bytes"]
+            field_width = parsed_summary["tracked_field_width_bytes"]
+            if (
+                field_width < 1 or destination + length > pointer_modulus
+                or field_offset + field_width > pointer_modulus
+            ):
+                raise ValueError(f"{where}: memory range summary exceeds pointer geometry")
+            actually_disjoint = (
+                length == 0 or destination + length <= field_offset
+                or field_offset + field_width <= destination
+            )
+            if summary["range_disjoint"] != actually_disjoint:
+                raise ValueError(f"{where}: memory range summary has an incorrect alias result")
+            if not unknown_ids and (status == "no_aliasing_memory_effect") != actually_disjoint:
+                raise ValueError(f"{where}: memory range summary and effect status disagree")
 
         function_key = (fact["program_id"], fact["function_entry"])
         cfg_item = cfg_by_function.get(function_key)
@@ -1369,6 +1476,7 @@ def audit_field_store_load_dominance(
         non_alias_store_locations: set[tuple[str, int]] = set()
         candidate_access_fact = None
         candidate_access_complete = not access_facts_enabled
+        memory_store_source_verified = identity["store_source_format"] != MEMORY_STORE_ACCESS_FORMAT
         if access_facts_enabled and store_location is not None and identity["store_time"] is not None:
             candidate_access_fact = memory_access_by_operation.get((
                 identity["program_id"], identity["function_entry"],
@@ -1388,6 +1496,7 @@ def audit_field_store_load_dominance(
                 ):
                     raise ValueError(f"field-access pair {pair_index}: paired accesses disagree on CFG/3 space metadata")
                 candidate_access_complete = True
+                memory_store_source_verified = True
                 for (address, operation_time), operation_location in cfg["operations"].items():
                     if operation_location[2] != "STORE" or (address, operation_time) == (
                         identity["store_address"], identity["store_time"],
@@ -1421,7 +1530,7 @@ def audit_field_store_load_dominance(
             status = "incomplete_evidence"
         elif store_memory_space != load_memory_space or store_width != load_width:
             status = "access_shape_mismatch"
-        elif access_facts_enabled and not candidate_access_complete:
+        elif (access_facts_enabled and not candidate_access_complete) or not memory_store_source_verified:
             status = "incomplete_evidence"
         else:
             budget = max_path_expansions - path_expansions
@@ -1483,7 +1592,8 @@ def audit_field_store_load_dominance(
 
         result = {
             "format": (
-                REACHING_FORMAT_V6 if indirect_effect_links_enabled
+                REACHING_FORMAT_V7 if identity["source_parameter_index"] is None
+                else REACHING_FORMAT_V6 if indirect_effect_links_enabled
                 else REACHING_FORMAT_V5 if interprocedural_effects_enabled
                 else REACHING_FORMAT_V4 if call_effect_closures_enabled
                 else REACHING_FORMAT_V3 if direct_call_effects_enabled
@@ -1511,7 +1621,8 @@ def audit_field_store_load_dominance(
                 "memory_effect_store_to_load": effect_after_store or [],
             },
             "claim_scope": (
-                REACHING_CLAIM_SCOPE_V6 if indirect_effect_links_enabled
+                REACHING_CLAIM_SCOPE_V7 if identity["source_parameter_index"] is None
+                else REACHING_CLAIM_SCOPE_V6 if indirect_effect_links_enabled
                 else REACHING_CLAIM_SCOPE_V5 if interprocedural_effects_enabled
                 else REACHING_CLAIM_SCOPE_V4 if call_effect_closures_enabled
                 else REACHING_CLAIM_SCOPE_V3 if direct_call_effects_enabled

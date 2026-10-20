@@ -1,0 +1,284 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/field-store-load-dominance-audit-v7.schema.json",
+  "title": "REVENGINSTR.FieldStoreLoadDominanceAudit/7 JSONL row",
+  "description": "All-path CFG candidate with optional memory and call-effect evidence; supports destination-rooted stores without a recovered source-parameter claim.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "program_id",
+    "function_entry",
+    "parameter_index",
+    "field_offset",
+    "source_parameter_index",
+    "status",
+    "store",
+    "load",
+    "store_reachable_from_entry",
+    "store_dominates_load",
+    "clean_store_to_load_path_exists",
+    "memory_effect_path_exists",
+    "witnesses",
+    "claim_scope",
+    "provenance"
+  ],
+  "properties": {
+    "format": {
+      "const": "REVENGINSTR.FieldStoreLoadDominanceAudit/7"
+    },
+    "program_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "function_entry": {
+      "type": "string",
+      "minLength": 1
+    },
+    "parameter_index": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "field_offset": {
+      "type": "string",
+      "pattern": "^-?0x[0-9a-f]+$"
+    },
+    "source_parameter_index": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "status": {
+      "enum": [
+        "unique_cfg_store_candidate",
+        "store_not_reachable",
+        "store_not_dominating_load",
+        "possible_intervening_memory_effect",
+        "no_post_store_cfg_path",
+        "incomplete_evidence",
+        "access_shape_mismatch"
+      ]
+    },
+    "store": {
+      "$ref": "#/$defs/access"
+    },
+    "load": {
+      "$ref": "#/$defs/access"
+    },
+    "store_reachable_from_entry": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "store_dominates_load": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "clean_store_to_load_path_exists": {
+      "type": "boolean"
+    },
+    "memory_effect_path_exists": {
+      "type": "boolean"
+    },
+    "witnesses": {
+      "$ref": "#/$defs/witnesses"
+    },
+    "claim_scope": {
+      "const": "Conservative single-function High-P-code structural candidate; field-store destinations may be linked to GhidraMemoryStoreAccess/1 without a recovered source-parameter claim; source-linked INDIRECT markers are counted with their exact source operation and ignored only when that operation is classified harmless; direct calls remain barriers without complete effect evidence; no branch-feasibility or runtime value-flow claim."
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    }
+  },
+  "$defs": {
+    "access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "address",
+        "time",
+        "block_index",
+        "memory_space",
+        "width_bytes"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "address": {
+          "type": "string",
+          "minLength": 1
+        },
+        "time": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "block_index": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "memory_space": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "width_bytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      }
+    },
+    "witnesses": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entry_to_store",
+        "store_bypass",
+        "clean_store_to_load",
+        "memory_effect_store_to_load"
+      ],
+      "properties": {
+        "entry_to_store": {
+          "$ref": "#/$defs/path"
+        },
+        "store_bypass": {
+          "$ref": "#/$defs/path"
+        },
+        "clean_store_to_load": {
+          "$ref": "#/$defs/path"
+        },
+        "memory_effect_store_to_load": {
+          "$ref": "#/$defs/path"
+        }
+      }
+    },
+    "path": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pair_graph_sha256",
+        "pair_graph_record_index",
+        "cfg_sha256",
+        "cfg_record_index",
+        "path_expansion_cap",
+        "path_expansions_before",
+        "path_expansions_used"
+      ],
+      "properties": {
+        "pair_graph_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "pair_graph_record_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cfg_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "cfg_record_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "path_expansion_cap": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "path_expansions_before": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "path_expansions_used": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "memory_store_access_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "memory_store_access_record_indices": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "memory_access_comparison_cap": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "memory_access_comparisons_before": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "memory_access_comparisons_used": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "interprocedural_memory_effect_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "interprocedural_memory_effect_record_indices": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "direct_call_memory_effect_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "direct_call_memory_effect_record_indices": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "direct_call_memory_effect_closure_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "direct_call_memory_effect_closure_record_indices": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    }
+  }
+}

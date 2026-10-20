@@ -1868,10 +1868,190 @@ monotone fixed point for cycles. Missing argument links, incomplete callee
 facts, unresolved stores, indirect calls, unknown operations and exhausted
 budgets remain barriers. `/1`–`/4` stay unchanged.
 
-**Next:** replay CFG/4 on further bounded x86-32 candidates from actual
-parameter-field `STORE` and `LOAD` rows. Compare `/5` and `/6` with the exact
-caller roots and complete memory facts pinned; keep aliasing and unresolved
-effects as barriers. Do not infer alias facts from decompiler text or
-instruction-level corpus labels. The current candidate family remains useful
-for checking that duplicate markers are deduplicated without changing a status
-when a separately classified possible write still lies on the witness.
+**Memory-only store/load replay:** `FieldStoreLoadPathAudit/2` and
+`FieldStoreLoadDominanceAudit/7` now preserve rooted `STORE` destinations
+from `GhidraMemoryStoreAccess/1` when the value has no recovered formal
+parameter. The x86-32 Shift function `00689db0` had zero
+`ParameterStoreField/1` rows, 21 parameter loads, and 28 general STORE facts.
+The new builder emitted 20 exact root/offset pairs without adding a
+value-source edge. For `STORE@00689e0a` → `LOAD@00689e49`, the store
+dominates the load, but two direct calls lie on the path; the `/7` replay
+keeps `possible_intervening_memory_effect`. Across all 20 pairs, 16 stores do
+not dominate their loads and four have possible intervening effects; no row
+became a unique CFG candidate. This validates memory-only provenance and
+continued fail-closed call handling; it does not establish memory
+reaching-definition or alias safety.
+
+The same candidate now has a bounded direct-call closure and `/2`
+interprocedural-memory replay. The two calls on the `00689e0a` to `00689e49`
+path reach `0067db80` and `004f5eb0`; both contain STOREs. The latter also
+calls `0042eff7`, whose flow was not exported, so its closure retains the
+unknown `CALL` effect. Exact caller roots map callee parameter 0 to caller
+parameter 0 at `+0x34`, while the observed callee STOREs are rooted at
+parameter 1. The alias audit therefore reports a possible alias for the first
+call and an unknown effect for the second; it proves no non-aliasing writes.
+For the 20 pairs, the 120 call-effect rows contain 20 possible-alias writes,
+40 unknown effects, and 60 calls without callee flow. The `/7` statuses match
+the direct-call-closure replay: 16 stores do not dominate their loads and four
+retain possible intervening effects. No pair becomes a unique candidate.
+This exercises the real nested-call and missing-root barriers without
+weakening the memory-only result.
+
+**Second CFG/4 replay:** the x86-32 Shift function `007146c0` yielded one
+memory-rooted pair at parameter 0 plus `0x15c`: `STORE@007147f8` (time 415,
+4 bytes, source parameter unknown) and `LOAD@00714810` (time 447). The path
+audit returns `candidate_path_compatible` with witness blocks `[5, 6]`; the
+dominance audit returns `unique_cfg_store_candidate`. All ten direct calls
+have missing callee flows in both the closure and `/2` sidecars, but their
+operation times are 34–412, before the tracked store. The unique candidate
+therefore survives both audits without using a callee-effect or alias proof.
+The complete capture and byte-for-byte analyzer replay are in
+[`field-store-load-shift-007146c0`](evidence/field-store-load-shift-007146c0/README.md).
+This is a structural candidate only; it does not establish runtime execution
+or memory reaching-definition.
+
+**Third CFG/4 replay:** Shift function `0064bb70` produced four exact
+parameter-0 `+0x84` store/load pairs. For `STORE@0064bbf6` → `LOAD@0064bd6c`,
+the store dominates, but the witness crosses eight direct calls and multiple
+stores. A bounded nine-function capture exported all eight direct callee
+flows, their CFG/4 records, and memory facts. Six caller-root plans produced
+two exact offset mappings. At call `0064bd7d`, callee `0064b8b0.param0` maps
+to caller `param0+0`; `/2` proves its STORE at `0064b91f` (`param0+0x28`,
+four bytes) disjoint from the tracked `+0x84` range. The same callee has an
+unresolved STORE at `0064b8d2` and an indirect call at `0064b90d`, so the call
+still has `unknown_effect`. The unresolved destination merges a load from
+`param0+0x48` with the direct parameter, so no single root can safely be
+assigned. Other witness calls also retain unresolved targets, missing nested
+flows, or possible aliasing writes. Both closure and `/2` audits preserve
+`possible_intervening_memory_effect`; no candidate is promoted. The full
+capture and byte-for-byte replay are in
+[`field-store-load-shift-0064bb70`](evidence/field-store-load-shift-0064bb70/README.md).
+This confirms that `/2` can record a proven disjoint callee store without
+discarding sibling unknown effects.
+Two fresh read-only `GhidraIndirectCallEvidence/1` rows pin the unresolved
+targets: `CALLIND@0064bcda` loads from `input:Stack[0x4]+0x28`; nested
+`CALLIND@0064b90d` loads from `register+0x4c`. Since callee parameter 0 maps to
+caller parameter 0 + 0, and the target LOAD uses the same register base as the
+callee's rooted `STORE@0064b91f`, the nested call loads its function pointer
+from a derived location at caller parameter 0 + `0x4c`. The pointer value
+remains unknown. Both calls stay barriers; the new evidence is in the replay
+report.
+
+A follow-up screen of 26 additional functions in the same x86-32 Shift project
+found one exact same-field pair in `00d83f90`: `LOAD@00d83fa1` at time 28 and
+`STORE@00d84019` at time 94, both for parameter 3 plus zero. CFG/4 confirms no
+path from that later STORE to the earlier LOAD, and the dominance audit records
+`store_not_dominating_load`. Its two calls occur before the STORE. The replay
+adds a negative exact-pair example but no new store-to-load candidate; captured
+inputs and outputs are in
+[`field-store-load-shift-00d83f90`](evidence/field-store-load-shift-00d83f90/README.md).
+
+**Fourth CFG/4 replay:** Shift function `00a45b50` adds two positive structural
+candidates. A parameter-value store `STORE@00a45b69` (time 33, `param1+0x4`,
+value from param 3) maps to `LOAD@00a45b75` (time 44), and `/6` reports
+`unique_cfg_store_candidate`. A later memory-only store
+`STORE@00a45b75` (time 46, same root and offset, value parameter unresolved)
+maps to `LOAD@00a45b78` (time 57), and `/7` reports the same status without
+inventing a value-source edge. Reusing the first store for the second load
+remains `possible_intervening_memory_effect` because the time-46 STORE touches
+the tracked range. Across the nine generated pairs, six other stores do not
+dominate their loads. Both direct calls are explicit writes but occur after
+the two positive load witnesses. The read-only CFG/4 and field-access capture,
+pair builder output, `/6`–`/7` audits, and replay commands are frozen in
+[`field-store-load-shift-00a45b50`](evidence/field-store-load-shift-00a45b50/README.md).
+These are structural candidates only; they do not prove runtime execution or
+memory reaching-definition.
+
+**Fifth CFG/4 replay:** Shift function `00a45520` has one positive
+`param0+0` pair: `STORE@00a45533` (time 30, value from parameter 3) to
+`LOAD@00a45540` (time 39) remains `unique_cfg_store_candidate` in `/6`. The
+later load `LOAD@00a45572` (time 107) stays
+`possible_intervening_memory_effect`: six STORE destinations between the pair
+are unresolved, and `CALL@00a4556d` at time 102 reaches a callee with an
+explicit STORE. The path audit marks all four generated pairs
+`candidate_path_compatible`, showing why path compatibility alone cannot clear
+write barriers. `/7` also keeps a memory-only store at time 109 as
+`store_not_dominating_load` for both loads. The fresh capture and
+byte-for-byte analyzer replay are in
+[`field-store-load-shift-00a45520`](evidence/field-store-load-shift-00a45520/README.md).
+
+**Sixth CFG/4 replay:** Shift function `00689db0` was re-exported from a
+disposable project copy after two stable callee-before-caller Parameter ID
+passes. This added the previously absent actual call arguments. The caller
+passes stack-local pointers to the second parameters of `0067db80` and
+`004f5eb0`; those values do not resolve to caller-formal roots. Nested
+`0042eff7` remains a no-argument function with an unresolved STORE destination.
+The fresh four-function CFG/4 capture has 20 exact memory-only field pairs.
+Across those pairs, path audit reports 16 `intervening_store_or_call` and 4
+`no_cfg_path`; `/7` reports 16 `store_not_dominating_load` and 4
+`possible_intervening_memory_effect`. The `/2` result has 40
+`possible_aliasing_write`, 20 `unknown_effect`, and 60 `missing_callee_flow`
+rows. No candidate is promoted, and the direct-call closure and `/2` dominance
+audits agree. This captures the call-root gap after the signatures were
+recovered; it does not prove runtime execution, alias disjointness, or memory
+reaching-definition. Full inputs, hashes, and commands are in
+[`field-store-load-shift-00689db0`](evidence/field-store-load-shift-00689db0/README.md).
+
+**Seventh CFG/4 replay:** Shift function `00a3dda0` adds three exact
+`param0+0x4` pairs for one STORE and three loads. A disposable Ghidra project
+copy needed three callee-before-caller Parameter ID passes to stabilize the
+root return type. Caller-root export maps the intervening `_memset` call's
+first argument to `param0+0x98`; the call also receives zero and `0x44`.
+However, the four-function CFG/4 closure contains 13 callee STORE facts whose
+destinations remain unresolved through `MULTIEQUAL`. `/2` therefore reports
+three `possible_aliasing_write` rows and proves no disjoint writes. Both
+dominance replays keep all three pairs at
+`possible_intervening_memory_effect`, despite the root STORE dominating each
+load. `/3` recognizes the standard `_memset` contract only with the direct
+callee name, exact destination root, constant width-matched length, and
+non-overflowing range. Its `[+0x98,+0xdc)` range is disjoint from the tracked
+`[+4,+8)` field, so all 13 implementation STORE facts are classified outside
+the call range and the dominance audit emits three
+`unique_cfg_store_candidate` rows. This is structural evidence only, with no
+runtime or value-flow claim. The `/2` baseline remains saved; the `/3` capture
+is byte-identical across repeated replay. Full inputs, outputs, and hashes are
+in
+[`field-store-load-shift-00a3dda0`](evidence/field-store-load-shift-00a3dda0/README.md).
+
+**Eighth CFG/4 replay:** Shift function `0041dd40` was freshly exported from
+the saved project in read-only mode. The 53 memory-store facts include 51
+parameter-rooted constant-offset locations; the 76 parameter loads form 87
+exact pairs. There are no recovered parameter-value stores. `/7` yields 12
+`unique_cfg_store_candidate`, 10 `possible_intervening_memory_effect`, and 65
+`store_not_dominating_load` rows. For one representative, `STORE@0041e466`
+(`param0+0x3f4`, 4 bytes) reaches `LOAD@0041e4ae` on blocks `[76,78,79,80]`;
+the STORE's value parameter remains unknown. Repeated analyzer replay was
+byte-identical. This validates the same-function memory-only store path. A
+targeted Parameter ID replay on a disposable project copy then traced the
+`0041eda4` to `0041edb2` pair across the `0041edad` call to `0088bc20`. Its
+exact caller root maps callee parameter 0 to caller parameter 0 plus `0x7b0`;
+the callee's two rooted STOREs resolve to caller offsets `0x7bc` and `0xe20`,
+disjoint from the tracked four-byte field at `0x1240`. The effect builder
+classifies that call `no_aliasing_memory_effect`, and the targeted `/7` audit
+moves the pair from `possible_intervening_memory_effect` to
+`unique_cfg_store_candidate`. The other 133 call-site rows retain conservative
+missing-flow or possible-alias statuses. Repeated analyzer replay was
+byte-identical. This is one structural interprocedural result; it does not
+establish branch feasibility, runtime execution, or memory reaching-definition.
+The full capture and hashes are in
+[`field-store-load-shift-0041dd40`](evidence/field-store-load-shift-0041dd40/README.md).
+
+An expanded screen covered five adjacent store/call/load pairs in the same
+function. Parameter ID recovered exact `param0+0x7b0` roots for all five
+callers. The four `0088d550`/`d5d0`/`d620`/`d670` closures contain direct stores
+whose mapped ranges are disjoint, but all reach `0088d1d0`; only one of its
+five call sites has an exact incoming parameter root, and the callee has three
+potentially aliasing STOREs plus 24 direct calls without exported flows.
+Those four pairs therefore remain `possible_intervening_memory_effect`. The
+`0088bc20` closure has two complete disjoint STOREs and no unknown operations;
+its `+0x1240` pair is the only additional
+`unique_cfg_store_candidate`. This screen confirms that exact top-level roots
+alone do not justify filtering an incomplete nested closure. Its inputs,
+outputs, and hashes are in
+[`call-series-screen`](evidence/field-store-load-shift-0041dd40/call-series-screen/README.md).
+
+**Next:** investigate whether the four `0088d1d0` call sites can be rooted
+through their loaded arguments without assuming memory value flow. Keep the
+current fail-closed results until such roots and the 24 nested callee flows
+are exact. Continue other positive CFG/4 replays, and retain incomplete
+closures such as `0064bb70` as barriers.

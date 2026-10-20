@@ -1,9 +1,10 @@
 # Field memory alias contract (M2.3)
 
 This defines the evidence boundary for the versioned
-`FieldStoreLoadDominanceAudit/2` and `/3`. The existing `/1` and `/2` outputs
-remain unchanged when the corresponding optional sidecars are absent; none of
-the versions is runtime value-flow evidence.
+`FieldStoreLoadDominanceAudit/2`–`/7` and
+`GhidraInterproceduralMemoryEffect/1`–`/3`. Existing outputs remain unchanged
+when their corresponding optional sidecars are absent; none of the versions
+is runtime value-flow evidence.
 
 ## What a memory-access fact must identify
 
@@ -176,8 +177,34 @@ closures whose every STORE is proven outside the tracked byte range can remove
 a direct-call barrier. Run `revenginstr-interprocedural-memory-effects` with
 one `--pcode-flow ENTRY TSV` argument per function in the bounded closure, then
 pass its JSONL output to the dominance audit with
-`--interprocedural-memory-effect-jsonl`. Freeze complete sidecar inputs and
-`/5` output before adopting positive alias filtering in a consumer.
+`--interprocedural-memory-effect-jsonl`. RevEngInstr PR #185 now freezes one
+positive exact-root replay: the memory-only pair in Shift `0041dd40` crosses a
+call to `0088bc20`, whose two rooted STORE ranges both resolve disjoint from
+the tracked field. The call is classified `no_aliasing_memory_effect`, and
+dominance `/7` moves the targeted pair from
+`possible_intervening_memory_effect` to `unique_cfg_store_candidate`. Other
+call-site rows retain their missing-flow and possible-alias barriers; the
+result does not establish runtime execution or memory value flow. See
+[`field-store-load-shift-0041dd40`](evidence/field-store-load-shift-0041dd40/README.md)
+for the frozen inputs, outputs, and hashes. The adjacent five-pair screen
+finds exact `param0+0x7b0` roots at all five direct calls, but four closures
+reach `0088d1d0`, where three possibly aliasing STOREs and 24 unexported direct
+calls keep those pairs conservative. Its nested argument export finds one
+exact root at `0088d550@0088d5af`; the other four `0088d1d0` call sites have no
+exact root. The screen retains these barriers and promotes only the complete
+`0088bc20` case; see
+[`call-series-screen`](evidence/field-store-load-shift-0041dd40/call-series-screen/README.md).
+
+`GhidraInterproceduralMemoryEffect/2` adds source-linked `INDIRECT` handling
+from CFG/4. `/3` additionally models the standard three-argument `_memset`
+contract when the direct target name is exact, destination argument 0 has an
+exact caller-formal root, length argument 2 is constant and pointer-width, and
+the call and tracked-field ranges do not overflow the pointer width. A disjoint
+call range classifies that call's callee STORE facts as non-aliasing; missing
+STORE facts and all unrelated unknown operations remain barriers. Other calls
+retain `/2` behavior. The Shift `00a3dda0` replay in RevEngInstr PR #185 checks
+this boundary against a real Ghidra capture; its three resulting candidates
+are structural only.
 
 ## Source-linked Ghidra INDIRECT markers
 
@@ -205,3 +232,27 @@ The `/1` flow, CFG `/1`–`/3`, interprocedural effect `/1`, and dominance audit
 `/1`–`/5` contracts remain unchanged. Use CFG/4 consistently for the caller
 and every function in the direct-call closure; mixed or missing CFG evidence
 does not authorize marker removal.
+
+## Stores with no recovered value parameter
+
+`ParameterStoreField/1` contains destination and value-formal indices, so it
+cannot represent a rooted memory write whose stored value is not derived from a
+formal parameter. `receiver-field-access-pairs --memory-store-access-jsonl`
+uses an exact rooted `GhidraMemoryStoreAccess/1` record for the destination
+instead. Its `ReceiverProvenanceGraph/1` edge has no value-source edge and
+retains the memory row identity. Path audit `/2` and dominance audit `/7`
+allow `source_parameter_index: null`; dominance requires the same operation,
+root, and offset in its hash-pinned memory-store sidecar. Without that
+corroboration, the audit returns `incomplete_evidence`. Calls and all other
+effects keep the existing conservative treatment.
+
+The fresh Shift `0041dd40` replay in RevEngInstr PR #185 exercises this
+memory-only path with 53 exact operation facts and 87 same-field pairs. `/7`
+reports 12 unique structural candidates, 10 possible intervening effects, and
+65 non-dominating stores. Its representative `STORE@0041e466` to
+`LOAD@0041e4ae` pair is rooted at parameter 0 plus `0x3f4`; the STORE has no
+recovered value parameter, and its witness crosses no memory effect. This
+validates the same-function `/7` boundary. A targeted interprocedural capture
+for the same function validates one exact-root call-effect filter; see
+[`field-store-load-shift-0041dd40`](evidence/field-store-load-shift-0041dd40/README.md)
+for the capture and deterministic replay.

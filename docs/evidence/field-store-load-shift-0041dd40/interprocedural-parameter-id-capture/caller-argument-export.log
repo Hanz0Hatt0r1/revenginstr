@@ -1,0 +1,58 @@
+openjdk version "21.0.12.1" 2026-08-18
+OpenJDK Runtime Environment (build 21.0.12.1+1)
+OpenJDK 64-Bit Server VM (build 21.0.12.1+1, mixed mode)
+INFO  Using log config file: jar:file:/opt/ghidra/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)
+INFO  Using log file: /home/pes/.config/ghidra/ghidra_12.1.2_DEV/application.log (LoggingInitialization)
+INFO  Loading user preferences: /home/pes/.config/ghidra/ghidra_12.1.2_DEV/preferences (Preferences)
+INFO  Searching for classes... (ClassSearcher)
+INFO  Class search complete (1418 ms) (ClassSearcher)
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)
+INFO  Initializing Random Number Generator... (SecureRandomFactory)
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)
+INFO  Headless startup complete (2850 ms) (AnalyzeHeadless)
+INFO  Class searcher loaded 59 extension points (21 false positives) (ClassSearcher)
+INFO  HEADLESS Script Paths:
+    /opt/ghidra/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/JVM/ghidra_scripts
+    /opt/ghidra/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/VersionTracking/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/PyGhidra/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /home/pes/.config/ghidra/ghidra_12.1.2_DEV/Extensions/Lisa/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/Atmel/ghidra_scripts
+    /opt/ghidra/Ghidra/Debug/Debugger/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/Decompiler/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/FunctionID/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/PIC/ghidra_scripts
+    /home/pes/.config/ghidra/ghidra_12.1.2_DEV/Extensions/SleighDevTools/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/BSim/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/BytePatterns/ghidra_scripts
+    /home/pes/.config/ghidra/ghidra_12.1.2_DEV/Extensions/Jython/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /home/pes/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/DATA/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/Base/ghidra_scripts
+    /home/pes/.config/ghidra/ghidra_12.1.2_DEV/Extensions/MachineLearning/ghidra_scripts
+    /tmp/tmp.vIIKC6dWhn
+    /opt/ghidra/Ghidra/Features/PDB/ghidra_scripts
+    /opt/ghidra/Ghidra/Processors/8051/ghidra_scripts
+    /opt/ghidra/Ghidra/Features/FileFormats/ghidra_scripts (HeadlessAnalyzer)
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)
+INFO  Opening existing project: /home/pes/ghidra_projects/revenginstr-paramid-shift-0041dd40/nfs_shift_vulkan_runtime_20261018 (HeadlessAnalyzer)
+INFO  Opening project: /home/pes/ghidra_projects/revenginstr-paramid-shift-0041dd40/nfs_shift_vulkan_runtime_20261018 (HeadlessProject)
+INFO  REPORT: Processing read-only project file: /SHIFT.exe (HeadlessAnalyzer)
+INFO  REPORT: Execute script: ExportGhidraCallerArgumentSubtree.java '/tmp/revenginstr-shift-0041dd40-plan.tsv' '/tmp/revenginstr-shift-0041dd40-subtree.tsv' '--parameter-root-output' '/tmp/revenginstr-shift-0041dd40-roots.tsv' '--parameter-offset-root-output' '/tmp/revenginstr-shift-0041dd40-offset-roots.tsv'  (HeadlessAnalyzer)
+INFO  SCRIPT: /tmp/tmp.vIIKC6dWhn/ExportGhidraCallerArgumentSubtree.java (HeadlessAnalyzer)
+INFO  ExportGhidraCallerArgumentSubtree.java> CALLER_ARGUMENT_SUBTREE_FORMAT=REVENGINSTR.GhidraCallerArgumentSubtree/1 (GhidraScript)
+INFO  ExportGhidraCallerArgumentSubtree.java> CALLER_ARGUMENT_SUBTREE_PLANS=1 (GhidraScript)
+INFO  ExportGhidraCallerArgumentSubtree.java> CALLER_ARGUMENT_SUBTREE_OUTPUT=/tmp/revenginstr-shift-0041dd40-subtree.tsv (GhidraScript)
+INFO  ExportGhidraCallerArgumentSubtree.java> CALLER_ARGUMENT_PARAMETER_ROOT_FORMAT=REVENGINSTR.GhidraCallerArgumentParameterRoot/1 (GhidraScript)
+INFO  ExportGhidraCallerArgumentSubtree.java> CALLER_ARGUMENT_PARAMETER_ROOT_ROWS=0 (GhidraScript)
+INFO  ExportGhidraCallerArgumentSubtree.java> CALLER_ARGUMENT_PARAMETER_ROOT_OUTPUT=/tmp/revenginstr-shift-0041dd40-roots.tsv (GhidraScript)
+INFO  ExportGhidraCallerArgumentSubtree.java> CALLER_ARGUMENT_PARAMETER_OFFSET_ROOT_FORMAT=REVENGINSTR.GhidraCallerArgumentParameterRoot/2 (GhidraScript)
+INFO  ExportGhidraCallerArgumentSubtree.java> CALLER_ARGUMENT_PARAMETER_OFFSET_ROOT_ROWS=1 (GhidraScript)
+INFO  ExportGhidraCallerArgumentSubtree.java> CALLER_ARGUMENT_PARAMETER_OFFSET_ROOT_OUTPUT=/tmp/revenginstr-shift-0041dd40-offset-roots.tsv (GhidraScript)

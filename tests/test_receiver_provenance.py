@@ -11,6 +11,7 @@ from revenginstr.receiver.provenance import (
     FORMAT,
     CALLER_ARGUMENT_FORMAT,
     CALLER_PARAMETER_ROOT_FORMAT,
+    MEMORY_STORE_ACCESS_FORMAT,
     PARAMETER_LOAD_FORMAT,
     PARAMETER_STORE_FORMAT,
     RECEIVER_TYPE_FORMAT,
@@ -442,6 +443,23 @@ def parameter_load_row(**overrides: str) -> dict[str, str]:
     return row
 
 
+def memory_store_access_row(**overrides):
+    row = {
+        "format": MEMORY_STORE_ACCESS_FORMAT,
+        "program_id": "analysis:sample",
+        "function_entry": "00401000",
+        "address": "00401020",
+        "time": 7,
+        "opcode": "STORE",
+        "memory_width_bytes": 4,
+        "root_parameter_index": 0,
+        "offset_bytes": 0x24,
+        "location_status": "parameter_rooted_constant_offset",
+    }
+    row.update(overrides)
+    return row
+
+
 def test_argument_load_join_uses_exact_callee_and_formal_parameter_keys() -> None:
     arguments = [
         caller_argument_row(parameter_index="0"),
@@ -569,6 +587,38 @@ def test_field_access_pairs_require_exact_function_parameter_and_numeric_offset(
         )
 
 
+def test_field_access_pairs_use_memory_only_rooted_stores_without_inventing_value_source() -> None:
+    [graph] = build_field_access_pair_graphs(
+        [], [parameter_load_row()], program_id="analysis:sample",
+        memory_store_rows=[memory_store_access_row()],
+    )
+
+    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+    Draft202012Validator(schema).validate(graph)
+    store_edge = next(edge for edge in graph["edges"] if edge["relation"] == "field_store")
+    assert store_edge["provenance"] == [{
+        "source_format": MEMORY_STORE_ACCESS_FORMAT,
+        "source_id": '["analysis:sample","00401000","00401020",7,0,36]',
+    }]
+    assert {edge["relation"] for edge in graph["edges"]} == {"field_store", "field_load"}
+    assert not any(node["id"].startswith("parameter:") and node["id"] != "parameter:0" for node in graph["nodes"])
+
+
+def test_memory_only_field_store_pairs_dedupe_parameter_store_source_and_skip_unresolved() -> None:
+    [graph] = build_field_access_pair_graphs(
+        [parameter_store_row()], [parameter_load_row()], program_id="analysis:sample",
+        memory_store_rows=[memory_store_access_row()],
+    )
+    assert any(
+        edge["provenance"][0]["source_format"] == PARAMETER_STORE_FORMAT
+        for edge in graph["edges"] if edge["relation"] == "field_store"
+    )
+    assert build_field_access_pair_graphs(
+        [], [parameter_load_row()], program_id="analysis:sample",
+        memory_store_rows=[memory_store_access_row(location_status="unresolved")],
+    ) == []
+
+
 def test_field_access_pair_cli_writes_graphs(tmp_path: Path, capsys) -> None:
     stores = tmp_path / "stores.tsv"
     stores.write_text(
@@ -596,6 +646,37 @@ def test_field_access_pair_cli_writes_graphs(tmp_path: Path, capsys) -> None:
         "field_store", "data_flow", "field_load"
     }
     assert "compatible field access pairs: 1" in capsys.readouterr().out
+
+
+def test_field_access_pair_cli_accepts_memory_store_sidecar(tmp_path: Path) -> None:
+    stores = tmp_path / "stores.tsv"
+    stores.write_text(
+        "format\tfunction_entry\tfunction_name\tstore_address\tstore_time\t"
+        "destination_parameter_index\tdestination_offset\tdestination_pattern\t"
+        "source_parameter_index\tvalue_size\tstatus\n",
+        encoding="utf-8",
+    )
+    loads = tmp_path / "loads.tsv"
+    loads.write_text(
+        "format\tfunction_entry\tfunction_name\tload_address\tload_time\tbase_parameter_index\t"
+        "field_offset\taddress_pattern\tvalue_size\tvalue_token\tstatus\n"
+        f"{PARAMETER_LOAD_FORMAT}\t00401000\tFUN_00401000\t00401030\t8\t0\t0x24\tptrsub\t4\t"
+        "def:LOAD@00401030:8:4\tparameter_field_load\n",
+        encoding="utf-8",
+    )
+    memory = tmp_path / "memory.jsonl"
+    memory.write_text(json.dumps(memory_store_access_row()) + "\n", encoding="utf-8")
+    output = tmp_path / "pairs.jsonl"
+
+    assert field_access_pairs_main([
+        str(stores), str(loads), "--program-id", "analysis:sample",
+        "--memory-store-access-jsonl", str(memory), "--output", str(output),
+    ]) == 0
+    [graph] = [json.loads(line) for line in output.read_text(encoding="utf-8").splitlines()]
+    assert any(
+        provenance["source_format"] == MEMORY_STORE_ACCESS_FORMAT
+        for edge in graph["edges"] for provenance in edge["provenance"]
+    )
 
 
 def test_field_access_pair_budget_caps_cartesian_expansion() -> None:

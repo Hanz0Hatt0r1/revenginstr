@@ -1,0 +1,2 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+00457cc0	00457cc0	3	RETURN	-	const:0x0:4	-	-

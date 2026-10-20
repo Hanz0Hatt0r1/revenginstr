@@ -1,0 +1,7 @@
+format	function_entry	function_name	load_address	load_time	base_parameter_index	field_offset	address_pattern	value_size	value_token	status
+REVENGINSTR.GhidraParameterLoadField/1	00a45b50	FUN_00a45b50	00a45b54	4	2	0x4e0	int_add	4	def:LOAD@00a45b54:4:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00a45b50	FUN_00a45b50	00a45b75	44	1	0x4	ptradd	4	def:LOAD@00a45b75:44:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00a45b50	FUN_00a45b50	00a45b78	57	1	0x4	ptradd	4	def:LOAD@00a45b78:57:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00a45b50	FUN_00a45b50	00a45b83	73	3	0x0	direct	4	def:LOAD@00a45b83:73:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00a45b50	FUN_00a45b50	00a45b99	104	0	0xc	int_add	4	def:LOAD@00a45b99:104:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	00a45b50	FUN_00a45b50	00a45bd0	181	0	0xc	int_add	4	def:LOAD@00a45bd0:181:4	parameter_field_load

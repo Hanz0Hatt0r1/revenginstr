@@ -1,0 +1,56 @@
+format	row_type	plan_id	callee_entry	parameter_index	direct_caller_functions	caller_functions_decompiled	caller_functions_failed	callers_with_matched_calls	matched_caller_calls	caller_entry	caller_name	caller_call_site	node_id	parent_node_id	input_index	depth	edge_kind	node_token	type_display	pointer_depth	pointee_type_display	constant_value	defining_opcode	defining_address	defining_time	call_target_entry	call_target_name	truncation	status
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1230	0088d550	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ea66	0	-1	-1	0	root	def:CAST@0041ea57:18290:4	void *	1	void	-	CAST	0041ea57	18290	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1230	0088d550	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ea66	1	0	0	1	value	def:INT_ADD@0041ea57:5539:4	int	0	-	-	INT_ADD	0041ea57	5539	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1230	0088d550	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ea66	2	1	0	2	base	def:CAST@0041ea57:18289:4	int	0	-	-	CAST	0041ea57	18289	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1230	0088d550	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ea66	3	2	0	3	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1230	0088d550	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ea66	4	1	1	2	offset	const:0x7b0:4	int	0	-	0x7b0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1230	0088d550	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ea77	0	-1	-1	0	root	def:LOAD@0041e9ca:5288:4	void *	1	void	-	LOAD	0041e9ca	5288	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1230	0088d550	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ea77	1	0	1	1	load_address	def:CAST@0041e9ca:18280:4	void * *	2	void *	-	CAST	0041e9ca	18280	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1230	0088d550	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ea77	2	1	0	2	value	def:INT_ADD@0041e9ca:5287:4	int	0	-	-	INT_ADD	0041e9ca	5287	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1230	0088d550	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ea77	3	2	0	3	base	def:CALL@0041e9c5:5286:4	int	0	-	-	CALL	0041e9c5	5286	00887720	FUN_00887720	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1230	0088d550	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ea77	4	2	1	3	offset	const:0x94c:4	int	0	-	0x94c	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	neighbor-0x1230	0088d550	0	1	1	0	1	2	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1234	0088d5d0	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041eb3a	0	-1	-1	0	root	def:CAST@0041eb2b:18275:4	void *	1	void	-	CAST	0041eb2b	18275	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1234	0088d5d0	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041eb3a	1	0	0	1	value	def:INT_ADD@0041eb2b:5965:4	int	0	-	-	INT_ADD	0041eb2b	5965	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1234	0088d5d0	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041eb3a	2	1	0	2	base	def:CAST@0041eb2b:18274:4	int	0	-	-	CAST	0041eb2b	18274	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1234	0088d5d0	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041eb3a	3	2	0	3	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1234	0088d5d0	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041eb3a	4	1	1	2	offset	const:0x7b0:4	int	0	-	0x7b0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1234	0088d5d0	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041eb4b	0	-1	-1	0	root	def:LOAD@0041ea9e:5714:4	void *	1	void	-	LOAD	0041ea9e	5714	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1234	0088d5d0	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041eb4b	1	0	1	1	load_address	def:CAST@0041ea9e:18265:4	void * *	2	void *	-	CAST	0041ea9e	18265	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1234	0088d5d0	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041eb4b	2	1	0	2	value	def:INT_ADD@0041ea9e:5713:4	int	0	-	-	INT_ADD	0041ea9e	5713	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1234	0088d5d0	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041eb4b	3	2	0	3	base	def:CALL@0041ea99:5712:4	int	0	-	-	CALL	0041ea99	5712	00887720	FUN_00887720	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1234	0088d5d0	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041eb4b	4	2	1	3	offset	const:0x94c:4	int	0	-	0x94c	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	neighbor-0x1234	0088d5d0	0	1	1	0	1	2	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1238	0088d620	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ec0e	0	-1	-1	0	root	def:CAST@0041ebff:18260:4	void *	1	void	-	CAST	0041ebff	18260	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1238	0088d620	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ec0e	1	0	0	1	value	def:INT_ADD@0041ebff:6391:4	int	0	-	-	INT_ADD	0041ebff	6391	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1238	0088d620	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ec0e	2	1	0	2	base	def:CAST@0041ebff:18259:4	int	0	-	-	CAST	0041ebff	18259	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1238	0088d620	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ec0e	3	2	0	3	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1238	0088d620	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ec0e	4	1	1	2	offset	const:0x7b0:4	int	0	-	0x7b0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1238	0088d620	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ec1f	0	-1	-1	0	root	def:LOAD@0041eb72:6140:4	void *	1	void	-	LOAD	0041eb72	6140	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1238	0088d620	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ec1f	1	0	1	1	load_address	def:CAST@0041eb72:18250:4	void * *	2	void *	-	CAST	0041eb72	18250	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1238	0088d620	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ec1f	2	1	0	2	value	def:INT_ADD@0041eb72:6139:4	int	0	-	-	INT_ADD	0041eb72	6139	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1238	0088d620	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ec1f	3	2	0	3	base	def:CALL@0041eb6d:6138:4	int	0	-	-	CALL	0041eb6d	6138	00887720	FUN_00887720	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1238	0088d620	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ec1f	4	2	1	3	offset	const:0x94c:4	int	0	-	0x94c	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	neighbor-0x1238	0088d620	0	1	1	0	1	2	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x123c	0088d670	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ece2	0	-1	-1	0	root	def:CAST@0041ecd3:18245:4	void *	1	void	-	CAST	0041ecd3	18245	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x123c	0088d670	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ece2	1	0	0	1	value	def:INT_ADD@0041ecd3:6817:4	int	0	-	-	INT_ADD	0041ecd3	6817	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x123c	0088d670	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ece2	2	1	0	2	base	def:CAST@0041ecd3:18244:4	int	0	-	-	CAST	0041ecd3	18244	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x123c	0088d670	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ece2	3	2	0	3	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x123c	0088d670	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ece2	4	1	1	2	offset	const:0x7b0:4	int	0	-	0x7b0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x123c	0088d670	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ecf3	0	-1	-1	0	root	def:LOAD@0041ec46:6566:4	void *	1	void	-	LOAD	0041ec46	6566	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x123c	0088d670	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ecf3	1	0	1	1	load_address	def:CAST@0041ec46:18235:4	void * *	2	void *	-	CAST	0041ec46	18235	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x123c	0088d670	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ecf3	2	1	0	2	value	def:INT_ADD@0041ec46:6565:4	int	0	-	-	INT_ADD	0041ec46	6565	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x123c	0088d670	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ecf3	3	2	0	3	base	def:CALL@0041ec41:6564:4	int	0	-	-	CALL	0041ec41	6564	00887720	FUN_00887720	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x123c	0088d670	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041ecf3	4	2	1	3	offset	const:0x94c:4	int	0	-	0x94c	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	neighbor-0x123c	0088d670	0	1	1	0	1	2	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1240	0088bc20	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041edad	0	-1	-1	0	root	def:CAST@0041ed9e:18230:4	void *	1	void	-	CAST	0041ed9e	18230	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1240	0088bc20	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041edad	1	0	0	1	value	def:INT_ADD@0041ed9e:7229:4	int	0	-	-	INT_ADD	0041ed9e	7229	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1240	0088bc20	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041edad	2	1	0	2	base	def:CAST@0041ed9e:18229:4	int	0	-	-	CAST	0041ed9e	18229	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1240	0088bc20	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041edad	3	2	0	3	value	register:register:00000004:4	void *	1	void	-	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1240	0088bc20	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041edad	4	1	1	2	offset	const:0x7b0:4	int	0	-	0x7b0	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1240	0088bc20	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041edbe	0	-1	-1	0	root	def:LOAD@0041ed1a:6992:4	void *	1	void	-	LOAD	0041ed1a	6992	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1240	0088bc20	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041edbe	1	0	1	1	load_address	def:CAST@0041ed1a:18220:4	void * *	2	void *	-	CAST	0041ed1a	18220	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1240	0088bc20	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041edbe	2	1	0	2	value	def:INT_ADD@0041ed1a:6991:4	int	0	-	-	INT_ADD	0041ed1a	6991	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1240	0088bc20	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041edbe	3	2	0	3	base	def:CALL@0041ed15:6990:4	int	0	-	-	CALL	0041ed15	6990	00887720	FUN_00887720	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	node	neighbor-0x1240	0088bc20	0	-	-	-	-	-	0041dd40	FUN_0041dd40	0041edbe	4	2	1	3	offset	const:0x94c:4	int	0	-	0x94c	-	-	-	-	-	-	-
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	neighbor-0x1240	0088bc20	0	1	1	0	1	2	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	complete_caller_argument_subtrees

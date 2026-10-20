@@ -1,0 +1,7 @@
+plan_id	callee_entry	parameter_index	caller_entry
+call-c6b0-p0	0064c6b0	0	0064bb70
+call-c570-p0	0064c570	0	0064bb70
+call-b8b0-p0	0064b8b0	0	0064bb70
+call-c5c0-p0	0064c5c0	0	0064bb70
+call-c5c0-p1	0064c5c0	1	0064bb70
+call-bab0-p0	0064bab0	0	0064bb70

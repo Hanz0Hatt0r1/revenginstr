@@ -12,6 +12,7 @@ RECEIVER_TYPE_FORMAT = "REVENGINSTR.GhidraIndirectReceiverType/1"
 CALLER_ARGUMENT_FORMAT = "REVENGINSTR.GhidraCallerArgumentSubtree/1"
 PARAMETER_STORE_FORMAT = "REVENGINSTR.GhidraParameterStoreField/1"
 PARAMETER_LOAD_FORMAT = "REVENGINSTR.GhidraParameterLoadField/1"
+MEMORY_STORE_ACCESS_FORMAT = "REVENGINSTR.GhidraMemoryStoreAccess/1"
 CALLER_PARAMETER_ROOT_FORMAT = "REVENGINSTR.GhidraCallerArgumentParameterRoot/1"
 DEFAULT_MAX_ARGUMENT_GRAPHS = 10_000
 DEFAULT_MAX_PROPAGATION_DEPTH = 8
@@ -597,6 +598,7 @@ def build_field_access_pair_graphs(
     load_rows: list[dict[str, str]],
     *,
     program_id: str,
+    memory_store_rows: list[dict[str, Any]] | None = None,
     max_graphs: int = DEFAULT_MAX_ARGUMENT_GRAPHS,
 ) -> list[dict[str, Any]]:
     """Pair same-function field accesses rooted at one parameter and offset."""
@@ -608,6 +610,71 @@ def build_field_access_pair_graphs(
     store_graphs = build_parameter_store_graphs(
         store_rows, program_id=program_id, max_graphs=max_graphs
     )
+    represented_stores: set[tuple[str, str, str, int | None, int, int]] = set()
+    seen_memory_stores: set[tuple[str, str, str, int, int, int]] = set()
+    for graph in store_graphs:
+        key = json.loads(graph["graph_id"])
+        represented_stores.add((key[0], key[1], key[2], key[3], key[4], key[5]))
+    for line_no, row in enumerate(memory_store_rows or [], 1):
+        where = f"memory store access row {line_no}"
+        if (
+            row.get("format") != MEMORY_STORE_ACCESS_FORMAT
+            or row.get("program_id") != program_id
+            or row.get("opcode") != "STORE"
+        ):
+            raise ValueError(f"{where}: unsupported memory store")
+        if row.get("location_status") == "unresolved":
+            continue
+        if row.get("location_status") != "parameter_rooted_constant_offset":
+            raise ValueError(f"{where}: unsupported memory store location status")
+        function_entry = row.get("function_entry")
+        address = row.get("address")
+        time = row.get("time")
+        parameter_index = row.get("root_parameter_index")
+        offset = row.get("offset_bytes")
+        width = row.get("memory_width_bytes")
+        if (
+            not isinstance(function_entry, str) or not function_entry
+            or not isinstance(address, str) or not address
+            or not isinstance(time, int) or isinstance(time, bool) or time < 0
+            or not isinstance(parameter_index, int) or isinstance(parameter_index, bool) or parameter_index < 0
+            or not isinstance(offset, int) or isinstance(offset, bool)
+            or not isinstance(width, int) or isinstance(width, bool) or width <= 0
+        ):
+            raise ValueError(f"{where}: invalid rooted store identity")
+        store_key = (program_id, function_entry, address, time, parameter_index, offset)
+        if store_key in seen_memory_stores:
+            raise ValueError(f"{where}: duplicate memory store identity")
+        seen_memory_stores.add(store_key)
+        if store_key in represented_stores:
+            continue
+        if len(store_graphs) >= max_graphs:
+            raise ValueError(f"parameter store graph budget exceeded: {max_graphs}")
+        represented_stores.add(store_key)
+        source_id = json.dumps(
+            [program_id, function_entry, address, time, parameter_index, offset],
+            ensure_ascii=False, separators=(",", ":"),
+        )
+        destination_node = f"parameter:{parameter_index}"
+        store_graphs.append({
+            "format": FORMAT,
+            "graph_id": source_id,
+            "nodes": [
+                {"id": destination_node, "kind": "parameter"},
+                {"id": "store", "kind": "field_store"},
+            ],
+            "edges": [{
+                "id": "destination_field",
+                "from": destination_node,
+                "to": "store",
+                "relation": "field_store",
+                "evidence_class": "exact_static",
+                "provenance": [{
+                    "source_format": MEMORY_STORE_ACCESS_FORMAT,
+                    "source_id": source_id,
+                }],
+            }],
+        })
     loads_by_access: dict[tuple[str, int, int], list[str]] = {}
     seen_loads: set[tuple[Any, ...]] = set()
     for line_no, row in enumerate(load_rows, 2):
@@ -623,8 +690,15 @@ def build_field_access_pair_graphs(
 
     joined_graphs: list[dict[str, Any]] = []
     for store_graph in store_graphs:
-        store_key = json.loads(store_graph["graph_id"])
-        _program_id, function_entry, _address, _time, parameter_index, offset, _source = store_key
+        store_edge = next(
+            edge for edge in store_graph["edges"] if edge["relation"] == "field_store"
+        )
+        store_ref = store_edge["provenance"][0]
+        store_key = json.loads(store_ref["source_id"])
+        if store_ref["source_format"] == MEMORY_STORE_ACCESS_FORMAT:
+            _program_id, function_entry, _address, _time, parameter_index, offset = store_key
+        else:
+            _program_id, function_entry, _address, _time, parameter_index, offset, _source = store_key
         access_key = (function_entry, parameter_index, offset)
         for load_source_id in loads_by_access.get(access_key, []):
             if len(joined_graphs) >= max_graphs:
@@ -667,6 +741,10 @@ def field_access_pairs_main(argv: list[str] | None = None) -> int:
     parser.add_argument("parameter_store_tsv", type=Path)
     parser.add_argument("parameter_load_tsv", type=Path)
     parser.add_argument("--program-id", required=True, help="Opaque consumer join key for the selected program.")
+    parser.add_argument(
+        "--memory-store-access-jsonl", type=Path,
+        help="Optional GhidraMemoryStoreAccess/1 rows for rooted stores without a recovered value parameter.",
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--max-graphs", type=int, default=DEFAULT_MAX_ARGUMENT_GRAPHS)
     args = parser.parse_args(argv)
@@ -675,8 +753,18 @@ def field_access_pairs_main(argv: list[str] | None = None) -> int:
 
     store_rows = read_tsv(args.parameter_store_tsv)
     load_rows = read_tsv(args.parameter_load_tsv)
+    memory_store_rows = []
+    if args.memory_store_access_jsonl is not None:
+        for line_no, line in enumerate(args.memory_store_access_jsonl.read_text(encoding="utf-8").splitlines(), 1):
+            if not line.strip():
+                raise ValueError(f"{args.memory_store_access_jsonl}:{line_no}: blank JSONL record")
+            row = json.loads(line)
+            if not isinstance(row, dict):
+                raise ValueError(f"{args.memory_store_access_jsonl}:{line_no}: expected object")
+            memory_store_rows.append(row)
     graphs = build_field_access_pair_graphs(
-        store_rows, load_rows, program_id=args.program_id, max_graphs=args.max_graphs
+        store_rows, load_rows, program_id=args.program_id,
+        memory_store_rows=memory_store_rows, max_graphs=args.max_graphs,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", encoding="utf-8") as handle:
@@ -684,6 +772,11 @@ def field_access_pairs_main(argv: list[str] | None = None) -> int:
             handle.write(json.dumps(graph, sort_keys=True) + "\n")
     print("input parameter stores:", len(store_rows))
     print("input parameter loads:", len(load_rows))
+    print("input memory store facts:", len(memory_store_rows))
+    print(
+        "rooted memory stores:",
+        sum(row.get("location_status") == "parameter_rooted_constant_offset" for row in memory_store_rows),
+    )
     print("compatible field access pairs:", len(graphs))
     print("max graphs:", args.max_graphs)
     print("output:", args.output)

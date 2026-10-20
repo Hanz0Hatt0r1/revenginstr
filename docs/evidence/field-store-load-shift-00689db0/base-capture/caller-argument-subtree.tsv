@@ -1,0 +1,4 @@
+format	row_type	plan_id	callee_entry	parameter_index	direct_caller_functions	caller_functions_decompiled	caller_functions_failed	callers_with_matched_calls	matched_caller_calls	caller_entry	caller_name	caller_call_site	node_id	parent_node_id	input_index	depth	edge_kind	node_token	type_display	pointer_depth	pointee_type_display	constant_value	defining_opcode	defining_address	defining_time	call_target_entry	call_target_name	truncation	status
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	0067db80-param1	0067db80	1	0	1	0	0	0	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	caller_filter_not_a_direct_caller
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	004f5eb0-param1	004f5eb0	1	0	1	0	0	0	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	caller_filter_not_a_direct_caller
+REVENGINSTR.GhidraCallerArgumentSubtree/1	summary	0042eff7-param0	0042eff7	0	0	1	0	0	0	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	-	caller_filter_not_a_direct_caller
