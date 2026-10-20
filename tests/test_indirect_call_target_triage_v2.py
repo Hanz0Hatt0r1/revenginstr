@@ -98,3 +98,34 @@ def test_unmatched_callsite_and_out_of_range_alternative_fail_closed(tmp_path: P
     write_jsonl(candidate_path, [symbols])
     with pytest.raises(ValueError, match="invalid alternative_indexes"):
         build_symbolic_indirect_call_target_triage(triage_path, [candidate_path])
+
+
+def test_retained_shift_replay_rebuilds_exact_symbolic_rows(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(ROOT)
+    replay = Path("docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40")
+    output = replay / "callind-target-triage-v2.jsonl"
+    rebuilt = build_symbolic_indirect_call_target_triage(
+        replay / "callind-target-triage.jsonl", [replay / "callind-symbol-candidates.jsonl"],
+    )
+    retained = [json.loads(line) for line in output.read_text(encoding="utf-8").splitlines()]
+
+    assert rebuilt == retained
+    annotated = {
+        (row["function_entry"], row["call_address"]): [
+            (candidate["module"], candidate["symbol"], candidate["alternative_indexes"])
+            for candidate in row["symbolic_target_candidates"]
+        ]
+        for row in rebuilt if row["symbolic_target_candidates"]
+    }
+    assert annotated == {
+        ("0090aa27", "0090aa89"): [("KERNEL32.DLL", "EncodePointer", [2])],
+        ("0090aa9e", "0090ab00"): [("KERNEL32.DLL", "DecodePointer", [2])],
+        ("009189cd", "00918a4c"): [
+            ("KERNEL32.DLL", "InitializeCriticalSectionAndSpinCount", [2, 3]),
+            ("SHIFT.exe", "___crtInitCritSecNoSpinCount@8", [1, 2]),
+        ],
+    }
+    assert len(rebuilt) == 22
+    assert all(row["classification"] == "mixed_bounded_and_blocked" for row in rebuilt if row["symbolic_target_candidates"])
+    for row in rebuilt:
+        Draft202012Validator(SCHEMA).validate(row)
