@@ -57,15 +57,20 @@ generic triage JSONL or remove the effect barrier. See
 three initially reviewed sites: `KERNEL32.DLL!InitializeCriticalSectionAndSpinCount`
 and `SHIFT.exe!___crtInitCritSecNoSpinCount@8` at `009189cd:00918a4c`, plus
 partial `KERNEL32.DLL!EncodePointer` and `KERNEL32.DLL!DecodePointer` paths at
-`0090aa89` and `0090ab00`. The helper candidates cover only alternative 2;
-unresolved cache loads remain visible.
+`0090aa89` and `0090ab00`. A later TLS follow-up identifies the indirect
+`FlsGetValue`/`TlsGetValue` calls used to reach those cache fields; their
+runtime API choice remains conditional.
 
-The second static pass adds nine exact dynamic-call identities:
+The follow-up passes add thirteen exact dynamic-call identities:
 
 | Function | CALLIND | Symbolic target | Alternative |
 | --- | --- | --- | ---: |
 | `00907467` | `00907485` | `SHIFT.exe!__exit` (`0x00907708`) | 1 |
 | `0090748b` | `009074ae` | `mscoree.dll!CorExitProcess` | 1 |
+| `0090aa27` | `0090aa4d` | `KERNEL32.DLL!FlsGetValue` | 1 |
+| `0090aa27` | `0090aa4d` | `KERNEL32.DLL!TlsGetValue` (fallback) | 1 |
+| `0090aa9e` | `0090aac4` | `KERNEL32.DLL!FlsGetValue` | 1 |
+| `0090aa9e` | `0090aac4` | `KERNEL32.DLL!TlsGetValue` (fallback) | 1 |
 | `0090ac77` | `0090ac8c` | `KERNEL32.DLL!TlsGetValue` (partial) | 1 |
 | `0090ac77` | `0090acbb` | `KERNEL32.DLL!TlsSetValue` | 1 |
 | `0091c073` | `0091c17c` | `USER32.DLL!GetProcessWindowStation` | 1 |
@@ -102,6 +107,26 @@ At `0090acbb`, `__mtinit` resolves `KERNEL32.DLL!TlsSetValue` through
 and stores the pointer in `0x00c321e4`. `0090ac77` decodes that global before
 the exact CALLIND.
 
+The wrapper-internal calls at `0090aa4d` and `0090aac4` also have bounded
+symbolic target sets. `__mtinit` resolves `FlsGetValue` from `KERNEL32.DLL`; if
+the FLS exports are unavailable, it stores the imported `TlsGetValue` pointer
+as the fallback. It saves the selected pointer in the TLS slot at
+`dwTlsIndex_00b96fd4` using `TlsSetValue`. Each wrapper first reads that slot
+with the imported `TlsGetValue`, then calls its value indirectly. The target
+is therefore `FlsGetValue` or `TlsGetValue` at alternative 1, while API
+availability and runtime execution remain unobserved. The subsequent reads at
+`+0x1f8` and `+0x1fc` still produce unresolved EncodePointer/DecodePointer
+cache values; the candidates at `0090aa89` and `0090ab00` cover only their
+`GetProcAddress` alternatives.
+
+The TLS target review uses the `__mtinit` instruction and P-code captures,
+defined FLS API strings, TLS slot metadata/xrefs, and both wrapper flows in
+[`callind-tls-followup-functions.jsonl`](callind-tls-followup-functions.jsonl),
+[`callind-mtinit-defined-strings.tsv`](callind-mtinit-defined-strings.tsv),
+[`callind-encode-tls-address-metadata.jsonl`](callind-encode-tls-address-metadata.jsonl),
+[`callind-encode-tls-address-references.jsonl`](callind-encode-tls-address-references.jsonl),
+and `closure-flows/0090aa27.tsv` / `closure-flows/0090aa9e.tsv`.
+
 Two remaining calls dispatch through callback globals. `FUN_0090a62e` reads
 `0x00c31ec4` and `__callnewh` reads `0x00c3239c`; their only direct writers
 are the small setters `FUN_0090a528` and `FUN_0090f2f7`. `__init_pointers`
@@ -136,10 +161,10 @@ remains conditional on initializer execution.
 
 The `/2` replay is
 [`callind-target-triage-v2.jsonl`](callind-target-triage-v2.jsonl), SHA-256
-`e76ce18d247ce93bc8796efb3f1d5aac95f30ea6bbcab52a1bc1a26d99994b52` (22
-rows; twelve annotated sites and thirteen symbolic candidates). Its input sidecar is
+`3df8967eff61b32551230c090a46192d31ebd9a64db723ac50f9e3c043b94be5` (22
+rows; fourteen annotated sites and seventeen symbolic candidates). Its input sidecar is
 [`callind-symbol-candidates.jsonl`](callind-symbol-candidates.jsonl), SHA-256
-`9e1124579118d391cda565647edc402ddda302be7a88e1e72f1eb29621176bc8` (12
+`a78b2c7220cf4f3ee17ddb9f098311206d7fd2a0d78e1f136028c1efc3f8a622` (14
 rows). Reproduce it from the repository root:
 
 ```sh
