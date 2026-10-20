@@ -35,6 +35,24 @@ The accompanying member-map rows are therefore explicit human-reviewed receiver
 roots, not signatures inferred from Ghidra's incomplete prototypes. The review
 is valid only for this pinned program and these functions.
 
+## Hit-area semantics
+
+`CCJoyStick::setHitAreaWithRect` at `0x002a6570` supplies an independent
+owner-method cross-check. Ghidra's prototype marks parameter 0 as
+`CCJoyStick * this` and parameter 1 as `CCRect`; the instruction at
+`0x002a6574` computes `this + 0x11c`, and the call at `0x002a6578` resolves to
+`cocos2d::CCRect::operator=`. The same method stores zero at `this + 0x12c`
+(`0x002a657e`). The four float loads from `+0x11c`, `+0x120`, `+0x124`, and
+`+0x128` in `containsTouchLocation` therefore observe components of the
+region assigned as a `CCRect`. The flat layout replay keeps those component
+access starts; it does not add a second, overlapping aggregate field row.
+
+`containsTouchLocation` treats `+0x12c` as a non-negative integer threshold,
+converts it to float, and compares it with a point distance. A positive value
+can satisfy the test before the rectangle component checks; the setter resets
+it to zero. This supports an integer candidate, but the field remains unnamed
+and unaccepted.
+
 ## Observed field evidence and conservative type candidates
 
 - `+0x104`: a four-byte load is passed to `CCNode::stopAllActions`, confirming pointer use. This is consistent with the existing `cocos2d::CCSprite *` candidate, but it does not establish the exact dynamic target type, so this package adds no new type candidate there.

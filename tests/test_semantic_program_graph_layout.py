@@ -1173,6 +1173,39 @@ def test_nevergone_ccjoystick_touch_helper_layout_extension_replays() -> None:
         "002a60c8", "002a6284", "002a63a8",
     }
 
+    owner_prototypes = [
+        json.loads(line)
+        for line in paths["prior_owner_function_prototypes"].read_text(encoding="utf-8").splitlines()
+    ]
+    setter = next(row for row in owner_prototypes if row["resolved_entry"] == "002a6570")
+    _schema("ghidra-function-prototype-v1.schema.json").validate(setter)
+    assert setter["qualified_name"] == "CCJoyStick::setHitAreaWithRect"
+    assert setter["parameters"][0]["name"] == "this"
+    assert setter["parameters"][0]["type"]["target_name"] == "CCJoyStick"
+    assert setter["parameters"][1]["type"]["name"] == "CCRect"
+    owner_pcode = list(csv.DictReader(
+        paths["prior_owner_pcode_flow"].open(encoding="utf-8"), delimiter="\t",
+    ))
+    setter_pcode = [row for row in owner_pcode if row["function_entry"] == "002a6570"]
+    pcode_schema = _schema("ghidra-function-pcode-flow-v1.schema.json")
+    for row in setter_pcode:
+        pcode_schema.validate(row)
+    assert any(
+        row["op_address"] == "002a6574" and row["opcode"] == "PTRADD"
+        and "const:0x11c:4" in row["inputs"]
+        for row in setter_pcode
+    )
+    assert any(
+        row["op_address"] == "002a6578" and row["opcode"] == "CALL"
+        and row["callee_name"] == "cocos2d::CCRect::operator="
+        for row in setter_pcode
+    )
+    assert any(
+        row["op_address"] == "002a657e" and row["opcode"] == "STORE"
+        and row["inputs"].endswith(";const:0x0:4")
+        for row in setter_pcode
+    )
+
     vtable_rows = list(csv.DictReader(paths["vtable_touch_slots"].open(encoding="utf-8"), delimiter="\t"))
     assert {
         row["slot_offset"]: (

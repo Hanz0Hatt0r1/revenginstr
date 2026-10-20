@@ -27,7 +27,11 @@ floating-point values; `+0x12c` is a 32-bit integer. No member names or accepted
 types are added. `+0x104` is observed as a pointer passed to
 `CCNode::stopAllActions`, consistent with the existing `cocos2d::CCSprite *`
 candidate. That use does not independently establish the exact dynamic target
-type, so this replay adds no candidate at `+0x104`.
+type, so this replay adds no candidate at `+0x104`. `setHitAreaWithRect` assigns
+a `CCRect` beginning at `+0x11c` and clears `+0x12c`; `containsTouchLocation`
+reads the four rectangle components and applies the integer threshold. The
+flat layout keeps the component access offsets and does not add an overlapping
+aggregate row.
 
 The replay manifest pins raw exports, the receiver review, source inputs, and
 the derived layout. The corresponding regression test rebuilds the layout and
