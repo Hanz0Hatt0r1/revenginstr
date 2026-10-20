@@ -2421,13 +2421,18 @@ preserves those call barriers. See the
 The new `IndirectCallTargetTriage/2` analyzer layer now attaches source-pinned
 symbolic API and internal-function candidates to exact triage sites while
 preserving the `/1` provenance, unresolved alternatives, and effect barriers.
-It records the conditional `00918a4c` API/fallback set and partial
-`EncodePointer`/`DecodePointer` paths at `0090aa89` and `0090ab00`; cache-load
-alternatives and runtime addresses remain unresolved.
+It records the conditional `00918a4c` API/fallback set, partial
+`EncodePointer`/`DecodePointer` paths at `0090aa89` and `0090ab00`,
+`mscoree.dll!CorExitProcess` at `009074ae`, and five `USER32.DLL` API targets
+at `0091c17c`, `0091c18f`, `0091c1e3`, `0091c204`, and `0091c225`. All ten
+symbolic candidates remain scoped to their provenance alternatives; runtime
+addresses and execution are unobserved, and cache-load alternatives remain
+unresolved.
 
 **Next:** acquire runtime observations for the two remaining mixed paths and
-the 13 dynamic-barrier-only sites, then bind runtime state for the seven
-scoped candidate sets, including the partial candidate at `00918a4c`.
+the 13 dynamic-barrier-only sites, then bind runtime state for the thirteen
+scoped candidate mappings across nine sites, including the partial candidate
+at `00918a4c`.
 Preserve unresolved target and alias barriers; keep selector and receiver
 conclusions conditional until runtime evidence binds them. Assess bodies
 smaller than 40 bytes only when a remaining target or pair gives a concrete

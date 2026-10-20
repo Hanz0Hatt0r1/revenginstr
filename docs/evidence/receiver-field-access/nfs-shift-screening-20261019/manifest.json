@@ -1465,25 +1465,49 @@
       "rows": 3246
     },
     {
+      "path": "scan37/replay-0041dd40/callind-blocker-api-address-metadata.jsonl",
+      "bytes": 1173,
+      "sha256": "4fe2354cb8b298f64fe20df7528f6f32ddb06dc2dbae67e0d76e2d166bee7865",
+      "rows": 3
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-blocker-cache-address-references.jsonl",
+      "bytes": 4105,
+      "sha256": "a371fe36cae47ace018722b2f7e865e2c048de4ba17b498d3e8704042025770c",
+      "rows": 5
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-blocker-defined-strings.tsv",
+      "bytes": 1019,
+      "sha256": "e43fc0d82c71ad72b13868f17988f3cecb2c3e8c43cbd17deccb417251806f7a",
+      "rows": 11
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-blocker-functions.jsonl",
+      "bytes": 618401,
+      "sha256": "c55d54b93043391424f3ca2c7906d9b27269c7138ba8e0ac7dcd34f2024bed32",
+      "rows": 8
+    },
+    {
       "path": "scan37/replay-0041dd40/callind-static-symbol-review-00918a4c.md",
       "bytes": 6044,
       "sha256": "ff15228316e44a5cbf02d84ed0c2401f1a9f5801d582cbe0cf5962d75a47bb46"
     },
     {
       "path": "scan37/replay-0041dd40/callind-symbol-candidates.jsonl",
-      "bytes": 11007,
-      "sha256": "fc24c4d925011cc30129b003446e55753def816ac38157cedc5af45add054379",
-      "rows": 3
+      "bytes": 28231,
+      "sha256": "424dde69fcfd6dc683f31f9f2f08f3a6595202928be4c98e9d67f5af47cd4b27",
+      "rows": 9
     },
     {
       "path": "scan37/replay-0041dd40/callind-target-triage-replay.md",
-      "bytes": 4871,
-      "sha256": "331ddd2c5d88630a965a1224db80dec709e19a2a860eb0b4de1fc742541ace1b"
+      "bytes": 6134,
+      "sha256": "4715914f2ba7821127db212993f7ddfc495f4953155fd65147e2dca05e3b765b"
     },
     {
       "path": "scan37/replay-0041dd40/callind-target-triage-v2.jsonl",
-      "bytes": 68304,
-      "sha256": "9d0ae1a23371b7f58e9e64287697be256f00fbe876a5e9020c8d1fe9255c2032",
+      "bytes": 86587,
+      "sha256": "b18d7768f6ca525b960c36343ee0b7b722386dd421faf93ea542f90c04ea1272",
       "rows": 22
     },
     {

@@ -53,29 +53,50 @@ generic triage JSONL or remove the effect barrier. See
 
 ## Symbolic target enrichment
 
-`callind-symbol-candidates.jsonl` supplies two evidence-backed identities for
-the exact site `009189cd:00918a4c`: `KERNEL32.DLL!InitializeCriticalSectionAndSpinCount`
-maps to provenance alternatives 2 and 3, and
-`SHIFT.exe!___crtInitCritSecNoSpinCount@8` (`0x009189bd`) maps to alternatives
-1 and 2. The overlap is intentional: the merged cache-decode alternative can
-represent either target. Each candidate retains its Ghidra source rows and
-limitations; the external runtime address and branch selection remain unknown.
+`callind-symbol-candidates.jsonl` supplies evidence-backed identities for the
+three initially reviewed sites: `KERNEL32.DLL!InitializeCriticalSectionAndSpinCount`
+and `SHIFT.exe!___crtInitCritSecNoSpinCount@8` at `009189cd:00918a4c`, plus
+partial `KERNEL32.DLL!EncodePointer` and `KERNEL32.DLL!DecodePointer` paths at
+`0090aa89` and `0090ab00`. The helper candidates cover only alternative 2;
+unresolved cache loads remain visible.
 
-The same captured helper flows provide partial symbolic identities at two
-other mixed sites: `0090aa27:0090aa89` may call
-`KERNEL32.DLL!EncodePointer`, and `0090aa9e:0090ab00` may call
-`KERNEL32.DLL!DecodePointer`. Each annotation links only alternative 2, where
-the exact API name is passed to `GetProcAddress`; alternative 1 remains an
-unresolved cache load. Neither annotation claims a complete target set or
-runtime address.
+A second static pass adds six exact dynamic-call identities:
+
+| Function | CALLIND | Symbolic target | Alternative |
+| --- | --- | --- | ---: |
+| `0090748b` | `009074ae` | `mscoree.dll!CorExitProcess` | 1 |
+| `0091c073` | `0091c17c` | `USER32.DLL!GetProcessWindowStation` | 1 |
+| `0091c073` | `0091c18f` | `USER32.DLL!GetUserObjectInformationA` | 1 |
+| `0091c073` | `0091c1e3` | `USER32.DLL!GetActiveWindow` | 1 |
+| `0091c073` | `0091c204` | `USER32.DLL!GetLastActivePopup` | 1 |
+| `0091c073` | `0091c225` | `USER32.DLL!MessageBoxA` | 1 |
+
+At `0090748b`, the instructions call the imported `GetModuleHandleA` with the
+retained `mscoree.dll` string, call imported `GetProcAddress` with
+`CorExitProcess`, check for null, then call the returned pointer. In
+`0091c073`, the code loads `USER32.DLL`, resolves the five API names through
+`GetProcAddress`, encodes each returned pointer into one of five globals, then
+decodes those globals immediately before the matching `CALLIND`. The Ghidra
+address-reference export shows only the expected initialization/read uses for
+those five globals in this program image. Static aliases and runtime writes
+cannot be excluded, and no runtime target was observed.
+
+The sidecar pins each identity to instruction, defined-string, address-metadata,
+P-code-flow, CALLIND, and (for encoded globals) address-reference rows. The
+retained captures are `callind-blocker-functions.jsonl` (8 functions),
+`callind-blocker-defined-strings.tsv` (11 strings),
+`callind-blocker-api-address-metadata.jsonl` (3 addresses), and
+`callind-blocker-cache-address-references.jsonl` (5 globals). These candidates
+name the statically requested API if the relevant pointer is resolved; they do
+not establish runtime execution, runtime address, or complete target sets.
 
 The `/2` replay is
 [`callind-target-triage-v2.jsonl`](callind-target-triage-v2.jsonl), SHA-256
-`9d0ae1a23371b7f58e9e64287697be256f00fbe876a5e9020c8d1fe9255c2032` (22
-rows; three annotated rows and four symbolic candidates). Its input sidecar is
+`b18d7768f6ca525b960c36343ee0b7b722386dd421faf93ea542f90c04ea1272` (22
+rows; nine annotated sites and ten symbolic candidates). Its input sidecar is
 [`callind-symbol-candidates.jsonl`](callind-symbol-candidates.jsonl), SHA-256
-`fc24c4d925011cc30129b003446e55753def816ac38157cedc5af45add054379`. Reproduce
-it from the repository root:
+`424dde69fcfd6dc683f31f9f2f08f3a6595202928be4c98e9d67f5af47cd4b27` (9
+rows). Reproduce it from the repository root:
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python -m revenginstr.indirect_call_target_triage_v2 \
