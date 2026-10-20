@@ -1897,9 +1897,41 @@ retain possible intervening effects. No pair becomes a unique candidate.
 This exercises the real nested-call and missing-root barriers without
 weakening the memory-only result.
 
-**Next:** replay CFG/4 on further bounded x86-32 candidates from actual
-parameter-field `STORE` and `LOAD` rows. Prefer a candidate where the tracked
-store dominates a later load and at least one exact callee root maps the
-written formal parameter; this can exercise a supported non-alias proof. Keep
-aliasing and unresolved effects as barriers. Do not infer alias facts from
-decompiler text or instruction-level corpus labels.
+**Second CFG/4 replay:** the x86-32 Shift function `007146c0` yielded one
+memory-rooted pair at parameter 0 plus `0x15c`: `STORE@007147f8` (time 415,
+4 bytes, source parameter unknown) and `LOAD@00714810` (time 447). The path
+audit returns `candidate_path_compatible` with witness blocks `[5, 6]`; the
+dominance audit returns `unique_cfg_store_candidate`. All ten direct calls
+have missing callee flows in both the closure and `/2` sidecars, but their
+operation times are 34–412, before the tracked store. The unique candidate
+therefore survives both audits without using a callee-effect or alias proof.
+The complete capture and byte-for-byte analyzer replay are in
+[`field-store-load-shift-007146c0`](evidence/field-store-load-shift-007146c0/README.md).
+This is a structural candidate only; it does not establish runtime execution
+or memory reaching-definition.
+
+**Third CFG/4 replay:** Shift function `0064bb70` produced four exact
+parameter-0 `+0x84` store/load pairs. For `STORE@0064bbf6` → `LOAD@0064bd6c`,
+the store dominates, but the witness crosses eight direct calls and multiple
+stores. A bounded nine-function capture exported all eight direct callee
+flows, their CFG/4 records, and memory facts. Six caller-root plans produced
+two exact offset mappings. At call `0064bd7d`, callee `0064b8b0.param0` maps
+to caller `param0+0`; `/2` proves its STORE at `0064b91f` (`param0+0x28`,
+four bytes) disjoint from the tracked `+0x84` range. The same callee has an
+unresolved STORE at `0064b8d2` and an indirect call at `0064b90d`, so the call
+still has `unknown_effect`. The unresolved destination merges a load from
+`param0+0x48` with the direct parameter, so no single root can safely be
+assigned. Other witness calls also retain unresolved targets, missing nested
+flows, or possible aliasing writes. Both closure and `/2` audits preserve
+`possible_intervening_memory_effect`; no candidate is promoted. The full
+capture and byte-for-byte replay are in
+[`field-store-load-shift-0064bb70`](evidence/field-store-load-shift-0064bb70/README.md).
+This confirms that `/2` can record a proven disjoint callee store without
+discarding sibling unknown effects.
+
+**Next:** continue bounded CFG/4 replays until a dominating store/load witness
+has complete evidence for every intervening write and call. Prefer cases with
+exact caller roots for every written callee formal; prove byte-range
+disjointness only from those roots and memory facts. Keep the incomplete
+`0064bb70` effects as barriers, and do not infer alias facts from decompiler
+text or instruction-level corpus labels.

@@ -1,0 +1,3 @@
+function_entry	op_address	op_time	opcode	output	inputs	callee_entry	callee_name
+0064c5c0	0064c5c6	8	CALL	-	register:register:00000004:4;register:register:00000008:4	0045b45c	FUN_0045b45c
+0064c5c0	0064c5c6	9	RETURN	-	const:0x0:8	-	-
