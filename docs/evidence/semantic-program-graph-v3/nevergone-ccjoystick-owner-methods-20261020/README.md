@@ -15,7 +15,8 @@ parameter-rooted memory stores, and 302 retained P-code rows. All six new
 function-flow acquisitions completed. The layout hypothesis grows from 13 to
 19 observed offsets by adding `0xe0`, `0xe4`, `0xe8`, `0x12c`, `0x138`, and
 `0x14c`; its 337-byte observed extent and 340-byte allocation size do not
-change. New offsets have no reviewed type candidates.
+change. The other added offsets (`0xe0`, `0xe4`, `0xe8`, `0x12c`, and `0x14c`)
+remain untyped.
 
 The graph has 168 nodes, 240 edges, and 36 type-to-field joins across the eight
 methods. The scoped gold uses the separate method prototypes, the rebuilt
@@ -25,6 +26,17 @@ with complete provenance. No edge is accepted because confidence remains
 null. This is a narrow cross-artifact owner-type check; it does not establish
 field meanings, direct-versus-inherited ownership, store-to-load flow, or
 runtime behavior. M10.5 remains open.
+
+## Manually reviewed type candidates
+
+The access traces support four conservative type candidates. The byte at
+`+0x138` is cleared by `resetJoyStick` and gates the `onTouchMoved` path; the
+byte at `+0x150` also gates that path. Both are recorded as boolean candidates.
+The values at `+0x13c` and `+0x140` are stored from `FLOAT_DIV` and
+`FLOAT2FLOAT` results in `updateTouchPoint`; `getPower` returns the value loaded
+from `+0x13c`. They are recorded as 32-bit floating-point candidates. The
+review rows pin these interpretations to exact P-code or memory-access records.
+No member names, accepted types, or runtime behavior are inferred.
 
 ## Reproduce the read-only exports
 
@@ -37,6 +49,10 @@ GHIDRA_HOME=/opt/ghidra \
   docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick-owner-methods-20261020/method-plan.tsv \
   /tmp/ccjoystick-owner-method-prototypes.jsonl
 ```
+
+The prototype, parameter-field, and P-code exports were rerun from the local
+Ghidra 12.1.2 project with Java 21. Their retained raw outputs matched the
+checked-in exports byte for byte.
 
 Export field accesses for the six additional methods:
 
@@ -76,5 +92,5 @@ pytest -q tests/test_semantic_program_graph_layout.py \
   -k owner_methods_replay_is_reproducible
 ```
 
-The manifest pins the source exports, prior Nevergone inputs, review evidence,
-schemas, derived artifacts, and this README.
+The manifest pins the source exports, prior Nevergone inputs, type-review
+candidates, schemas, derived artifacts, and this README.

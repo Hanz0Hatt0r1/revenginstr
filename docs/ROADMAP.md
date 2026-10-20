@@ -1522,9 +1522,12 @@ A follow-on read-only replay adds six more `CCJoyStick *` methods (constructor,
 destructor, touch movement, reset, hit-area setter, and power getter). Across
 the eight-method sample the layout hypothesis now contains 19 observed offsets,
 and the exploratory graph joins 36 owner fields with complete provenance. The
-same-project `ANALYSIS` prototypes and raw accesses support this narrow replay;
-the offsets still lack reviewed semantic types, and no edge is accepted. This
-does not establish direct-versus-inherited ownership or close M10.5. See
+same-project `ANALYSIS` prototypes and raw accesses support this narrow replay.
+A separate manual review records boolean candidates at `+0x138` and `+0x150`,
+and floating-point candidates at `+0x13c` and `+0x140`, tied to exact P-code and
+memory records. The other added offsets remain untyped; no member names or
+accepted types are inferred, and no graph edge is accepted. This does not
+establish direct-versus-inherited ownership or close M10.5. See
 [`CCJoyStick` owner-method field replay](evidence/semantic-program-graph-v3/nevergone-ccjoystick-owner-methods-20261020/README.md).
 
 `revenginstr-semantic-program-query` now selects nodes and edges by kind,

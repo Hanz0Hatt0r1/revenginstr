@@ -5,7 +5,7 @@
   "candidate_edge_count": 36,
   "dataset_id": "nevergone-ccjoystick-prototype-layout-crosscheck",
   "format": "REVENGINSTR.SemanticProgramGraphEvaluation/1",
-  "gold_artifact_sha256": "401965218c78985aa08b510861a35c8a4f3627be8dfda5e56c5df8e95a21fb06",
+  "gold_artifact_sha256": "407d6d01e92daf2ab7ba9a72b356836e2302d72b9399a35545dc1fb4c91d1077",
   "minimum_confidence": 0.95,
   "per_relation": {
     "has_field": {
@@ -19,7 +19,7 @@
   },
   "provenance_complete_edge_count": 36,
   "provenance_completeness": 1.0,
-  "semantic_program_graph_sha256": "1e0a374fa7577fc30342be214b20f53364b2b83a79300fb938919cd30ec2fae7",
+  "semantic_program_graph_sha256": "816d379861ec8795bb75f8ad4afd10128e7724e4521d9fee119897ccc7544745",
   "split_id": "separate-ghidra-prototype-export-2026-10",
   "subgraphs_evaluated": 1,
   "unsupported_edge_count": 0,

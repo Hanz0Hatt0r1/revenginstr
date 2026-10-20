@@ -681,6 +681,82 @@ def test_nevergone_ccjoystick_owner_methods_replay_is_reproducible() -> None:
     for row in callind_rows:
         callind_schema.validate(row)
 
+    field_type_rows = [
+        json.loads(line)
+        for line in paths["owner_field_type_review"].read_text(encoding="utf-8").splitlines()
+    ]
+    field_type_schema = _schema("type-layout-field-type-review-v1.schema.json")
+    for row in field_type_rows:
+        field_type_schema.validate(row)
+        assert row["program_id"] == program_id
+        assert row["program_sha256"] == manifest["program_sha256"]
+        assert row["type_id"] == "nevergone:opaque-object-002a6584"
+    assert len(field_type_rows) == 7
+    assert {
+        (row["offset_bytes"], row["kind"], row["width_bytes"])
+        for row in field_type_rows
+    } == {
+        (0x138, "boolean", 1),
+        (0x13C, "floating_point", 4),
+        (0x140, "floating_point", 4),
+        (0x150, "boolean", 1),
+    }
+    review_pcode_sha = artifacts["pcode_flow"]["sha256"]
+    review_memory_sha = artifacts["memory_store_access"]["sha256"]
+    combined_pcode_rows = list(csv.DictReader(paths["pcode_flow"].open(encoding="utf-8"), delimiter="\t"))
+    combined_pcode_by_key = {
+        (row["function_entry"], row["op_address"], row["op_time"], row["opcode"]): row
+        for row in combined_pcode_rows
+    }
+    combined_memory_rows = [
+        json.loads(line) for line in paths["memory_store_access"].read_text(encoding="utf-8").splitlines()
+    ]
+    combined_memory_by_key = {
+        (row["function_entry"], row["address"], str(row["time"]), row["opcode"]): row
+        for row in combined_memory_rows
+    }
+    for row in field_type_rows:
+        evidence = row["evidence"]
+        key_parts = evidence["record_key"].split(";")
+        if evidence["source_format"] == "REVENGINSTR.GhidraFunctionPcodeFlow/1":
+            assert evidence["source_sha256"] == review_pcode_sha
+            key = dict(part.split("=", 1) for part in key_parts[:4])
+            source_row = combined_pcode_by_key[(
+                key["function"], key["op_address"], key["op_time"], key["opcode"],
+            )]
+            if row["offset_bytes"] == 0x138 and key["function"] == "002a643c":
+                assert source_row["inputs"].endswith(";const:0x0:1")
+            if row["offset_bytes"] == 0x13C:
+                assert source_row["opcode"] == "FLOAT_DIV"
+                store_row = combined_pcode_by_key[("002a5f00", "002a5f84", "145", "STORE")]
+                assert store_row["inputs"].endswith(";" + source_row["output"])
+                getter_row = combined_pcode_by_key[("002a66c6", "002a66c6", "1", "LOAD")]
+                assert getter_row["output"].rsplit(":", 1)[1] == "4"
+            if row["offset_bytes"] == 0x140:
+                assert source_row["opcode"] == "FLOAT2FLOAT"
+                store_row = combined_pcode_by_key[("002a5f00", "002a5f88", "147", "STORE")]
+                assert store_row["inputs"].endswith(";" + source_row["output"])
+        else:
+            assert evidence["source_format"] == "REVENGINSTR.GhidraMemoryStoreAccess/1"
+            assert evidence["source_sha256"] == review_memory_sha
+            key = dict(part.split("=", 1) for part in key_parts[:4])
+            source_row = combined_memory_by_key[(
+                key["function"], key["address"], key["time"], key["opcode"],
+            )]
+            assert source_row["offset_bytes"] == row["offset_bytes"]
+            assert source_row["memory_width_bytes"] == row["width_bytes"]
+    keys_by_offset = {
+        offset: [row["evidence"]["record_key"] for row in field_type_rows if row["offset_bytes"] == offset]
+        for offset in {row["offset_bytes"] for row in field_type_rows}
+    }
+    assert any("002a6442" in key for key in keys_by_offset[0x138])
+    assert any("002a605e" in key for key in keys_by_offset[0x138])
+    assert "FLOAT_DIV" in keys_by_offset[0x13C][0]
+    assert "002a66c6" in keys_by_offset[0x13C][0]
+    assert "FLOAT2FLOAT" in keys_by_offset[0x140][0]
+    assert any("002a65ca" in key for key in keys_by_offset[0x150])
+    assert any("002a6058" in key for key in keys_by_offset[0x150])
+
     load_schema = _schema("ghidra-parameter-load-field-v1.schema.json")
     raw_loads = list(csv.DictReader(paths["raw_parameter_loads"].open(encoding="utf-8"), delimiter="\t"))
     assert len(raw_loads) == 4
@@ -719,7 +795,7 @@ def test_nevergone_ccjoystick_owner_methods_replay_is_reproducible() -> None:
         [paths["type_layout_member_map"]],
         parameter_load_paths=[paths["parameter_loads"]],
         size_review_paths=[paths["size_review"]],
-        field_type_review_paths=[paths["field_type_review"]],
+        field_type_review_paths=[paths["field_type_review"], paths["owner_field_type_review"]],
         program_id=program_id,
         program_sha256=manifest["program_sha256"],
         language_id="ARM:LE:32:v8",
@@ -737,6 +813,17 @@ def test_nevergone_ccjoystick_owner_methods_replay_is_reproducible() -> None:
     assert len(layout_rows[0]["fields"]) == 19
     assert layout_rows[0]["object_size"]["minimum_observed_bytes"] == 337
     assert layout_rows[0]["object_size"]["exact_size_bytes"] == 340
+    reviewed_fields = {field["offset_bytes"]: field for field in layout_rows[0]["fields"]}
+    for offset, kind, width in {
+        (0x138, "boolean", 1),
+        (0x13C, "floating_point", 4),
+        (0x140, "floating_point", 4),
+        (0x150, "boolean", 1),
+    }:
+        assert any(
+            candidate["kind"] == kind and candidate["width_bytes"] == width
+            for candidate in reviewed_fields[offset]["type_candidates"]
+        )
 
     effects, effects_sha = _read_jsonl(paths["function_effect_ir"])
     layouts, layout_sha = _read_jsonl(paths["type_layout_hypothesis"])

@@ -96,38 +96,38 @@
     {
       "id": "type_layout_hypothesis",
       "path": "type-layout-hypothesis.jsonl",
-      "bytes": 36158,
-      "sha256": "1de9e604e92ea7b8a7da2339c65b1053f60c14833edc3c9c5cde1d8fb583e50a"
+      "bytes": 41305,
+      "sha256": "1ecb54e9a6b7284de8507fadccd84a89898998a610a36fa7aac26019592fd3fd"
     },
     {
       "id": "semantic_graph",
       "path": "semantic-program-graph.jsonl",
-      "bytes": 429352,
-      "sha256": "1e0a374fa7577fc30342be214b20f53364b2b83a79300fb938919cd30ec2fae7"
+      "bytes": 434655,
+      "sha256": "816d379861ec8795bb75f8ad4afd10128e7724e4521d9fee119897ccc7544745"
     },
     {
       "id": "field_access_query",
       "path": "field-access-query.jsonl",
       "bytes": 83475,
-      "sha256": "950d55ad5ea4ff33ef90024d7abc535b2c9ced52e0f09ab8c0fae8d67b159e07"
+      "sha256": "0995a01422c314570ab8bc49ec8c3e55be0e911147f8d98a559fe247704ae19d"
     },
     {
       "id": "field_layout_gold",
       "path": "field-layout-gold.jsonl",
       "bytes": 32221,
-      "sha256": "401965218c78985aa08b510861a35c8a4f3627be8dfda5e56c5df8e95a21fb06"
+      "sha256": "407d6d01e92daf2ab7ba9a72b356836e2302d72b9399a35545dc1fb4c91d1077"
     },
     {
       "id": "field_layout_evaluation",
       "path": "field-layout-evaluation.json",
       "bytes": 956,
-      "sha256": "c61ad9d1af4a96945487d0ec18c67e3f7fb01714a40ed4e66c4cb207986fba6d"
+      "sha256": "04aa75d64953c43cfa8978221e30b6f53c11eb588c108c18f2d411b99d5edf5d"
     },
     {
       "id": "readme",
       "path": "README.md",
-      "bytes": 3535,
-      "sha256": "aa98552f734329fedbdf169ff53208bd8033c26964ef5aac7e1b5d64e7d9d8ad"
+      "bytes": 4410,
+      "sha256": "b6e8449dbf7534731e9238ce02383eb35944a180c47b68b9ba69328f306ad26d"
     },
     {
       "id": "init_parameter_loads",
@@ -170,6 +170,12 @@
       "path": "../../type-layout-review/nevergone-ccjoystick-20261019/size-review.jsonl",
       "bytes": 621,
       "sha256": "be17fddac5f7a62ba37f7b47ca69840e9a5afcec5857e6f699acf954a46cbbe6"
+    },
+    {
+      "id": "owner_field_type_review",
+      "path": "field-type-review.jsonl",
+      "bytes": 4705,
+      "sha256": "db7f885438654ed01c5b9d8d6c5d06819b626e7437bc4133dedf332c8f93406d"
     },
     {
       "id": "field_type_review",
@@ -289,6 +295,14 @@
     "exploratory_has_field_precision": 1.0,
     "exploratory_has_field_recall": 1.0,
     "provenance_completeness": 1.0,
-    "accepted_has_field_edges": 0
+    "accepted_has_field_edges": 0,
+    "reviewed_type_candidate_fields": 4,
+    "reviewed_type_candidate_offsets": [
+      "0x138",
+      "0x13c",
+      "0x140",
+      "0x150"
+    ],
+    "field_type_review_records": 7
   }
 }
