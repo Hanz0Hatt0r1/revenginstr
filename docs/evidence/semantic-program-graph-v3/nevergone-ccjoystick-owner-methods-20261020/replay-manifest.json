@@ -1,0 +1,294 @@
+{
+  "format": "REVENGINSTR.SemanticProgramGraphOwnerMethodsReplay/1",
+  "program_id": "nevergone:libcocos2dcpp.so",
+  "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
+  "artifacts": [
+    {
+      "id": "method_plan",
+      "path": "method-plan.tsv",
+      "bytes": 425,
+      "sha256": "7b648ad5d328e4a8fabce497ae0b0807577720eda8334596f6f51ed26b0c6b40"
+    },
+    {
+      "id": "function_entries",
+      "path": "function-entries.txt",
+      "bytes": 54,
+      "sha256": "501d7ac639a13bc6b29aa9a0cd2b53444f4176b66f7e18eb70314f284e5a0e40"
+    },
+    {
+      "id": "function_prototypes",
+      "path": "function-prototypes.jsonl",
+      "bytes": 9236,
+      "sha256": "77b048046fbdba4de42f8f2722bbffc09fe36f0a45f928d0195025ffb2107848"
+    },
+    {
+      "id": "raw_parameter_loads",
+      "path": "raw-parameter-loads.tsv",
+      "bytes": 715,
+      "sha256": "96e4f53fbcbf7dc651ae39e287063f6c2596b0ae8f598d68d6c91bcb6b1c509b"
+    },
+    {
+      "id": "raw_parameter_stores",
+      "path": "raw-parameter-stores.tsv",
+      "bytes": 169,
+      "sha256": "e6ec39452b9221d0dc18ab1849187bc501b73d9eda27703ce055486e35d90282"
+    },
+    {
+      "id": "raw_memory_store_access",
+      "path": "raw-memory-store-access.jsonl",
+      "bytes": 8012,
+      "sha256": "0b6145c3c0ff28c3ea4eb2dccc476c88646f32a40dedea162feaadca28a47b05"
+    },
+    {
+      "id": "raw_pcode_flow",
+      "path": "raw-pcode-flow.tsv",
+      "bytes": 10385,
+      "sha256": "9523d1d20fefa2205cb1a6f752f543ac9d5615966c726d09d12a209ca5ef9b05"
+    },
+    {
+      "id": "raw_callind_evidence",
+      "path": "raw-callind-evidence.jsonl",
+      "bytes": 626,
+      "sha256": "a8b2e1ee1cede37b18284be881e5d6dde039f67aa42c864bbc7ee22a0e932238"
+    },
+    {
+      "id": "raw_pcode_acquisition",
+      "path": "raw-acquisition.jsonl",
+      "bytes": 1089,
+      "sha256": "327dceddfc6b5794856071ae58d9c00dbaf61e130ff42deb18237aa806c8e0e8"
+    },
+    {
+      "id": "parameter_loads",
+      "path": "parameter-loads.tsv",
+      "bytes": 3781,
+      "sha256": "c1e6229522b3a8d59048b04b12fc9d6f4ae18b1471e411eaf420c74edd862506"
+    },
+    {
+      "id": "parameter_stores",
+      "path": "parameter-stores.tsv",
+      "bytes": 925,
+      "sha256": "308a90c88b719f1bb0bdbd3f605dd18968a2fe4e284b51cde6ac2a4c63749bc0"
+    },
+    {
+      "id": "memory_store_access",
+      "path": "memory-store-access.jsonl",
+      "bytes": 16577,
+      "sha256": "58393c3945018a6c026f3bef4ad5e2968b2201bd000f46ee9358f8b51efe1808"
+    },
+    {
+      "id": "pcode_flow",
+      "path": "pcode-flow.tsv",
+      "bytes": 25337,
+      "sha256": "0e75c17c7d13d05fc627be93a4e1dd78aef8ff7e49d9f207ee17f3deef05dda2"
+    },
+    {
+      "id": "type_layout_member_map",
+      "path": "type-layout-member-map.jsonl",
+      "bytes": 2256,
+      "sha256": "1c46f741dea5f63ef0f835625a3d264e9800828f254043913e3ede3c6695f025"
+    },
+    {
+      "id": "function_effect_ir",
+      "path": "function-effects.jsonl",
+      "bytes": 55908,
+      "sha256": "078e85ca421a2cd87193c70c017fd1a0de65c619fabcacc4bd12f6bb8e11906b"
+    },
+    {
+      "id": "type_layout_hypothesis",
+      "path": "type-layout-hypothesis.jsonl",
+      "bytes": 36158,
+      "sha256": "1de9e604e92ea7b8a7da2339c65b1053f60c14833edc3c9c5cde1d8fb583e50a"
+    },
+    {
+      "id": "semantic_graph",
+      "path": "semantic-program-graph.jsonl",
+      "bytes": 429352,
+      "sha256": "1e0a374fa7577fc30342be214b20f53364b2b83a79300fb938919cd30ec2fae7"
+    },
+    {
+      "id": "field_access_query",
+      "path": "field-access-query.jsonl",
+      "bytes": 83475,
+      "sha256": "950d55ad5ea4ff33ef90024d7abc535b2c9ced52e0f09ab8c0fae8d67b159e07"
+    },
+    {
+      "id": "field_layout_gold",
+      "path": "field-layout-gold.jsonl",
+      "bytes": 32221,
+      "sha256": "401965218c78985aa08b510861a35c8a4f3627be8dfda5e56c5df8e95a21fb06"
+    },
+    {
+      "id": "field_layout_evaluation",
+      "path": "field-layout-evaluation.json",
+      "bytes": 956,
+      "sha256": "c61ad9d1af4a96945487d0ec18c67e3f7fb01714a40ed4e66c4cb207986fba6d"
+    },
+    {
+      "id": "readme",
+      "path": "README.md",
+      "bytes": 3535,
+      "sha256": "aa98552f734329fedbdf169ff53208bd8033c26964ef5aac7e1b5d64e7d9d8ad"
+    },
+    {
+      "id": "init_parameter_loads",
+      "path": "../../receiver-field-access/nevergone-ccjoystick-init-20261019/parameter-loads.tsv",
+      "bytes": 1389,
+      "sha256": "b96a464135852bc16474bb3e9e6d127b07527330a8e128b67b4907be999df134"
+    },
+    {
+      "id": "init_parameter_stores",
+      "path": "../../receiver-field-access/nevergone-ccjoystick-init-20261019/parameter-stores.tsv",
+      "bytes": 925,
+      "sha256": "308a90c88b719f1bb0bdbd3f605dd18968a2fe4e284b51cde6ac2a4c63749bc0"
+    },
+    {
+      "id": "init_memory_store_access",
+      "path": "../../receiver-field-access/nevergone-ccjoystick-init-20261019/memory-store-access.jsonl",
+      "bytes": 7299,
+      "sha256": "391c0444194daa95b554670f8c29a112ca17625549290129c521c13f52311eda"
+    },
+    {
+      "id": "update_touchpoint_loads",
+      "path": "../nevergone-ccjoystick-method-pair-20261020/update-touchpoint-loads.tsv",
+      "bytes": 1955,
+      "sha256": "1f06139671dafe7d470481209ef713d3e2f65bf4e801f96a4232cb54e0bdfacb"
+    },
+    {
+      "id": "update_touchpoint_memory_store_access",
+      "path": "../nevergone-ccjoystick-method-pair-20261020/update-touchpoint-memory-stores.jsonl",
+      "bytes": 1266,
+      "sha256": "3449e4830a1a7f2023d1f649d1a69605b25c557569b8bcadc3b70edb2456c569"
+    },
+    {
+      "id": "update_touchpoint_pcode_flow",
+      "path": "../nevergone-ccjoystick-method-pair-20261020/update-touchpoint-pcode-flow.tsv",
+      "bytes": 15032,
+      "sha256": "17b9a726f0f8e1ef04c4bf77bfdcd06d77e3a035af6fa66a7745d607800555a6"
+    },
+    {
+      "id": "size_review",
+      "path": "../../type-layout-review/nevergone-ccjoystick-20261019/size-review.jsonl",
+      "bytes": 621,
+      "sha256": "be17fddac5f7a62ba37f7b47ca69840e9a5afcec5857e6f699acf954a46cbbe6"
+    },
+    {
+      "id": "field_type_review",
+      "path": "../../type-layout-review/nevergone-ccjoystick-20261019/field-type-review.jsonl",
+      "bytes": 6122,
+      "sha256": "6145e57ddf02fdc722c6b36fe20ac51df78024f7b757e00b03eb3f5c368b7977"
+    },
+    {
+      "id": "function_prototype_schema",
+      "path": "../../../../schemas/ghidra-function-prototype-v1.schema.json",
+      "bytes": 3061,
+      "sha256": "add5786aff444d068a2c922090b30bc19f5cfd46fe697c95fc7495326784f082"
+    },
+    {
+      "id": "parameter_load_schema",
+      "path": "../../../../schemas/ghidra-parameter-load-field-v1.schema.json",
+      "bytes": 1375,
+      "sha256": "8d2f634d7a0c92eeded035bb2a4bf8dfd461ef842aba478391b97274bf72e4b7"
+    },
+    {
+      "id": "parameter_store_schema",
+      "path": "../../../../schemas/ghidra-parameter-store-field-v1.schema.json",
+      "bytes": 1459,
+      "sha256": "4d55be7cf2f7af94c3e00bf4c330b80e372cd8514ba09be7212bd3db34c79f62"
+    },
+    {
+      "id": "memory_store_schema",
+      "path": "../../../../schemas/ghidra-memory-store-access-v1.schema.json",
+      "bytes": 2974,
+      "sha256": "bf53e4abc2d85609b23f831c85b0aa4b2bdb155bf2bc82ff7c5443a8c8c6b05d"
+    },
+    {
+      "id": "function_pcode_flow_schema",
+      "path": "../../../../schemas/ghidra-function-pcode-flow-v1.schema.json",
+      "bytes": 1014,
+      "sha256": "f0c4c38211ce1402074a27c8deb03e3e8079921073856fce6490c1e0b4940c05"
+    },
+    {
+      "id": "pcode_acquisition_schema",
+      "path": "../../../../schemas/ghidra-pcode-flow-acquisition-v1.schema.json",
+      "bytes": 1005,
+      "sha256": "5d8fa0fa31e009bffa8e9342a5ecdda980086721e22d813940890321d7fb9d90"
+    },
+    {
+      "id": "callind_evidence_v4_schema",
+      "path": "../../../../schemas/ghidra-indirect-call-evidence-v4.schema.json",
+      "bytes": 3536,
+      "sha256": "902b36e4329a1d9cc1d31c2cdcce111ce478120b12e6ec413ccb2a6d89c470be"
+    },
+    {
+      "id": "function_effect_ir_schema",
+      "path": "../../../../schemas/function-effect-ir-v1.schema.json",
+      "bytes": 6052,
+      "sha256": "67ecb001d47a6d4ecc273b257bc62f7f6c6d06e286faf924c91c4ef925784779"
+    },
+    {
+      "id": "type_layout_schema",
+      "path": "../../../../schemas/type-layout-hypothesis-v1.schema.json",
+      "bytes": 7552,
+      "sha256": "9ffbb68840291c7029627904d773ba8eeec5675c8474bd245d0aaeedf0c2fb91"
+    },
+    {
+      "id": "type_layout_member_map_schema",
+      "path": "../../../../schemas/type-layout-member-map-v1.schema.json",
+      "bytes": 903,
+      "sha256": "e21c47ca352a6fcd8f779d4cd6502a3436641e52f523ae367a7aa45228e3904d"
+    },
+    {
+      "id": "semantic_graph_schema_v3",
+      "path": "../../../../schemas/semantic-program-graph-v3.schema.json",
+      "bytes": 19651,
+      "sha256": "674ea89ab173734971cb6206870064a71b4047fcbddf7a7e9f20d921bace4f5f"
+    },
+    {
+      "id": "query_result_schema",
+      "path": "../../../../schemas/semantic-program-query-result-v1.schema.json",
+      "bytes": 4539,
+      "sha256": "1cc14f26ec8ba74650ef072a5e57acead9d51fde7dcd5935e770edbe2a18e138"
+    },
+    {
+      "id": "gold_schema",
+      "path": "../../../../schemas/semantic-program-graph-gold-v1.schema.json",
+      "bytes": 4265,
+      "sha256": "886fc1635f594eba5f2a669bf1179cde310053a88e2f33d139b9cac572280b78"
+    },
+    {
+      "id": "evaluation_schema",
+      "path": "../../../../schemas/semantic-program-graph-evaluation-v1.schema.json",
+      "bytes": 2931,
+      "sha256": "528e719a14c522a382ccb257101060096a8795708685a10f1b8c2d770e70e847"
+    }
+  ],
+  "summary": {
+    "owner_methods": 8,
+    "additional_receiver_methods": 6,
+    "parameter_rooted_loads": 25,
+    "parameter_to_parameter_stores": 6,
+    "parameter_rooted_memory_stores": 27,
+    "pcode_rows": 302,
+    "new_layout_offsets": [
+      "0xe0",
+      "0xe4",
+      "0xe8",
+      "0x12c",
+      "0x138",
+      "0x14c"
+    ],
+    "layout_field_offsets": 19,
+    "minimum_observed_extent_bytes": 337,
+    "exact_size_bytes": 340,
+    "graph_nodes": 168,
+    "graph_edges": 240,
+    "joined_type_field_edges": 36,
+    "query_field_nodes": 36,
+    "query_related_type_nodes": 1,
+    "adjudicated_has_field_gold_edges": 36,
+    "exploratory_has_field_precision": 1.0,
+    "exploratory_has_field_recall": 1.0,
+    "provenance_completeness": 1.0,
+    "accepted_has_field_edges": 0
+  }
+}

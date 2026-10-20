@@ -1518,6 +1518,15 @@ is a cross-artifact owner-type check, not broad independent field-accuracy or
 confidence evidence; no edges enter the accepted view. Broader subsystem gold
 and accepted derived-relation evaluation remain open, so M10.5 is not complete.
 
+A follow-on read-only replay adds six more `CCJoyStick *` methods (constructor,
+destructor, touch movement, reset, hit-area setter, and power getter). Across
+the eight-method sample the layout hypothesis now contains 19 observed offsets,
+and the exploratory graph joins 36 owner fields with complete provenance. The
+same-project `ANALYSIS` prototypes and raw accesses support this narrow replay;
+the offsets still lack reviewed semantic types, and no edge is accepted. This
+does not establish direct-versus-inherited ownership or close M10.5. See
+[`CCJoyStick` owner-method field replay](evidence/semantic-program-graph-v3/nevergone-ccjoystick-owner-methods-20261020/README.md).
+
 `revenginstr-semantic-program-query` now selects nodes and edges by kind,
 relation, indirect-call state, conflict state, function entry, operation
 address, field offset, type id, and provenance id. It emits a hash-pinned

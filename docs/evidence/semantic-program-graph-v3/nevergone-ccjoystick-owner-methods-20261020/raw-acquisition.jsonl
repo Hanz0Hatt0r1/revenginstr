@@ -1,0 +1,6 @@
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"libcocos2dcpp.so","function_entry":"002a5e08","state":"complete","operation_count":28,"callind_count":0,"error":null}
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"libcocos2dcpp.so","function_entry":"002a5ea0","state":"complete","operation_count":52,"callind_count":0,"error":null}
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"libcocos2dcpp.so","function_entry":"002a6048","state":"complete","operation_count":29,"callind_count":1,"error":null}
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"libcocos2dcpp.so","function_entry":"002a643c","state":"complete","operation_count":5,"callind_count":0,"error":null}
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"libcocos2dcpp.so","function_entry":"002a6570","state":"complete","operation_count":7,"callind_count":0,"error":null}
+{"format":"REVENGINSTR.GhidraPcodeFlowAcquisition/1","program":"libcocos2dcpp.so","function_entry":"002a66c6","state":"complete","operation_count":5,"callind_count":0,"error":null}

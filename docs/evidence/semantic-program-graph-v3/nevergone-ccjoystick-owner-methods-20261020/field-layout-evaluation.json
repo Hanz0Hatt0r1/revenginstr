@@ -1,0 +1,28 @@
+{
+  "accepted_edge_count": 0,
+  "accepted_edge_precision": null,
+  "accepted_edge_true_positives": 0,
+  "candidate_edge_count": 36,
+  "dataset_id": "nevergone-ccjoystick-prototype-layout-crosscheck",
+  "format": "REVENGINSTR.SemanticProgramGraphEvaluation/1",
+  "gold_artifact_sha256": "401965218c78985aa08b510861a35c8a4f3627be8dfda5e56c5df8e95a21fb06",
+  "minimum_confidence": 0.95,
+  "per_relation": {
+    "has_field": {
+      "candidate_edge_precision": 1.0,
+      "candidate_edges": 36,
+      "gold_edges": 36,
+      "recall": 1.0,
+      "true_positives": 36,
+      "unsupported_edges": 0
+    }
+  },
+  "provenance_complete_edge_count": 36,
+  "provenance_completeness": 1.0,
+  "semantic_program_graph_sha256": "1e0a374fa7577fc30342be214b20f53364b2b83a79300fb938919cd30ec2fae7",
+  "split_id": "separate-ghidra-prototype-export-2026-10",
+  "subgraphs_evaluated": 1,
+  "unsupported_edge_count": 0,
+  "unsupported_edge_rate": 0.0,
+  "view": "exploratory"
+}

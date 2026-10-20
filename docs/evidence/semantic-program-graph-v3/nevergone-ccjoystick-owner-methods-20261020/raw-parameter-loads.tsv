@@ -1,0 +1,5 @@
+format	function_entry	function_name	load_address	load_time	base_parameter_index	field_offset	address_pattern	value_size	value_token	status
+REVENGINSTR.GhidraParameterLoadField/1	002a6048	CCJoyStick::onTouchMoved	002a604c	16	0	0x0	direct	4	def:LOAD@002a604c:16:4	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a6048	CCJoyStick::onTouchMoved	002a6058	29	0	0x150	ptradd	1	def:LOAD@002a6058:29:1	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a6048	CCJoyStick::onTouchMoved	002a605e	34	0	0x138	ptradd	1	def:LOAD@002a605e:34:1	parameter_field_load
+REVENGINSTR.GhidraParameterLoadField/1	002a66c6	CCJoyStick::getPower	002a66c6	1	0	0x13c	ptradd	4	def:LOAD@002a66c6:1:4	parameter_field_load
