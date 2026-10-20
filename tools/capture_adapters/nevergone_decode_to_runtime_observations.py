@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import hmac
 import json
 import re
 from datetime import datetime, timezone
@@ -13,6 +14,7 @@ from typing import Any
 PROGRAM_SHA = "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e"
 PROGRAM_ID = "nevergone-1.0.9-armv7-libcocos2dcpp"
 DECODE_SYMBOL = "_ZN7cocos2d6DecodeEPhiS0_j"
+FILE_DATA_SYMBOL = "_ZN7cocos2d18CCFileUtilsAndroid11getFileDataEPKcS2_Pm"
 MAX_TRACE_BYTES = 64 * 1024 * 1024
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
@@ -75,6 +77,7 @@ def main() -> int:
     parser.add_argument("--static-entry", default="0x544a40")
     parser.add_argument("--static-image-base", default="0x10000")
     parser.add_argument("--installed-apk-sha256", required=True)
+    parser.add_argument("--value-token-key-file", type=Path)
     parser.add_argument("--application-version", default="1.0.9")
     parser.add_argument("--device-model", default="Redmi Note 8 Pro")
     parser.add_argument("--device-code", default="begonia")
@@ -84,6 +87,9 @@ def main() -> int:
         raise ValueError("installed APK hash must be lowercase SHA-256")
     if not args.capture_id.strip():
         raise ValueError("capture_id must not be empty")
+    token_key = args.value_token_key_file.read_bytes() if args.value_token_key_file else None
+    if token_key is not None and not 32 <= len(token_key) <= 4096:
+        raise ValueError("value token key must contain 32 to 4096 bytes")
 
     trace_rows, trace_raw = _jsonl(args.trace)
     try:
@@ -101,7 +107,15 @@ def main() -> int:
 
     headers = [row for row in trace_rows if row.get("type") == "header"]
     modules = [row for row in trace_rows if row.get("type") == "module" and row.get("name") == "libcocos2dcpp.so"]
-    events = [row for row in trace_rows if row.get("type") == "call" and row.get("symbol") == DECODE_SYMBOL]
+    indexed_events = [
+        (index, row) for index, row in enumerate(trace_rows)
+        if row.get("type") == "call" and row.get("symbol") == DECODE_SYMBOL
+    ]
+    events = [row for _, row in indexed_events]
+    file_data_events = [
+        (index, row) for index, row in enumerate(trace_rows)
+        if row.get("type") == "call" and row.get("symbol") == FILE_DATA_SYMBOL
+    ]
     if len(headers) != 1 or len(modules) != 1 or not events:
         raise ValueError("trace must contain one header, one libcocos2dcpp module, and Decode calls")
     if headers[0].get("package") != "com.hippiegame.nevergone" or headers[0].get("arch") != "arm":
@@ -119,9 +133,12 @@ def main() -> int:
     addresses: list[dict[str, Any]] = []
     transforms: list[dict[str, Any]] = []
     direct_calls: list[dict[str, Any]] = []
+    value_flow_addresses: list[dict[str, Any]] = []
+    value_observations: list[dict[str, Any]] = []
+    value_candidates: list[dict[str, Any]] = []
     ordinals: set[int] = set()
     callsite_facts: dict[int, dict[str, Any]] = {}
-    for sequence, event in enumerate(events):
+    for sequence, (row_index, event) in enumerate(indexed_events):
         offset = _hex(event.get("offset"), f"Decode event {sequence + 1} offset")
         if offset & ~1 != expected_elf_vma:
             raise ValueError(f"Decode event {sequence + 1} does not map to the requested static function")
@@ -196,6 +213,92 @@ def main() -> int:
             "callsite_runtime_address": f"0x{runtime_callsite_address:x}",
             "target_runtime_address": f"0x{address:x}",
         })
+        if token_key is not None:
+            thread_id = event.get("tid")
+            if isinstance(thread_id, bool) or not isinstance(thread_id, int) or thread_id < 0:
+                raise ValueError("Decode event has no valid thread id for return pairing")
+            caller_entry = _hex(callsite_nodes[0].get("function_entry"), "direct CALL owner entry")
+            caller_nodes = [
+                node for node in graph.get("nodes", [])
+                if node.get("kind") == "function"
+                and _hex(node.get("entry"), "graph function entry") == caller_entry
+            ]
+            caller_elf_vma = caller_entry - image_base
+            if len(caller_nodes) != 1 or caller_elf_vma < 0:
+                raise ValueError("direct CALL owner does not identify one in-range function")
+            parent_match = next((
+                (candidate_index, candidate) for candidate_index, candidate in file_data_events
+                if candidate_index > row_index and candidate.get("tid") == thread_id
+            ), None)
+            if parent_match is None or not isinstance(parent_match[1].get("typed"), dict):
+                raise ValueError("Decode call has no later same-thread getFileData return")
+            parent_index, parent = parent_match
+            if any(
+                row_index < index < parent_index and candidate.get("symbol") == DECODE_SYMBOL
+                and candidate.get("tid") == thread_id
+                for index, candidate in indexed_events
+            ):
+                raise ValueError("nested Decode calls make the enclosing getFileData return ambiguous")
+            parent_typed = parent["typed"]
+            if (
+                parent_typed.get("kind") != "get_file_data"
+                or _hex(parent.get("offset"), "getFileData entry") & ~1 != caller_elf_vma
+                or parent_typed.get("success") is not True
+            ):
+                raise ValueError("next same-thread return is not a successful direct-call owner")
+            destination = _hex(typed.get("destination_ptr"), "Decode destination pointer")
+            returned = _hex(parent_typed.get("returned_data_pointer"), "getFileData return pointer")
+            if destination == 0 or destination != returned:
+                raise ValueError("Decode destination and enclosing getFileData return do not match")
+            pair_sequence = sequence * 2
+            pointer_token = "hmac-sha256:" + hmac.new(
+                token_key,
+                f"{args.capture_id}\0runtime-pointer\0{destination:x}".encode("ascii"),
+                hashlib.sha256,
+            ).hexdigest()
+            caller_address = module_base + caller_elf_vma
+            value_flow_addresses.extend((
+                {
+                    "format": "REVENGINSTR.RuntimeAddressObservation/1",
+                    "capture_id": args.capture_id,
+                    "sequence": pair_sequence,
+                    "event_kind": "call_target",
+                    "runtime_address": f"0x{address:x}",
+                },
+                {
+                    "format": "REVENGINSTR.RuntimeAddressObservation/1",
+                    "capture_id": args.capture_id,
+                    "sequence": pair_sequence + 1,
+                    "event_kind": "function_exit",
+                    "runtime_address": f"0x{caller_address:x}",
+                },
+            ))
+            value_observations.extend((
+                {
+                    "format": "REVENGINSTR.RuntimeValueObservation/1",
+                    "capture_id": args.capture_id,
+                    "correlation_sequence": pair_sequence,
+                    "event_kind": "call_output",
+                    "runtime_address": f"0x{address:x}",
+                    "tokens": {"subject": pointer_token},
+                },
+                {
+                    "format": "REVENGINSTR.RuntimeValueObservation/1",
+                    "capture_id": args.capture_id,
+                    "correlation_sequence": pair_sequence + 1,
+                    "event_kind": "function_return",
+                    "runtime_address": f"0x{caller_address:x}",
+                    "tokens": {"subject": pointer_token},
+                },
+            ))
+            value_candidates.append({
+                "candidate_id": f"decode-output-return-{sequence + 1:03d}",
+                "relation_kind": "call_output_return",
+                "source_sequence": pair_sequence,
+                "sink_sequence": pair_sequence + 1,
+                "expected_source_node_id": target_nodes[0]["id"],
+                "expected_sink_node_id": caller_nodes[0]["id"],
+            })
 
     identity = {
         "format": "REVENGINSTR.RuntimeStaticIdentity/1",
@@ -249,6 +352,11 @@ def main() -> int:
         "unavailable_results": unavailable,
         "sampling_status": "unknown",
         "buffer_bytes_retained": False,
+        **({
+            "runtime_value_flow_pairs": len(value_candidates),
+            "runtime_value_pointer_identity_matches": len(value_candidates),
+            "runtime_value_token_scheme": "capture-scoped HMAC-SHA-256",
+        } if token_key is not None else {}),
     }
     args.output_dir.mkdir(parents=True, exist_ok=True)
     _write_json(args.output_dir / "static-identity.json", identity)
@@ -257,11 +365,17 @@ def main() -> int:
     _write_jsonl(args.output_dir / "runtime-address-observations.jsonl", addresses)
     _write_jsonl(args.output_dir / "runtime-transform-observations.jsonl", transforms)
     _write_jsonl(args.output_dir / "runtime-direct-call-observations.jsonl", direct_calls)
+    if token_key is not None:
+        _write_jsonl(args.output_dir / "runtime-value-flow-address-observations.jsonl", value_flow_addresses)
+        _write_jsonl(args.output_dir / "runtime-value-observations.jsonl", value_observations)
+        _write_json(args.output_dir / "runtime-value-flow-candidates.json", value_candidates)
     print("Decode calls:", len(transforms))
     print("formula matches:", matched)
     print("formula mismatches:", mismatched)
     print("unavailable:", unavailable)
     print("direct CALL observations:", len(direct_calls))
+    if token_key is not None:
+        print("runtime value-flow pointer identity pairs:", len(value_candidates))
     print("output:", args.output_dir)
     return 0
 

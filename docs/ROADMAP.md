@@ -1296,7 +1296,7 @@ from `CCFileUtilsAndroid::getFileData` to `cocos2d::Decode`. In the same device
 capture, 11 normalized Thumb callsites map to the exact `CALL` operation at
 `0x544bdc`, its owner at `0x544a60`, and its unique target at `0x544a40`.
 Capture completeness remains unknown; this establishes the edge only for the
-observed calls and does not close object, field, or value-flow joins. See
+observed calls and does not close object, field, or other value-flow joins. See
 [`runtime direct-call correlation`](RUNTIME_DIRECT_CALL_CORRELATION.md).
 
 **Indirect-call triple correlation v1 implemented:**
@@ -1321,8 +1321,8 @@ ambiguous, or unmapped joins remain `review_required` with
 observations to exact static function entries; its ledger has 88
 `human_review` events and zero accepts. Sampling completeness remains unknown,
 and the replay does not treat any observed target as exhaustive. Consumer-
-collected NFS dispatch observations, runtime value-flow observations, and
-frozen probe outcome measurements remain open. The retained decision-ledger
+collected NFS dispatch observations, broader runtime value-flow observations,
+and frozen probe outcome measurements remain open. The retained decision-ledger
 replay is documented with the [device capture evidence](evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/README.md).
 
 ### M9.3 Differential and interventional analysis
@@ -1348,14 +1348,18 @@ Mixed, unchanged, or incomplete comparisons remain `correlation`; this is not
 `RuntimeValueFlowManifest/1` pins one exact address-correlation report, one
 consumer-generated `RuntimeValueObservation/1` JSONL file, and explicit
 candidate pairs. Receiver identity, field write/read, state transition,
-factory return/use and allocation/release relations compare only opaque
-HMAC-shaped tokens. Both pair endpoints must map to their declared static
+factory return/use, call-output/return and allocation/release relations
+compare only opaque HMAC-shaped tokens. Both pair endpoints must map to their declared static
 nodes through unique exact address matches. Declared gaps and partial sampling
 remain visible; only the selected pair can be `witnessed`, `observed_mismatch`
 or `inconclusive`. Token authenticity is not verified, no raw values enter the
-report, and no pair upgrades a static path to `confirmed_exact`. The pinned
-Nevergone example is synthetic; obtaining in-game value observations remains
-open because the current device capture contains only startup function entries.
+report, and no pair upgrades a static path to `confirmed_exact`. A real
+Nevergone device replay now witnesses 11 selected `Decode` output-buffer to
+`getFileData` return-pointer identity pairs. Other in-game receiver, field,
+state, factory, and lifetime observations remain open; capture completeness is
+unknown. Its decision-ledger replay yields 11 `review_required` events and no
+accepts. See the [runtime value-flow replay](RUNTIME_VALUE_FLOW.md) and the
+[device evidence](evidence/runtime-behavior-replay-v1/nevergone-decode-device-20261020/README.md).
 `revenginstr-runtime-ledger` deterministically turns pair results into
 `AnalysisDecisionLedgerEvent/1` records; a witness remains `review_required`,
 a mismatch becomes `escalated_conflict`, and missing evidence remains

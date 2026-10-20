@@ -8,12 +8,17 @@ sequence and repeats its runtime address; both selected locations must map to
 the candidate's expected static node as one unambiguous exact match.
 
 The first version handles receiver identity, field write/read, state
-transitions, factory return/use and allocation/release pairs. It compares only
-opaque `hmac-sha256:<hex>` tokens for subject, field and value slots. Raw values
-must stay in the consumer. The HMAC shape is a format check only: the analyzer
-does not know the secret and cannot verify token authenticity or stable
-tokenization. The replay hashes its inputs but those hashes do not establish
-who collected them.
+transitions, factory return/use, call-output/return and allocation/release
+pairs. It compares only opaque `hmac-sha256:<hex>` tokens for subject, field
+and value slots. Raw values must stay in the consumer. The HMAC shape is a
+format check only: the analyzer does not know the secret and cannot verify
+token authenticity or stable tokenization. The replay hashes its inputs but
+those hashes do not establish who collected them.
+
+`call_output_return` pairs a callee's output-buffer identity with the enclosing
+function's returned identity. A witness establishes pointer identity for that
+selected pair; it does not establish buffer contents, ownership, lifetime, or
+the transform applied to those contents.
 
 Results are `witnessed`, `observed_mismatch` or `inconclusive` for the selected
 pair. They do not claim a whole-program path exists or is absent, do not infer
@@ -31,11 +36,14 @@ python -m revenginstr.runtime_value_flow \
   --output /tmp/runtime-value-flow-replay.json
 ```
 
-This checked-in input is a synthetic contract fixture, not a Nevergone device
-capture. The separate [runtime transform replay](RUNTIME_TRANSFORM_REPLAY.md)
-now records sampled Decode behavior from the device, but it is not a
-receiver/field/state/factory/lifetime value-flow witness. Pair-scoped runtime
-value-flow still has no actual in-game observations.
+This checked-in input is a synthetic contract fixture. The
+[Nevergone device replay](evidence/runtime-behavior-replay-v1/nevergone-decode-device-20261020/README.md)
+also records 11 `Decode` output-buffer to `getFileData` return identity pairs.
+All 11 are witnessed through exact static function matches and operator-keyed
+opaque tokens. Capture completeness remains unknown, and the result proves
+pointer identity only for those selected calls.
+The device pair report replays into 11 `review_required` decision-ledger
+events; it does not auto-accept any runtime claim.
 
 ## Decision-ledger replay
 

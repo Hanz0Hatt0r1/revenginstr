@@ -1,0 +1,177 @@
+{
+  "candidates": [
+    {
+      "candidate_id": "decode-output-return-001",
+      "compared_token_slots": [
+        "subject"
+      ],
+      "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+      "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+      "intervening_coverage": "not_established",
+      "reason": "selected_pair_satisfies_relation",
+      "relation_kind": "call_output_return",
+      "sink_sequence": 1,
+      "source_sequence": 0,
+      "status": "witnessed"
+    },
+    {
+      "candidate_id": "decode-output-return-002",
+      "compared_token_slots": [
+        "subject"
+      ],
+      "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+      "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+      "intervening_coverage": "not_established",
+      "reason": "selected_pair_satisfies_relation",
+      "relation_kind": "call_output_return",
+      "sink_sequence": 3,
+      "source_sequence": 2,
+      "status": "witnessed"
+    },
+    {
+      "candidate_id": "decode-output-return-003",
+      "compared_token_slots": [
+        "subject"
+      ],
+      "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+      "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+      "intervening_coverage": "not_established",
+      "reason": "selected_pair_satisfies_relation",
+      "relation_kind": "call_output_return",
+      "sink_sequence": 5,
+      "source_sequence": 4,
+      "status": "witnessed"
+    },
+    {
+      "candidate_id": "decode-output-return-004",
+      "compared_token_slots": [
+        "subject"
+      ],
+      "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+      "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+      "intervening_coverage": "not_established",
+      "reason": "selected_pair_satisfies_relation",
+      "relation_kind": "call_output_return",
+      "sink_sequence": 7,
+      "source_sequence": 6,
+      "status": "witnessed"
+    },
+    {
+      "candidate_id": "decode-output-return-005",
+      "compared_token_slots": [
+        "subject"
+      ],
+      "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+      "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+      "intervening_coverage": "not_established",
+      "reason": "selected_pair_satisfies_relation",
+      "relation_kind": "call_output_return",
+      "sink_sequence": 9,
+      "source_sequence": 8,
+      "status": "witnessed"
+    },
+    {
+      "candidate_id": "decode-output-return-006",
+      "compared_token_slots": [
+        "subject"
+      ],
+      "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+      "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+      "intervening_coverage": "not_established",
+      "reason": "selected_pair_satisfies_relation",
+      "relation_kind": "call_output_return",
+      "sink_sequence": 11,
+      "source_sequence": 10,
+      "status": "witnessed"
+    },
+    {
+      "candidate_id": "decode-output-return-007",
+      "compared_token_slots": [
+        "subject"
+      ],
+      "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+      "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+      "intervening_coverage": "not_established",
+      "reason": "selected_pair_satisfies_relation",
+      "relation_kind": "call_output_return",
+      "sink_sequence": 13,
+      "source_sequence": 12,
+      "status": "witnessed"
+    },
+    {
+      "candidate_id": "decode-output-return-008",
+      "compared_token_slots": [
+        "subject"
+      ],
+      "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+      "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+      "intervening_coverage": "not_established",
+      "reason": "selected_pair_satisfies_relation",
+      "relation_kind": "call_output_return",
+      "sink_sequence": 15,
+      "source_sequence": 14,
+      "status": "witnessed"
+    },
+    {
+      "candidate_id": "decode-output-return-009",
+      "compared_token_slots": [
+        "subject"
+      ],
+      "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+      "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+      "intervening_coverage": "not_established",
+      "reason": "selected_pair_satisfies_relation",
+      "relation_kind": "call_output_return",
+      "sink_sequence": 17,
+      "source_sequence": 16,
+      "status": "witnessed"
+    },
+    {
+      "candidate_id": "decode-output-return-010",
+      "compared_token_slots": [
+        "subject"
+      ],
+      "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+      "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+      "intervening_coverage": "not_established",
+      "reason": "selected_pair_satisfies_relation",
+      "relation_kind": "call_output_return",
+      "sink_sequence": 19,
+      "source_sequence": 18,
+      "status": "witnessed"
+    },
+    {
+      "candidate_id": "decode-output-return-011",
+      "compared_token_slots": [
+        "subject"
+      ],
+      "expected_sink_node_id": "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6",
+      "expected_source_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+      "intervening_coverage": "not_established",
+      "reason": "selected_pair_satisfies_relation",
+      "relation_kind": "call_output_return",
+      "sink_sequence": 21,
+      "source_sequence": 20,
+      "status": "witnessed"
+    }
+  ],
+  "capture_id": "nevergone-decode-device-20261020-pid15911",
+  "claim_scope": "selected_observation_pairs_only",
+  "correlation_report_sha256": "0db5975c190d937b74b39da697bd56db2cbe8fed6f5ac391759775a1d7a33d07",
+  "format": "REVENGINSTR.RuntimeValueFlowReplay/1",
+  "observations_sha256": "364e6be7a0b4ef44f3cff24dce0e3574b7a5d6ff739c2e2219558684b10f4eeb",
+  "program_id": "nevergone-1.0.9-armv7-libcocos2dcpp",
+  "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
+  "sampling": {
+    "gaps": [],
+    "status": "unknown"
+  },
+  "semantic_graph_sha256": "04c223505df90987014c1732c0707cc6e5576b7a380cbcf1dc9c485a91610e4c",
+  "summary": {
+    "candidate_count": 11,
+    "inconclusive": 0,
+    "observed_mismatch": 0,
+    "witnessed": 11
+  },
+  "token_provenance": "Opaque HMAC-shaped tokens are caller supplied; the replay cannot verify their secret or authenticity."
+}

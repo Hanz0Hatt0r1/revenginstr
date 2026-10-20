@@ -24,6 +24,18 @@ the probe or recompute the formula from the omitted bytes. It does not prove
 whole-buffer behavior or close the receiver/field/state value-flow pairs in
 M9.4.
 
+The same trace also binds each `Decode` output buffer to the pointer returned by
+its enclosing `getFileData` call. The adapter pairs the next same-thread
+`getFileData` return after each direct `Decode` call, checks the exact static
+owner and target, and emits only capture-scoped HMAC tokens for the pointer
+identity. The separate `RuntimeValueFlowReplay/1` report has 11 `witnessed`, 0
+`observed_mismatch`, and 0 `inconclusive` pairs; its 22 function-address
+observations all map uniquely. This proves pointer identity for those selected
+calls only. It does not prove buffer contents, ownership, lifetime, or complete
+capture coverage.
+Replaying the pair report through `revenginstr-runtime-ledger` yields 11
+`review_required`/`human_review` events and no automatic accepts.
+
 The same 11 events also verify the caller edge. Frida recorded return offset
 `0x534be1`; clearing the Thumb state bit and stepping back the four-byte `BL`
 maps it to ELF call instruction `0x534bdc`, then to graph operation `0x544bdc`
@@ -39,12 +51,17 @@ process pointers and file-access paths; its SHA-256 is retained in the capture
 metadata. Recreate the normalized capture with:
 
 ```sh
+if [ ! -f /tmp/nevergone-runtime-token.key ]; then
+  python3 -c 'from pathlib import Path; import secrets; p=Path("/tmp/nevergone-runtime-token.key"); p.write_bytes(secrets.token_bytes(32)); p.chmod(0o600)'
+fi
+
 python tools/capture_adapters/nevergone_decode_to_runtime_observations.py \
   /path/to/nevergone-trace.jsonl \
   --probe-script docs/evidence/runtime-behavior-replay-v1/nevergone-decode-device-20261020/probe-script.js \
   --semantic-graph docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/semantic-program-graph.jsonl \
   --capture-id nevergone-decode-device-20261020-pid15911 \
   --installed-apk-sha256 e1b85fd36fa932e6de49fdab6e858a8bddbba233faef9817cd568ae6adfe51bf \
+  --value-token-key-file /tmp/nevergone-runtime-token.key \
   --output-dir /tmp/nevergone-decode-capture
 
 PYTHONPATH=src python -m revenginstr.runtime_static_correlation \
@@ -61,6 +78,29 @@ PYTHONPATH=src python -m revenginstr.runtime_direct_call_correlation \
   /tmp/nevergone-decode-capture/runtime-direct-call-observations.jsonl \
   --output /tmp/nevergone-decode-capture/runtime-direct-call-correlation.json
 
+PYTHONPATH=src python -m revenginstr.runtime_static_correlation \
+  docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/semantic-program-graph.jsonl \
+  /tmp/nevergone-decode-capture/static-identity.json \
+  /tmp/nevergone-decode-capture/capture-manifest.json \
+  /tmp/nevergone-decode-capture/runtime-value-flow-address-observations.jsonl \
+  --output /tmp/nevergone-decode-capture/runtime-value-flow-static-correlation.json
+
+python tools/capture_adapters/pin_runtime_value_flow_manifest.py \
+  /tmp/nevergone-decode-capture/runtime-value-flow-static-correlation.json \
+  /tmp/nevergone-decode-capture/runtime-value-observations.jsonl \
+  /tmp/nevergone-decode-capture/runtime-value-flow-candidates.json \
+  --output /tmp/nevergone-decode-capture/runtime-value-flow-manifest.json
+
+PYTHONPATH=src python -m revenginstr.runtime_value_flow \
+  /tmp/nevergone-decode-capture/runtime-value-flow-manifest.json \
+  /tmp/nevergone-decode-capture/runtime-value-flow-static-correlation.json \
+  /tmp/nevergone-decode-capture/runtime-value-observations.jsonl \
+  --output /tmp/nevergone-decode-capture/runtime-value-flow-replay.json
+
+PYTHONPATH=src python -m revenginstr.runtime_evidence_ledger \
+  /tmp/nevergone-decode-capture/runtime-value-flow-replay.json \
+  --output /tmp/nevergone-decode-capture/runtime-value-flow-ledger-events.jsonl
+
 python tools/capture_adapters/pin_runtime_transform_manifest.py \
   /tmp/nevergone-decode-capture/capture-metadata.json \
   /tmp/nevergone-decode-capture/runtime-static-correlation.json \
@@ -74,6 +114,10 @@ PYTHONPATH=src python -m revenginstr.runtime_transform_replay \
   --output /tmp/nevergone-decode-capture/runtime-transform-replay.json
 ```
 
-The checked-in address, direct-call, and transform correlations, observations,
-manifest, and replay are the hash-pinned outputs from those steps. A fresh
-capture needs a manifest whose hashes refer to that capture's files.
+The checked-in address, direct-call, value-flow, and transform correlations,
+observations, manifests, replays, and decision-ledger events are the outputs
+from those steps. A fresh capture needs manifests whose hashes refer to that
+capture's files.
+The private HMAC key is never retained here. Keep the same key outside the
+repository when regenerating the normalized value observations; the checked-in
+HMAC tokens and replay manifest are sufficient to rerun the pair evaluator.

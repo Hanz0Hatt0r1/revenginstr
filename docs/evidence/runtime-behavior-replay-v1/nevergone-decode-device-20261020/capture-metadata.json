@@ -1,5 +1,5 @@
 {
-  "adapter_sha256": "7fa4869a3dd27b0bb9f024162825d9bff8bae60ca94cecd4a43fde87ba2e9ab5",
+  "adapter_sha256": "33870317330839706f46e575d5962c7081a802c434afe7ec98cd459c81fa1284",
   "android_abi": "armeabi-v7a",
   "application_version": "1.0.9",
   "buffer_bytes_retained": false,
@@ -34,6 +34,9 @@
   "probe_script_sha256": "0ffb0ced88a48680f2122647b4fb5f1b80356819c915d7da8db302327a483c0f",
   "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
   "runtime_module_base": "0xbb64e000",
+  "runtime_value_flow_pairs": 11,
+  "runtime_value_pointer_identity_matches": 11,
+  "runtime_value_token_scheme": "capture-scoped HMAC-SHA-256",
   "sampled_bytes": 1280,
   "sampling_status": "unknown",
   "source_trace_sha256": "383e0f8ce81f9ccd65e75202a3730bb48eb3eb546591ddcdb03b6d11d3829be9",
