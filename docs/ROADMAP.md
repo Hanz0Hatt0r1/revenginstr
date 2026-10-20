@@ -1868,6 +1868,20 @@ monotone fixed point for cycles. Missing argument links, incomplete callee
 facts, unresolved stores, indirect calls, unknown operations and exhausted
 budgets remain barriers. `/1`–`/4` stay unchanged.
 
+**Memory-only store/load replay:** `FieldStoreLoadPathAudit/2` and
+`FieldStoreLoadDominanceAudit/7` now preserve rooted `STORE` destinations
+from `GhidraMemoryStoreAccess/1` when the value has no recovered formal
+parameter. The x86-32 Shift function `00689db0` had zero
+`ParameterStoreField/1` rows, 21 parameter loads, and 28 general STORE facts.
+The new builder emitted 20 exact root/offset pairs without adding a
+value-source edge. For `STORE@00689e0a` → `LOAD@00689e49`, the store
+dominates the load, but two direct calls lie on the path; the `/7` replay
+keeps `possible_intervening_memory_effect`. Across all 20 pairs, 16 stores do
+not dominate their loads and four have possible intervening effects; no row
+became a unique CFG candidate. This validates memory-only provenance and
+continued fail-closed call handling; it does not establish memory
+reaching-definition or alias safety.
+
 **Next:** replay CFG/4 on further bounded x86-32 candidates from actual
 parameter-field `STORE` and `LOAD` rows. Compare `/5` and `/6` with the exact
 caller roots and complete memory facts pinned; keep aliasing and unresolved

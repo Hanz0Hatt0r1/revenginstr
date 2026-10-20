@@ -205,3 +205,16 @@ The `/1` flow, CFG `/1`–`/3`, interprocedural effect `/1`, and dominance audit
 `/1`–`/5` contracts remain unchanged. Use CFG/4 consistently for the caller
 and every function in the direct-call closure; mixed or missing CFG evidence
 does not authorize marker removal.
+
+## Stores with no recovered value parameter
+
+`ParameterStoreField/1` contains destination and value-formal indices, so it
+cannot represent a rooted memory write whose stored value is not derived from a
+formal parameter. `receiver-field-access-pairs --memory-store-access-jsonl`
+uses an exact rooted `GhidraMemoryStoreAccess/1` record for the destination
+instead. Its `ReceiverProvenanceGraph/1` edge has no value-source edge and
+retains the memory row identity. Path audit `/2` and dominance audit `/7`
+allow `source_parameter_index: null`; dominance requires the same operation,
+root, and offset in its hash-pinned memory-store sidecar. Without that
+corroboration, the audit returns `incomplete_evidence`. Calls and all other
+effects keep the existing conservative treatment.

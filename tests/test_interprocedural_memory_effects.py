@@ -8,7 +8,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 import pytest
 
-from revenginstr.receiver.field_flow import audit_field_store_load_dominance
+from revenginstr.receiver.field_flow import audit_field_store_load_dominance, audit_field_store_load_paths
 from revenginstr.receiver.interprocedural_memory import (
     PARAMETER_ROOT_FORMAT,
     PARAMETER_ROOT_HEADER,
@@ -108,6 +108,89 @@ def _pair_graphs():
         "value_token": "def:LOAD@00401030:11:4", "status": "parameter_field_load",
     }]
     return build_field_access_pair_graphs(store, load, program_id="synthetic:interprocedural")
+
+
+def _memory_only_pair_graphs():
+    memory_store = _store_fact("00401000", "00401020", 7, 0x10)
+    memory_store["program_id"] = "synthetic:interprocedural"
+    load = [{
+        "format": PARAMETER_LOAD_FORMAT, "function_entry": "00401000", "function_name": "root",
+        "load_address": "00401030", "load_time": "11", "base_parameter_index": "0",
+        "field_offset": "0x10", "address_pattern": "ptrsub", "value_size": "4",
+        "value_token": "def:LOAD@00401030:11:4", "status": "parameter_field_load",
+    }]
+    return build_field_access_pair_graphs(
+        [], load, program_id="synthetic:interprocedural", memory_store_rows=[memory_store],
+    )
+
+
+def test_memory_only_field_pair_keeps_unknown_call_barrier_and_nullable_source_schema() -> None:
+    pairs = _memory_only_pair_graphs()
+    store = _store_fact("00401000", "00401020", 7, 0x10)
+    store["program_id"] = "synthetic:interprocedural"
+    flow = _flow("00401000", [
+        ("00401020", 7, "STORE", "const:0x0:4;input:root:0:4", "-"),
+        ("00401024", 10, "CALL", "input:root:0:4", "00402000"),
+        ("00401030", 11, "LOAD", "const:0x0:4;input:root:0:4", "-"),
+    ])
+    cfg_rows = [_cfg("00401000", flow)]
+    pair_bytes = (json.dumps(pairs[0], sort_keys=True) + "\n").encode()
+    cfg_bytes = (json.dumps(cfg_rows[0], sort_keys=True) + "\n").encode()
+    access_bytes = (json.dumps(store, sort_keys=True) + "\n").encode()
+
+    [path_row] = audit_field_store_load_paths(
+        pairs, cfg_rows, pair_graph_sha256=hashlib.sha256(pair_bytes).hexdigest(),
+        cfg_sha256=hashlib.sha256(cfg_bytes).hexdigest(),
+    )
+    path_schema = json.loads((ROOT / "schemas/field-store-load-path-audit-v2.schema.json").read_text())
+    Draft202012Validator(path_schema).validate(path_row)
+    assert path_row["format"] == "REVENGINSTR.FieldStoreLoadPathAudit/2"
+    assert path_row["source_parameter_index"] is None
+
+    [row] = audit_field_store_load_dominance(
+        pairs, cfg_rows, pair_graph_sha256=hashlib.sha256(pair_bytes).hexdigest(),
+        cfg_sha256=hashlib.sha256(cfg_bytes).hexdigest(),
+        memory_store_access_rows=[store], memory_store_access_sha256=hashlib.sha256(access_bytes).hexdigest(),
+    )
+    schema = json.loads((ROOT / "schemas/field-store-load-dominance-audit-v7.schema.json").read_text())
+    Draft202012Validator.check_schema(schema)
+    Draft202012Validator(schema).validate(row)
+    assert row["format"] == "REVENGINSTR.FieldStoreLoadDominanceAudit/7"
+    assert row["source_parameter_index"] is None
+    assert row["status"] == "possible_intervening_memory_effect"
+
+    [unverified] = audit_field_store_load_dominance(
+        pairs, cfg_rows, pair_graph_sha256=hashlib.sha256(pair_bytes).hexdigest(),
+        cfg_sha256=hashlib.sha256(cfg_bytes).hexdigest(),
+    )
+    assert unverified["status"] == "incomplete_evidence"
+
+
+def test_memory_only_pair_flows_through_interprocedural_alias_audit(tmp_path: Path) -> None:
+    pair_path, cfg_path, access_path, roots_path, flow_paths, _, cfg_rows, stores = _dataset(
+        tmp_path, offset=0x20,
+    )
+    pairs = _memory_only_pair_graphs()
+    pair_path.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in pairs))
+    effects = build_interprocedural_memory_effects(
+        pair_path, cfg_path, access_path, roots_path, pcode_flows=flow_paths,
+    )
+    assert effects[0]["status"] == "no_aliasing_memory_effect"
+    encoded_effects = ("".join(json.dumps(row, sort_keys=True) + "\n" for row in effects)).encode()
+    pair_sha = hashlib.sha256(pair_path.read_bytes()).hexdigest()
+    cfg_sha = hashlib.sha256(cfg_path.read_bytes()).hexdigest()
+    access_sha = hashlib.sha256(access_path.read_bytes()).hexdigest()
+
+    [row] = audit_field_store_load_dominance(
+        pairs, cfg_rows, pair_graph_sha256=pair_sha, cfg_sha256=cfg_sha,
+        memory_store_access_rows=stores, memory_store_access_sha256=access_sha,
+        interprocedural_memory_effect_rows=effects,
+        interprocedural_memory_effect_sha256=hashlib.sha256(encoded_effects).hexdigest(),
+    )
+    schema = json.loads((ROOT / "schemas/field-store-load-dominance-audit-v7.schema.json").read_text())
+    Draft202012Validator(schema).validate(row)
+    assert row["status"] == "unique_cfg_store_candidate"
+    assert row["source_parameter_index"] is None
 
 
 def _write_tsv(path: Path, header: tuple[str, ...], rows: list[dict[str, str]]) -> None:

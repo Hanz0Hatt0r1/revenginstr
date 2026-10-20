@@ -69,6 +69,22 @@ numeric parameter indices remain auditable in the source row and are not given
 class semantics; the opaque graph id is only a join key. No field-to-load join
 or class/type claim is made.
 
+`revenginstr-receiver-field-access-pairs` can also consume
+`GhidraMemoryStoreAccess/1` JSONL rows through `--memory-store-access-jsonl`.
+This pairs a rooted constant-offset `STORE` with a same-formal, same-offset
+parameter `LOAD` even when the stored value has no recovered formal source.
+The graph points its `field_store` edge directly to the memory-access source
+row and omits a stored-value edge; it never invents a source parameter.
+Unresolved stores are skipped. Duplicate identities and rows for another
+program fail closed. The path audit emits `/2` with a null
+`source_parameter_index`; the dominance audit emits `/7` and requires the
+matching memory-access sidecar to verify the rooted store. These are structural
+access pairs only, not memory reaching-definitions.
+
+```sh
+revenginstr-receiver-field-access-pairs parameter-stores.tsv parameter-loads.tsv --program-id 'consumer:analysis-id' --memory-store-access-jsonl memory-stores.jsonl --output field-access-pairs.jsonl
+```
+
 ## Joining caller arguments to stores
 
 `revenginstr-receiver-argument-store-flow` joins caller roots to parameter

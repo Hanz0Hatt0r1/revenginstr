@@ -57,6 +57,7 @@ REVENGINSTR.GhidraFunctionPcodeFlow/1
 REVENGINSTR.GhidraFunctionPcodeCFG/1
 REVENGINSTR.GhidraFunctionPcodeCFG/2
 REVENGINSTR.FieldStoreLoadDominanceAudit/1
+REVENGINSTR.FieldStoreLoadDominanceAudit/7
 REVENGINSTR.GhidraPcodeDefinedString/1
 REVENGINSTR.GhidraAddressReferenceOwner/1
 REVENGINSTR.GhidraAddressReferences/1
@@ -67,6 +68,7 @@ REVENGINSTR.GhidraScalarUses/1
 REVENGINSTR.GhidraFieldStoreCandidates/1
 REVENGINSTR.GhidraParameterStoreField/1
 REVENGINSTR.FieldStoreLoadPathAudit/1
+REVENGINSTR.FieldStoreLoadPathAudit/2
 REVENGINSTR.GhidraFunctionOperand/1
 REVENGINSTR.GhidraAddressMetadata/1
 REVENGINSTR.GhidraIndirectCallEvidence/1
