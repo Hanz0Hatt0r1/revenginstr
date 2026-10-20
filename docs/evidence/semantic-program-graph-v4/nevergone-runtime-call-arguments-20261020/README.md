@@ -22,6 +22,13 @@ PYTHONPATH=src python -m revenginstr.direct_call_argument_definitions \
   docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/CCFileUtilsAndroid-getFileData.pcode-flow.tsv \
   --output docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/argument-definitions.jsonl
 
+PYTHONPATH=src python -m revenginstr.direct_call_argument_traces \
+  docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/call-arguments.jsonl \
+  docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/argument-definitions.jsonl \
+  docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/LoadGameLevels.pcode-flow.tsv \
+  docs/evidence/runtime-static-correlation-v1/nevergone-device-runtime-20261019/CCFileUtilsAndroid-getFileData.pcode-flow.tsv \
+  --output docs/evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/argument-operand-traces.jsonl
+
 PYTHONPATH=src python -m revenginstr.semantic_program_graph \
   docs/evidence/semantic-program-graph-v3/nevergone-runtime-correlation-20261020/function-effects.jsonl \
   --type-layout-hypotheses docs/evidence/semantic-program-graph-v3/nevergone-ccjoystick/type-layout-hypothesis.jsonl \
@@ -53,8 +60,16 @@ validates against `SemanticProgramGraph/4`. The pinned replay
 manifest records byte lengths and SHA-256 values for all source, output, and
 schema artifacts.
 
-This records P-code operands at statically resolved calls. It does not resolve
-`def:` chains beyond one exact source row, infer resource names or prototypes,
-or claim runtime argument values or complete call-site coverage. The
-observations cover only two functions, and the existing runtime capture
-corroborates function entries.
+The operand-trace pass emits 70 rows: 28 operand closures end without unresolved
+references, 28 reach explicit memory/call boundaries, and 14 are non-definition
+tokens. Across the traces it retains 87 producer rows, 33 exact operand links,
+and 34 boundary rows. `LOAD`, `CALL`, `CALLIND`, and `INDIRECT` boundaries
+prevent claims about memory contents or callee return values.
+
+This records P-code operands at statically resolved calls. The definition
+sidecar alone links each `def:` token to one exact producer row; the separate
+operand trace expands syntactic input references within the stated limits and
+stops at memory and call-result boundaries. Neither artifact evaluates runtime
+values, infers resource names or prototypes, or claims complete call-site
+coverage. The observations cover only two functions, and the existing runtime
+capture corroborates function entries.

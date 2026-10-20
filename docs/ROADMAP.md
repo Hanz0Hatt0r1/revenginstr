@@ -1546,10 +1546,13 @@ record to agree. The Nevergone replay attaches 36 call-site observations
 across `GameLevels::LoadGameLevels` and
 `CCFileUtilsAndroid::getFileData`, preserving 70 ordered value tokens (10
 constants) and complete row provenance; its 90-node, 128-edge graph rebuilds
-deterministically. These are P-code operand observations: `def:` tokens remain
-unresolved and no argument meaning, prototype, resource identity, or runtime
-value flow is inferred. Generic queries, bounded path queries, and runtime
-address correlators accept `/4`; see the [call-argument graph replay](evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/README.md).
+deterministically. These are P-code operand observations, not recovered
+prototypes, resource identities, or runtime argument values. An optional
+exact-definition sidecar is attached per argument, and the replay's operand
+tracer retains bounded same-artifact use/def references. It stops at memory
+and call-result boundaries and does not evaluate values. Generic queries,
+bounded path queries, and runtime address correlators accept `/4`; see the
+[call-argument graph replay](evidence/semantic-program-graph-v4/nevergone-runtime-call-arguments-20261020/README.md).
 This extends graph access to static call arguments but does not close M10.5,
 whose broad subsystem reconstruction and accepted derived-relation evaluation
 remain open.
@@ -1569,6 +1572,15 @@ The graph validates that the sidecar row points back to the exact pinned call
 observation and that its token and width agree. This makes the bounded
 definition evidence queryable alongside the callsite without upgrading it to
 a semantic or runtime value-flow claim.
+
+`revenginstr-direct-call-argument-traces` emits a bounded operand-use closure
+for each observed direct-call argument. On the Nevergone replay, 56 exact
+definitions expand to 87 producer rows and 33 exact operand references; 28
+traces reach a memory/call boundary, 28 close without one, and 14 operands are
+non-definition tokens. Cycles, ambiguities, missing rows, and trace limits are
+preserved explicitly. The replay does not traverse `LOAD` contents or call
+returns, choose `MULTIEQUAL` branches, evaluate runtime values, or infer
+operand semantics.
 
 ---
 

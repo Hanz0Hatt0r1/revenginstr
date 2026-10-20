@@ -71,6 +71,18 @@
       "path": "../../../../schemas/direct-call-argument-definition-v1.schema.json",
       "bytes": 3400,
       "sha256": "335ac0a989ded1e48090440874b6bfad8231907ced4eb5e2fd507d0f75b41679"
+    },
+    {
+      "id": "argument_operand_traces",
+      "path": "argument-operand-traces.jsonl",
+      "bytes": 195232,
+      "sha256": "8d6135421625efc05c00cf074fc678b6001859e39e5b203d05102d649975b086"
+    },
+    {
+      "id": "argument_operand_trace_schema",
+      "path": "../../../../schemas/direct-call-argument-operand-trace-v1.schema.json",
+      "bytes": 9396,
+      "sha256": "87a426cc242ffa9d943881cbd4485f7ada7735fa02be5499038b999645626478"
     }
   ],
   "format": "REVENGINSTR.SemanticProgramGraphCallArgumentReplay/1",
@@ -83,6 +95,13 @@
     "graph_edges": 128,
     "graph_nodes": 90,
     "exact_argument_definitions": 56,
-    "non_definition_arguments": 14
+    "non_definition_arguments": 14,
+    "operand_trace_rows": 70,
+    "closed_operand_traces": 28,
+    "boundary_operand_traces": 28,
+    "non_definition_operand_traces": 14,
+    "operand_trace_producer_rows": 87,
+    "operand_trace_edges": 33,
+    "operand_trace_boundaries": 34
   }
 }

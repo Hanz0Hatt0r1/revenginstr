@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/direct-call-argument-operand-trace-v1.schema.json",
+  "title": "REVENGINSTR.DirectCallArgumentOperandTrace/1 JSONL row",
+  "description": "Bounded, provenance-pinned closure of syntactic P-code operand references rooted at one direct-call argument. This records operand relations, not evaluated values or semantic data flow.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "program_id", "program_sha256", "caller_entry", "callee_entry", "call_address", "call_time",
+    "argument_index", "argument_count", "value_token", "width_bytes", "call_observation_ref",
+    "call_pcode_evidence_ref", "definition_analysis_ref", "definition_resolution_state", "trace_state",
+    "max_depth", "max_nodes_per_argument", "root_use", "root_definition_refs", "nodes", "operand_edges",
+    "leaf_operands", "unresolved_operands", "boundary_rows", "cycle_edges"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.DirectCallArgumentOperandTrace/1"},
+    "program_id": {"type": "string", "minLength": 1},
+    "program_sha256": {"$ref": "#/$defs/sha256"},
+    "caller_entry": {"type": "string", "minLength": 1},
+    "callee_entry": {"type": "string", "minLength": 1},
+    "call_address": {"type": "string", "minLength": 1},
+    "call_time": {"type": "integer", "minimum": 0},
+    "argument_index": {"type": "integer", "minimum": 0},
+    "argument_count": {"type": "integer", "minimum": 0},
+    "value_token": {"type": "string", "minLength": 1},
+    "width_bytes": {"type": "integer", "minimum": 1},
+    "call_observation_ref": {"$ref": "#/$defs/call_observation_ref"},
+    "call_pcode_evidence_ref": {"$ref": "#/$defs/pcode_ref"},
+    "definition_analysis_ref": {"$ref": "#/$defs/definition_ref"},
+    "definition_resolution_state": {"enum": ["exact_definition", "definition_not_found", "ambiguous_definition", "non_definition_token"]},
+    "trace_state": {"enum": ["closed", "boundary_reached", "cycle_present", "partial", "depth_limit", "node_limit", "definition_not_found", "ambiguous_definition", "non_definition_token"]},
+    "max_depth": {"type": "integer", "minimum": 1, "maximum": 128},
+    "max_nodes_per_argument": {"type": "integer", "minimum": 1, "maximum": 100000},
+    "root_use": {"$ref": "#/$defs/root_use"},
+    "root_definition_refs": {"type": "array", "items": {"$ref": "#/$defs/pcode_ref"}},
+    "nodes": {"type": "array", "items": {"$ref": "#/$defs/node"}},
+    "operand_edges": {"type": "array", "items": {"$ref": "#/$defs/operand_edge"}},
+    "leaf_operands": {"type": "array", "items": {"$ref": "#/$defs/leaf_operand"}},
+    "unresolved_operands": {"type": "array", "items": {"$ref": "#/$defs/unresolved_operand"}},
+    "boundary_rows": {"type": "array", "items": {"$ref": "#/$defs/boundary_row"}},
+    "cycle_edges": {"type": "array", "items": {"$ref": "#/$defs/operand_edge"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "pcode_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_sha256", "record_index", "source_format"],
+      "properties": {
+        "artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "record_index": {"type": "integer", "minimum": 1},
+        "source_format": {"const": "REVENGINSTR.GhidraFunctionPcodeFlow/1"}
+      }
+    },
+    "call_observation_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_sha256", "record_index", "source_format"],
+      "properties": {
+        "artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "record_index": {"type": "integer", "minimum": 1},
+        "source_format": {"const": "REVENGINSTR.DirectCallArgumentObservation/1"}
+      }
+    },
+    "definition_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_sha256", "record_index", "source_format"],
+      "properties": {
+        "artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "record_index": {"type": "integer", "minimum": 1},
+        "source_format": {"const": "REVENGINSTR.DirectCallArgumentDefinition/1"}
+      }
+    },
+    "root_use": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["consumer_ref", "input_index", "value_token"],
+      "properties": {
+        "consumer_ref": {"$ref": "#/$defs/pcode_ref"},
+        "input_index": {"type": "integer", "minimum": 0},
+        "value_token": {"type": "string", "minLength": 1}
+      }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_ref", "function_entry", "operation_address", "operation_time", "opcode", "output_token", "inputs", "callee_entry", "callee_name"],
+      "properties": {
+        "evidence_ref": {"$ref": "#/$defs/pcode_ref"},
+        "function_entry": {"type": "string", "minLength": 1},
+        "operation_address": {"type": "string", "minLength": 1},
+        "operation_time": {"type": "integer", "minimum": 0},
+        "opcode": {"type": "string", "minLength": 1},
+        "output_token": {"type": "string", "minLength": 1},
+        "inputs": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "callee_entry": {"type": "string"},
+        "callee_name": {"type": "string"}
+      }
+    },
+    "operand_edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["consumer_ref", "producer_ref", "input_index", "value_token"],
+      "properties": {
+        "consumer_ref": {"$ref": "#/$defs/pcode_ref"},
+        "producer_ref": {"$ref": "#/$defs/pcode_ref"},
+        "input_index": {"type": "integer", "minimum": 0},
+        "value_token": {"type": "string", "minLength": 1}
+      }
+    },
+    "leaf_operand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["consumer_ref", "input_index", "value_token", "token_kind"],
+      "properties": {
+        "consumer_ref": {"$ref": "#/$defs/pcode_ref"},
+        "input_index": {"type": "integer", "minimum": 0},
+        "value_token": {"type": "string", "minLength": 1},
+        "token_kind": {"type": "string", "minLength": 1}
+      }
+    },
+    "unresolved_operand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["consumer_ref", "input_index", "value_token", "resolution_state", "candidate_refs"],
+      "properties": {
+        "consumer_ref": {"$ref": "#/$defs/pcode_ref"},
+        "input_index": {"type": "integer", "minimum": 0},
+        "value_token": {"type": "string", "minLength": 1},
+        "resolution_state": {"enum": ["definition_not_found", "ambiguous_definition", "depth_limit", "node_limit"]},
+        "candidate_refs": {"type": "array", "items": {"$ref": "#/$defs/pcode_ref"}}
+      }
+    },
+    "boundary_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_ref", "opcode", "boundary_reason", "operands"],
+      "properties": {
+        "evidence_ref": {"$ref": "#/$defs/pcode_ref"},
+        "opcode": {"enum": ["CALL", "CALLIND", "INDIRECT", "LOAD"]},
+        "boundary_reason": {"enum": ["call_return_value", "indirect_call_return_value", "indirect_operation_result", "memory_read_value"]},
+        "operands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["input_index", "value_token"],
+            "properties": {
+              "input_index": {"type": "integer", "minimum": 0},
+              "value_token": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"definition_resolution_state": {"const": "exact_definition"}}, "required": ["definition_resolution_state"]},
+      "then": {"properties": {"root_definition_refs": {"minItems": 1, "maxItems": 1}}}
+    },
+    {
+      "if": {"properties": {"definition_resolution_state": {"const": "ambiguous_definition"}}, "required": ["definition_resolution_state"]},
+      "then": {"properties": {"root_definition_refs": {"minItems": 2}}}
+    },
+    {
+      "if": {"properties": {"definition_resolution_state": {"enum": ["definition_not_found", "non_definition_token"]}}, "required": ["definition_resolution_state"]},
+      "then": {"properties": {"root_definition_refs": {"maxItems": 0}}}
+    },
+    {
+      "if": {"properties": {"definition_resolution_state": {"const": "exact_definition"}}, "required": ["definition_resolution_state"]},
+      "then": {"properties": {"trace_state": {"enum": ["closed", "boundary_reached", "cycle_present", "partial", "depth_limit", "node_limit"]}}}
+    },
+    {
+      "if": {"properties": {"definition_resolution_state": {"const": "definition_not_found"}}, "required": ["definition_resolution_state"]},
+      "then": {"properties": {"trace_state": {"const": "definition_not_found"}}}
+    },
+    {
+      "if": {"properties": {"definition_resolution_state": {"const": "ambiguous_definition"}}, "required": ["definition_resolution_state"]},
+      "then": {"properties": {"trace_state": {"const": "ambiguous_definition"}}}
+    },
+    {
+      "if": {"properties": {"definition_resolution_state": {"const": "non_definition_token"}}, "required": ["definition_resolution_state"]},
+      "then": {"properties": {"trace_state": {"const": "non_definition_token"}}}
+    }
+  ]
+}
