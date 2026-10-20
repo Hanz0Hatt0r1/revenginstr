@@ -34,9 +34,13 @@ GHIDRA_HOME=/opt/ghidra \
 ```
 
 The runner uses `-readOnly -noanalysis` and a temporary script directory, so it
-does not alter the project analysis or compile unrelated scripts. Consumers
-should retain their existing exporter copy as a fallback until shared-first
-lookup has passed same-project output parity.
+does not alter the project analysis or compile unrelated scripts. Call
+operation argument lists follow the saved callee signatures. Apply Ghidra's
+`Decompiler Parameter ID` analyzer to the bounded call closure before exporting
+when those signatures are missing; `scripts/run_ghidra_parameter_id.sh` is the
+explicit writable preparation step. Consumers should retain their existing
+exporter copy as a fallback until shared-first lookup has passed same-project
+output parity.
 
 The runner also requires the exporter's `GhidraFunctionPcodeFlow/1` completion
 marker. Ghidra can return a zero process status after a post-script exception;
@@ -50,6 +54,15 @@ with `--default-priority=<rank>` for names that match no fragment. Repeating
 the option also supports demangled symbols that contain commas. Keep
 program-specific fragments in the consumer adapter; the generic exporters do
 not choose title-specific names.
+
+Their completion message reports `capped=true` when the function budget stops
+queued work and `depth-capped=true` when the depth limit excludes at least one
+otherwise reachable direct caller or callee. A flow export with either flag
+set is bounded and must not be treated as a complete direct-call closure.
+
+The caller-argument subtree runner checks the exporter's completion marker and
+each requested parameter-root marker. This catches Ghidra post-script failures
+that can otherwise return a zero exit status.
 
 ## Direct-call memory-effect facts
 

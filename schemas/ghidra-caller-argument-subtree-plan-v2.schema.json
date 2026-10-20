@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-caller-argument-subtree-plan-v2.schema.json",
+  "title": "REVENGINSTR.GhidraCallerArgumentSubtreePlan/2 TSV row",
+  "description": "A consumer-supplied plan key, callee parameter, and optional caller function scope.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["plan_id", "callee_entry", "parameter_index", "caller_entry"],
+  "properties": {
+    "plan_id": {"type": "string", "minLength": 1},
+    "callee_entry": {"type": "string", "minLength": 1},
+    "parameter_index": {"type": "string", "pattern": "^[0-9]+$"},
+    "caller_entry": {"type": "string", "minLength": 1, "description": "Caller function address, or - to discover direct callers."}
+  }
+}

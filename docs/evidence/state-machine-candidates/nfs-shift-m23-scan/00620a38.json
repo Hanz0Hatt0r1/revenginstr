@@ -1,0 +1,67 @@
+{
+  "candidates": [
+    {
+      "branch": {
+        "cfg_block_index": 0,
+        "cfg_record_index": 1,
+        "operation_address": "00620a87",
+        "operation_time": 97,
+        "pcode_flow_record_index": 51,
+        "successor_block_indices": [
+          1,
+          6
+        ],
+        "write_reachable_successor_index": 1
+      },
+      "candidate_id": "00719081316ca436eac6211c986dca3aa57faecd8cc1a2ba59ec559cc92b8aa4",
+      "comparison": {
+        "opcode": "INT_EQUAL",
+        "operation_address": "00620a7a",
+        "operation_time": 85,
+        "pcode_flow_record_index": 49
+      },
+      "field": {
+        "offset_bytes": 20,
+        "root_parameter_index": 0
+      },
+      "function_entry": "00620a38",
+      "load": {
+        "operation_address": "00620a7a",
+        "operation_time": 79,
+        "parameter_load_record_index": 1,
+        "pcode_flow_record_index": 48
+      },
+      "reason_codes": [
+        "parameter_field_load_directly_compared",
+        "comparison_result_controls_conditional_branch",
+        "same_parameter_offset_store_reachable_from_one_successor"
+      ],
+      "write": {
+        "cfg_block_index": 1,
+        "cfg_record_index": 1,
+        "memory_store_record_index": 4,
+        "operation_address": "00620a9e",
+        "operation_time": 139,
+        "pcode_flow_record_index": 67
+      }
+    }
+  ],
+  "claim_scope": "Single-function structural candidate only; no state semantics, branch truth polarity, path feasibility, or runtime value-flow claim.",
+  "format": "REVENGINSTR.StateMachineCandidateAudit/2",
+  "program_id": "nfs-shift:SHIFT.exe",
+  "selected_function_entries": [
+    "00620a38"
+  ],
+  "source": {
+    "candidate_count": 1,
+    "cfg_sha256": "063cca9998c02cf08b62d86bbf85cd8ce2c237c4e7957b2ba2137e5912749110",
+    "function_count": 1,
+    "memory_store_rows": 4,
+    "memory_store_sha256": "b2cc605143dc82725f10903fb9c14ff9ee828225a96b7d8eea8a4fac33147ec8",
+    "parameter_load_rows": 7,
+    "parameter_load_sha256": "984a296d5be0d98f6aaf78c6650a31ee4c0c044d74860ecde3f3846560405260",
+    "pcode_flow_sha256": "690a2139949dd5b24146b8e9ffc3d4aae8a16c46472de485bcbaa211296c441e",
+    "pcode_operations": 246,
+    "unresolved_store_rows": 0
+  }
+}

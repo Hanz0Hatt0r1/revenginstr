@@ -1,0 +1,282 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/semantic-program-graph-v2.schema.json",
+  "title": "REVENGINSTR.SemanticProgramGraph/2",
+  "description": "Deterministic evidence-linked program graph from FunctionEffectIR/1 or /2, optionally joined to exact-call-site GhidraIndirectReceiverType/1 observations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "graph_id",
+    "program_id",
+    "source_effect_ir_format",
+    "source_effect_ir_sha256",
+    "nodes",
+    "edges",
+    "source_receiver_types_format",
+    "source_receiver_types_sha256"
+  ],
+  "properties": {
+    "format": {"const":"REVENGINSTR.SemanticProgramGraph/2"},
+    "graph_id": {"type":"string","pattern":"^program:[0-9a-f]{64}$"},
+    "program_id": {"type":"string","minLength":1},
+    "source_effect_ir_format": {"enum":["REVENGINSTR.FunctionEffectIR/1","REVENGINSTR.FunctionEffectIR/2"]},
+    "source_effect_ir_sha256": {"$ref":"#/$defs/sha256"},
+    "nodes": {"type":"array","minItems":3,"items":{"$ref":"#/$defs/node"}},
+    "edges": {"type":"array","minItems":1,"items":{"$ref":"#/$defs/edge"}},
+    "source_receiver_types_format": {"const":"REVENGINSTR.GhidraIndirectReceiverType/1"},
+    "source_receiver_types_sha256": {"$ref":"#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "support": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["effect_id","evidence_class","provenance"],
+          "properties": {
+            "effect_id": {"$ref":"#/$defs/sha256"},
+            "evidence_class": {"enum":["exact_static","derived_structural"]},
+            "provenance": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["source_format","artifact_sha256","record_index"],
+              "properties": {
+                "source_format": {
+                  "enum": [
+                    "REVENGINSTR.GhidraParameterStoreField/1",
+                    "REVENGINSTR.GhidraParameterLoadField/1",
+                    "REVENGINSTR.GhidraFunctionPcodeFlow/1"
+                  ]
+                },
+                "artifact_sha256": {"$ref":"#/$defs/sha256"},
+                "record_index": {"type":"integer","minimum":1}
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source_record_id","evidence_class","provenance"],
+          "properties": {
+            "source_record_id": {"type":"string","minLength":1},
+            "evidence_class": {"const":"observed_metadata"},
+            "provenance": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["source_format","artifact_sha256","record_index"],
+              "properties": {
+                "source_format": {"const":"REVENGINSTR.GhidraIndirectReceiverType/1"},
+                "artifact_sha256": {"$ref":"#/$defs/sha256"},
+                "record_index": {"type":"integer","minimum":1}
+              }
+            }
+          }
+        }
+      ]
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id","kind","evidence_class","confidence","conflict_state","support"],
+      "properties": {
+        "id": {"type":"string","pattern":"^(program|function|operation|field|receiver_observation):[0-9a-f]{64}$"},
+        "kind": {"enum":["program","function","operation","field","receiver_observation"]},
+        "entry": {"type":"string","minLength":1},
+        "function_entry": {"type":"string","minLength":1},
+        "owner_function_entry": {"type":"string","minLength":1},
+        "operation_address": {"type":"string","minLength":1},
+        "operation_time": {"type":["integer","null"],"minimum":0},
+        "opcode": {"enum":["LOAD","STORE","CALL","CALLIND","RETURN"]},
+        "kinds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["parameter_field_read","parameter_field_write","direct_call","indirect_call","return_op","memory_read","memory_write"]
+          }
+        },
+        "call_target_state": {"enum":["not_applicable","resolved","unresolved","indirect","conflicted"]},
+        "target_entries": {"type":"array","uniqueItems":true,"items":{"type":"string","minLength":1}},
+        "conflict_reasons": {"type":"array","uniqueItems":true,"items":{"enum":["target_disagreement","opcode_disagreement"]}},
+        "parameter_index": {"type":"integer","minimum":0},
+        "field_offset": {"type":"string","pattern":"^-?0x[0-9a-f]+$"},
+        "evidence_class": {"enum":["exact_static","derived_structural","mixed","observed_metadata"]},
+        "confidence": {"type":["number","null"],"minimum":0,"maximum":1},
+        "conflict_state": {"enum":["uncontested","contested"]},
+        "support": {"type":"array","minItems":1,"items":{"$ref":"#/$defs/support"}},
+        "call_index": {"type":"integer","minimum":0},
+        "join_state": {
+          "enum": ["matched","matched_contested","ambiguous","function_not_in_effect_ir","call_site_not_found","call_site_not_indirect"]
+        },
+        "receiver_present": {"type":"boolean"},
+        "receiver_storage_kind": {"type":"string"},
+        "receiver_token": {"type":"string"},
+        "receiver_type_name": {"type":"string"},
+        "receiver_type_display": {"type":"string"},
+        "pointee_type_name": {"type":"string"},
+        "pointee_type_display": {"type":"string"},
+        "receiver_pointer_depth": {"type":"integer","minimum":0},
+        "flow_type_node_count": {"type":"integer","minimum":0},
+        "flow_single_pointer_pointee_names": {"type":"array","items":{"type":"string"}},
+        "flow_single_pointer_pointee_displays": {"type":"array","items":{"type":"string"}}
+      },
+      "allOf": [
+        {"if":{"properties":{"kind":{"const":"program"}},"required":["kind"]},"then":{"properties":{"id":{"pattern":"^program:"}}}},
+        {
+          "if": {"properties":{"kind":{"const":"function"}},"required":["kind"]},
+          "then": {"required":["entry"],"properties":{"id":{"pattern":"^function:"}}}
+        },
+        {
+          "if": {"properties":{"kind":{"const":"operation"}},"required":["kind"]},
+          "then": {
+            "required": [
+              "function_entry",
+              "operation_address",
+              "operation_time",
+              "opcode",
+              "kinds",
+              "call_target_state",
+              "target_entries",
+              "conflict_reasons"
+            ]
+          }
+        },
+        {
+          "if": {"properties":{"kind":{"const":"operation"}},"required":["kind"]},
+          "then": {"properties":{"id":{"pattern":"^operation:"}}}
+        },
+        {
+          "if": {"properties":{"kind":{"const":"field"}},"required":["kind"]},
+          "then": {"required":["owner_function_entry","parameter_index","field_offset"],"properties":{"id":{"pattern":"^field:"}}}
+        },
+        {
+          "if": {"properties":{"kinds":{"contains":{"const":"direct_call"}}},"required":["kinds"]},
+          "then": {"properties":{"call_target_state":{"enum":["resolved","unresolved","conflicted"]}}}
+        },
+        {
+          "if": {"properties":{"kinds":{"contains":{"const":"indirect_call"}}},"required":["kinds"]},
+          "then": {"properties":{"call_target_state":{"const":"indirect"}}}
+        },
+        {
+          "if": {"properties":{"kinds":{"not":{"contains":{"enum":["direct_call","indirect_call"]}}}},"required":["kinds"]},
+          "then": {"properties":{"call_target_state":{"const":"not_applicable"}}}
+        },
+        {
+          "if": {"properties":{"call_target_state":{"const":"resolved"}},"required":["call_target_state"]},
+          "then": {"properties":{"target_entries":{"minItems":1,"maxItems":1}}}
+        },
+        {
+          "if": {"properties":{"call_target_state":{"const":"conflicted"}},"required":["call_target_state"]},
+          "then": {"properties":{"target_entries":{"minItems":2}}}
+        },
+        {
+          "if": {"properties":{"call_target_state":{"enum":["not_applicable","unresolved","indirect"]}},"required":["call_target_state"]},
+          "then": {"properties":{"target_entries":{"maxItems":0}}}
+        },
+        {
+          "if": {"properties":{"call_target_state":{"const":"conflicted"}},"required":["call_target_state"]},
+          "then": {"properties":{"conflict_state":{"const":"contested"},"conflict_reasons":{"contains":{"const":"target_disagreement"}}}}
+        },
+        {
+          "if": {"properties":{"conflict_state":{"const":"contested"}},"required":["conflict_state"]},
+          "then": {"properties":{"conflict_reasons":{"minItems":1}}}
+        },
+        {
+          "if": {"properties":{"conflict_reasons":{"minItems":1}},"required":["conflict_reasons"]},
+          "then": {"properties":{"conflict_state":{"const":"contested"}}}
+        },
+        {
+          "if": {"properties":{"conflict_state":{"const":"uncontested"}},"required":["conflict_state"]},
+          "then": {"properties":{"conflict_reasons":{"maxItems":0}}}
+        },
+        {
+          "if": {"properties":{"kind":{"const":"receiver_observation"}},"required":["kind"]},
+          "then": {
+            "required": [
+              "function_entry",
+              "call_index",
+              "operation_address",
+              "operation_time",
+              "join_state",
+              "receiver_present",
+              "receiver_storage_kind",
+              "receiver_token",
+              "receiver_type_name",
+              "receiver_type_display",
+              "receiver_pointer_depth",
+              "pointee_type_name",
+              "pointee_type_display",
+              "flow_type_node_count",
+              "flow_single_pointer_pointee_names",
+              "flow_single_pointer_pointee_displays",
+              "conflict_reasons"
+            ],
+            "properties": {"id":{"pattern":"^receiver_observation:"},"evidence_class":{"const":"observed_metadata"}}
+          }
+        },
+        {
+          "if": {"properties":{"join_state":{"const":"matched_contested"}},"required":["join_state"]},
+          "then": {"properties":{"conflict_state":{"const":"contested"},"conflict_reasons":{"minItems":1}}}
+        }
+      ]
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id","from","to","relation","evidence_class","confidence","conflict_state","support"],
+      "properties": {
+        "id": {"type":"string","pattern":"^edge:[0-9a-f]{64}$"},
+        "from": {"type":"string","pattern":"^(program|function|operation|field|receiver_observation):[0-9a-f]{64}$"},
+        "to": {"type":"string","pattern":"^(program|function|operation|field|receiver_observation):[0-9a-f]{64}$"},
+        "relation": {"enum":["contains","calls","reads","writes","observes_receiver"]},
+        "evidence_class": {"enum":["exact_static","derived_structural","mixed","observed_metadata"]},
+        "confidence": {"type":["number","null"],"minimum":0,"maximum":1},
+        "conflict_state": {"enum":["uncontested","contested"]},
+        "support": {"type":"array","minItems":1,"items":{"$ref":"#/$defs/support"}},
+        "conflict_reasons": {"type":"array","uniqueItems":true,"items":{"enum":["opcode_disagreement"]}}
+      },
+      "allOf": [
+        {
+          "if": {"properties":{"relation":{"const":"contains"}},"required":["relation"]},
+          "then": {
+            "oneOf": [
+              {"properties":{"from":{"pattern":"^program:"},"to":{"pattern":"^function:"}}},
+              {"properties":{"from":{"pattern":"^function:"},"to":{"pattern":"^operation:"}}},
+              {"properties":{"from":{"pattern":"^function:"},"to":{"pattern":"^receiver_observation:"}}}
+            ]
+          }
+        },
+        {
+          "if": {"properties":{"relation":{"const":"calls"}},"required":["relation"]},
+          "then": {"properties":{"from":{"pattern":"^operation:"},"to":{"pattern":"^function:"},"evidence_class":{"const":"exact_static"}}}
+        },
+        {
+          "if": {"properties":{"relation":{"enum":["reads","writes"]}},"required":["relation"]},
+          "then": {
+            "properties": {"from":{"pattern":"^operation:"},"to":{"pattern":"^field:"},"evidence_class":{"const":"derived_structural"}}
+          }
+        },
+        {
+          "if": {"properties":{"relation":{"const":"observes_receiver"}},"required":["relation"]},
+          "then": {
+            "properties": {
+              "from": {"pattern":"^operation:"},
+              "to": {"pattern":"^receiver_observation:"},
+              "evidence_class": {"const":"observed_metadata"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"relation":{"const":"observes_receiver"},"conflict_state":{"const":"contested"}},
+            "required": ["relation","conflict_state"]
+          },
+          "then": {"properties":{"conflict_reasons":{"minItems":1}},"required":["conflict_reasons"]}
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/ghidra-function-pcode-cfg-v4.schema.json",
+  "title": "REVENGINSTR.GhidraFunctionPcodeCFG/4 JSONL row",
+  "description": "High-P-code CFG with logical and physical memory metadata and exact links from INDIRECT markers to their source P-code operation when resolvable; it does not assert aliasing or runtime value flow.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "program_id", "function_entry", "entry_block_index", "blocks"],
+  "properties": {
+    "format": {"const": "REVENGINSTR.GhidraFunctionPcodeCFG/4"},
+    "program_id": {"type": "string", "minLength": 1},
+    "function_entry": {"type": "string", "minLength": 1},
+    "entry_block_index": {"type": "integer", "minimum": 0},
+    "blocks": {"type": "array", "items": {"$ref": "#/$defs/block"}}
+  },
+  "$defs": {
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["address", "time", "opcode", "memory_space", "memory_width_bytes", "memory_physical_space", "memory_pointer_width_bytes", "indirect_effect_link"],
+      "properties": {
+        "address": {"type": "string", "minLength": 1},
+        "time": {"type": "integer", "minimum": 0},
+        "opcode": {"type": "string", "minLength": 1},
+        "memory_space": {"type": ["string", "null"], "minLength": 1},
+        "memory_width_bytes": {"type": ["integer", "null"], "minimum": 1},
+        "memory_physical_space": {"type": ["string", "null"], "minLength": 1},
+        "memory_pointer_width_bytes": {"type": ["integer", "null"], "minimum": 1},
+        "indirect_effect_link": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/indirectEffectLink"}
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"opcode": {"const": "INDIRECT"}}},
+          "then": {"properties": {"indirect_effect_link": {"$ref": "#/$defs/indirectEffectLink"}}}
+        },
+        {
+          "if": {"properties": {"opcode": {"not": {"const": "INDIRECT"}}}},
+          "then": {"properties": {"indirect_effect_link": {"const": null}}}
+        },
+        {
+          "if": {"properties": {"opcode": {"enum": ["LOAD", "STORE"]}}},
+          "then": {"properties": {
+            "memory_space": {"type": ["string", "null"]},
+            "memory_width_bytes": {"type": ["integer", "null"]},
+            "memory_physical_space": {"type": ["string", "null"]},
+            "memory_pointer_width_bytes": {"type": ["integer", "null"]}
+          }}
+        },
+        {
+          "if": {"properties": {"opcode": {"not": {"enum": ["LOAD", "STORE"]}}}},
+          "then": {"properties": {
+            "memory_space": {"const": null},
+            "memory_width_bytes": {"const": null},
+            "memory_physical_space": {"const": null},
+            "memory_pointer_width_bytes": {"const": null}
+          }}
+        }
+      ]
+    },
+    "indirectEffectLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "source_address", "source_time", "source_opcode"],
+      "properties": {
+        "status": {"enum": ["resolved", "unresolved"]},
+        "source_address": {"type": ["string", "null"], "minLength": 1},
+        "source_time": {"type": ["integer", "null"], "minimum": 0},
+        "source_opcode": {"type": ["string", "null"], "minLength": 1}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "resolved"}}},
+          "then": {"properties": {
+            "source_address": {"type": "string"},
+            "source_time": {"type": "integer"},
+            "source_opcode": {"type": "string"}
+          }}
+        },
+        {
+          "if": {"properties": {"status": {"const": "unresolved"}}},
+          "then": {"properties": {
+            "source_address": {"const": null},
+            "source_time": {"const": null},
+            "source_opcode": {"const": null}
+          }}
+        }
+      ]
+    },
+    "block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["block_index", "start_address", "stop_address", "operations", "successors"],
+      "properties": {
+        "block_index": {"type": "integer", "minimum": 0},
+        "start_address": {"type": "string", "minLength": 1},
+        "stop_address": {"type": "string", "minLength": 1},
+        "operations": {"type": "array", "items": {"$ref": "#/$defs/operation"}},
+        "successors": {"type": "array", "uniqueItems": true, "items": {"type": "integer", "minimum": 0}}
+      }
+    }
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Hanz0Hatt0r1/revenginstr/schemas/semantic-program-path-query-result-v1.schema.json",
+  "title": "REVENGINSTR.SemanticProgramPathQueryResult/1",
+  "description": "Bounded paths over exact direct-call graph edges with source evidence and optional Ghidra CFG call-site reachability annotations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format", "query_id", "source_graph_id", "source_graph_format", "program_id",
+    "source_graph_sha256", "source_function_entry", "target_function_entry", "view",
+    "minimum_confidence", "max_hops", "max_paths", "max_expansions", "path_semantics",
+    "status", "paths", "uncertain_call_frontier"
+  ],
+  "properties": {
+    "format": {"const": "REVENGINSTR.SemanticProgramPathQueryResult/1"},
+    "query_id": {"type": "string", "pattern": "^path-query:[0-9a-f]{64}$"},
+    "source_graph_id": {"type": "string", "pattern": "^program:[0-9a-f]{64}$"},
+    "source_graph_format": {"enum": ["REVENGINSTR.SemanticProgramGraph/1", "REVENGINSTR.SemanticProgramGraph/2"]},
+    "program_id": {"type": "string", "minLength": 1},
+    "source_graph_sha256": {"$ref": "#/$defs/sha256"},
+    "cfg_source_sha256": {"$ref": "#/$defs/sha256"},
+    "cfg_semantics": {"const": "entry_block_successor_reachability"},
+    "source_function_entry": {"type": "string", "minLength": 1},
+    "target_function_entry": {"type": "string", "minLength": 1},
+    "view": {"enum": ["exact-only", "accepted-high-confidence", "exploratory"]},
+    "minimum_confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "max_hops": {"type": "integer", "minimum": 0},
+    "max_paths": {"type": "integer", "minimum": 1},
+    "max_expansions": {"type": "integer", "minimum": 1},
+    "path_semantics": {"const": "exact_direct_call_graph_only"},
+    "status": {"enum": [
+      "both_functions_missing", "source_function_missing", "target_function_missing",
+      "no_direct_call_path_within_bound", "direct_call_paths_found"
+    ]},
+    "paths": {"type": "array", "items": {"$ref": "#/$defs/path"}},
+    "uncertain_call_frontier": {"type": "array", "items": {"$ref": "#/$defs/frontier"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "node": {
+      "type": "object",
+      "required": ["id", "kind"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation):[0-9a-f]{64}$"},
+        "kind": {"enum": ["program", "function", "operation", "field", "receiver_observation"]}
+      },
+      "additionalProperties": true
+    },
+    "edge": {
+      "type": "object",
+      "required": ["id", "from", "to", "relation"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^edge:[0-9a-f]{64}$"},
+        "from": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation):[0-9a-f]{64}$"},
+        "to": {"type": "string", "pattern": "^(program|function|operation|field|receiver_observation):[0-9a-f]{64}$"},
+        "relation": {"enum": ["contains", "calls", "reads", "writes", "observes_receiver"]}
+      },
+      "additionalProperties": true
+    },
+    "function_node": {
+      "allOf": [
+        {"$ref": "#/$defs/node"},
+        {"properties": {"kind": {"const": "function"}, "entry": {"type": "string", "minLength": 1}}, "required": ["entry"]}
+      ]
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["caller_entry", "caller_function", "call_operation", "membership_edge", "call_edge", "callee_entry", "callee_function", "conflict_state"],
+      "properties": {
+        "caller_entry": {"type": "string", "minLength": 1},
+        "caller_function": {"$ref": "#/$defs/function_node"},
+        "call_operation": {"allOf": [
+          {"$ref": "#/$defs/node"},
+          {"properties": {"kind": {"const": "operation"}, "opcode": {"const": "CALL"}, "function_entry": {"type": "string", "minLength": 1}, "operation_address": {"type": "string", "minLength": 1}}, "required": ["opcode", "function_entry", "operation_address"]}
+        ]},
+        "membership_edge": {"allOf": [
+          {"$ref": "#/$defs/edge"},
+          {"properties": {"relation": {"const": "contains"}}, "required": ["relation"]}
+        ]},
+        "call_edge": {"allOf": [
+          {"$ref": "#/$defs/edge"},
+          {"properties": {"relation": {"const": "calls"}}, "required": ["relation"]}
+        ]},
+        "cfg_callsite": {"$ref": "#/$defs/cfg_callsite"},
+        "callee_entry": {"type": "string", "minLength": 1},
+        "callee_function": {"$ref": "#/$defs/function_node"},
+        "conflict_state": {"enum": ["uncontested", "contested"]}
+      }
+    },
+    "path": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["function_entries", "steps", "conflict_state"],
+      "properties": {
+        "function_entries": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "steps": {"type": "array", "items": {"$ref": "#/$defs/step"}},
+        "conflict_state": {"enum": ["uncontested", "contested"]},
+        "cfg_status": {"enum": [
+          "no_call_sites_to_check", "all_call_sites_in_entry_reachable_blocks",
+          "contains_unreachable_call_site", "cfg_opcode_mismatch", "incomplete_cfg_evidence"
+        ]}
+      }
+    },
+    "cfg_callsite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "cfg_record_index", "block_index", "block_path"],
+      "properties": {
+        "status": {"enum": [
+          "reachable", "unreachable", "function_cfg_missing", "operation_missing",
+          "opcode_mismatch", "entry_block_unavailable"
+        ]},
+        "cfg_record_index": {"type": ["integer", "null"], "minimum": 1},
+        "block_index": {"type": ["integer", "null"], "minimum": 0},
+        "block_path": {"type": "array", "items": {"type": "integer", "minimum": 0}}
+      }
+    },
+    "frontier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["function_entry", "reachable_with_conflict_state", "reachability_steps", "function", "membership_edge", "operation"],
+      "properties": {
+        "function_entry": {"type": "string", "minLength": 1},
+        "reachable_with_conflict_state": {"enum": ["uncontested", "contested"]},
+        "reachability_steps": {"type": "array", "items": {"$ref": "#/$defs/step"}},
+        "function": {"$ref": "#/$defs/function_node"},
+        "membership_edge": {"allOf": [
+          {"$ref": "#/$defs/edge"},
+          {"properties": {"relation": {"const": "contains"}}, "required": ["relation"]}
+        ]},
+        "cfg_callsite": {"$ref": "#/$defs/cfg_callsite"},
+        "operation": {"allOf": [
+          {"$ref": "#/$defs/node"},
+          {"properties": {"kind": {"const": "operation"}, "function_entry": {"type": "string", "minLength": 1}, "opcode": {"enum": ["CALL", "CALLIND"]}, "call_target_state": {"enum": ["indirect", "unresolved", "conflicted"]}}, "required": ["function_entry", "opcode", "call_target_state"]}
+        ]}
+      }
+    }
+  }
+}

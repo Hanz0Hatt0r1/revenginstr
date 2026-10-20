@@ -58,7 +58,37 @@ or pointer-width metadata for repeated operations in the same logical space.
 Version 3 is defined by
 [`GhidraFunctionPcodeCFG/3`](../schemas/ghidra-function-pcode-cfg-v3.schema.json).
 
+Pass `--indirect-effect-links` to emit version 4. It includes all version 3
+metadata and adds `indirect_effect_link` to each operation: non-`INDIRECT`
+operations carry `null`; each `INDIRECT` carries either the exact source
+operation address, sequence time, and opcode, or an explicit unresolved state.
+Ghidra resolves the link through the decompiler's operation-reference table.
+The reader verifies that a resolved source is another operation in the same
+function CFG with the recorded opcode. Downstream analyses can then avoid
+counting a linked `INDIRECT` twice only when its source operation is already
+classified as harmless; unresolved links remain barriers.
+
+```bash
+GHIDRA_HOME=/opt/ghidra \
+  scripts/run_ghidra_function_pcode_cfg.sh \
+  /path/to/projects project-name program-name function-pcode-cfg.jsonl \
+  'analysis:opaque-id' 00401000 --indirect-effect-links
+```
+
+Version 4 is defined by
+[`GhidraFunctionPcodeCFG/4`](../schemas/ghidra-function-pcode-cfg-v4.schema.json).
+The flag also enables version 3 memory metadata so all newer analysis facts
+remain available in one pinned CFG artifact.
+
 The runner checks that the exporter emitted its format completion marker in
 addition to checking Ghidra's process exit. Some Ghidra versions can log a
 post-script exception while returning a zero exit status; missing completion
 markers therefore fail the runner.
+
+For metadata exports, `--skip-missing-entry-blocks` lets a batch continue when
+Ghidra returns a High-P-code graph with no block starting at the function entry.
+The default still fails the export. Skipped functions have no CFG row, and the
+exporter reports each omitted entry with
+`GHIDRA_FUNCTION_PCODE_CFG_SKIPPED_ENTRY=<address> reason=entry_block_not_found`
+plus exported/skipped counts. Preserve that log with the JSONL: a skipped CFG
+is missing evidence and must remain a barrier in downstream audits.

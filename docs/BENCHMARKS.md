@@ -268,7 +268,8 @@ revenginstr-benchmark benchmark.json --mode full --output build/summary.json
 
 The same contract can chain evidence aggregation, receiver inference and
 provenance graph construction (including bounded caller-argument/store joins),
-family-grouped classifier training/inference, router training/inference,
-frozen validation and drift audit. Their arguments remain the native CLI
-arguments documented by each tool; the benchmark runner only orders, pins,
-validates and summarizes them.
+Effect IR, structured summaries, the semantic program graph and its gold
+evaluator, family-grouped classifier training/inference, router
+training/inference, frozen validation and drift audit. Their arguments remain
+the native CLI arguments documented by each tool; the benchmark runner only
+orders, pins, validates and summarizes them.

@@ -269,6 +269,7 @@ public class ExportBoundedReverseCallGraphPcodeFlow extends GhidraScript {
         long rows = 0;
         int functions = 0;
         boolean capped = false;
+        boolean depthCapped = false;
         try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
                 new FileOutputStream(output), StandardCharsets.UTF_8))) {
             out.write("function_entry\top_address\top_time\topcode\toutput\tinputs\tcallee_entry\tcallee_name");
@@ -316,6 +317,13 @@ public class ExportBoundedReverseCallGraphPcodeFlow extends GhidraScript {
                         }
                     }
                 }
+                else {
+                    for (Function caller : directCallers(function)) {
+                        if (!scheduled.contains(caller.getEntryPoint())) {
+                            depthCapped = true;
+                        }
+                    }
+                }
             }
         } finally {
             decompiler.dispose();
@@ -324,6 +332,6 @@ public class ExportBoundedReverseCallGraphPcodeFlow extends GhidraScript {
         println("Exported " + rows + " P-code flow rows across " + functions +
             " reverse-call functions from " + root.getName(true) + " at " + root.getEntryPoint() +
             " (max-depth=" + maxDepth + ", max-functions=" + maxFunctions +
-            ", capped=" + capped + ") -> " + output);
+            ", capped=" + capped + ", depth-capped=" + depthCapped + ") -> " + output);
     }
 }

@@ -822,9 +822,17 @@ Recover candidate state fields and transition graphs from repeated comparisons/w
 joins, a parameter-rooted field load feeding a comparison and terminal
 conditional branch, and a same-parameter/same-offset store reachable from only
 one of two CFG successors. It emits hash-pinned `StateMachineCandidateAudit/1`
-records and makes no branch-polarity, path-feasibility, runtime-value, or state
+records by default and `/2` when selecting exact function entries from larger
+multi-function captures; `/2` records that scope even when it finds no
+candidates. The detector makes no branch-polarity, path-feasibility,
+runtime-value, or state
 semantics claim. Cross-function field sharing, switch recovery, transition
 graphs, confidence per edge, and consumer evaluation remain open.
+An exploratory NFS SHIFT replay over fourteen selected functions found two
+such structural candidates and twelve non-matches; both positive candidates
+were checked against their original P-code, parameter-load, memory-store, and
+CFG records (see the
+[replay](evidence/state-machine-candidates/nfs-shift-m23-scan/README.md)).
 
 ## M5.5 Object-role clustering
 
@@ -1187,6 +1195,76 @@ Build consumer-owned gold subgraphs for independently understood subsystems and 
 
 Stretch: accepted-edge precision >=0.98 with useful cross-function/state/object graph coverage across multiple projects.
 
+### Current implementation status (2026-10-19)
+
+`SemanticProgramGraph/1` projects `FunctionEffectIR/1` and `/2` into
+deterministic program, function, operation, and parameter-rooted field
+entities. Resolved direct calls and structural field reads/writes retain
+source effect ids and artifact hashes; unresolved and indirect calls stay
+explicit, and multiple direct targets at one call site remain contested.
+Cross-export opcode disagreements at the same function, address, and P-code
+time also remain contested.
+
+`SemanticProgramGraph/2` optionally joins
+`GhidraIndirectReceiverType/1` observations by exact function entry, call
+address, and P-code time. It retains absent receivers and unmatched rows,
+records raw type metadata as observations, and emits no inferred dispatch
+target. A captured Ghidra replay for GT5 Prologue function `00032830` validates
+one `CALLIND` join from exported data; see
+[`SemanticProgramGraph/2 replay`](evidence/semantic-program-graph-v2/gt5-prologue-00032830/README.md).
+
+The graph families are still structural slices of M10.1–M10.3. Dispatch
+recovery, recovered layouts, roles, states, resources, callbacks, execution
+contexts, broadly scoped semantic gold graphs, and M10 exit criteria remain
+open.
+
+`revenginstr-semantic-program-query` now selects nodes and edges by kind,
+relation, indirect-call state, conflict state, function entry, operation
+address, field offset, and provenance id. It emits a hash-pinned
+`SemanticProgramQueryResult/1` with endpoint context and supports exact-only,
+accepted-high-confidence, and exploratory views. A replay over the captured
+Ghidra graph returns its `CALLIND` and exact receiver observation; the same
+query runner also returns endpoint context and preserves source support. This
+is the first generic selector layer for M10.4. Queries that require CFG
+feasibility, field meaning, layout equivalence, resource/state/callback paths,
+broadly scoped semantic subsystem gold data, and all M10 exit criteria remain
+open. A separate bounded path query now enumerates simple routes over exact direct-call edges,
+retaining caller/callee function context and call-operation,
+membership-edge, and call-edge provenance. It also surfaces unresolved,
+indirect, and conflicted call sites in the source's direct-call reachable
+region as candidate frontiers with a witness path and membership provenance;
+it does not assign those sites a target, claim that they block the target
+path, or establish CFG-feasible execution. The NFS SHIFT replay in
+[`SemanticProgramPathQuery/1 replay`](evidence/semantic-program-path-query/nfs-shift-call-path/README.md)
+returns the captured route `00a45520 → 00a40550 → 00886930`.
+
+The path query also accepts a hash-pinned Ghidra Function P-code CFG artifact
+and joins call sites by exact function entry, address, P-code time, and opcode.
+It records the call block and a successor-path witness from the function entry.
+The NFS SHIFT CFG/3 replay confirms the call at `00a4556d` is in entry-reachable
+block 3; block-graph reachability does not establish branch-predicate
+feasibility or runtime execution.
+
+`SemanticProgramGraphGold/1` and
+`SemanticProgramGraphEvaluation/1` now define scoped consumer gold and report
+relation-specific recall only where labels declare completeness. The evaluator
+also reports unsupported candidate-edge rate and provenance-field coverage.
+The evaluator and gold schema reject relation/node-kind mismatches; the
+evaluator also checks source opcodes when those operations are present, so
+malformed labels cannot silently lower recall.
+Reviewer-curated raw P-code projection audits match 2/2 GT5 and 7/7 NFS SHIFT
+direct-call edges; the Nevergone consumer-owned player-facing subgraph matches
+all 3 documented calls (see the
+[replay](evidence/semantic-program-graph-evaluation/nevergone-player-horizontal-facing/README.md)).
+The NFS M2.3 consumer-owned slice matches 7 calls, 2 reads, and 1 write (see
+its [replay](evidence/semantic-program-graph-evaluation/nfs-m23-00a45520/README.md)).
+All twenty-two edges have complete provenance fields. Both consumer golds are
+narrow structural interpretations, without independent runtime
+corroboration; the NFS gold does not assign field meaning or prove memory
+flow. Calibrated accepted edges and reconstruction/query of two broader
+semantic subsystems remain open, so M10.5 and its exit criteria are not
+complete.
+
 ---
 
 # 16. M11 — Active learning and reviewer-feedback loop
@@ -1394,7 +1472,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 
 ## P1 — after measurement is stable
 
-12. ✅ Receiver provenance graph IR schema and reference validator; graph construction is still open.
+12. ✅ Receiver provenance graph schema, reference validation, and initial exact one-hop projections; the unified program-level graph remains open under M10.
 13. 🟡 Interprocedural receiver propagation v1; bounded caller-argument, field-store/load, and return anchors plus exact one-hop joins are implemented, while positive memory-flow and semantic receiver validation remain open.
 14. ✅ Initial Effect IR schema + structural extractor v1; additional effect classes and semantic evaluation remain open.
 15. ✅ Initial generic semantic-label/evaluation format and paired scorer; family-isolated consumer gold sets remain open.
@@ -1423,7 +1501,7 @@ A behavior-changing PR should include before/after metrics or a pointer to the r
 31. Bounded runtime probe-request and correlation contracts.
 32. Static/runtime differential replay and information-gain metrics.
 33. Semantic Program Graph schema and deterministic builder.
-34. Gold-subgraph evaluation harness.
+34. 🟡 Scoped graph-gold schema/evaluator, two raw P-code projection audits, and narrow Nevergone/NFS consumer-owned structural golds implemented; accepted-edge precision and end-to-end semantic subsystem gates remain open.
 35. Feedback quarantine, adjudication and leakage-gated training promotion.
 
 ## P4 — architecture and integration
@@ -1626,6 +1704,163 @@ the original 1,000-function sample under its existing filters. These results
 validate bounded evidence handling and fail-closed behavior; they do not
 validate runtime value flow or a positive alias-filtering promotion.
 
+A fresh x86-32 sample screened 100 additional Ghidra functions outside that
+slice. It produced 12 parameter-field stores and 133 parameter loads, but no
+exact formal/offset pair. A separate exact-root replay did find a direct call
+whose callee flow has no stores or nested calls; `/5` classified that call as
+`no_aliasing_memory_effect`. Its caller pair still remains
+`store_not_dominating_load` in `/2` and `/5`, because a CFG path reaches the
+load without executing the store. This validates the exact-root call-effect
+path, but does not promote the pair or validate runtime value flow.
+
+Four follow-up address-stratified screens (`next100b`–`next100e`) covered 400
+planned functions and exported 31 parameter-field stores and 459 parameter
+loads. They produced 14 exact same-formal/offset pairs. Manual replay of the
+dominating candidates found two pairs in one function in `next100b`, two in
+`next100d`, and one in `next100e`; `/2` kept each at
+`possible_intervening_memory_effect`. The remaining pairs checked in those
+screens had stores that did not dominate their loads. The `next100e` strongest
+candidate was replayed through `/5` as well: its direct-call closure returned
+`unknown_effect` because exact caller-formal argument roots were absent and
+the closure contained unresolved/indirect operations and missing CFG facts, so
+`/5` preserved `possible_intervening_memory_effect`. The argument subtree
+showed a global address and a loop value rather than the caller's formal
+parameter; treating that as a non-alias proof would be unsound. These screens
+add no positive alias-filtering promotion and do not establish memory value
+flow.
+
+A separate high-priority prefilter selected 169 previously unseen functions
+whose mined instruction-level sequence was `STORE`, direct `CALL`, `LOAD`.
+Fresh High-P-code exports produced zero P-code `STORE` operations, zero
+parameter-field stores, and zero parameter-field loads across those functions;
+all 169 general memory-store sidecars were empty. A fresh flow export for one
+sample contained two `CALL` rows and one `RETURN`, confirming that the corpus
+labels are instruction-level candidate features and must not be read as
+Ghidra P-code memory facts. Keep that corpus as an address-generation aid only;
+future candidate prioritization must confirm actual High-P-code memory
+operations before exporting call closures.
+
+A higher-complexity 100-function screen (`next100f`) exported 14
+parameter-field stores and 1,154 parameter loads, forming nine exact pairs.
+Six pairs in two functions had a store-bypass path. Three pairs in a third
+function had dominating stores but remained `possible_intervening_memory_effect`
+in `/2`. A fresh `/5` replay of one of those pairs kept that status: all eight
+calls in the effect bundle were `unknown_effect`, with missing direct-call
+roots and a transitive closure containing stores and indirect calls. This
+rechecked the candidate and did not produce an alias-filtering promotion.
+
+A subsequent screen (`next100g`) constrained the corpus prefilter to one direct
+call and exported 25 parameter-field stores and 507 parameter loads across 100
+functions, producing two exact pairs in one function. Fresh `/2` and `/5`
+replays agreed: the first pair was `unique_cfg_store_candidate` because its
+store dominates the load and no possible memory effect lies on the witness;
+the second stayed `possible_intervening_memory_effect`. The intervening call
+for the second load was `unknown_effect`; its only exact argument root mapped
+callee parameter 2 to caller parameter 3, while the other arguments came from
+loads. Distinct caller formals still may alias. This validates both a positive
+structural candidate path and an unknown-effect barrier, without a `/2` to
+`/5` status change or a runtime value-flow claim.
+
+A follow-up one-call screen (`next100h`) exported 20 parameter-field stores
+and 408 parameter loads across 100 functions, forming nine exact pairs. The
+fresh `/2` and `/5` replays agreed on all nine: two
+`unique_cfg_store_candidate`, five `possible_intervening_memory_effect`, and
+two `store_not_dominating_load`. A subsequent live replay found that two of
+the three apparent exact call-site roots were false: their argument roots were
+loop-carried `MULTIEQUAL` values, but the exporter had treated shared
+`HighVariable` identity as proof of a direct formal root and ignored changing
+backedge offsets (`+0x12c` and `+0x13a * 4`). The exporter now rejects derived
+values as direct roots and accepts a `MULTIEQUAL` only when every incoming
+branch resolves to the same formal and byte offset. Replaying the same calls
+removed both false roots; the third root, a direct constant-offset path from
+caller parameter 0 at `+0x98`, remains exact. Rebuilding the interprocedural
+effects and `/5` audit from the corrected root sidecar retained seven
+`unknown_effect` and two `missing_callee_flow` rows, with all nine audit
+statuses unchanged; no alias-filtering promotion was justified. This corrects
+the earlier root evidence and makes loop-carried argument mapping fail closed.
+
+A fresh top-ranked 20-function screen (`next20i`) used previously unseen
+mining candidates indicating one direct-call feature and high instruction-level
+`STORE` and `LOAD` counts. The Ghidra exports contained zero parameter-field
+stores, 434 parameter-field loads, and 535 general memory-store facts; 320 of
+those stores had parameter-rooted constant offsets, but none stored a value
+rooted at a formal parameter, so the screen produced no compatible
+field-store/load pair.
+This rejects instruction-count ranking for pair discovery and reinforces that
+follow-up batches should start from exported parameter-field stores and loads.
+
+A refined 53-function `__thiscall` sample with 300–600-byte functions and
+instruction-level direct-call features produced 29 parameter-field stores and
+390 parameter loads, forming 30 exact same-formal/offset pairs. CFG/3 replays
+of all seven pair-bearing functions classified all 30 as
+`store_not_dominating_load`; none qualified for interprocedural call-effect
+filtering. The calling-convention and size signals improved store yield over
+`next20i`, but the sampled functions still did not produce a dominating
+store/load pair.
+
+A writable Parameter ID replay exposed a data-preparation gap in the earlier
+`next100d` closure investigation. On a clean copy of the SHIFT Ghidra project,
+`ApplyDecompilerParameterId` recovered signatures for `00806ef0`, `008868c0`,
+`006382b0`, and `00638020`; subsequent read-only P-code exports then showed
+1, 2, and 3 actual arguments at their direct-call edges. The prior sidecar
+mapping `00638020.param0` to `006382b0.param1` did not survive this replay:
+the actual argument is a `MULTIEQUAL` of two `0062e1a0` call results, and the
+fresh caller-root sidecar has no row. The intermediate
+`008868c0.param0` → `006382b0.param0` mapping remains exact; the outer
+`00806ef0` argument is an `INT_OR` value derived from `Stack[0x4]`, so it also
+has no exact formal-root row. A fresh `/5` replay paired the one parameter
+field store with two loads. Both audit rows remain
+`possible_intervening_memory_effect`; the call at `00806f1a` to `008868c0`
+returns `unknown_effect` for both pairs, so no effect was promoted. The bounded
+replay used 122 P-code flows across depths zero through six after three stable
+callee-before-caller Parameter ID passes. Ghidra emitted CFG/3 for 116
+functions and explicitly skipped six whose High-P-code graphs had no block at
+the function entry. The closure also contains 59 direct-call targets outside
+the exported flow set, and 315 of 320 STORE operations have no exact memory
+fact. These missing CFG, target, store, and argument-root facts remain
+conservative barriers; the replay is not a complete call closure and does not
+validate positive alias filtering. `--skip-missing-entry-blocks` now lets a
+batch retain valid CFG rows while logging each skipped entry. The new
+`scripts/run_ghidra_parameter_id.sh` persists Parameter ID on a writable
+project copy before read-only evidence export. Prior call-root sidecars from
+projects whose signatures were not saved must be regenerated before reuse;
+the earlier conservative audit statuses do not establish the validity of
+those sidecars.
+
+A fresh post-Parameter-ID replay of the `next100g`/`next100h` roots completed
+five bounded closures covering 89 unique functions and 12,050 flow rows. Three
+callee-before-caller signature passes changed 62 signatures, then 7, then 0.
+The first broad caller-root export omitted 29 of 356 closure call arguments:
+18 were beyond the 128-caller cap, 8 belonged to self-recursive calls, and 3
+were absent from Ghidra's reference index. The caller-argument exporter now
+includes call references to the current function and makes `--caller-entry`
+decompile the selected caller directly before checking its P-code target. A
+new plan `/2` adds a caller address to each plan row, allowing one read-only
+Ghidra invocation to scope every closure call without hitting the global cap.
+Its replay completed all 271 caller-target-parameter plans and emitted
+subtrees for all 356 call arguments; 71 had exact caller-formal/constant-offset
+roots, so the rest remain barriers.
+
+The small `next100h` closure for `00a3dda0` is complete across four functions:
+all four exported CFG/3, the flow contains 538 operations, and its 63 STOREs
+have 50 exact memory locations plus 13 unresolved locations. The exact root
+from `00a3dda0` to `009015b0` maps parameter 0 to caller parameter 0 at `+0x98`.
+However, four side-effect-dependent `INDIRECT` operations in the callee closure
+and 13 unresolved store locations keep all three `/5` pairs at
+`possible_intervening_memory_effect`; no alias filtering promotion is supported
+by this replay.
+
+The exporter now has an opt-in CFG/4 contract that resolves each Ghidra
+`INDIRECT` operation reference to its exact source operation. The Python reader
+checks that the source address, sequence time, and opcode identify another
+operation in the same function. Interprocedural effects/2 and dominance/6
+remove a marker only when that source is independently classified; unresolved
+links, aliasing stores, unknown calls, and incomplete evidence remain barriers.
+A fresh Ghidra replay exercised the new path: duplicate markers disappeared
+from the unknown-effect set, while the field-pair statuses stayed conservative
+because possible aliasing stores remained. The consumer retains its raw rows and
+measured outcomes.
+
 The generic `GhidraInterproceduralMemoryEffect/1` builder and versioned `/5`
 audit are merged in revenginstr PRs [#110](https://github.com/Hanz0Hatt0r1/revenginstr/pull/110)
 and [#111](https://github.com/Hanz0Hatt0r1/revenginstr/pull/111). They propagate
@@ -1635,10 +1870,10 @@ monotone fixed point for cycles. Missing argument links, incomplete callee
 facts, unresolved stores, indirect calls, unknown operations and exhausted
 budgets remain barriers. `/1`–`/4` stay unchanged.
 
-**Next:** use a fresh bounded x86-32 P-code sample outside the exhausted
-1,000-function slice to find a caller/callee closure with an exact caller-formal
-root, a relevant field pair and complete CFG/memory-access facts. Freeze the
-consumer exports and replay `/4` versus `/5`, preserving unknown and indirect
-barriers. Keep positive alias filtering opt-in until a consumer replay contains
-a complete exact-root case where the status change follows from the pinned
-facts. Do not infer alias facts from decompiler text.
+**Next:** replay CFG/4 on further bounded x86-32 candidates from actual
+parameter-field `STORE` and `LOAD` rows. Compare `/5` and `/6` with the exact
+caller roots and complete memory facts pinned; keep aliasing and unresolved
+effects as barriers. Do not infer alias facts from decompiler text or
+instruction-level corpus labels. The current candidate family remains useful
+for checking that duplicate markers are deduplicated without changing a status
+when a separately classified possible write still lies on the witness.

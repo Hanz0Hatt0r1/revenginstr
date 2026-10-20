@@ -229,6 +229,7 @@ public class ExportBoundedCallGraphPcodeFlow extends GhidraScript {
         long rows = 0;
         int functions = 0;
         boolean capped = false;
+        boolean depthCapped = false;
         try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
                 new FileOutputStream(output), StandardCharsets.UTF_8))) {
             out.write("function_entry\top_address\top_time\topcode\toutput\tinputs\tcallee_entry\tcallee_name");
@@ -268,10 +269,15 @@ public class ExportBoundedCallGraphPcodeFlow extends GhidraScript {
                     out.newLine();
                     rows++;
 
-                    if (work.depth < maxDepth && callee != null && !callee.isExternal() &&
+                    if (callee != null && !callee.isExternal() &&
                             !scheduled.contains(callee.getEntryPoint())) {
-                        callees.add(callee);
-                        scheduled.add(callee.getEntryPoint());
+                        if (work.depth < maxDepth) {
+                            callees.add(callee);
+                            scheduled.add(callee.getEntryPoint());
+                        }
+                        else {
+                            depthCapped = true;
+                        }
                     }
                 }
                 functions++;
@@ -290,6 +296,6 @@ public class ExportBoundedCallGraphPcodeFlow extends GhidraScript {
         println("Exported " + rows + " P-code flow rows across " + functions +
             " functions from " + root.getName(true) + " at " + root.getEntryPoint() +
             " (max-depth=" + maxDepth + ", max-functions=" + maxFunctions +
-            ", capped=" + capped + ") -> " + output);
+            ", capped=" + capped + ", depth-capped=" + depthCapped + ") -> " + output);
     }
 }
