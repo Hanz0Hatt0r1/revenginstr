@@ -1068,3 +1068,208 @@ def test_nevergone_runtime_resource_calls_match_independent_instruction_referenc
     }
     assert crosschecked_calls <= accepted_calls
     assert all(edge["confidence"] is None for edge in accepted_query["edges"])
+
+
+def test_nevergone_ccjoystick_touch_helper_layout_extension_replays() -> None:
+    replay_dir = ROOT / (
+        "docs/evidence/semantic-program-graph-v3/"
+        "nevergone-ccjoystick-touch-helpers-20261020"
+    )
+    manifest = json.loads((replay_dir / "replay-manifest.json").read_text(encoding="utf-8"))
+    artifacts = {artifact["id"]: artifact for artifact in manifest["artifacts"]}
+    paths = {
+        artifact_id: (replay_dir / artifact["path"]).resolve()
+        for artifact_id, artifact in artifacts.items()
+    }
+    for artifact_id, artifact in artifacts.items():
+        raw = paths[artifact_id].read_bytes()
+        assert len(raw) == artifact["bytes"]
+        assert hashlib.sha256(raw).hexdigest() == artifact["sha256"]
+
+    prototype_rows = [
+        json.loads(line)
+        for line in paths["function_prototypes"].read_text(encoding="utf-8").splitlines()
+    ]
+    for row in prototype_rows:
+        _schema("ghidra-function-prototype-v1.schema.json").validate(row)
+        assert row["program_sha256"] == manifest["program_sha256"]
+        assert row["signature_source"] == "ANALYSIS"
+        assert row["qualified_name"].startswith("CCJoyStick::")
+        # These three Ghidra signatures omit `this`; use the separately reviewed
+        # ARM receiver flow, never the declared parameter type, for field roots.
+        assert row["calling_convention"] == "__stdcall"
+        assert row["parameters"][0]["type"].get("target_name") != "CCJoyStick"
+    assert {row["resolved_entry"] for row in prototype_rows} == {
+        "002a60c8", "002a6284", "002a63a8",
+    }
+
+    pcode_rows = list(csv.DictReader(paths["pcode_flow"].open(encoding="utf-8"), delimiter="\t"))
+    pcode_schema = _schema("ghidra-function-pcode-flow-v1.schema.json")
+    for row in pcode_rows:
+        pcode_schema.validate(row)
+    pcode_by_key = {
+        (row["function_entry"], row["op_address"], row["op_time"], row["opcode"]): row
+        for row in pcode_rows
+    }
+    assert len(pcode_rows) == len(pcode_by_key) == 256
+
+    acquisitions = [
+        json.loads(line)
+        for line in paths["acquisition"].read_text(encoding="utf-8").splitlines()
+    ]
+    acquisition_schema = _schema("ghidra-pcode-flow-acquisition-v1.schema.json")
+    for row in acquisitions:
+        acquisition_schema.validate(row)
+        assert row["state"] == "complete"
+        assert row["operation_count"] == sum(
+            operation["function_entry"] == row["function_entry"] for operation in pcode_rows
+        )
+    assert len(acquisitions) == 3
+
+    callind_rows = [
+        json.loads(line)
+        for line in paths["callind_evidence"].read_text(encoding="utf-8").splitlines()
+    ]
+    for row in callind_rows:
+        _schema("ghidra-indirect-call-evidence-v4.schema.json").validate(row)
+
+    load_rows = list(csv.DictReader(paths["parameter_loads"].open(encoding="utf-8"), delimiter="\t"))
+    load_schema = _schema("ghidra-parameter-load-field-v1.schema.json")
+    for row in load_rows:
+        load_schema.validate(row)
+        assert row["base_parameter_index"] == "0"
+        load = pcode_by_key[(row["function_entry"], row["load_address"], row["load_time"], "LOAD")]
+        assert int(load["output"].rsplit(":", 1)[1]) == int(row["value_size"])
+    assert len(load_rows) == 20
+    assert {
+        int(row["field_offset"], 16)
+        for row in load_rows
+        if int(row["field_offset"], 16) != 0
+    } == {0x104, 0x118, 0x119, 0x11A, 0x11C, 0x120, 0x124, 0x128, 0x12C, 0x138, 0x150}
+
+    memory_rows = [
+        json.loads(line)
+        for line in paths["memory_store_access"].read_text(encoding="utf-8").splitlines()
+    ]
+    memory_schema = _schema("ghidra-memory-store-access-v1.schema.json")
+    for row in memory_rows:
+        memory_schema.validate(row)
+        store = pcode_by_key[(row["function_entry"], row["address"], str(row["time"]), "STORE")]
+        assert store["inputs"].split(";")[1] == row["pointer_token"]
+        assert int(store["inputs"].split(";")[2].rsplit(":", 1)[1]) == row["memory_width_bytes"]
+    assert len(memory_rows) == 2
+    assert {row["offset_bytes"] for row in memory_rows} == {312}
+
+    member_rows = [
+        json.loads(line)
+        for line in paths["touch_helper_member_map"].read_text(encoding="utf-8").splitlines()
+    ]
+    member_schema = _schema("type-layout-member-map-v1.schema.json")
+    for row in member_rows:
+        member_schema.validate(row)
+        assert row["root_parameter_index"] == 0
+        assert row["type_id"] == "nevergone:opaque-object-002a6584"
+    assert {row["function_entry"] for row in member_rows} == {
+        "002a60c8", "002a6284", "002a63a8",
+    }
+
+    vtable_rows = list(csv.DictReader(paths["vtable_touch_slots"].open(encoding="utf-8"), delimiter="\t"))
+    assert {
+        row["slot_offset"]: (
+            row["vtable_symbol_start"], row["address_point"], row["target_entry"], row["target_name"],
+        )
+        for row in vtable_rows
+    } == {
+        "0x178": ("0x8f4220", "0x8f4228", "002a6300", "ccTouchBegan"),
+        "0x180": ("0x8f4220", "0x8f4228", "002a63ec", "ccTouchEnded"),
+    }
+
+    receiver_evidence = paths["receiver_abi_evidence"].read_text(encoding="utf-8")
+    for instruction in (
+        "0x002a6304`",
+        "0x002a6362`",
+        "0x002a63ee`",
+        "0x002a642c`",
+        "executes `mov r4,r0` at\n  `0x002a60ce`",
+        "executes `mov r4,r0` at `0x002a6286`",
+        "executes `mov r4,r0` at `0x002a63aa`",
+    ):
+        assert instruction in receiver_evidence
+
+    field_review_rows = [
+        json.loads(line)
+        for line in paths["field_type_review"].read_text(encoding="utf-8").splitlines()
+    ]
+    field_review_schema = _schema("type-layout-field-type-review-v1.schema.json")
+    load_sha = artifacts["parameter_loads"]["sha256"]
+    evidence_sha = artifacts["receiver_abi_evidence"]["sha256"]
+    for row in field_review_rows:
+        field_review_schema.validate(row)
+        assert row["program_id"] == manifest["program_id"]
+        assert row["program_sha256"] == manifest["program_sha256"]
+        if row["evidence"]["source_format"] == "REVENGINSTR.GhidraParameterLoadField/1":
+            assert row["evidence"]["source_sha256"] == load_sha
+            line_no = int(row["evidence"]["source_pointer"].rsplit("=", 1)[1])
+            assert 2 <= line_no <= len(load_rows) + 1
+            source = load_rows[line_no - 2]
+            assert int(source["field_offset"], 16) == row["offset_bytes"]
+            assert source["value_size"] == str(row["width_bytes"])
+        else:
+            assert row["evidence"]["source_format"] == "Nevergone.CCJoyStickReceiverABIReview/1"
+            assert row["evidence"]["source_sha256"] == evidence_sha
+            assert row["evidence"]["evidence_class"] == "human_review"
+    assert len(field_review_rows) == 16
+    assert {
+        (row["offset_bytes"], row["kind"], row["width_bytes"])
+        for row in field_review_rows
+    } == {
+        (0x118, "boolean", 1), (0x119, "boolean", 1), (0x11A, "boolean", 1),
+        (0x11C, "floating_point", 4), (0x120, "floating_point", 4),
+        (0x124, "floating_point", 4), (0x128, "floating_point", 4),
+        (0x12C, "integer", 4),
+    }
+
+    rebuilt = build_type_layout_hypotheses(
+        [paths["prior_memory_store_access"], paths["memory_store_access"]],
+        [paths["prior_member_map"], paths["touch_helper_member_map"]],
+        parameter_load_paths=[paths["prior_parameter_loads"], paths["parameter_loads"]],
+        size_review_paths=[paths["prior_size_review"]],
+        field_type_review_paths=[
+            paths["prior_field_type_review"], paths["prior_owner_field_type_review"],
+            paths["field_type_review"],
+        ],
+        program_id=manifest["program_id"],
+        program_sha256=manifest["program_sha256"],
+        language_id="ARM:LE:32:v8",
+        pointer_width_bytes=4,
+        addressable_unit_bytes=1,
+        endianness="little",
+    )
+    rebuilt_bytes = "".join(
+        json.dumps(row, sort_keys=True, separators=(",", ":")) + "\n" for row in rebuilt
+    ).encode()
+    assert rebuilt_bytes == paths["type_layout_hypothesis"].read_bytes()
+    [layout] = rebuilt
+    _schema("type-layout-hypothesis-v1.schema.json").validate(layout)
+    assert len(layout["fields"]) == 23
+    assert layout["object_size"]["exact_size_bytes"] == 340
+    fields = {field["offset_bytes"]: field for field in layout["fields"]}
+    assert {0x11C, 0x120, 0x124, 0x128} <= set(fields)
+    expected_types = {
+        0x118: ("boolean", 1), 0x119: ("boolean", 1), 0x11A: ("boolean", 1),
+        0x11C: ("floating_point", 4), 0x120: ("floating_point", 4),
+        0x124: ("floating_point", 4), 0x128: ("floating_point", 4),
+        0x12C: ("integer", 4),
+    }
+    for offset, candidate in expected_types.items():
+        assert any(
+            (row["kind"], row["width_bytes"]) == candidate
+            for row in fields[offset]["type_candidates"]
+        )
+        assert fields[offset]["status"] == "review"
+    # This package preserves the existing concrete candidate without upgrading it.
+    assert fields[0x104]["status"] == "review"
+    assert any(
+        row.get("target_type_id") == "cocos2d::CCSprite"
+        for row in fields[0x104]["type_candidates"]
+    )

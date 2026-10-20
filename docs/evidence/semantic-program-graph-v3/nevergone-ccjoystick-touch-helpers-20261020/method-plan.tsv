@@ -1,0 +1,4 @@
+plan_id	requested_entry	resolution
+CCJoyStick_containsTouchLocation_002a60c8	002a60c8	exact
+CCJoyStick_onTouchBegan_002a6284	002a6284	exact
+CCJoyStick_onTouchEnd_002a63a8	002a63a8	exact
