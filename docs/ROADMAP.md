@@ -1954,6 +1954,19 @@ pair builder output, `/6`–`/7` audits, and replay commands are frozen in
 These are structural candidates only; they do not prove runtime execution or
 memory reaching-definition.
 
+**Fifth CFG/4 replay:** Shift function `00a45520` has one positive
+`param0+0` pair: `STORE@00a45533` (time 30, value from parameter 3) to
+`LOAD@00a45540` (time 39) remains `unique_cfg_store_candidate` in `/6`. The
+later load `LOAD@00a45572` (time 107) stays
+`possible_intervening_memory_effect`: six STORE destinations between the pair
+are unresolved, and `CALL@00a4556d` at time 102 reaches a callee with an
+explicit STORE. The path audit marks all four generated pairs
+`candidate_path_compatible`, showing why path compatibility alone cannot clear
+write barriers. `/7` also keeps a memory-only store at time 109 as
+`store_not_dominating_load` for both loads. The fresh capture and
+byte-for-byte analyzer replay are in
+[`field-store-load-shift-00a45520`](evidence/field-store-load-shift-00a45520/README.md).
+
 **Next:** continue bounded CFG/4 replays, especially for witnesses that cross
 calls. Prefer cases with exact caller roots for every written callee formal;
 prove byte-range disjointness only from those roots and memory facts. Keep the
