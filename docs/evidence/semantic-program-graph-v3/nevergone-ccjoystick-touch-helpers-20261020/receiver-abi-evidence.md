@@ -47,6 +47,16 @@ owner-method cross-check. Ghidra's prototype marks parameter 0 as
 region assigned as a `CCRect`. The flat layout replay keeps those component
 access starts; it does not add a second, overlapping aggregate field row.
 
+The complete read-only P-code export for `CCJoyStick::init` at `0x002a6584`
+adds the caller-side check. It calls `CCDirector::sharedDirector` and
+`CCDirector::getWinSize`, constructs a `CCRect` at `0x002a65fc`, then calls
+`CCJoyStick::setHitAreaWithRect` at `0x002a6604` with the same receiver. The
+export contains 101 operations and four separate `CALLIND` sites; the latter
+remain unresolved. It also records zero stores to `+0x13c` and `+0x140` and a
+one-byte value of one at `+0x150`. These initialization facts strengthen the
+unlabelled field observations without assigning member names or accepting
+semantic types.
+
 `containsTouchLocation` treats `+0x12c` as a non-negative integer threshold,
 converts it to float, and compares it with a point distance. A positive value
 can satisfy the test before the rectangle component checks; the setter resets

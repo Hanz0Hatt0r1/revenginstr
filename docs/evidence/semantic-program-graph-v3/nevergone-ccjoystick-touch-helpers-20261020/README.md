@@ -30,8 +30,11 @@ candidate. That use does not independently establish the exact dynamic target
 type, so this replay adds no candidate at `+0x104`. `setHitAreaWithRect` assigns
 a `CCRect` beginning at `+0x11c` and clears `+0x12c`; `containsTouchLocation`
 reads the four rectangle components and applies the integer threshold. The
-flat layout keeps the component access offsets and does not add an overlapping
-aggregate row.
+`init` path obtains the director window size, constructs a `CCRect`, and passes
+it to `setHitAreaWithRect`. The flat layout keeps the component access offsets
+and does not add an overlapping aggregate row. `init` also zeros the floats at
+`+0x13c/+0x140` and sets the byte at `+0x150`; these remain unnamed candidates.
+Its four `CALLIND` sites remain unresolved and are retained as barriers.
 
 The replay manifest pins raw exports, the receiver review, source inputs, and
 the derived layout. The corresponding regression test rebuilds the layout and
