@@ -73,6 +73,8 @@ def test_exporter_restores_only_verified_returning_call_fallthroughs() -> None:
         "operation.getOpcode() == PcodeOp.RETURN",
         "addRecoverySuccessors",
         "MAX_RECOVERED_BYTES",
+        "exceeded the ",
+        "instruction budget",
     ):
         assert required in source
     for consumer_term in ("Nevergone", "SHIFT.exe", "__fload_withFB", "0x00902ec7"):

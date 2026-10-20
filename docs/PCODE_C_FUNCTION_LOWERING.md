@@ -45,10 +45,16 @@ context layout unchanged.
 
 For little-endian x86-32, ordinary `CALL` and `CALLIND` lowerings reuse the
 instruction's fallthrough slot when its P-code has already pushed it onto guest
-`ESP`; simplified inputs without that slot get one from the lowerer. A guest
+`ESP`; simplified inputs without that P-code store get one from the lowerer.
+Slot detection uses the P-code store itself, not a matching value left in stack
+memory. A guest
 callee's P-code `RET` consumes the slot. If an import handler leaves `ESP` on
 it, the lowerer consumes just that slot. Tail calls reuse the caller's return
 slot. Import-specific argument cleanup remains the consumer's responsibility.
+The Ghidra instruction exporter follows explicit control-flow targets across
+discontiguous code while excluding other known functions. It bounds newly
+decoded instructions to 4 KiB per returning call and fails with the call
+address if that byte budget is exceeded, instead of emitting a partial row.
 
 The current subset covers scalar varnodes up to 8 bytes; raw 10-byte and
 16-byte copy, memory, bitwise, extension, shift, and extraction operations;

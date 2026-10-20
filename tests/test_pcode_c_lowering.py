@@ -782,7 +782,7 @@ def test_codegen_routes_computed_call_terminator_with_trailing_return(tmp_path: 
     }]
     source, operation_count = compile_function(row, _address_spaces())
     assert operation_count == 3
-    assert 'rvi_call_x86_32(ctx, rvi_1_call_target_value, UINT32_C(0x401001), "ram")' in source
+    assert 'rvi_call_x86_32(ctx, rvi_1_call_target_value, UINT32_C(0x401001), "ram", 0)' in source
 
     compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
     if compiler is None:
@@ -810,6 +810,11 @@ static int write_bytes(void *opaque, const char *space, uint64_t offset, size_t 
 static int call_function(void *opaque, uint64_t target) {
     TestState *state = (TestState *)opaque;
     if (target != UINT64_C(0x1234)) return -1;
+    uint32_t esp = 0, return_address = 0;
+    memcpy(&esp, state->registers + 0x10, sizeof(esp));
+    if (esp != 0x17c) return -1;
+    memcpy(&return_address, state->ram + esp, sizeof(return_address));
+    if (return_address != UINT32_C(0x401001)) return -1;
     state->function_calls++;
     return 0;
 }
@@ -825,8 +830,10 @@ static int execute_userop(void *opaque, uint32_t index, const uint64_t *args,
 int rvi_00401000(RviPcodeContext *ctx);
 int main(void) {
     TestState state = {0};
-    uint32_t esp = 0x200;
+    uint32_t esp = 0x180;
+    uint32_t stale_return_address = 0x401001;
     memcpy(state.registers + 0x10, &esp, sizeof(esp));
+    memcpy(state.ram + esp, &stale_return_address, sizeof(stale_return_address));
     RviPcodeContext context = {&state, read_bytes, write_bytes, call_function, execute_userop};
     if (rvi_00401000(&context) != 0) return 1;
     uint32_t final_esp = 0;
@@ -1255,8 +1262,8 @@ def test_codegen_dispatches_direct_and_indirect_calls(tmp_path: Path) -> None:
     ]
     source, operation_count = compile_function(row, _address_spaces())
     assert operation_count == 8
-    assert 'rvi_call_x86_32(ctx, UINT64_C(0x405000), UINT32_C(0x401205), "ram")' in source
-    assert 'rvi_call_x86_32(ctx, rvi_5_call_target_value, UINT32_C(0x401207), "ram")' in source
+    assert 'rvi_call_x86_32(ctx, UINT64_C(0x405000), UINT32_C(0x401205), "ram", 1)' in source
+    assert 'rvi_call_x86_32(ctx, rvi_5_call_target_value, UINT32_C(0x401207), "ram", 1)' in source
 
     compiler = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
     if compiler is None:

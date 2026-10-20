@@ -123,6 +123,35 @@ def _direct_control_target(node: object, default_space: str, where: str) -> int:
     raise PcodeLoweringError(f"{where}: expected a direct {default_space} target")
 
 
+def _x86_32_call_has_return_slot(
+    operations: list, call_index: int, spaces_by_id: dict[int, dict],
+    default_data_space: str, return_address: int,
+) -> bool:
+    for operation in operations[:call_index]:
+        if not isinstance(operation, dict) or operation.get("opcode") != "STORE":
+            continue
+        inputs = operation.get("inputs")
+        if not isinstance(inputs, list) or len(inputs) != 3:
+            continue
+        space_node, address_node, value_node = inputs
+        if (not isinstance(space_node, dict) or space_node.get("space") != "const" or
+                space_node.get("constant") is not True):
+            continue
+        memory = spaces_by_id.get(_hex(space_node.get("offset"), "x86 CALL stack space"))
+        if not isinstance(memory, dict) or memory.get("name") != default_data_space:
+            continue
+        if (not isinstance(address_node, dict) or address_node.get("space") != "register" or
+                _size(address_node, "x86 CALL stack pointer") != 4 or
+                _hex(address_node.get("offset"), "x86 CALL stack pointer") != 0x10):
+            continue
+        if (isinstance(value_node, dict) and value_node.get("space") == "const" and
+                value_node.get("constant") is True and
+                _size(value_node, "x86 CALL return address") == 4 and
+                _hex(value_node.get("offset"), "x86 CALL return address") == return_address):
+            return True
+    return False
+
+
 def _x87_status_word_register(instructions: list[dict]) -> int | None:
     for instruction in instructions:
         mnemonic = instruction.get("mnemonic")
@@ -1098,20 +1127,16 @@ static int rvi_call(RviPcodeContext *ctx, uint64_t target) {
     return ctx && ctx->call ? ctx->call(ctx->opaque, target) : -1;
 }
 static int rvi_call_x86_32(RviPcodeContext *ctx, uint64_t target,
-                           uint32_t return_address, const char *stack_space) {
-    uint64_t original_esp, stack_return_address = 0;
+                           uint32_t return_address, const char *stack_space,
+                           int return_slot_prepared) {
+    uint64_t original_esp;
     if (!ctx || rvi_read_space(ctx, "register", UINT64_C(0x10), 4, 0,
                                &original_esp) != 0 || original_esp > UINT32_MAX)
         return -1;
     const uint32_t esp = (uint32_t)original_esp;
-    int synthetic_return_slot = 1;
-    uint32_t call_esp;
-    if (rvi_read_space(ctx, stack_space, esp, 4, 0, &stack_return_address) == 0 &&
-        (uint32_t)stack_return_address == return_address) {
-        /* Ghidra's x86 CALL P-code has already pushed this fallthrough. */
-        call_esp = esp;
-        synthetic_return_slot = 0;
-    } else {
+    int synthetic_return_slot = !return_slot_prepared;
+    uint32_t call_esp = esp;
+    if (!return_slot_prepared) {
         if (esp < 4) return -1;
         call_esp = esp - 4;
         if (rvi_write_space(ctx, stack_space, call_esp, 4, 0, return_address) != 0 ||
@@ -1515,9 +1540,11 @@ def compile_function(
                     if return_address > 0xffffffff:
                         raise PcodeLoweringError(
                             f"{address}: x86-32 call return address exceeds 32 bits")
+                    return_slot_prepared = _x86_32_call_has_return_slot(
+                        operations, op_index, spaces_by_id, call_stack_space, return_address)
                     call_lines.append(
                         f"if (rvi_call_x86_32(ctx, {target_expr}, UINT32_C(0x{return_address:x}), "
-                        f"{_escape_c_string(call_stack_space)}) != 0) return -1;")
+                        f"{_escape_c_string(call_stack_space)}, {_c_bool(return_slot_prepared)}) != 0) return -1;")
                 else:
                     call_lines.append(f"if (rvi_call(ctx, {target_expr}) != 0) return -1;")
                 if tail_call or (flow_type == "COMPUTED_CALL_TERMINATOR" and not callind_return_suffix):
