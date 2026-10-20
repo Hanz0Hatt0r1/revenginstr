@@ -88,6 +88,12 @@ def test_unmatched_callsite_and_out_of_range_alternative_fail_closed(tmp_path: P
         build_symbolic_indirect_call_target_triage(triage_path, [candidate_path])
 
     symbols = candidate_row()
+    symbols["candidates"][0]["candidate_kind"] = ["external_api"]
+    write_jsonl(candidate_path, [symbols])
+    with pytest.raises(ValueError, match="unsupported candidate_kind"):
+        build_symbolic_indirect_call_target_triage(triage_path, [candidate_path])
+
+    symbols = candidate_row()
     symbols["candidates"][0]["alternative_indexes"] = [2]
     write_jsonl(candidate_path, [symbols])
     with pytest.raises(ValueError, match="invalid alternative_indexes"):

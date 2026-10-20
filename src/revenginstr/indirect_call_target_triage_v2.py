@@ -36,7 +36,11 @@ def _reject_constant(value: str) -> None:
 
 
 def _read_jsonl(path: Path, *, max_rows: int) -> tuple[str, list[tuple[int, dict[str, Any]]]]:
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    hasher = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            hasher.update(block)
+    digest = hasher.hexdigest()
     rows: list[tuple[int, dict[str, Any]]] = []
     with path.open("r", encoding="utf-8", newline="") as handle:
         for line_no, raw in enumerate(handle, 1):
@@ -95,7 +99,7 @@ def _symbolic_candidate(value: Any, alternative_count: int, where: str) -> dict[
     if not isinstance(value, dict) or set(value) != fields:
         raise ValueError(f"{where}: malformed symbolic candidate fields")
     kind = value["candidate_kind"]
-    if kind not in {"external_api", "internal_function"}:
+    if not isinstance(kind, str) or kind not in {"external_api", "internal_function"}:
         raise ValueError(f"{where}: unsupported candidate_kind {kind!r}")
     for name in ("module", "symbol"):
         if not isinstance(value[name], str) or not value[name].strip():
