@@ -314,13 +314,14 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
         Set<Address> restoredCalls = new HashSet<>();
         ArrayDeque<Address> work = new ArrayDeque<>();
         Set<Address> visited = new HashSet<>();
+        Function entryOwner = functions.getFunctionContaining(entry);
         work.addLast(entry);
         long recoveredBytes = 0;
         while (!work.isEmpty()) {
             monitor.checkCancelled();
             Address address = work.removeFirst();
             if (instructions.containsKey(address) || !visited.add(address) ||
-                    !isSafeEntrypointAddress(entry, address)) continue;
+                    !isSafeEntrypointAddress(entry, address, entryOwner)) continue;
             Instruction instruction = instructionAt(address);
             if (instruction == null) continue;
             recoveredBytes += instruction.getLength();
@@ -329,7 +330,7 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
             if (isReturningDirectCall(instruction)) {
                 Address fallthrough = instruction.getAddress().add(instruction.getLength());
                 if (instructionAt(fallthrough) != null &&
-                        isSafeEntrypointAddress(entry, fallthrough)) {
+                        isSafeEntrypointAddress(entry, fallthrough, entryOwner)) {
                     restoredCalls.add(instruction.getAddress());
                     work.addLast(fallthrough);
                 }
@@ -340,7 +341,8 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
         return new FunctionInstructions(instructions, restoredCalls);
     }
 
-    private boolean isSafeEntrypointAddress(Address entry, Address address) {
+    private boolean isSafeEntrypointAddress(Address entry, Address address,
+            Function entryOwner) {
         long distance;
         try {
             distance = address.subtract(entry);
@@ -349,8 +351,10 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
         }
         if (distance < -MAX_RECOVERED_BYTES || distance > MAX_RECOVERED_BYTES) return false;
         Function owner = functions.getFunctionContaining(address);
-        if (owner != null) return owner.getEntryPoint().equals(entry);
-        return functions.getFunctionAt(address) == null;
+        if (entryOwner != null) {
+            return owner != null && owner.getEntryPoint().equals(entryOwner.getEntryPoint());
+        }
+        return owner == null && functions.getFunctionAt(address) == null;
     }
 
     private Instruction instructionAt(Address address) {
