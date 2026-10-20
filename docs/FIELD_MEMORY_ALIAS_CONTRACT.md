@@ -1,9 +1,10 @@
 # Field memory alias contract (M2.3)
 
 This defines the evidence boundary for the versioned
-`FieldStoreLoadDominanceAudit/2` and `/3`. The existing `/1` and `/2` outputs
-remain unchanged when the corresponding optional sidecars are absent; none of
-the versions is runtime value-flow evidence.
+`FieldStoreLoadDominanceAudit/2`–`/7` and
+`GhidraInterproceduralMemoryEffect/1`–`/3`. Existing outputs remain unchanged
+when their corresponding optional sidecars are absent; none of the versions
+is runtime value-flow evidence.
 
 ## What a memory-access fact must identify
 
@@ -178,6 +179,17 @@ one `--pcode-flow ENTRY TSV` argument per function in the bounded closure, then
 pass its JSONL output to the dominance audit with
 `--interprocedural-memory-effect-jsonl`. Freeze complete sidecar inputs and
 `/5` output before adopting positive alias filtering in a consumer.
+
+`GhidraInterproceduralMemoryEffect/2` adds source-linked `INDIRECT` handling
+from CFG/4. `/3` additionally models the standard three-argument `_memset`
+contract when the direct target name is exact, destination argument 0 has an
+exact caller-formal root, length argument 2 is constant and pointer-width, and
+the call and tracked-field ranges do not overflow the pointer width. A disjoint
+call range classifies that call's callee STORE facts as non-aliasing; missing
+STORE facts and all unrelated unknown operations remain barriers. Other calls
+retain `/2` behavior. The Shift `00a3dda0` replay in RevEngInstr PR #185 checks
+this boundary against a real Ghidra capture; its three resulting candidates
+are structural only.
 
 ## Source-linked Ghidra INDIRECT markers
 

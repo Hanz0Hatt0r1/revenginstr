@@ -1928,6 +1928,14 @@ capture and byte-for-byte replay are in
 [`field-store-load-shift-0064bb70`](evidence/field-store-load-shift-0064bb70/README.md).
 This confirms that `/2` can record a proven disjoint callee store without
 discarding sibling unknown effects.
+Two fresh read-only `GhidraIndirectCallEvidence/1` rows pin the unresolved
+targets: `CALLIND@0064bcda` loads from `input:Stack[0x4]+0x28`; nested
+`CALLIND@0064b90d` loads from `register+0x4c`. Since callee parameter 0 maps to
+caller parameter 0 + 0, and the target LOAD uses the same register base as the
+callee's rooted `STORE@0064b91f`, the nested call loads its function pointer
+from a derived location at caller parameter 0 + `0x4c`. The pointer value
+remains unknown. Both calls stay barriers; the new evidence is in the replay
+report.
 
 A follow-up screen of 26 additional functions in the same x86-32 Shift project
 found one exact same-field pair in `00d83f90`: `LOAD@00d83fa1` at time 28 and

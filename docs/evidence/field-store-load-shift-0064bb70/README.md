@@ -35,11 +35,32 @@ non-aliasing callee write fact while retaining the surrounding unknown effects.
 It does not establish branch feasibility, runtime execution, or memory
 reaching-definition/value flow.
 
+An additional read-only Ghidra export records the two relevant `CALLIND`
+target expressions. `CALLIND@0064bcda` (time 496, three arguments) loads its
+target from `input:Stack[0x4]+0x28`. `CALLIND@0064b90d` (time 105, no arguments)
+loads from `register+0x4c`. The exact root mapping at the call from `0064bb70`
+to `0064b8b0` maps callee parameter 0 to caller parameter 0 + 0. The target
+LOAD uses the same register base as the callee's rooted `STORE@0064b91f`, so
+the loaded function-pointer storage is derived as caller parameter 0 +
+`0x4c`. These expressions identify where the target is loaded, not its value;
+both calls remain unresolved indirect effects and continue to block alias
+filtering.
+
 ## Rebuild analyzer outputs
 
 Run from the repository root with the project environment installed:
 
 ```sh
+GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_indirect_call_evidence.sh \
+  /home/pes/ghidra_projects nfs_shift_vulkan_runtime_20261018 SHIFT.exe \
+  /tmp/callind-caller.jsonl 0064bb70
+GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_indirect_call_evidence.sh \
+  /home/pes/ghidra_projects nfs_shift_vulkan_runtime_20261018 SHIFT.exe \
+  /tmp/callind-callee.jsonl 0064b8b0
+cat /tmp/callind-caller.jsonl /tmp/callind-callee.jsonl > /tmp/indirect-call-evidence.jsonl
+cmp /tmp/indirect-call-evidence.jsonl \
+  docs/evidence/field-store-load-shift-0064bb70/indirect-call-evidence.jsonl
+
 uv run --project . revenginstr-receiver-field-access-pairs \
   docs/evidence/field-store-load-shift-0064bb70/parameter-stores.tsv \
   docs/evidence/field-store-load-shift-0064bb70/parameter-loads.tsv \
@@ -115,6 +136,7 @@ uv run --project . revenginstr-receiver-field-store-load-dominance-audit \
 | Parameter load field/1 | `b1ea8270e3665df9433f0735c0dd6df8f19c5c52fdd0657868d6359bd51f0dec` |
 | Parameter store field/1 | `02327af81026a0169362cd1756125cafa089be59a9564c74a7b4c7f1aff5064a` |
 | Field store/load path audit/2 | `6852e2a597fe7b948b33cf8df72602dd0b1351a9eabcaa4e0bc9f42e1337c590` |
+| Ghidra indirect-call target evidence/1 | `85e120d14dc94221b0e2fe458baa7755d9aa229969699afd28b54e50358ffebe` |
 | Callee flow `00457cc0` | `ae8f64b9ac91bb9a59240d8f53d6b063059f51611199b6fcfb6ff8a98552b975` |
 | Callee flow `0064b8b0` | `41e5a8cab45d76a689bd8d477b0e01b1ea476afc008aac065dd98383b5c07332` |
 | Callee flow `0064bab0` | `fcb0f6a8587903b1d51452b6b3c32752b7004ed405ddb506e178154d663e6057` |
