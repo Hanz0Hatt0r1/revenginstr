@@ -165,6 +165,84 @@ def test_nevergone_layout_joins_graph_and_remains_queryable(tmp_path: Path) -> N
         )
 
 
+def test_nevergone_member_map_joins_function_fields_to_reviewed_layout() -> None:
+    replay_dir = ROOT / (
+        "docs/evidence/semantic-program-graph-v3/"
+        "nevergone-ccjoystick-init-layout-join-20261020"
+    )
+    manifest = json.loads((replay_dir / "replay-manifest.json").read_text(encoding="utf-8"))
+    for artifact in manifest["artifacts"]:
+        raw = (replay_dir / artifact["path"]).resolve().read_bytes()
+        assert len(raw) == artifact["bytes"]
+        assert hashlib.sha256(raw).hexdigest() == artifact["sha256"]
+
+    effects_path = ROOT / (
+        "docs/evidence/receiver-field-access/"
+        "nevergone-ccjoystick-init-20261019/function-effects.jsonl"
+    )
+    review_dir = ROOT / "docs/evidence/type-layout-review/nevergone-ccjoystick-20261019"
+    layout_path = review_dir / "type-layout-hypothesis.jsonl"
+    member_map_path = review_dir / "member-map.jsonl"
+    graph_path = replay_dir / "semantic-program-graph.jsonl"
+    query_path = replay_dir / "field-access-query.jsonl"
+    effects, effects_sha256 = _read_jsonl(effects_path)
+    layouts, layout_sha256 = _read_jsonl(layout_path)
+    member_maps, member_map_sha256 = _read_jsonl(member_map_path)
+
+    graph = build_semantic_program_graphs(
+        effects,
+        source_sha256=effects_sha256,
+        type_layout_rows=layouts,
+        type_layout_sha256=layout_sha256,
+        type_layout_member_map_rows=member_maps,
+        type_layout_member_map_sha256=member_map_sha256,
+    )[0]
+    _schema("semantic-program-graph-v3.schema.json").validate(graph)
+    assert graph["program_id"] == "nevergone:libcocos2dcpp.so"
+    assert graph["source_type_layout_member_maps_sha256"] == member_map_sha256
+    joined_edges = [
+        edge for edge in graph["edges"]
+        if edge["relation"] == "has_field" and edge["to"].startswith("field:")
+    ]
+    assert len(joined_edges) == 9
+    assert all(
+        any(
+            support.get("provenance", {}).get("source_format") == "REVENGINSTR.TypeLayoutMemberMap/1"
+            and support.get("provenance", {}).get("artifact_sha256") == member_map_sha256
+            for support in edge["support"]
+        )
+        for edge in joined_edges
+    )
+    graph_bytes = (json.dumps(graph, sort_keys=True) + "\n").encode()
+    assert graph_bytes == graph_path.read_bytes()
+
+    result = query_graphs(
+        [graph],
+        source_sha256=hashlib.sha256(graph_path.read_bytes()).hexdigest(),
+        view="exploratory",
+        kinds=["field"],
+        function_entries=["002a6584"],
+        relations=["has_field"],
+        field_offsets=["0x119", "0x11a"],
+    )[0]
+    _schema("semantic-program-query-result-v1.schema.json").validate(result)
+    assert {node["field_offset"] for node in result["nodes"]} == {"0x119", "0x11a"}
+    assert [node["kind"] for node in result["related_nodes"]] == ["type"]
+    assert len(result["edges"]) == 2
+    assert (json.dumps(result, sort_keys=True) + "\n").encode() == query_path.read_bytes()
+
+    wrong_map = [{**member_maps[0], "program_sha256": "0" * 64}]
+    with pytest.raises(ValueError, match="program_sha256 does not match type-layout hypothesis"):
+        build_semantic_program_graphs(
+            effects,
+            source_sha256=effects_sha256,
+            type_layout_rows=layouts,
+            type_layout_sha256=layout_sha256,
+            type_layout_member_map_rows=wrong_map,
+            type_layout_member_map_sha256=member_map_sha256,
+        )
+
+
 def test_nevergone_runtime_resource_calls_match_independent_instruction_references() -> None:
     replay_dir = ROOT / (
         "docs/evidence/semantic-program-graph-evaluation/"

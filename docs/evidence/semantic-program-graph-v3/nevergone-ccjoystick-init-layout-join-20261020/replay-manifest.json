@@ -1,0 +1,83 @@
+{
+  "format": "REVENGINSTR.SemanticProgramGraphLayoutJoinReplay/1",
+  "program_id": "nevergone:libcocos2dcpp.so",
+  "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
+  "artifacts": [
+    {
+      "id": "function_effect_ir",
+      "path": "../../receiver-field-access/nevergone-ccjoystick-init-20261019/function-effects.jsonl",
+      "bytes": 9065,
+      "sha256": "c8854141d955a30d9199a8b7fde0462e9943f5973ba66249921f13a7936cd3e0"
+    },
+    {
+      "id": "type_layout_hypothesis",
+      "path": "../../type-layout-review/nevergone-ccjoystick-20261019/type-layout-hypothesis.jsonl",
+      "bytes": 20314,
+      "sha256": "5aa1def50f8f51c9cf6c0927efda7dadd2aa61a51d095acbb5684d731704be7a"
+    },
+    {
+      "id": "type_layout_member_map",
+      "path": "../../type-layout-review/nevergone-ccjoystick-20261019/member-map.jsonl",
+      "bytes": 271,
+      "sha256": "c9b12fff3ffb7fbdc0160bc2c557853269ffeef61ac3034f91e261313ab5d959"
+    },
+    {
+      "id": "semantic_graph",
+      "path": "semantic-program-graph.jsonl",
+      "bytes": 105956,
+      "sha256": "e7c10980977d8a84938aae4821722219c7df080b02bfca15a3c103b2b41184ba"
+    },
+    {
+      "id": "field_access_query",
+      "path": "field-access-query.jsonl",
+      "bytes": 7727,
+      "sha256": "f930c39fcb6ecfdee04c1b3e015ecd77ff550729d9439b302bf6b4a803b1834d"
+    },
+    {
+      "id": "function_effect_ir_schema",
+      "path": "../../../../schemas/function-effect-ir-v1.schema.json",
+      "bytes": 5991,
+      "sha256": "d7e92fd6504c758fa4bc25f9a74c017f52aed9e4e61f11d0367a64db48cc721e"
+    },
+    {
+      "id": "type_layout_schema",
+      "path": "../../../../schemas/type-layout-hypothesis-v1.schema.json",
+      "bytes": 7552,
+      "sha256": "9ffbb68840291c7029627904d773ba8eeec5675c8474bd245d0aaeedf0c2fb91"
+    },
+    {
+      "id": "type_layout_member_map_schema",
+      "path": "../../../../schemas/type-layout-member-map-v1.schema.json",
+      "bytes": 903,
+      "sha256": "e21c47ca352a6fcd8f779d4cd6502a3436641e52f523ae367a7aa45228e3904d"
+    },
+    {
+      "id": "semantic_graph_schema_v3",
+      "path": "../../../../schemas/semantic-program-graph-v3.schema.json",
+      "bytes": 19590,
+      "sha256": "587dfeb129ff13ec8ab8940b17fa7541db05a4e850cb484fbc769551d466e9d7"
+    },
+    {
+      "id": "query_result_schema",
+      "path": "../../../../schemas/semantic-program-query-result-v1.schema.json",
+      "bytes": 4539,
+      "sha256": "1cc14f26ec8ba74650ef072a5e57acead9d51fde7dcd5935e770edbe2a18e138"
+    },
+    {
+      "id": "readme",
+      "path": "README.md",
+      "bytes": 2093,
+      "sha256": "a6e682c0e48abf2421562e291d62ab059e36af510ab3525b187a6af68642def6"
+    }
+  ],
+  "summary": {
+    "graph_nodes": 40,
+    "graph_edges": 54,
+    "member_map_field_joins": 9,
+    "queried_offsets": [
+      "0x119",
+      "0x11a"
+    ],
+    "queried_field_nodes": 2
+  }
+}

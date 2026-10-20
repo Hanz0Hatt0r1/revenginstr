@@ -27,11 +27,15 @@
     "source_receiver_types_format": {"const": "REVENGINSTR.GhidraIndirectReceiverType/1"},
     "source_receiver_types_sha256": {"$ref": "#/$defs/sha256"},
     "source_type_layout_hypotheses_format": {"const": "REVENGINSTR.TypeLayoutHypothesis/1"},
-    "source_type_layout_hypotheses_sha256": {"$ref": "#/$defs/sha256"}
+    "source_type_layout_hypotheses_sha256": {"$ref": "#/$defs/sha256"},
+    "source_type_layout_member_maps_format": {"const": "REVENGINSTR.TypeLayoutMemberMap/1"},
+    "source_type_layout_member_maps_sha256": {"$ref": "#/$defs/sha256"}
   },
   "allOf": [
     {"if": {"required": ["source_receiver_types_format"]}, "then": {"required": ["source_receiver_types_sha256"]}},
-    {"if": {"required": ["source_receiver_types_sha256"]}, "then": {"required": ["source_receiver_types_format"]}}
+    {"if": {"required": ["source_receiver_types_sha256"]}, "then": {"required": ["source_receiver_types_format"]}},
+    {"if": {"required": ["source_type_layout_member_maps_format"]}, "then": {"required": ["source_type_layout_hypotheses_format", "source_type_layout_member_maps_sha256"]}},
+    {"if": {"required": ["source_type_layout_member_maps_sha256"]}, "then": {"required": ["source_type_layout_hypotheses_format", "source_type_layout_member_maps_format"]}}
   ],
   "$defs": {
     "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
@@ -94,6 +98,25 @@
               "required": ["source_format", "artifact_sha256", "record_index"],
               "properties": {
                 "source_format": {"const": "REVENGINSTR.TypeLayoutHypothesis/1"},
+                "artifact_sha256": {"$ref": "#/$defs/sha256"},
+                "record_index": {"type": "integer", "minimum": 1}
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source_record_id", "evidence_class", "provenance"],
+          "properties": {
+            "source_record_id": {"type": "string", "minLength": 1},
+            "evidence_class": {"const": "human_review"},
+            "provenance": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["source_format", "artifact_sha256", "record_index"],
+              "properties": {
+                "source_format": {"const": "REVENGINSTR.TypeLayoutMemberMap/1"},
                 "artifact_sha256": {"$ref": "#/$defs/sha256"},
                 "record_index": {"type": "integer", "minimum": 1}
               }
@@ -419,8 +442,8 @@
           "then": {
             "properties": {
               "from": {"pattern": "^type:"},
-              "to": {"pattern": "^layout_field:"},
-              "evidence_class": {"const": "derived_structural"}
+              "to": {"pattern": "^(layout_field|field):"},
+              "evidence_class": {"enum": ["derived_structural", "mixed"]}
             }
           }
         }

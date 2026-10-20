@@ -37,10 +37,10 @@
       "sha256": "04c223505df90987014c1732c0707cc6e5576b7a380cbcf1dc9c485a91610e4c"
     },
     {
-      "bytes": 26890,
+      "bytes": 28206,
       "id": "graph_schema_v4",
       "path": "../../../../schemas/semantic-program-graph-v4.schema.json",
-      "sha256": "c51f2976e955f012661cbf670a387ffc07efd02a6eeb58449a39f5a5c12e1446"
+      "sha256": "804802ac7ea5248a68a798c5a8c8bfbf096818770436887fbba3340af1a8513a"
     },
     {
       "bytes": 2069,

@@ -1479,6 +1479,16 @@ edge, or accepted-edge accuracy measurement. The audit still reports possible
 intervening memory effects and makes no alias or runtime value-flow claim. See
 [`CCJoyStick::init field access replay`](evidence/receiver-field-access/nevergone-ccjoystick-init-20261019/README.md).
 
+An additional SemanticProgramGraph/3 replay now rebuilds the FunctionEffectIR
+with the exact program id used by the reviewed layout and joins nine of the
+parameter-rooted field nodes through the reviewer-supplied
+`TypeLayoutMemberMap/1` row. The query for `+0x119` and `+0x11a` returns the
+owner type as context. These are provenance-linked review associations with
+null confidence; they do not change the earlier benchmark's separate graph
+identities, establish object identity at runtime, or resolve its
+intervening-memory-effect findings. See
+[`CCJoyStick::init field-to-layout graph replay`](evidence/semantic-program-graph-v3/nevergone-ccjoystick-init-layout-join-20261020/README.md).
+
 The graph families are still structural slices of M10.1–M10.3. Dispatch
 recovery, object identity across functions, roles, states, resources,
 callbacks, execution contexts, broadly scoped semantic gold graphs, and M10

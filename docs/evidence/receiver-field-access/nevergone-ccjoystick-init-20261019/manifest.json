@@ -2,14 +2,14 @@
   "apk_sha256": "97296efc9d32fdd46bdf2dba475aeb13adb4cc6d2957ddf02da7a5d9c56e9508",
   "artifacts": [
     {
-      "bytes": 4775,
+      "bytes": 5243,
       "path": "docs/evidence/receiver-field-access/nevergone-ccjoystick-init-20261019/README.md",
-      "sha256": "2258ba33a23c9199fe3cf77c2638153c41f70cf8b68282876220e48654dce691"
+      "sha256": "a4ca13a74e2fb1f8899c6ff34e95e962e90b39f2ca2f7f847f64d564b59f6cef"
     },
     {
       "bytes": 10190,
       "path": "docs/evidence/receiver-field-access/nevergone-ccjoystick-init-20261019/benchmark-manifest.json",
-      "sha256": "7c4b86c1524245e4b403519cb20403f8ad88b28f0efa172eafe669f0bae9873a"
+      "sha256": "3b450cf1a62a3d2ee9714979272f304bf165bdfbfa3297367115e2ecf9a19498"
     },
     {
       "bytes": 2800,

@@ -53,3 +53,10 @@ The smoke run validates the Effect IR, layout input, graph, and query schemas.
 It reproduces the checked-in graph and query bytes exactly. Remove the two
 `benchmark-*.generated.jsonl` files before rerunning because benchmark outputs
 must not exist at the start of a run.
+
+This layout-only projection predates the field-to-layout join. The separate
+`CCJoyStick::init` field capture has a different opaque program id, so its
+original benchmark still keeps those graph identities separate. A later
+replay rebuilds the effects with the exact id and joins nine field nodes using
+the reviewer-pinned `TypeLayoutMemberMap/1` input; see the
+[`field-to-layout replay`](../nevergone-ccjoystick-init-layout-join-20261020/README.md).

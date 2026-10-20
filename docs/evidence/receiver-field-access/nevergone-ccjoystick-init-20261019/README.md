@@ -84,3 +84,10 @@ deliberately protected from accidental overwrite.
 The captured parameter TSVs and source-tool revision describe the historical
 export. The replay itself was run with RevEngInstr commit
 `0b4deff` (`Replay runtime value-flow results into decision ledger`).
+
+This remains the behavior of the frozen benchmark described above. A separate
+SemanticProgramGraph/3 replay rebuilds the FunctionEffectIR with the layout's
+exact program id and uses the reviewer-supplied member map to connect nine
+matching parameter-rooted field nodes to the reviewed type. It retains null
+confidence and review provenance; see the
+[`field-to-layout replay`](../../semantic-program-graph-v3/nevergone-ccjoystick-init-layout-join-20261020/README.md).

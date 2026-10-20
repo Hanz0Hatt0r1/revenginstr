@@ -51,6 +51,7 @@ Supply an optional `DirectCallArgumentObservation/1` JSONL file to emit `/4`:
 ```sh
 revenginstr-semantic-program-graph function-effects.jsonl \
   --type-layout-hypotheses type-layout-hypotheses.jsonl \
+  --type-layout-member-maps type-layout-member-maps.jsonl \
   --call-arguments direct-call-arguments.jsonl \
   --call-argument-definitions direct-call-argument-definitions.jsonl \
   --call-argument-traces direct-call-argument-traces.jsonl \
@@ -72,6 +73,13 @@ record, callsite identity, P-code artifact, argument index, token, and width.
 It attaches the resolution state and exact definition evidence references to
 each argument and pins the definition-analysis artifact hash. This remains a
 single-row definition link and does not chase transitive data flow.
+
+Optionally supply `TypeLayoutMemberMap/1` beside the layout hypothesis. A map
+joins a function's parameter-rooted `field` nodes to its reviewed `type` node
+only when the exact program, function entry, parameter index, type id, and
+byte offset all match. The graph pins the member-map artifact; `has_field`
+edges retain member-map, layout, and field-effect provenance and remain
+review-only with null confidence.
 
 Optionally supply `DirectCallArgumentOperandTrace/1` alongside the observation
 and definition sidecars. The graph pins the trace artifact and records each

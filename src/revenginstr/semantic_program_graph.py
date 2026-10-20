@@ -18,6 +18,7 @@ FORMAT_V4 = "REVENGINSTR.SemanticProgramGraph/4"
 FORMAT = FORMAT_V1
 RECEIVER_TYPE_FORMAT = "REVENGINSTR.GhidraIndirectReceiverType/1"
 TYPE_LAYOUT_FORMAT = "REVENGINSTR.TypeLayoutHypothesis/1"
+TYPE_LAYOUT_MEMBER_MAP_FORMAT = "REVENGINSTR.TypeLayoutMemberMap/1"
 CALL_ARGUMENT_FORMAT = "REVENGINSTR.DirectCallArgumentObservation/1"
 CALL_ARGUMENT_DEFINITION_FORMAT = "REVENGINSTR.DirectCallArgumentDefinition/1"
 CALL_ARGUMENT_TRACE_FORMAT = "REVENGINSTR.DirectCallArgumentOperandTrace/1"
@@ -48,7 +49,7 @@ _EDGE_ENDPOINTS = {
     "reads": {("operation", "field")},
     "writes": {("operation", "field")},
     "observes_receiver": {("operation", "receiver_observation")},
-    "has_field": {("type", "layout_field")},
+    "has_field": {("type", "field"), ("type", "layout_field")},
 }
 
 
@@ -109,6 +110,23 @@ def _layout_support(
     }
 
 
+def _member_map_support(
+    row: dict[str, Any], *, source_sha256: str, record_index: int,
+) -> dict[str, Any]:
+    return {
+        "source_record_id": (
+            f"function={row['function_entry']};root_parameter_index={row['root_parameter_index']};"
+            f"type_id={row['type_id']}#{record_index}"
+        ),
+        "evidence_class": "human_review",
+        "provenance": {
+            "source_format": TYPE_LAYOUT_MEMBER_MAP_FORMAT,
+            "artifact_sha256": source_sha256,
+            "record_index": record_index,
+        },
+    }
+
+
 def _validate_type_layout_rows(
     rows: list[dict[str, Any]], *, known_programs: set[str],
 ) -> dict[str, list[dict[str, Any]]]:
@@ -160,6 +178,50 @@ def _validate_type_layout_rows(
             if not all(isinstance(field.get(name), list) for name in ("accesses", "type_candidates", "conflicts")):
                 raise ValueError(f"{field_where}: malformed evidence collections")
         by_program[program_id].append({**row, "_record_index": record_index})
+    return by_program
+
+
+def _validate_type_layout_member_map_rows(
+    rows: list[dict[str, Any]], *,
+    layouts_by_program: dict[str, list[dict[str, Any]]],
+) -> dict[str, dict[tuple[str, int], dict[str, Any]]]:
+    if not rows:
+        raise ValueError("TypeLayoutMemberMap input is empty")
+    layouts = {
+        program_id: {row["type_id"]: row for row in program_rows}
+        for program_id, program_rows in layouts_by_program.items()
+    }
+    by_program: dict[str, dict[tuple[str, int], dict[str, Any]]] = defaultdict(dict)
+    expected_fields = {
+        "format", "program_id", "program_sha256", "type_id", "function_entry",
+        "root_parameter_index",
+    }
+    for record_index, row in enumerate(rows, 1):
+        where = f"type-layout member-map record {record_index}"
+        if not isinstance(row, dict) or set(row) != expected_fields or row.get("format") != TYPE_LAYOUT_MEMBER_MAP_FORMAT:
+            raise ValueError(f"{where}: malformed TypeLayoutMemberMap/1 fields")
+        program_id, type_id = row.get("program_id"), row.get("type_id")
+        if not isinstance(program_id, str) or program_id not in layouts:
+            raise ValueError(f"{where}: program_id has no matching type-layout input")
+        if not isinstance(type_id, str) or type_id not in layouts[program_id]:
+            raise ValueError(f"{where}: type_id has no matching type-layout hypothesis")
+        if not isinstance(row.get("program_sha256"), str) or not _is_sha256(row["program_sha256"]):
+            raise ValueError(f"{where}: invalid program_sha256")
+        layout = layouts[program_id][type_id]
+        if row["program_sha256"] != layout["program_sha256"]:
+            raise ValueError(f"{where}: program_sha256 does not match type-layout hypothesis")
+        function_entry = row.get("function_entry")
+        parameter_index = row.get("root_parameter_index")
+        if not isinstance(function_entry, str) or not function_entry:
+            raise ValueError(f"{where}: function_entry must be a non-empty string")
+        if type(parameter_index) is not int or parameter_index < 0:
+            raise ValueError(f"{where}: root_parameter_index must be a non-negative integer")
+        key = (function_entry, parameter_index)
+        if key in by_program[program_id]:
+            raise ValueError(f"{where}: duplicate function/root-parameter membership")
+        by_program[program_id][key] = {
+            **row, "_record_index": record_index, "_layout_record": layout,
+        }
     return by_program
 
 
@@ -591,6 +653,8 @@ def validate_graph_references(graph: dict[str, Any]) -> None:
         graph_format == FORMAT_V3
         or "source_type_layout_hypotheses_format" in graph
         or "source_type_layout_hypotheses_sha256" in graph
+        or "source_type_layout_member_maps_format" in graph
+        or "source_type_layout_member_maps_sha256" in graph
     ):
         layout_sha256 = graph.get("source_type_layout_hypotheses_sha256")
         if (
@@ -601,18 +665,74 @@ def validate_graph_references(graph: dict[str, Any]) -> None:
             raise ValueError("SemanticProgramGraph/3 requires pinned TypeLayoutHypothesis input")
         type_nodes = {node["id"]: node for node in graph["nodes"] if node["kind"] == "type"}
         field_nodes = {node["id"]: node for node in graph["nodes"] if node["kind"] == "layout_field"}
+        observed_field_nodes = {node["id"]: node for node in graph["nodes"] if node["kind"] == "field"}
+        member_format = graph.get("source_type_layout_member_maps_format")
+        member_sha256 = graph.get("source_type_layout_member_maps_sha256")
+        has_member_format = member_format is not None
+        has_member_sha256 = member_sha256 is not None
+        if has_member_format != has_member_sha256:
+            raise ValueError("type-layout member-map pins must include format and SHA-256")
+        if has_member_format and (
+            member_format != TYPE_LAYOUT_MEMBER_MAP_FORMAT
+            or not _is_sha256(member_sha256)
+        ):
+            raise ValueError("invalid pinned TypeLayoutMemberMap input")
         if not type_nodes:
             raise ValueError("SemanticProgramGraph/3 requires at least one layout type")
-        attached_fields: set[str] = set()
+        attached_layout_fields: set[str] = set()
         for edge in graph["edges"]:
             if edge["relation"] != "has_field":
                 continue
-            field = field_nodes[edge["to"]]
             owner = type_nodes[edge["from"]]
-            if field["type_id"] != owner["type_id"] or field["id"] in attached_fields:
-                raise ValueError("layout field ownership edge does not match its type")
-            attached_fields.add(field["id"])
-        if attached_fields != set(field_nodes):
+            if edge["to"] in field_nodes:
+                field = field_nodes[edge["to"]]
+                if field["type_id"] != owner["type_id"] or field["id"] in attached_layout_fields:
+                    raise ValueError("layout field ownership edge does not match its type")
+                attached_layout_fields.add(field["id"])
+                continue
+            field = observed_field_nodes.get(edge["to"])
+            if field is None or not has_member_format:
+                raise ValueError("observed field ownership edges require a pinned member map")
+            expected_source_record_id = (
+                f"function={field['owner_function_entry']};root_parameter_index={field['parameter_index']};"
+                f"type_id={owner['type_id']}#"
+            )
+            member_supports = [
+                support for support in edge["support"]
+                if support.get("provenance", {}).get("source_format") == TYPE_LAYOUT_MEMBER_MAP_FORMAT
+                and support.get("provenance", {}).get("artifact_sha256") == member_sha256
+                and isinstance(support.get("source_record_id"), str)
+                and support["source_record_id"].startswith(expected_source_record_id)
+            ]
+            layout_supports = [
+                support for support in edge["support"]
+                if support.get("provenance", {}).get("source_format") == TYPE_LAYOUT_FORMAT
+                and support.get("provenance", {}).get("artifact_sha256") == layout_sha256
+                and support.get("provenance", {}).get("record_index") == owner["hypothesis_record_index"]
+            ]
+            try:
+                observed_offset = int(field["field_offset"], 16)
+            except (KeyError, TypeError, ValueError):
+                observed_offset = -1
+            member_record_index = (
+                member_supports[0].get("provenance", {}).get("record_index")
+                if len(member_supports) == 1 else None
+            )
+            if (
+                len(member_supports) != 1
+                or type(member_record_index) is not int
+                or member_record_index < 1
+                or member_supports[0].get("evidence_class") != "human_review"
+                or member_supports[0].get("source_record_id") != expected_source_record_id + str(member_record_index)
+                or len(layout_supports) != 1
+                or not any(
+                    layout_field.get("type_id") == owner["type_id"]
+                    and layout_field.get("offset_bytes") == observed_offset
+                    for layout_field in field_nodes.values()
+                )
+            ):
+                raise ValueError("observed field ownership edge lacks exact member-map/layout evidence")
+        if attached_layout_fields != set(field_nodes):
             raise ValueError("layout field must have exactly one owner type")
         for node in (*type_nodes.values(), *field_nodes.values()):
             if node["hypothesis_record_index"] < 1 or not any(
@@ -870,6 +990,8 @@ def build_semantic_program_graphs(
     receiver_sha256: str | None = None,
     type_layout_rows: list[dict[str, Any]] | None = None,
     type_layout_sha256: str | None = None,
+    type_layout_member_map_rows: list[dict[str, Any]] | None = None,
+    type_layout_member_map_sha256: str | None = None,
     call_argument_rows: list[dict[str, Any]] | None = None,
     call_argument_sha256: str | None = None,
     call_argument_definition_rows: list[dict[str, Any]] | None = None,
@@ -897,6 +1019,17 @@ def build_semantic_program_graphs(
         layout_by_program = _validate_type_layout_rows(
             type_layout_rows, known_programs=set(by_program)
         )
+    type_layout_member_maps_by_program: dict[str, dict[tuple[str, int], dict[str, Any]]] = defaultdict(dict)
+    if type_layout_member_map_rows is not None:
+        if type_layout_rows is None or type_layout_sha256 is None:
+            raise ValueError("type-layout member maps require pinned type-layout hypotheses")
+        if type_layout_member_map_sha256 is None or not _is_sha256(type_layout_member_map_sha256):
+            raise ValueError("type-layout member maps require their source SHA-256")
+        type_layout_member_maps_by_program = _validate_type_layout_member_map_rows(
+            type_layout_member_map_rows, layouts_by_program=layout_by_program,
+        )
+    elif type_layout_member_map_sha256 is not None:
+        raise ValueError("type-layout member-map SHA-256 supplied without member-map rows")
     receiver_by_program: dict[str, list[dict[str, Any]]] = defaultdict(list)
     if receiver_rows is not None:
         if receiver_sha256 is None or not _is_sha256(receiver_sha256):
@@ -957,6 +1090,7 @@ def build_semantic_program_graphs(
 
     graphs: list[dict[str, Any]] = []
     for program_id, functions in sorted(by_program.items()):
+        program_type_layout_member_maps = type_layout_member_maps_by_program.get(program_id, {})
         program_call_arguments = call_arguments_by_program.get(program_id, [])
         program_call_argument_definitions = call_argument_definitions_by_program.get(program_id, {})
         program_call_argument_traces = call_argument_traces_by_program.get(program_id, {})
@@ -1083,6 +1217,44 @@ def build_semantic_program_graphs(
                         "confidence": None,
                         "conflict_state": "contested" if opcode_conflict else "uncontested",
                     })
+                    member_map = program_type_layout_member_maps.get((entry, effect["parameter_index"]))
+                    if member_map is not None:
+                        layout_record = member_map["_layout_record"]
+                        try:
+                            field_offset_bytes = int(effect["field_offset"], 16)
+                        except (TypeError, ValueError):
+                            field_offset_bytes = -1
+                        matching_layout_field = next((
+                            field for field in layout_record["fields"]
+                            if field["offset_bytes"] == field_offset_bytes
+                        ), None)
+                        if matching_layout_field is not None:
+                            type_node = _stable_id("type", [program_id, member_map["type_id"]])
+                            layout_support = _layout_support(
+                                layout_record,
+                                source_sha256=type_layout_sha256 or "",
+                                record_index=layout_record["_record_index"],
+                            )
+                            member_support = _member_map_support(
+                                member_map,
+                                source_sha256=type_layout_member_map_sha256 or "",
+                                record_index=member_map["_record_index"],
+                            )
+                            _add_edge(edges, {
+                                "from": type_node,
+                                "to": field_node,
+                                "relation": "has_field",
+                                "evidence_class": "derived_structural",
+                                "support": [support[0], layout_support, member_support],
+                                "confidence": None,
+                                "conflict_state": "contested" if (
+                                    opcode_conflict
+                                    or layout_record["status"] == "conflicted"
+                                    or bool(layout_record["conflicts"])
+                                    or matching_layout_field["status"] == "conflicted"
+                                    or bool(matching_layout_field["conflicts"])
+                                ) else "uncontested",
+                            })
 
                 for target, call_effects in sorted(targets.items()):
                     target_node = _stable_id("function", [program_id, target])
@@ -1358,6 +1530,9 @@ def build_semantic_program_graphs(
         if type_layout_rows is not None:
             graph["source_type_layout_hypotheses_format"] = TYPE_LAYOUT_FORMAT
             graph["source_type_layout_hypotheses_sha256"] = type_layout_sha256
+        if type_layout_member_map_rows is not None:
+            graph["source_type_layout_member_maps_format"] = TYPE_LAYOUT_MEMBER_MAP_FORMAT
+            graph["source_type_layout_member_maps_sha256"] = type_layout_member_map_sha256
         if program_call_arguments:
             graph["source_call_arguments_format"] = CALL_ARGUMENT_FORMAT
             graph["source_call_arguments_sha256"] = call_argument_sha256
@@ -1375,6 +1550,7 @@ def build_semantic_program_graphs(
                 "source_effect_ir_sha256", "source_receiver_types_format",
                 "source_receiver_types_sha256", "source_type_layout_hypotheses_format",
                 "source_type_layout_hypotheses_sha256", "source_call_arguments_format",
+                "source_type_layout_member_maps_format", "source_type_layout_member_maps_sha256",
                 "source_call_arguments_sha256", "source_call_arguments_program_sha256",
                 "source_call_argument_definitions_format", "source_call_argument_definitions_sha256",
                 "source_call_argument_traces_format", "source_call_argument_traces_sha256",
@@ -1435,6 +1611,10 @@ def main(argv: list[str] | None = None) -> int:
         help="optional TypeLayoutHypothesis/1 JSONL; adds candidate type and field nodes",
     )
     parser.add_argument(
+        "--type-layout-member-maps", type=Path,
+        help="optional TypeLayoutMemberMap/1 JSONL; joins exact parameter-rooted fields to types",
+    )
+    parser.add_argument(
         "--call-arguments", type=Path,
         help="optional DirectCallArgumentObservation/1 JSONL; joins exact resolved CALL sites",
     )
@@ -1457,6 +1637,10 @@ def main(argv: list[str] | None = None) -> int:
     type_layout_sha256 = None
     if args.type_layout_hypotheses is not None:
         type_layout_rows, type_layout_sha256 = _read_jsonl(args.type_layout_hypotheses)
+    type_layout_member_map_rows = None
+    type_layout_member_map_sha256 = None
+    if args.type_layout_member_maps is not None:
+        type_layout_member_map_rows, type_layout_member_map_sha256 = _read_jsonl(args.type_layout_member_maps)
     call_argument_rows = None
     call_argument_sha256 = None
     if args.call_arguments is not None:
@@ -1476,6 +1660,8 @@ def main(argv: list[str] | None = None) -> int:
         receiver_sha256=receiver_sha256,
         type_layout_rows=type_layout_rows,
         type_layout_sha256=type_layout_sha256,
+        type_layout_member_map_rows=type_layout_member_map_rows,
+        type_layout_member_map_sha256=type_layout_member_map_sha256,
         call_argument_rows=call_argument_rows,
         call_argument_sha256=call_argument_sha256,
         call_argument_definition_rows=call_argument_definition_rows,
@@ -1504,6 +1690,13 @@ def main(argv: list[str] | None = None) -> int:
         ))
         print("layout fields:", sum(
             node["kind"] == "layout_field" for graph in graphs for node in graph["nodes"]
+        ))
+    if type_layout_member_map_sha256 is not None:
+        print("source type-layout member maps SHA-256:", type_layout_member_map_sha256)
+        print("field-to-type joins:", sum(
+            edge["relation"] == "has_field"
+            and edge["to"].startswith("field:")
+            for graph in graphs for edge in graph["edges"]
         ))
     if call_argument_sha256 is not None:
         print("source call-argument observations SHA-256:", call_argument_sha256)
