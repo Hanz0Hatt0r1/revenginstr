@@ -1929,6 +1929,15 @@ capture and byte-for-byte replay are in
 This confirms that `/2` can record a proven disjoint callee store without
 discarding sibling unknown effects.
 
+A follow-up screen of 26 additional functions in the same x86-32 Shift project
+found one exact same-field pair in `00d83f90`: `LOAD@00d83fa1` at time 28 and
+`STORE@00d84019` at time 94, both for parameter 3 plus zero. CFG/4 confirms no
+path from that later STORE to the earlier LOAD, and the dominance audit records
+`store_not_dominating_load`. Its two calls occur before the STORE. The replay
+adds a negative exact-pair example but no new store-to-load candidate; captured
+inputs and outputs are in
+[`field-store-load-shift-00d83f90`](evidence/field-store-load-shift-00d83f90/README.md).
+
 **Next:** continue bounded CFG/4 replays until a dominating store/load witness
 has complete evidence for every intervening write and call. Prefer cases with
 exact caller roots for every written callee formal; prove byte-range

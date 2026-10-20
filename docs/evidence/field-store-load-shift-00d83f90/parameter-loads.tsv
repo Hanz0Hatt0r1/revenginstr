@@ -1,0 +1,2 @@
+format	function_entry	function_name	load_address	load_time	base_parameter_index	field_offset	address_pattern	value_size	value_token	status
+REVENGINSTR.GhidraParameterLoadField/1	00d83f90	FUN_00d83f90	00d83fa1	28	3	0x0	direct	4	def:LOAD@00d83fa1:28:4	parameter_field_load
