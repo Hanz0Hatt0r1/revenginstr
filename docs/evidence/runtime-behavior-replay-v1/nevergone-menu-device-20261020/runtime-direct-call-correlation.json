@@ -1,0 +1,1204 @@
+{
+  "address_mapping": {
+    "method": "runtime_address_minus_module_delta",
+    "module_delta": "0xbb63a000",
+    "runtime_module_base": "0xbb64a000",
+    "static_image_base": "0x10000"
+  },
+  "capture_id": "nevergone-menu-device-20261020-pid914",
+  "capture_manifest_sha256": "085671060f16ce1e3a55bcecf974dadc9101b2f4e534d5e0f1d45e0c731e487a",
+  "events": [
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 0,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 1,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 2,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 3,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 4,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 5,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 6,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 7,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 8,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 9,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 10,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 11,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 12,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 13,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 14,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 15,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 16,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 17,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 18,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 19,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 20,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 21,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 22,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 23,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 24,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 25,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 26,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 27,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 28,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 29,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 30,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 31,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 32,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 33,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 34,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 35,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 36,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 37,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 38,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 39,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 40,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    },
+    {
+      "caller_addresses": [
+        "0x544a60"
+      ],
+      "caller_match_state": "matched",
+      "caller_node_ids": [
+        "function:98a579230acbea67b6a3be427716e94b1314035e3315dc52f4bd024e3bf023a6"
+      ],
+      "callsite_address": "0x544bdc",
+      "callsite_match_state": "matched",
+      "callsite_node_ids": [
+        "operation:627a1b14d26a2004ae0833105607db8cc77facb964346f7a861b0cfd430007d9"
+      ],
+      "callsite_runtime_address": "0xbbb7ebdc",
+      "capture_id": "nevergone-menu-device-20261020-pid914",
+      "match_state": "matched",
+      "sequence": 41,
+      "static_target_entries": [
+        "00544a40"
+      ],
+      "static_target_match_state": "matched",
+      "target_address": "0x544a40",
+      "target_match_state": "matched",
+      "target_node_ids": [
+        "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1"
+      ],
+      "target_runtime_address": "0xbbb7ea40"
+    }
+  ],
+  "format": "REVENGINSTR.RuntimeDirectCallCorrelation/1",
+  "observations_sha256": "871326857044e5a56e0ffbcb71fe8209e2e0b63efedfbf15eeb5a2d330af34d8",
+  "program_id": "nevergone-1.0.9-armv7-libcocos2dcpp",
+  "program_sha256": "94b1ef6a9469e261183ac08199c5b0eb65c0c40b81918ca097bd32920828eb5e",
+  "sampling": {
+    "gaps": [],
+    "status": "unknown"
+  },
+  "semantic_graph_sha256": "04c223505df90987014c1732c0707cc6e5576b7a380cbcf1dc9c485a91610e4c",
+  "static_identity_sha256": "4db276e242085c912d470f1e105af40ca4943606bfea53b8e1b049e66e19970a",
+  "summary": {
+    "event_count": 42,
+    "match_state_counts": {
+      "matched": 42
+    }
+  }
+}

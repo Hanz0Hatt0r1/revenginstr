@@ -7,6 +7,7 @@ import hashlib
 import hmac
 import json
 import re
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -58,6 +59,27 @@ def _hex(value: Any, where: str) -> int:
     if not text or not re.fullmatch(r"[0-9a-fA-F]{1,16}", text):
         raise ValueError(f"{where}: invalid hexadecimal string")
     return int(text, 16)
+
+
+def _callsite_context(
+    event: dict[str, Any], graph: dict[str, Any], image_base: int,
+    static_entry: int, sequence: int,
+) -> tuple[int, dict[str, Any]]:
+    return_offset = _hex(event.get("callsite"), f"Decode event {sequence + 1} callsite")
+    if return_offset & 1 == 0:
+        raise ValueError(f"Decode event {sequence + 1} return address is not Thumb-tagged")
+    callsite_elf_vma = (return_offset & ~1) - 4
+    if callsite_elf_vma < 0:
+        raise ValueError(f"Decode event {sequence + 1} return address precedes a Thumb BL")
+    callsite_static_address = callsite_elf_vma + image_base
+    callsite_nodes = [
+        node for node in graph.get("nodes", [])
+        if node.get("kind") == "operation" and node.get("opcode") == "CALL"
+        and _hex(node.get("operation_address"), "graph direct call address") == callsite_static_address
+    ]
+    if len(callsite_nodes) != 1 or callsite_nodes[0].get("target_entries") != [f"{static_entry:08x}"]:
+        raise ValueError(f"Decode event {sequence + 1} return address does not identify one direct CALL to the selected function")
+    return callsite_elf_vma, callsite_nodes[0]
 
 
 def _write_json(path: Path, value: Any) -> None:
@@ -138,24 +160,60 @@ def main() -> int:
     value_candidates: list[dict[str, Any]] = []
     ordinals: set[int] = set()
     callsite_facts: dict[int, dict[str, Any]] = {}
+    paired_parent_by_decode: dict[int, tuple[int, dict[str, Any]]] = {}
+    pair_exclusions: Counter[str] = Counter()
+    if token_key is not None:
+        matches_by_parent: dict[int, list[int]] = {}
+        parent_by_decode: dict[int, tuple[int, dict[str, Any]]] = {}
+        for sequence, (row_index, event) in enumerate(indexed_events):
+            thread_id = event.get("tid")
+            if isinstance(thread_id, bool) or not isinstance(thread_id, int) or thread_id < 0:
+                pair_exclusions["invalid_thread_id"] += 1
+                continue
+            parent_match = next((
+                (candidate_index, candidate) for candidate_index, candidate in file_data_events
+                if candidate_index > row_index and candidate.get("tid") == thread_id
+            ), None)
+            if parent_match is None:
+                pair_exclusions["no_later_same_thread_get_file_data_return"] += 1
+                continue
+            parent_index, parent = parent_match
+            parent_typed = parent.get("typed")
+            _, callsite_node = _callsite_context(event, graph, image_base, static_entry, sequence)
+            caller_entry = _hex(callsite_node.get("function_entry"), "direct CALL owner entry")
+            caller_elf_vma = caller_entry - image_base
+            if (
+                not isinstance(parent_typed, dict)
+                or parent_typed.get("kind") != "get_file_data"
+                or _hex(parent.get("offset"), "getFileData entry") & ~1 != caller_elf_vma
+                or parent_typed.get("success") is not True
+            ):
+                pair_exclusions["no_successful_direct_owner_return"] += 1
+                continue
+            typed = event.get("typed")
+            if not isinstance(typed, dict) or typed.get("kind") != "decode":
+                raise ValueError(f"Decode event {sequence + 1} has no typed observation")
+            destination = _hex(typed.get("destination_ptr"), "Decode destination pointer")
+            returned = _hex(parent_typed.get("returned_data_pointer"), "getFileData return pointer")
+            if destination == 0 or destination != returned:
+                pair_exclusions["pointer_identity_not_observed"] += 1
+                continue
+            matches_by_parent.setdefault(parent_index, []).append(row_index)
+            parent_by_decode[row_index] = (parent_index, parent)
+
+        for rows in matches_by_parent.values():
+            if len(rows) == 1:
+                row_index = rows[0]
+                paired_parent_by_decode[row_index] = parent_by_decode[row_index]
+            else:
+                pair_exclusions["ambiguous_pointer_identity_match"] += len(rows)
+
     for sequence, (row_index, event) in enumerate(indexed_events):
         offset = _hex(event.get("offset"), f"Decode event {sequence + 1} offset")
         if offset & ~1 != expected_elf_vma:
             raise ValueError(f"Decode event {sequence + 1} does not map to the requested static function")
-        return_offset = _hex(event.get("callsite"), f"Decode event {sequence + 1} callsite")
-        if return_offset & 1 == 0:
-            raise ValueError(f"Decode event {sequence + 1} return address is not Thumb-tagged")
-        callsite_elf_vma = (return_offset & ~1) - 4
-        if callsite_elf_vma < 0:
-            raise ValueError(f"Decode event {sequence + 1} return address precedes a Thumb BL")
+        callsite_elf_vma, callsite_node = _callsite_context(event, graph, image_base, static_entry, sequence)
         callsite_static_address = callsite_elf_vma + image_base
-        callsite_nodes = [
-            node for node in graph.get("nodes", [])
-            if node.get("kind") == "operation" and node.get("opcode") == "CALL"
-            and _hex(node.get("operation_address"), "graph direct call address") == callsite_static_address
-        ]
-        if len(callsite_nodes) != 1 or callsite_nodes[0].get("target_entries") != [f"{static_entry:08x}"]:
-            raise ValueError(f"Decode event {sequence + 1} return address does not identify one direct CALL to the selected function")
         typed = event.get("typed")
         if not isinstance(typed, dict) or typed.get("kind") != "decode":
             raise ValueError(f"Decode event {sequence + 1} has no typed observation")
@@ -181,8 +239,8 @@ def main() -> int:
         runtime_callsite_address = module_base + callsite_elf_vma
         callsite_facts[callsite_elf_vma] = {
             "static_address": f"0x{callsite_static_address:x}",
-            "node_id": callsite_nodes[0]["id"],
-            "caller_entry": callsite_nodes[0]["function_entry"],
+            "node_id": callsite_node["id"],
+            "caller_entry": callsite_node["function_entry"],
         }
         addresses.append({
             "format": "REVENGINSTR.RuntimeAddressObservation/1",
@@ -213,11 +271,11 @@ def main() -> int:
             "callsite_runtime_address": f"0x{runtime_callsite_address:x}",
             "target_runtime_address": f"0x{address:x}",
         })
-        if token_key is not None:
+        if token_key is not None and row_index in paired_parent_by_decode:
             thread_id = event.get("tid")
             if isinstance(thread_id, bool) or not isinstance(thread_id, int) or thread_id < 0:
                 raise ValueError("Decode event has no valid thread id for return pairing")
-            caller_entry = _hex(callsite_nodes[0].get("function_entry"), "direct CALL owner entry")
+            caller_entry = _hex(callsite_node.get("function_entry"), "direct CALL owner entry")
             caller_nodes = [
                 node for node in graph.get("nodes", [])
                 if node.get("kind") == "function"
@@ -226,19 +284,7 @@ def main() -> int:
             caller_elf_vma = caller_entry - image_base
             if len(caller_nodes) != 1 or caller_elf_vma < 0:
                 raise ValueError("direct CALL owner does not identify one in-range function")
-            parent_match = next((
-                (candidate_index, candidate) for candidate_index, candidate in file_data_events
-                if candidate_index > row_index and candidate.get("tid") == thread_id
-            ), None)
-            if parent_match is None or not isinstance(parent_match[1].get("typed"), dict):
-                raise ValueError("Decode call has no later same-thread getFileData return")
-            parent_index, parent = parent_match
-            if any(
-                row_index < index < parent_index and candidate.get("symbol") == DECODE_SYMBOL
-                and candidate.get("tid") == thread_id
-                for index, candidate in indexed_events
-            ):
-                raise ValueError("nested Decode calls make the enclosing getFileData return ambiguous")
+            parent_index, parent = paired_parent_by_decode[row_index]
             parent_typed = parent["typed"]
             if (
                 parent_typed.get("kind") != "get_file_data"
@@ -249,7 +295,7 @@ def main() -> int:
             destination = _hex(typed.get("destination_ptr"), "Decode destination pointer")
             returned = _hex(parent_typed.get("returned_data_pointer"), "getFileData return pointer")
             if destination == 0 or destination != returned:
-                raise ValueError("Decode destination and enclosing getFileData return do not match")
+                raise ValueError("selected Decode/getFileData pointer pair changed during normalization")
             pair_sequence = sequence * 2
             pointer_token = "hmac-sha256:" + hmac.new(
                 token_key,
@@ -321,10 +367,19 @@ def main() -> int:
     matched = sum(row["formula_result"] == "match" for row in transforms)
     mismatched = sum(row["formula_result"] == "mismatch" for row in transforms)
     unavailable = sum(row["formula_result"] == "unavailable" for row in transforms)
+    trace_timestamps = [
+        row["ts_ms"] for row in trace_rows
+        if isinstance(row.get("ts_ms"), int) and not isinstance(row.get("ts_ms"), bool)
+    ]
     metadata = {
         "format": "REVENGINSTR.NevergoneDecodeCaptureMetadata/1",
         "capture_id": args.capture_id,
         "captured_at_utc": datetime.fromtimestamp(headers[0]["ts_ms"] / 1000, timezone.utc).isoformat(),
+        "last_observation_at_utc": datetime.fromtimestamp(max(trace_timestamps) / 1000, timezone.utc).isoformat(),
+        "source_trace_bytes": len(trace_raw),
+        "source_trace_row_count": len(trace_rows),
+        "source_trace_event_counts": dict(sorted(Counter(str(row.get("type", "<missing>")) for row in trace_rows).items())),
+        "source_trace_has_footer": any(row.get("type") == "footer" for row in trace_rows),
         "package": headers[0]["package"],
         "application_version": args.application_version,
         "device_model": args.device_model,
@@ -356,6 +411,7 @@ def main() -> int:
             "runtime_value_flow_pairs": len(value_candidates),
             "runtime_value_pointer_identity_matches": len(value_candidates),
             "runtime_value_token_scheme": "capture-scoped HMAC-SHA-256",
+            "runtime_value_flow_pair_exclusions": dict(sorted(pair_exclusions.items())),
         } if token_key is not None else {}),
     }
     args.output_dir.mkdir(parents=True, exist_ok=True)

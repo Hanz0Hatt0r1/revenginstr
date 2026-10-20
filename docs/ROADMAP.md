@@ -1353,13 +1353,18 @@ compare only opaque HMAC-shaped tokens. Both pair endpoints must map to their de
 nodes through unique exact address matches. Declared gaps and partial sampling
 remain visible; only the selected pair can be `witnessed`, `observed_mismatch`
 or `inconclusive`. Token authenticity is not verified, no raw values enter the
-report, and no pair upgrades a static path to `confirmed_exact`. A real
-Nevergone device replay now witnesses 11 selected `Decode` output-buffer to
-`getFileData` return-pointer identity pairs. Other in-game receiver, field,
-state, factory, and lifetime observations remain open; capture completeness is
-unknown. Its decision-ledger replay yields 11 `review_required` events and no
-accepts. See the [runtime value-flow replay](RUNTIME_VALUE_FLOW.md) and the
-[device evidence](evidence/runtime-behavior-replay-v1/nevergone-decode-device-20261020/README.md).
+report, and no pair upgrades a static path to `confirmed_exact`. Three real
+Nevergone device captures now witness 11, 34, and 34 selected `Decode`
+output-buffer to `getFileData` return-pointer identity pairs. The gameplay
+capture maps all 49 calls to the exact static graph; nine pointer mismatches
+and six calls without a later same-thread return are excluded. A later
+post-Tap-to-Start menu capture maps all 42 calls to the graph; its 34-pair
+ledger has no accepts. Other in-game receiver, field, state, factory, and
+lifetime observations remain open; capture completeness is unknown. See the
+[runtime value-flow replay](RUNTIME_VALUE_FLOW.md), the
+[first capture](evidence/runtime-behavior-replay-v1/nevergone-decode-device-20261020/README.md),
+the [gameplay capture](evidence/runtime-behavior-replay-v1/nevergone-gameplay-device-20261020/README.md),
+and the [post-Tap-to-Start menu capture](evidence/runtime-behavior-replay-v1/nevergone-menu-device-20261020/README.md).
 `revenginstr-runtime-ledger` deterministically turns pair results into
 `AnalysisDecisionLedgerEvent/1` records; a witness remains `review_required`,
 a mismatch becomes `escalated_conflict`, and missing evidence remains
@@ -1370,14 +1375,21 @@ a mismatch becomes `escalated_conflict`, and missing evidence remains
 pins consumer-reported transform observations to exact function-entry matches
 in `RuntimeStaticCorrelation/1`, retaining sample counts, source ordinals, and
 unknown capture completeness. On 2026-10-20, the installed Nevergone 1.0.9
-build exercised `cocos2d::Decode` 11 times; 10 non-empty calls checked 128
-evenly spaced byte positions each and reported matches for the recovered
-formula, while one zero-length call remained inconclusive. All 11 addresses
-matched the exact graph function node. The bytes are not retained and RevEngInstr
-does not recompute the consumer's formula result, so this remains bounded
-runtime evidence, not an accepted claim or a pair-scoped value-flow witness.
-See [`runtime transform replay`](RUNTIME_TRANSFORM_REPLAY.md) and the
-[device capture](evidence/runtime-behavior-replay-v1/nevergone-decode-device-20261020/README.md).
+gameplay capture exercised `cocos2d::Decode` 49 times; 48 non-empty calls
+checked 6,028 byte positions and reported formula matches (45 sampled checks
+and 3 full-buffer checks), while one zero-length call remained inconclusive.
+A post-Tap-to-Start menu capture adds 42 calls; 41 reported formula matches
+(38 sampled and 3 full-buffer checks), with one zero-length call
+inconclusive. All 91 addresses across both captures matched the exact graph
+function node. The bytes are not retained and RevEngInstr does not recompute
+the consumer's formula result, so these remain bounded runtime evidence, not
+accepted claims or pair-scoped value-flow witnesses. Both source traces lack
+footers and reach the 200 file-access-event cap, so completeness remains
+unknown. See
+[`runtime transform replay`](RUNTIME_TRANSFORM_REPLAY.md), the
+[first device capture](evidence/runtime-behavior-replay-v1/nevergone-decode-device-20261020/README.md),
+the [gameplay capture](evidence/runtime-behavior-replay-v1/nevergone-gameplay-device-20261020/README.md),
+and the [post-Tap-to-Start menu capture](evidence/runtime-behavior-replay-v1/nevergone-menu-device-20261020/README.md).
 
 ### M9.5 Information-gain evaluation
 

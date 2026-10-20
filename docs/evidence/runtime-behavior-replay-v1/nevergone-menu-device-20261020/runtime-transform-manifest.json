@@ -1,0 +1,11 @@
+{
+  "behavior_id": "nevergone-decode-xor-subtract-index-mod-127-u8/v1",
+  "candidate_id": "nevergone-decode-static-recovery",
+  "capture_id": "nevergone-menu-device-20261020-pid914",
+  "correlation_report_sha256": "532bd519da7f071d68879d5a7399a0e87db998a67e8b0e71a862e80e1b301a5d",
+  "expected_function_node_id": "function:0b3d984b71db09e5abbc42cc4def79b7e1061ed9b4a87c526342eec9953117a1",
+  "format": "REVENGINSTR.RuntimeTransformReplayManifest/1",
+  "observations_sha256": "0d98b02462b57358649f1ae7aeffe947958768d7646a520a7dc349fbc5af2094",
+  "probe_script_sha256": "0ffb0ced88a48680f2122647b4fb5f1b80356819c915d7da8db302327a483c0f",
+  "source_capture_sha256": "fe684bec8e41de6b99b53cdb9377299ba564e887624b16ef698942b7536f2957"
+}

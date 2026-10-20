@@ -21,6 +21,9 @@ revenginstr-runtime-direct-call-correlate semantic-program-graph.jsonl \
   --output runtime-direct-call-correlation.json
 ```
 
-The Nevergone capture correlates 11 observed calls from
-`CCFileUtilsAndroid::getFileData` to `cocos2d::Decode`; see the
-[device replay](evidence/runtime-behavior-replay-v1/nevergone-decode-device-20261020/README.md).
+The first Nevergone capture correlates 11 observed calls from
+`CCFileUtilsAndroid::getFileData` to `cocos2d::Decode`. The later gameplay and
+post-Tap-to-Start menu captures add 49 and 42 matched calls, respectively.
+See the [first device replay](evidence/runtime-behavior-replay-v1/nevergone-decode-device-20261020/README.md),
+[gameplay replay](evidence/runtime-behavior-replay-v1/nevergone-gameplay-device-20261020/README.md),
+and [menu replay](evidence/runtime-behavior-replay-v1/nevergone-menu-device-20261020/README.md).

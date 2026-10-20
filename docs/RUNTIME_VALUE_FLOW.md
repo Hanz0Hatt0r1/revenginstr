@@ -36,14 +36,17 @@ python -m revenginstr.runtime_value_flow \
   --output /tmp/runtime-value-flow-replay.json
 ```
 
-This checked-in input is a synthetic contract fixture. The
+This checked-in input is a synthetic contract fixture. The earlier
 [Nevergone device replay](evidence/runtime-behavior-replay-v1/nevergone-decode-device-20261020/README.md)
-also records 11 `Decode` output-buffer to `getFileData` return identity pairs.
-All 11 are witnessed through exact static function matches and operator-keyed
-opaque tokens. Capture completeness remains unknown, and the result proves
-pointer identity only for those selected calls.
-The device pair report replays into 11 `review_required` decision-ledger
-events; it does not auto-accept any runtime claim.
+witnesses 11 `Decode` output-buffer to `getFileData` return identity pairs.
+The newer [gameplay capture](evidence/runtime-behavior-replay-v1/nevergone-gameplay-device-20261020/README.md)
+adds 34 witnessed pairs from 49 observed calls. Both use exact static function
+matches and opaque tokens; capture completeness remains unknown. Each result
+proves pointer identity only for its selected calls. The new device pair report
+replays into 34 `review_required` decision-ledger events; it does not
+auto-accept any runtime claim. A later [post-Tap-to-Start menu capture](evidence/runtime-behavior-replay-v1/nevergone-menu-device-20261020/README.md)
+also witnesses 34 pairs from 42 calls and records that the installed game
+reached its existing save-selection screen without a crash during the check.
 
 ## Decision-ledger replay
 
