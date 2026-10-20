@@ -1,5 +1,11 @@
 {
   "analysis": {
+    "cfg_export": {
+      "format": "REVENGINSTR.GhidraFunctionPcodeCFG/5",
+      "functions": 5,
+      "mode": "read-only, no-analysis",
+      "provider": "Ghidra 12.1.2"
+    },
     "java": "21",
     "mode": "read-only, no-analysis",
     "project": "nevergone_title_enemy",
@@ -49,22 +55,22 @@
       "sha256": "4167a3a089dbb285b814c7ebe327ca564701cf93461272423fd1213ba220139e"
     },
     {
-      "bytes": 265141,
+      "bytes": 267645,
       "id": "artifact_08_path-callback-to-hitcheck",
       "path": "path-callback-to-hitcheck.jsonl",
-      "sha256": "d8e0c4a847c27a8fa0da5213f2fa16fce8d1a72175fe9ae4f9dc0afacb93762f"
+      "sha256": "48c0872aadcf3c3239413136377ba9efa38b625a8ce2b1a2c1032ac63bbaa418"
     },
     {
-      "bytes": 264872,
+      "bytes": 267382,
       "id": "artifact_09_path-callback-to-began",
       "path": "path-callback-to-began.jsonl",
-      "sha256": "074bf80e22f299418df6182c8b0c3af57e0b05fced6f52cc55c7e52a6f440c34"
+      "sha256": "6f9d3afee3818f47432604b98ca9f43cb333b8de9d9bee87b7955f29ea6f76c7"
     },
     {
-      "bytes": 40070,
+      "bytes": 40789,
       "id": "artifact_10_path-callback-to-end",
       "path": "path-callback-to-end.jsonl",
-      "sha256": "aa0705dd156c21e6e28bb26d75ef709e59b73597ee213c2b4f0797bd30451ef3"
+      "sha256": "a83401a310a3d78d10c727dfd9acab618df4d21208be7faad4b29e9a75eb6385"
     },
     {
       "bytes": 25550,
@@ -73,16 +79,16 @@
       "sha256": "ff569a386668cac45b29227401bcac27b6428ff17ae192f2d1f57e87a26f397c"
     },
     {
-      "bytes": 5051,
+      "bytes": 5344,
       "id": "artifact_12_rebuild_py",
       "path": "rebuild.py",
-      "sha256": "dfa851cb970aded656d69cca5e08a737831f9848a8a35cfdbfe123842816b22a"
+      "sha256": "94dee072b1a2b8aaa4ad03def1e606201396b1c72286fde9c706de337a1d77e8"
     },
     {
-      "bytes": 3607,
+      "bytes": 4707,
       "id": "artifact_13_README_md",
       "path": "README.md",
-      "sha256": "56bcc4897c2f4f3936bb092da2c5d29b505c283531d7bba5e77280e7b0090896"
+      "sha256": "f8d6c2e061dfcfa209e5d9444981d2a523e5719eb1ee2b35ff7425b9f3cddc87"
     },
     {
       "bytes": 55908,
@@ -175,16 +181,46 @@
       "sha256": "8e133433a7841cc5dddd33c314359750f756475cfefe422d6a286b75512b3f78"
     },
     {
-      "bytes": 22149,
+      "bytes": 22325,
       "id": "artifact_29_semantic_program_path_query_py",
       "path": "../../../../src/revenginstr/semantic_program_path_query.py",
-      "sha256": "4e12241d2768176ecc3ff0a0f18aa81cf6ab0659c88d653afaed91fd226a60e0"
+      "sha256": "12180452063233446cefb6d48031478f4faa7bd6122437d1e254bfabd5bd8428"
     },
     {
       "bytes": 13966,
       "id": "artifact_30_semantic_program_query_py",
       "path": "../../../../src/revenginstr/semantic_program_query.py",
       "sha256": "de3c9b2974908e139601a3e7d81ce8aff683f6ba8ebdb70f6aaec0256ea52a5f"
+    },
+    {
+      "bytes": 69700,
+      "id": "artifact_31_callback-function-pcode-cfg_jsonl",
+      "path": "callback-function-pcode-cfg.jsonl",
+      "sha256": "9f167fc04144d251dc310111a13e4ecdce9bb06911b26820c90bd3da2c20c6f3"
+    },
+    {
+      "bytes": 17084,
+      "id": "artifact_32_ExportFunctionPcodeCFG_java",
+      "path": "../../../../ghidra/ExportFunctionPcodeCFG.java",
+      "sha256": "714cceac94340397db566b6c4ba49afa421f3cfd096f07bb4fcf2fd1fae7c164"
+    },
+    {
+      "bytes": 1437,
+      "id": "artifact_33_run_ghidra_function_pcode_cfg_sh",
+      "path": "../../../../scripts/run_ghidra_function_pcode_cfg.sh",
+      "sha256": "ea1cee8e7bed19ee1666eb69996fac4e535e14dae3810778153ed417d447a4b4"
+    },
+    {
+      "bytes": 92859,
+      "id": "artifact_34_field_flow_py",
+      "path": "../../../../src/revenginstr/receiver/field_flow.py",
+      "sha256": "a73831dcee8f76bb3178d7607af0cc67d8db2aa1f73d1e39c43c2e79f1c31545"
+    },
+    {
+      "bytes": 4755,
+      "id": "artifact_35_ghidra-function-pcode-cfg-v5_schema_json",
+      "path": "../../../../schemas/ghidra-function-pcode-cfg-v5.schema.json",
+      "sha256": "3be67975ecf75b939483274e4028cf6214657bc5db7d2ff319557a9368be0f19"
     }
   ],
   "format": "Nevergone.CCJoyStickTouchPipelineReplay/1",
@@ -196,6 +232,8 @@
     "callback_pcode_rows": 56,
     "ccTouchBegan_uncertain_call_frontier_sites": 8,
     "ccTouchEnded_uncertain_call_frontier_sites": 2,
+    "cfg_export_functions": 5,
+    "cfg_reachable_direct_call_sites": 3,
     "exact_direct_call_paths": 3,
     "field_to_type_joins": 53,
     "function_count": 13,

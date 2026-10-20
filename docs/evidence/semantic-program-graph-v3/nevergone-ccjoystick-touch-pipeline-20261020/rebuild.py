@@ -12,6 +12,7 @@ from revenginstr.effect_ir import build_function_effect_ir
 from revenginstr.semantic_program_graph import build_semantic_program_graphs
 from revenginstr.semantic_program_path_query import query_graphs as query_paths
 from revenginstr.semantic_program_query import query_graphs
+from revenginstr.receiver.field_flow import _index_cfg
 
 
 ROOT = next(parent for parent in Path(__file__).resolve().parents if (parent / "pyproject.toml").is_file())
@@ -84,6 +85,9 @@ def rebuild(output_dir: Path) -> None:
     graph_raw = _jsonl_bytes(graphs)
     _write(output_dir / "semantic-program-graph.jsonl", graph_raw)
     graph_sha256 = hashlib.sha256(graph_raw).hexdigest()
+    cfg_rows, cfg_raw = _read_jsonl(HERE / "callback-function-pcode-cfg.jsonl")
+    cfg_index = _index_cfg(cfg_rows)
+    cfg_sha256 = hashlib.sha256(cfg_raw).hexdigest()
 
     for source_entry, target_entry, filename in PATH_QUERIES:
         result = query_paths(
@@ -93,6 +97,8 @@ def rebuild(output_dir: Path) -> None:
             target_function_entry=target_entry,
             view="exact-only",
             max_hops=4,
+            cfg_index=cfg_index,
+            cfg_sha256=cfg_sha256,
         )
         _write(output_dir / filename, _jsonl_bytes(result))
 

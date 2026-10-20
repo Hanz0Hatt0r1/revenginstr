@@ -34,10 +34,13 @@ def _consume_expansion(budget: list[int], max_expansions: int) -> None:
 def _reachable_block_paths(
     cfg: dict[str, Any], *, max_expansions: int, expansion_budget: list[int]
 ) -> dict[int, list[int]]:
-    entry = cfg["entry_block_index"]
+    entries = cfg["entry_block_indices"]
+    if entries is None:
+        entry = cfg["entry_block_index"]
+        entries = [] if entry is None else [entry]
     blocks = cfg["blocks"]
-    paths = {entry: [entry]}
-    pending = deque([entry])
+    paths = {entry: [entry] for entry in entries}
+    pending = deque(entries)
     while pending:
         block_index = pending.popleft()
         for successor in sorted(blocks[block_index]["successors"]):
@@ -80,7 +83,7 @@ def _cfg_callsite(
     if opcode != operation.get("opcode"):
         status = "opcode_mismatch"
         block_path = []
-    elif cfg["entry_block_index"] is None:
+    elif not cfg["entry_block_indices"] and cfg["entry_block_index"] is None:
         status = "entry_block_unavailable"
         block_path = []
     else:

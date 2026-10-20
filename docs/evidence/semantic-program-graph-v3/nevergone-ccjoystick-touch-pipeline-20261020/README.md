@@ -13,6 +13,12 @@ acquisition receipt retain the exact export for `CCJoyStick::ccTouchBegan`
 completed; the export contains 56 P-code rows. The original Ghidra project was
 not modified.
 
+A separate read-only, no-analysis Ghidra export pins `FunctionPcodeCFG/5` for
+the two callbacks and the three path targets. It records all entry blocks,
+P-code operation locations and block successors for five functions. The path
+query uses these rows to check each direct call site against CFG successor
+reachability from the entry block list.
+
 ## Replay result
 
 The deterministic builder composes 13 function bodies: the eight existing
@@ -23,11 +29,15 @@ provenance and null confidence; none is accepted as a semantic fact.
 
 Three exact-only path queries recover these direct calls:
 
-| Caller | Call site | Callee |
-| --- | ---: | --- |
-| `CCJoyStick::ccTouchBegan` (`0x002a6300`) | `0x002a6308` | `CCJoyStick::containsTouchLocation` (`0x002a60c8`) |
-| `CCJoyStick::ccTouchBegan` (`0x002a6300`) | `0x002a6362` | `CCJoyStick::onTouchBegan` (`0x002a6284`) |
-| `CCJoyStick::ccTouchEnded` (`0x002a63ec`) | `0x002a642c` | `CCJoyStick::onTouchEnd` (`0x002a63a8`) |
+| Caller | Call site | Callee | CFG block path |
+| --- | ---: | --- | --- |
+| `CCJoyStick::ccTouchBegan` (`0x002a6300`) | `0x002a6308` | `CCJoyStick::containsTouchLocation` (`0x002a60c8`) | `[0]` |
+| `CCJoyStick::ccTouchBegan` (`0x002a6300`) | `0x002a6362` | `CCJoyStick::onTouchBegan` (`0x002a6284`) | `[0, 1, 3]` |
+| `CCJoyStick::ccTouchEnded` (`0x002a63ec`) | `0x002a642c` | `CCJoyStick::onTouchEnd` (`0x002a63a8`) | `[0]` |
+
+All three paths report `all_call_sites_in_entry_reachable_blocks`. These are
+successor-graph reachability witnesses from the listed entry blocks. They do
+not establish branch-predicate feasibility or runtime execution.
 
 The hit-area query selects reads of `+0x11c`, `+0x120`, `+0x124`, `+0x128`,
 and `+0x12c` in `containsTouchLocation`, plus the `+0x12c` write in
@@ -57,8 +67,20 @@ GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_pcode_flow_batch.sh \
   /tmp/ccjoystick-touch-callback-acquisition.jsonl 2 600
 ```
 
-Compare the temporary outputs to the pinned callback artifacts, then rebuild
-the combined Effect IR, graph, path queries and field query:
+Re-export the CFG/5 evidence for the two callbacks and their three targets:
+
+```sh
+JAVA_HOME=/usr/lib/jvm/java-21-openjdk \
+PATH=/usr/lib/jvm/java-21-openjdk/bin:$PATH \
+GHIDRA_HOME=/opt/ghidra scripts/run_ghidra_function_pcode_cfg.sh \
+  /home/pes/ghidra_projects nevergone_title_enemy libcocos2dcpp.so \
+  /tmp/ccjoystick-touch-callback-function-pcode-cfg.jsonl \
+  nevergone:libcocos2dcpp.so \
+  002a6300 002a63ec 002a60c8 002a6284 002a63a8 --entry-block-indices
+```
+
+Compare the temporary CFG and callback outputs to their pinned artifacts, then
+rebuild the combined Effect IR, graph, path queries and field query:
 
 ```sh
 PYTHONPATH=src python \

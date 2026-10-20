@@ -1594,9 +1594,12 @@ returns the captured route `00a45520 → 00a40550 → 00886930`.
 The path query also accepts a hash-pinned Ghidra Function P-code CFG artifact
 and joins call sites by exact function entry, address, P-code time, and opcode.
 It records the call block and a successor-path witness from the function entry.
-The NFS SHIFT CFG/3 replay confirms the call at `00a4556d` is in entry-reachable
-block 3; block-graph reachability does not establish branch-predicate
-feasibility or runtime execution.
+CFG/5 `entry_block_indices` now seeds reachability from every listed entry
+block, while earlier CFG formats retain their single-entry behavior. The
+Nevergone touch-pipeline replay confirms three call sites are reachable with
+block paths `[0]`, `[0, 1, 3]`, and `[0]`; the NFS SHIFT CFG/3 replay confirms
+the call at `00a4556d` is in entry-reachable block 3. Block-graph reachability
+does not establish branch-predicate feasibility or runtime execution.
 
 `SemanticProgramGraphGold/1` and
 `SemanticProgramGraphEvaluation/1` now define scoped consumer gold and report
