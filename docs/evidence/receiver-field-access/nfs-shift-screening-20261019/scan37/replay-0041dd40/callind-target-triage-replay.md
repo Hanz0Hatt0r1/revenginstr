@@ -61,9 +61,20 @@ maps to provenance alternatives 2 and 3, and
 represent either target. Each candidate retains its Ghidra source rows and
 limitations; the external runtime address and branch selection remain unknown.
 
+The same captured helper flows provide partial symbolic identities at two
+other mixed sites: `0090aa27:0090aa89` may call
+`KERNEL32.DLL!EncodePointer`, and `0090aa9e:0090ab00` may call
+`KERNEL32.DLL!DecodePointer`. Each annotation links only alternative 2, where
+the exact API name is passed to `GetProcAddress`; alternative 1 remains an
+unresolved cache load. Neither annotation claims a complete target set or
+runtime address.
+
 The `/2` replay is
 [`callind-target-triage-v2.jsonl`](callind-target-triage-v2.jsonl), SHA-256
-`8a11a40476a1c0f4c21888b67b9d90e995ef8ea53d4f9b70ad1ba02593120819` (22 rows; one row annotated with two candidates). Reproduce
+`9d0ae1a23371b7f58e9e64287697be256f00fbe876a5e9020c8d1fe9255c2032` (22
+rows; three annotated rows and four symbolic candidates). Its input sidecar is
+[`callind-symbol-candidates.jsonl`](callind-symbol-candidates.jsonl), SHA-256
+`fc24c4d925011cc30129b003446e55753def816ac38157cedc5af45add054379`. Reproduce
 it from the repository root:
 
 ```sh

@@ -2421,8 +2421,9 @@ preserves those call barriers. See the
 The new `IndirectCallTargetTriage/2` analyzer layer now attaches source-pinned
 symbolic API and internal-function candidates to exact triage sites while
 preserving the `/1` provenance, unresolved alternatives, and effect barriers.
-For `00918a4c`, it records both target names and their overlapping alternative
-indexes without claiming runtime branch selection or an external address.
+It records the conditional `00918a4c` API/fallback set and partial
+`EncodePointer`/`DecodePointer` paths at `0090aa89` and `0090ab00`; cache-load
+alternatives and runtime addresses remain unresolved.
 
 **Next:** acquire runtime observations for the two remaining mixed paths and
 the 13 dynamic-barrier-only sites, then bind runtime state for the seven
