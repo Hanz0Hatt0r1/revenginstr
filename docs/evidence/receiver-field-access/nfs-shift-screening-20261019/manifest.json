@@ -1507,6 +1507,18 @@
       "rows": 8
     },
     {
+      "path": "scan37/replay-0041dd40/callind-callback-setter-address-references.jsonl",
+      "bytes": 4032,
+      "sha256": "297399ec69aa683df965e0595bc775ca8a6222be1c5a5391b518843ad05885da",
+      "rows": 5
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-encoded-null-helper.jsonl",
+      "bytes": 6360,
+      "sha256": "a1d91daefe40e8a75b66e527a4027fdb514ec8d0512a7bdd93727cc0101b9f34",
+      "rows": 1
+    },
+    {
       "path": "scan37/replay-0041dd40/callind-mtinit-defined-strings.tsv",
       "bytes": 463,
       "sha256": "31fd7f851e0aa7a12e490b435e0b76c7df4b208289402f45fe43677355f109d4",
@@ -1531,8 +1543,8 @@
     },
     {
       "path": "scan37/replay-0041dd40/callind-target-triage-replay.md",
-      "bytes": 7660,
-      "sha256": "d6b574a0c021e7bd214a01c5e7b921af70d9430c660f1532ac0d5134c4c29883"
+      "bytes": 8888,
+      "sha256": "c11b8a832bf1981ffa61f7a1c4cf8d76018628bbc6c75eebd3478a9f0f260d42"
     },
     {
       "path": "scan37/replay-0041dd40/callind-target-triage-v2.jsonl",

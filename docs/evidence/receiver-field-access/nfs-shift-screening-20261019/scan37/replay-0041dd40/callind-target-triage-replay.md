@@ -102,6 +102,25 @@ At `0090acbb`, `__mtinit` resolves `KERNEL32.DLL!TlsSetValue` through
 and stores the pointer in `0x00c321e4`. `0090ac77` decodes that global before
 the exact CALLIND.
 
+Two remaining calls dispatch through callback globals. `FUN_0090a62e` reads
+`0x00c31ec4` and `__callnewh` reads `0x00c3239c`; their only direct writers
+are the small setters `FUN_0090a528` and `FUN_0090f2f7`. `__init_pointers`
+calls `__encoded_null`, which passes zero to the `EncodePointer` wrapper, and
+passes that encoded-null value to both setters. The retained address-reference
+capture finds each setter called only from `__init_pointers` and finds only the
+expected reader and setter references for each global. This establishes the
+startup value, not a complete runtime target set: indirect aliases or later
+runtime writes cannot be excluded. No non-null symbolic candidate is added for
+`0090a62e:0090a642` or `0090f301:0090f315`, and both CALLIND barriers remain.
+
+The callback follow-up captures are
+[`callind-callback-setter-address-references.jsonl`](callind-callback-setter-address-references.jsonl)
+and [`callind-encoded-null-helper.jsonl`](callind-encoded-null-helper.jsonl).
+The initializer instructions are retained in
+[`crt-pointer-cache-init-00907737.jsonl`](crt-pointer-cache-init-00907737.jsonl);
+the two setter bodies are in
+[`callind-tls-followup-functions.jsonl`](callind-tls-followup-functions.jsonl).
+
 The sidecar pins each identity to instruction, defined-string, address-metadata,
 P-code-flow, CALLIND, and (for encoded globals) address-reference rows. The
 retained captures are `callind-blocker-functions.jsonl` (8 functions),
