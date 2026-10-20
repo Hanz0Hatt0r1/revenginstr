@@ -15,7 +15,9 @@ addresses and offsets emitted by the exporter use lowercase `0x` hexadecimal;
 `-`. The command also prints `VTABLE_SLOT_FORMAT=REVENGINSTR.GhidraArm32ItaniumVtableSlots/1`
 as invocation metadata. Program addresses, symbol names and signatures are
 provenance from the selected Ghidra database; keep program identity alongside
-the output because the row has no program field.
+the output because the row has no program field. Primary symbol spellings are
+retained, so Itanium-mangled names may appear instead of demangled names. The
+exporter avoids demangling every symbol while scanning the database.
 
 Vtable symbols are de-duplicated by start address (preferring a primary symbol)
 and sorted by start address. Each address point is symbol start +8. Slots are

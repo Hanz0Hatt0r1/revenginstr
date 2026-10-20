@@ -55,7 +55,7 @@ public class ExportArm32ItaniumVtableSlots extends GhidraScript {
         String leaf = name;
         int ns = leaf.lastIndexOf("::");
         if (ns >= 0) leaf = leaf.substring(ns + 2);
-        if (leaf.startsWith("_ZTV")) return true;
+        if (leaf.startsWith("_ZTV") || leaf.startsWith("_ZTC")) return true;
         String low = name.toLowerCase(Locale.ROOT);
         return low.contains("vtable for ") || low.contains("construction vtable for ");
     }
@@ -132,7 +132,10 @@ public class ExportArm32ItaniumVtableSlots extends GhidraScript {
         SymbolIterator symbols = currentProgram.getSymbolTable().getAllSymbols(true);
         while (symbols.hasNext() && !monitor.isCancelled()) {
             Symbol symbol = symbols.next();
-            String name = symbol.getName(true);
+            if (symbol.isDynamic()) continue;
+            // Dynamic labels can resolve lazily through reference data, so skip them
+            // before asking Ghidra for a symbol name.
+            String name = symbol.getName();
             if (!isVtableName(name)) continue;
             long start = symbol.getAddress().getOffset();
             VtableSymbol previous = byStart.get(start);
@@ -201,7 +204,7 @@ public class ExportArm32ItaniumVtableSlots extends GhidraScript {
                     out.write(hex(vtable.start.getOffset()) + "\t" + cell(vtable.name) + "\t" +
                         hex(addressPoint.getOffset()) + "\t" + hex(slotOffset) + "\t" +
                         hex(slotLong) + "\t" + hex(rawValue) + "\t" + thumb + "\t" +
-                        cell(target.getEntryPoint()) + "\t" + cell(target.getName(true)) + "\t" +
+                        cell(target.getEntryPoint()) + "\t" + cell(target.getName()) + "\t" +
                         cell(target.getSignature()) + "\t" + mode + "\t" +
                         (nextStart == Long.MAX_VALUE ? "-" : hex(nextStart)));
                     out.newLine();

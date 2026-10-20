@@ -19,8 +19,13 @@ def test_arm32_itanium_vtable_export_is_project_neutral_and_read_only() -> None:
         "Long.compareUnsigned(slotLong, nextStart) >= 0",
         "REVENGINSTR.GhidraArm32ItaniumVtableSlots/1",
         "next_vtable_symbol_start",
+        "symbol.getName()",
+        "target.getName()",
+        'leaf.startsWith("_ZTC")',
     )
     assert all(fragment in source for fragment in required)
+    assert "getName(true)" not in source
+    assert source.index("if (symbol.isDynamic()) continue;") < source.index("String name = symbol.getName();")
     assert all(name not in source for name in ("Nevergone", "NEVERGONE", "SHIFT", "libcocos"))
     assert all(name not in source for name in ("setBytes(", "setInt(", "createFunction(", "removeFunction("))
 
