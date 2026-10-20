@@ -1470,9 +1470,21 @@
       "sha256": "ff15228316e44a5cbf02d84ed0c2401f1a9f5801d582cbe0cf5962d75a47bb46"
     },
     {
+      "path": "scan37/replay-0041dd40/callind-symbol-candidates.jsonl",
+      "bytes": 6146,
+      "sha256": "cb08a29ee853f79cb50eadb665221e1d52d6e23827b32b96dc39b87ebe88cc91",
+      "rows": 1
+    },
+    {
       "path": "scan37/replay-0041dd40/callind-target-triage-replay.md",
-      "bytes": 2798,
-      "sha256": "705a03b2e4e282b3105c5d9508ee54058b79e555118dd84b39f66e56dde79913"
+      "bytes": 4262,
+      "sha256": "704be07360f65ce5efe00bec066e88a1a55f63988df9fd75095123b17c6fd6b1"
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-target-triage-v2.jsonl",
+      "bytes": 63379,
+      "sha256": "8a11a40476a1c0f4c21888b67b9d90e995ef8ea53d4f9b70ad1ba02593120819",
+      "rows": 22
     },
     {
       "path": "scan37/replay-0041dd40/callind-target-triage.jsonl",

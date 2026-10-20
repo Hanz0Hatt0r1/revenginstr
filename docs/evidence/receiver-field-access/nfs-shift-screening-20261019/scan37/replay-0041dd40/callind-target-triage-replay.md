@@ -50,3 +50,29 @@ runtime address and branch selection remain unresolved, and the indirect
 cache has a possible aliasing reference; this evidence does not change the
 generic triage JSONL or remove the effect barrier. See
 [`callind-static-symbol-review-00918a4c.md`](callind-static-symbol-review-00918a4c.md).
+
+## Symbolic target enrichment
+
+`callind-symbol-candidates.jsonl` supplies two evidence-backed identities for
+the exact site `009189cd:00918a4c`: `KERNEL32.DLL!InitializeCriticalSectionAndSpinCount`
+maps to provenance alternatives 2 and 3, and
+`SHIFT.exe!___crtInitCritSecNoSpinCount@8` (`0x009189bd`) maps to alternatives
+1 and 2. The overlap is intentional: the merged cache-decode alternative can
+represent either target. Each candidate retains its Ghidra source rows and
+limitations; the external runtime address and branch selection remain unknown.
+
+The `/2` replay is
+[`callind-target-triage-v2.jsonl`](callind-target-triage-v2.jsonl), SHA-256
+`8a11a40476a1c0f4c21888b67b9d90e995ef8ea53d4f9b70ad1ba02593120819` (22 rows; one row annotated with two candidates). Reproduce
+it from the repository root:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python -m revenginstr.indirect_call_target_triage_v2 \
+  --target-triage docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/callind-target-triage.jsonl \
+  --symbolic-candidates docs/evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/callind-symbol-candidates.jsonl \
+  --output /tmp/callind-target-triage-v2.jsonl
+```
+
+All `/1` provenance and counts are preserved. The `/2` rows add symbolic
+candidate annotations without asserting path feasibility, runtime selection,
+or an external address; every site remains a `CALLIND` effect barrier.

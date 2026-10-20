@@ -2418,8 +2418,13 @@ runtime address, and unknown branch selection. The generic triage output still
 preserves those call barriers. See the
 [symbolic-target review](evidence/receiver-field-access/nfs-shift-screening-20261019/scan37/replay-0041dd40/callind-static-symbol-review-00918a4c.md).
 
-**Next:** add evidence-backed symbolic API-target summaries to the analyzer,
-then acquire runtime observations for the two remaining mixed paths and
+The new `IndirectCallTargetTriage/2` analyzer layer now attaches source-pinned
+symbolic API and internal-function candidates to exact triage sites while
+preserving the `/1` provenance, unresolved alternatives, and effect barriers.
+For `00918a4c`, it records both target names and their overlapping alternative
+indexes without claiming runtime branch selection or an external address.
+
+**Next:** acquire runtime observations for the two remaining mixed paths and
 the 13 dynamic-barrier-only sites, then bind runtime state for the seven
 scoped candidate sets, including the partial candidate at `00918a4c`.
 Preserve unresolved target and alias barriers; keep selector and receiver

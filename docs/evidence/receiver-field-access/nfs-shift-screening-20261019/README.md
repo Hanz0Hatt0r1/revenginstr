@@ -35,6 +35,11 @@ internal `___crtInitCritSecNoSpinCount@8` fallback at `0x009189bd`. It retains
 the indirect-call barrier because branch selection, the external runtime
 address, and possible cache aliases remain unresolved; see the
 [symbolic-target review](scan37/replay-0041dd40/callind-static-symbol-review-00918a4c.md).
+The new `IndirectCallTargetTriage/2` replay joins both names to the exact site
+and their provenance alternatives, with Ghidra source references and the
+runtime-selection limits carried in each candidate. The `/1` report and all
+22 CALLIND effect barriers remain unchanged; see the
+[symbolic triage replay](scan37/replay-0041dd40/callind-target-triage-replay.md).
 
 ## Screens
 

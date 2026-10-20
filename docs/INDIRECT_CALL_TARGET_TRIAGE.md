@@ -34,3 +34,27 @@ from a resolved constant anchor; it does not verify a function identity,
 establish runtime selection, treat uncovered alternatives as resolved, or
 remove the `CALLIND` effect barrier. Consumer-collected runtime observations
 must be separately pinned before a runtime target can be considered observed.
+
+## Symbolic candidates
+
+`revenginstr-indirect-call-target-triage-v2` enriches `/1` rows with a separate
+`GhidraIndirectCallSymbolCandidates/1` JSONL sidecar. It joins on program ID,
+binary SHA-256, function entry, CALLIND address, and P-code operation time. A
+sidecar row that does not match exactly one triage site, or has an invalid
+alternative index, fails closed. Unannotated rows carry an empty candidate
+array and a null source.
+
+```sh
+revenginstr-indirect-call-target-triage-v2 \
+  --target-triage callind-target-triage.jsonl \
+  --symbolic-candidates callind-symbol-candidates.jsonl \
+  --output callind-target-triage-v2.jsonl
+```
+
+The `/2` layer preserves every `/1` field and adds candidate names, candidate
+kind, optional static address, linked provenance-alternative indexes, source
+references, and explicit limitations. These are static identity annotations:
+they do not claim runtime branch selection or an external API address, resolve
+the target, or remove the `CALLIND` effect barrier. Candidate indexes may
+overlap when one merged provenance alternative represents more than one
+conditional target.
