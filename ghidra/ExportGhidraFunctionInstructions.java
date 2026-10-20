@@ -256,7 +256,7 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
             Instruction call = pending.removeFirst();
             Address nextAddress = call.getAddress().add(call.getLength());
             Instruction next = instructionAt(nextAddress);
-            if (next == null || !isSafeRecoveryAddress(function, nextAddress, nextAddress)) continue;
+            if (next == null || !isSafeRecoveryAddress(function, nextAddress)) continue;
 
             restoredCalls.add(call.getAddress());
             ArrayDeque<Address> work = new ArrayDeque<>();
@@ -267,11 +267,14 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
                 monitor.checkCancelled();
                 Address address = work.removeFirst();
                 if (instructions.containsKey(address) || !visited.add(address) ||
-                        !isSafeRecoveryAddress(function, address, nextAddress)) continue;
+                        !isSafeRecoveryAddress(function, address)) continue;
                 Instruction instruction = instructionAt(address);
                 if (instruction == null) continue;
                 recoveredBytes += instruction.getLength();
-                if (recoveredBytes > MAX_RECOVERED_BYTES) break;
+                if (recoveredBytes > MAX_RECOVERED_BYTES) {
+                    throw new IllegalStateException("fallthrough recovery from call " +
+                        call.getAddress() + " exceeded the " + MAX_RECOVERED_BYTES + "-byte instruction budget");
+                }
                 instructions.put(address, instruction);
 
                 if (isReturningDirectCall(instruction)) {
@@ -363,18 +366,15 @@ public class ExportGhidraFunctionInstructions extends GhidraScript {
         }
     }
 
-    private boolean isSafeRecoveryAddress(Function function, Address address, Address origin) {
-        long distance;
-        try {
-            distance = address.subtract(origin);
-        } catch (RuntimeException exc) {
-            return false;
-        }
-        if (distance < -MAX_RECOVERED_BYTES || distance > MAX_RECOVERED_BYTES) return false;
+    private boolean isSafeRecoveryAddress(Function function, Address address) {
+        return !belongsToAnotherFunction(function, address);
+    }
+
+    private boolean belongsToAnotherFunction(Function function, Address address) {
         Function owner = functions.getFunctionContaining(address);
-        if (owner != null && !owner.getEntryPoint().equals(function.getEntryPoint())) return false;
+        if (owner != null && !owner.getEntryPoint().equals(function.getEntryPoint())) return true;
         Function entry = functions.getFunctionAt(address);
-        return entry == null || entry.getEntryPoint().equals(function.getEntryPoint());
+        return entry != null && !entry.getEntryPoint().equals(function.getEntryPoint());
     }
 
     private void addRecoverySuccessors(Instruction instruction, ArrayDeque<Address> work) {
