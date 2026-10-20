@@ -1507,25 +1507,37 @@
       "rows": 8
     },
     {
+      "path": "scan37/replay-0041dd40/callind-mtinit-defined-strings.tsv",
+      "bytes": 463,
+      "sha256": "31fd7f851e0aa7a12e490b435e0b76c7df4b208289402f45fe43677355f109d4",
+      "rows": 5
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-mtinit-pcode-flow.tsv",
+      "bytes": 30255,
+      "sha256": "7fb05d9983958cffe6f4b565b21b996b52535fd601a00fbe6fefdc57e5d3fa68",
+      "rows": 356
+    },
+    {
       "path": "scan37/replay-0041dd40/callind-static-symbol-review-00918a4c.md",
       "bytes": 6044,
       "sha256": "ff15228316e44a5cbf02d84ed0c2401f1a9f5801d582cbe0cf5962d75a47bb46"
     },
     {
       "path": "scan37/replay-0041dd40/callind-symbol-candidates.jsonl",
-      "bytes": 31249,
-      "sha256": "aa1c6fad685e117f001f2a860322417d54d4d75799e92b29d7747adc34b24c25",
-      "rows": 10
+      "bytes": 36056,
+      "sha256": "14c465bedb02f406409e10b69ea1e21364fe405a14ac30c4f01d43a8a0239cf7",
+      "rows": 11
     },
     {
       "path": "scan37/replay-0041dd40/callind-target-triage-replay.md",
-      "bytes": 6743,
-      "sha256": "d5a79c79d747fcb6c17b15a1627af84d3ff780bd4d3bc034944a5e6a7e755f81"
+      "bytes": 7281,
+      "sha256": "9c6e3b03d788ba0371d7c6bd68fcaa6e624e5f4b113cb84946d95d3568d57eec"
     },
     {
       "path": "scan37/replay-0041dd40/callind-target-triage-v2.jsonl",
-      "bytes": 89731,
-      "sha256": "97f6faf007ddd898179babfea6a85cd30f439bf9541a863a30d0dbd798ddd028",
+      "bytes": 94712,
+      "sha256": "657d80244186842c80698eb4d2ec7b465014b1b9109a2b6aeae3616f56ce78a8",
       "rows": 22
     },
     {
@@ -1533,6 +1545,24 @@
       "bytes": 55750,
       "sha256": "582d0793e3fae55fc84fc56f5caf6fefc120d35ec12eae8d4a7138fbb5741cb9",
       "rows": 22
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-tls-followup-address-metadata.jsonl",
+      "bytes": 4571,
+      "sha256": "ce139dbcc99c6b00bbbffd8da2e63ec28500bc718a3358d4a5e823f46dc63f32",
+      "rows": 12
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-tls-followup-functions.jsonl",
+      "bytes": 199215,
+      "sha256": "05939385b96b6339e780a4981ae4d2fbe40f01065c833993e955791412bfcbe8",
+      "rows": 3
+    },
+    {
+      "path": "scan37/replay-0041dd40/callind-tls-followup-global-references.jsonl",
+      "bytes": 11271,
+      "sha256": "d6bbd1344d55099cc5b85a7ab55a4dfba79f7e9542a78421f44604112896c928",
+      "rows": 6
     },
     {
       "path": "scan37/replay-0041dd40/cfg-v5-entry-block-replay.md",
